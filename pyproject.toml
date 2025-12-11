@@ -1,8 +1,8 @@
 [project]
-name = "package-name"
+name = "lode"
 version = "0.1.0"
-description = "Package description"
-authors = [{name = "Author Name", email = "author@example.com"}]
+description = "New reengineered version of LODE, maintained by OpenCitations"
+authors = [{name = "Valentina Pasqual, Sivio Peroni", email = "valentina.pasqual2@unibo.it"}]
 readme = "README.md"
 license = {text = "ISC"}
 requires-python = ">=3.10"
@@ -20,9 +20,9 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/username/package-name"
-Documentation = "https://username.github.io/package-name/"
-Repository = "https://github.com/username/package-name"
+Homepage = "https://github.com/username/lode"
+Documentation = "https://username.github.io/lode/"
+Repository = "https://github.com/username/lode"
 
 [dependency-groups]
 dev = [

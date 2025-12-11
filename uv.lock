@@ -285,7 +285,7 @@ wheels = [
 ]
 
 [[package]]
-name = "package-name"
+name = "lode"
 version = "0.1.0"
 source = { editable = "." }
 

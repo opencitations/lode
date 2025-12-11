@@ -9,15 +9,15 @@ export default defineConfig({
 		],
 	},
 	site: 'https://opencitations.github.io',
-	base: '/python-package-template',
+	base: '/lode',
 
 	integrations: [
 		starlight({
-			title: 'Python Package Template',
-			description: 'A template for creating Python packages with UV, pytest, and Starlight documentation',
+			title: 'Lode',
+			description: 'New reengineered version of LODE, maintained by OpenCitations',
 
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/opencitations/python-package-template' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/opencitations/lode' },
 			],
 
 			sidebar: [

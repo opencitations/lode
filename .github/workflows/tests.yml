@@ -27,7 +27,7 @@ jobs:
 
     - name: Run tests with coverage
       if: matrix.python-version == '3.13'
-      run: uv run pytest tests/ --cov=package_name --cov-report=html --cov-report=xml
+      run: uv run pytest tests/ --cov=lode --cov-report=html --cov-report=xml
 
     - name: Run tests without coverage
       if: matrix.python-version != '3.13'

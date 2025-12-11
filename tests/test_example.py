@@ -1,9 +1,9 @@
-"""Example tests for package_name."""
+"""Example tests for lode."""
 
-from package_name import example_function
+from lode import example_function
 
 
 def test_example_function():
     """Test that example_function returns expected value."""
     result = example_function()
-    assert result == "Hello from package_name!"
+    assert result == "Hello from lode!"
