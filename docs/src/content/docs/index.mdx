@@ -1,0 +1,42 @@
+---
+title: Python Package Template
+description: A template for creating Python packages with UV, pytest, and Starlight documentation
+template: splash
+hero:
+  title: Python Package Template
+  tagline: A template for creating Python packages with UV, pytest, and Starlight documentation
+  actions:
+    - text: Get started
+      link: /python-package-template/getting_started/
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/opencitations/python-package-template
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid>
+  <Card title="UV dependency management" icon="rocket">
+    Fast, modern Python package management with UV.
+  </Card>
+  <Card title="Pytest testing" icon="puzzle">
+    Pre-configured testing with pytest and coverage reports.
+  </Card>
+  <Card title="Starlight documentation" icon="open-book">
+    Beautiful documentation site with Astro Starlight.
+  </Card>
+  <Card title="Automated releases" icon="github">
+    Semantic versioning with automated releases to PyPI.
+  </Card>
+</CardGrid>
+
+## Quick start
+
+```bash
+# Use this template on GitHub
+# Then clone your new repository and run:
+python setup.py
+```
