@@ -1,0 +1,375 @@
+
+=== Generating Pizza Ontology HTML ===
+
+1944 triples loaded (via HTTP; fallback format: xml)
+
+============================================================
+ESTRAZIONE INSTANCES
+============================================================
+
+--- FASE 0: Datatypes ---
+  Creati 1 datatypes
+
+--- FASE 1: Classificazione predicati ---
+  N42ad22a623f545de82b3acf4017f4483 -> Quantifier
+  Nff4e4f7d773744bcaca2443ed671c1b7 -> Quantifier
+  N4491e09440bd4023914c2d38a6a58ade -> Quantifier
+  N45c2b26d4b4f44a9ad566acb8c9e3441 -> Quantifier
+  N1fb0ad8db9bf41b8bd731be59e1ea844 -> Quantifier
+  N08cbbf08cd764caea0a34270ba7f12d7 -> Quantifier
+  N05fc9cd411af4e7a9037afebb85defb0 -> Quantifier
+  Nfe5f7ece1f964d6b818ba9f072ab50dd -> Quantifier
+  Na36a4ca37156443488e96df55c132259 -> Quantifier
+  N5ee5905cfd824df7bb38ef1ac74e33ad -> Quantifier
+  N930d6bb659874035befb3304c6b5ad8b -> Quantifier
+  N2e9c4de8ad9e44308dd4bef4b1dd6377 -> Quantifier
+  N268053c78a834171b1fa55e2144c4463 -> Quantifier
+  Na90375b2f2c6413dbe91dcab0e0cc905 -> Quantifier
+  N81a4059c171048adb6a5b537c0bd394d -> Quantifier
+  Nbdc4612806a1406cba16219c3ed20fb8 -> Quantifier
+  N6757f22052df466aa201c18cd72cb97c -> Quantifier
+  Nbbac05ff19b24395ae8be4b913b89f57 -> Quantifier
+  N6a6a5089a7a640a4a593550250f4d0d7 -> Quantifier
+  N9b6a2f6acd94437eba228bb35f747c66 -> Quantifier
+  N05b03404050048ccbb6634708e33da15 -> Quantifier
+  N0799c8d4ffd342ada663b8e00cca7977 -> Quantifier
+  Nb814aba89f534869a333f44211259581 -> Quantifier
+  N83541b2a46804e63ab2037b64d327d5c -> Quantifier
+  Nc5c3d1e1a3d441b9a7f360158da11d53 -> Quantifier
+  N7017af28ac2145028405d24f6932eb25 -> Quantifier
+  Ndd274ec0d13748538921c9ba47482d2a -> Quantifier
+  N7d5e7a3fbf644899953423bc6c8aed35 -> Quantifier
+  N640ab2e5e7e744b5a7e4a22f7adffabe -> Quantifier
+  N932a9168ac394e9fa7727b851dffdb23 -> Quantifier
+  Ncca8255b16484245812a14bfa75ad70d -> Quantifier
+  N552e1426ccf4485bac4f16eb5d2cb96c -> Quantifier
+  Ne696090cfb404e35a0fd0f00a8917c48 -> Quantifier
+  N108ac20fba874c78b557e6aecdf0e986 -> Quantifier
+  N09537ab6ef434ba19677fb2cf8929a20 -> Quantifier
+  Na02195d842144648b6edb3adf562a47a -> Quantifier
+  Ndaa92bfa968244599f9019b519e94b76 -> Quantifier
+  Nef786db3b02c4b2f8adfd9bdd16119c2 -> Quantifier
+  N3a437790fb634123a62e4eac9f72caf1 -> Quantifier
+  N2202ce8358b8433ba0b36664659a5449 -> Quantifier
+  N2854f544c54d438da06ad5c859fb40d2 -> Quantifier
+  N7bd354d4db974d8e9c206925d98b360d -> Quantifier
+  Ne7cc0ad6dd8f44ce99c4ba4fcfba86c5 -> Quantifier
+  N816b61b900ba48f3bbe5ebcfd32013d4 -> Quantifier
+  Nceed0bc314f149a2a12e8bdf3f2719f2 -> Quantifier
+  Nd0bcb3f431984824accaf4f933140089 -> Quantifier
+  Nbe69f3f6bfbd47bb8c00eb42cc125fdc -> Quantifier
+  N1a0da1568079496ca6fdab3449424303 -> Quantifier
+  N34b291c3daa541bbb0136fd88e01606a -> Quantifier
+  Nf41abfd791d443a0840ebb35580a1785 -> Quantifier
+  Nece62eb1a6764c03b166aee9c603a629 -> Quantifier
+  N7db933befa004d23b4b381fd1d7d4604 -> Quantifier
+  N5a16da17df0d4b70b3769b8fc9181296 -> Quantifier
+  Ndaceab37413c482dbf0d509beba0374b -> Quantifier
+  Naea4ea1c2bf3415d9f3b12b82bdc5f87 -> Quantifier
+  N8c01c17ecd564c048372cca311d4b9b2 -> Quantifier
+  N8bad26fc681f4e4399e2b99710978a63 -> Quantifier
+  N00ee8e03b6cf4a63bf73b128faf1dd4a -> Quantifier
+  N453cbeb8c0e24e0ca0e6e772de09fde0 -> Quantifier
+  Nf7dbf463160c4a89935970d347ed889c -> Quantifier
+  Nba44447aadc2433fa5c035e9b2ad37ec -> Quantifier
+  Nea412883ba7f43eb84493eda7071c76d -> Quantifier
+  N6537e50ad54249a9b2fb81a8f9cc7ced -> Quantifier
+  N4e9e02731fca4060bc3c7b032571a495 -> Quantifier
+  N53a63c840ff54673a732e2ec77ab2b6c -> Quantifier
+  N0068d0cc3fea4de0b60f7b6f70e431c3 -> Quantifier
+  N9718e42eb7b14f53b2025e0da927303b -> Quantifier
+  Nc9655918bfea48e0bebafb9158d4be9c -> Quantifier
+  N69e6a90e60604c84b8c38c3b6777cd1f -> Quantifier
+  N08c5c7addc2f41469c34e3224b48c1fe -> Quantifier
+  N26a195b8fff243918919f25a3e906606 -> Quantifier
+  N05d38bdd268648afab05c6b367ffbbf7 -> Quantifier
+  N559cd17bdf5d4364bc1eee23ab314cac -> Quantifier
+  N2f785c3bc73f4e4d825984fa75d1cd0f -> Quantifier
+  Ne69a1a89ca614bbaa082c69fcedbd972 -> Quantifier
+  N9d4f255d34ec4e0e8ceb1e07f5521225 -> Quantifier
+  N19af95c677d643c3a09e315b9ef822ef -> Quantifier
+  Naf3332f3c27c4cdea844bb9ce63b4855 -> Quantifier
+  N8c02ca3dacde4217ba136ef88848d266 -> Quantifier
+  Nedb0352272c64bd2b5617d2d6d63feb0 -> Quantifier
+  Nedee067f43fc4ecfa6307a6c6572262e -> Quantifier
+  N81edd80f56594629967c230afe7cfbc1 -> Quantifier
+  N4b6c956f02e94585949973a6a9a2432c -> Quantifier
+  Nb3509d85734a475dbb2771519b5debbb -> Quantifier
+  N17aee84ea0004710a37922fac24b2f11 -> Quantifier
+  N284cf0c695be47069e4faa48ff61d6d2 -> Quantifier
+  Nebc2502f788e44c8a3581c707fdbc799 -> Quantifier
+  N861b93eca3074b9c8cf103ab4a8a3f85 -> Quantifier
+  N575a8bdd57c349579e5a602b3c880c0f -> Quantifier
+  N8c6e1dea87f8481ca2eacd8ea12e7be2 -> Quantifier
+  N09dddfcceb8d46ff9bec980dca952174 -> Quantifier
+  Nb52a1a42d8d74b86b98f0188a0557560 -> Quantifier
+  Nab34329360184c6db987e2d418c438e4 -> Quantifier
+  N7d4f6002ff6345bba063e4a7caf974e2 -> Quantifier
+  N736fc124898f4ef38c370b6fcf3d47ac -> Quantifier
+  N561f026f1fbc4ec580b114b778bd9a1b -> Quantifier
+  N04f9725094aa407da3fba3b8cac86316 -> Quantifier
+  N7b29394d8b8e4d46ba5330d7011fbe72 -> Quantifier
+  N64ec1fb07f1045c681750a8bea410a06 -> Quantifier
+  Nbac10617a67348ad829206efa3f82545 -> Quantifier
+  N6de99d557ddf4443809b9895fa806a14 -> Quantifier
+  Nd7097fbe2e044a94bdfcd4569208f1de -> Quantifier
+  N2667cabbfb6e45e7ae8fba80bc1f504e -> Quantifier
+  N47a6b2fa22a24fdc83e894a927568904 -> Quantifier
+  N5554687f57174f82b0fc75bdccee2a3b -> Quantifier
+  N089aac45cd4b4560b06152e3f6bfa2e8 -> Quantifier
+  N11fb1775c812497197fb11997cb25d52 -> Quantifier
+  N3abf81fa98444f9eb6dfa20b28848657 -> Quantifier
+  N18ad88987ec947e6871c5aa2a7dc8739 -> Quantifier
+  N57150fec7d3747a7b7bcfeeb69e5b285 -> Quantifier
+  Ne5c1f547948c4c41a8e469d906dab647 -> Quantifier
+  N08524519955147e8840ffc5c5b9f05b6 -> Quantifier
+  Na0e9b59fd16c4511b0548cc45df5cb6a -> Quantifier
+  N423d0d24820846aea8e2270ce09b7618 -> Quantifier
+  Nac8e5d3bd70148f9abb40d6301f3d30c -> Quantifier
+  N0a611788e9f64336b9ebf2907397009a -> Quantifier
+  Ne7fc538634b64643b5ca47d567104745 -> Quantifier
+  N9f070ddbc33d4e17aab76f9ea8764766 -> Quantifier
+  Nae7c8b1e46b44e0893028fb78acf14fd -> Quantifier
+  N4b7788920d0148c0bb21d3d75ca2f5f2 -> Quantifier
+  N6256f9f9e9944d0bbbce38e298f061c6 -> Quantifier
+  Nc5d03f78099747eda1fd6de57a26595a -> Quantifier
+  N624db491916849a8b5e0377152e8e3c3 -> Quantifier
+  N02b295e6248e4be993529756f2839736 -> Quantifier
+  Nee0a2235d99c4b62939ba749da838829 -> Quantifier
+  N7bea39c63a88440296882d6129d8ae9c -> Quantifier
+  N5a5564675534468cba954668f8eceb24 -> Quantifier
+  N67910ae19fa24cc0894c6d2e6c42780d -> Quantifier
+  Ne19500919d474d0c8fee07959f8247fd -> Quantifier
+  N2b55164cdc9144a58a5eab7028ba9e2d -> Quantifier
+  N7a8b2a7a48724855801cdc6bdf622881 -> Quantifier
+  Ndeac79b851c24276a78f186812f94739 -> Quantifier
+  Nb373b20831934da7a4cbbe0bf81f3615 -> Quantifier
+  N861fb8159e5a4aae963cc43d352c494c -> Quantifier
+  Nfed41380fbff4e78b7cdbb6a387bec7b -> Quantifier
+  N4971b6f897d94b61ad09d278828e6bb3 -> Quantifier
+  N29e6bf837e274edfa2e817e152ebc92d -> Quantifier
+  N7b42edaa29fe42328390063785808f1a -> Quantifier
+  N053ac763aab14963842090318eedba68 -> Quantifier
+  N1f5da4eb330c45539c283c7b4949e833 -> Quantifier
+  Nc37f82bcdb6843d788810501e0a50551 -> Quantifier
+  N78ac59e1d5514f21b769907f1e43ed15 -> Quantifier
+  N99781e71c87747cdab532e9ce58ad30d -> Quantifier
+  N89e2202737ec4e36867edd2e6ea0de6f -> Quantifier
+  Nf1a26e28acd54967b175eecd666dbd65 -> Quantifier
+  N9fec2003d2544c4689faf7061158eed7 -> Quantifier
+  Ne0b5072fe5f0411c990cb041cf37cb1d -> Quantifier
+  Nedea86ac5fdb4dd292b571924aed45e5 -> Quantifier
+  Nf52bdfe0832b49f1931fc82f0b69502b -> Quantifier
+  N4229e8a363f34596a595a3af2d6688ab -> Quantifier
+  N3e307760543941c399da66bd7b13d928 -> Quantifier
+  N2b8099b2cb1c4e878a842ed24f6393f6 -> Quantifier
+  Nfc4459d588a449ccb13b92a4abe5d6c6 -> Quantifier
+  N25435d67935343a093cc27662d19335a -> Quantifier
+  Ncb7ac723a1f744f9a908453b3f82f958 -> Quantifier
+  Nb43986e3908f4393a93c77f870fc6943 -> TruthFunction
+  Nbdd4aba718a94b18aade7c07a199d817 -> TruthFunction
+  N24bb0eca27a64c6b8fb382650afffa10 -> TruthFunction
+  N8bf976b969e342f1aab4e17164f54db2 -> TruthFunction
+  N43e77bf3344e44f1aa89a4ea82d01837 -> TruthFunction
+  N2ed1736cd9cc4b40887346d618c6d6bc -> TruthFunction
+  Nb3bdb8df9fba418685cf269eba5a842a -> TruthFunction
+  Nc3d07fbfd3aa475a83dd5488a119ad5c -> TruthFunction
+  Nd95551b72753465d94eebd964f10b792 -> TruthFunction
+  N61c3ccd0207f4dc995d38aa638637cf9 -> TruthFunction
+  Nc90953059abf449583fa5bbc56f4bcdf -> TruthFunction
+  Na4bd3c74c5304940bb5e1a8d36d2170a -> TruthFunction
+  N4f7f95e0f05944d099200a96395b39de -> TruthFunction
+  Naf002ca7f9954c369700c7bbbb1f1319 -> TruthFunction
+  N9aef698540234144b83581a220d6bf94 -> TruthFunction
+  Nfa64a75e7fa04c699d8268e0065fb685 -> Quantifier
+  N38a5572680c9440fa6be9ef62135abfd -> Quantifier
+  Ndfbff3e55d054800a3931c8087c4c3cc -> Quantifier
+  N783ae4fa90ca4801b25e7afdeda174bc -> Quantifier
+  N0c2fbc80dd41449f84bc52d05037be35 -> Quantifier
+  N3e72f8c19ec448178d8c3270c1e78ddc -> Quantifier
+  N91c3791a0d1348649c5dd70964a930d2 -> Quantifier
+  Nde6f35cd381a4e9a84823af53d894e21 -> Quantifier
+  Nb30051b29a794b80beaef03a4a6f65c8 -> Quantifier
+  N49d01b62c74449f69e5e316cad788cad -> Quantifier
+  N8f13cd62e56d4988a8ff429774b4ae97 -> Quantifier
+  N7245a593f8fd420491af5f65b8911bd8 -> Quantifier
+  Nf25f41d558564ee5ba78cb3bfd18b03a -> Quantifier
+  N3d61740092564942bfb47ec85f4ae2a3 -> Quantifier
+  N3003dfe231bb47a491c8e18b3a427d27 -> Quantifier
+  Nbb862895f6c54997939e24b919703ca5 -> Quantifier
+  Nb2ca420f667c4944bd2fc5762ea1b1cc -> Quantifier
+  N8c20a850542c42f986270691a0b13937 -> Quantifier
+  Nae9553b6b9314e7294d9808981a75978 -> Quantifier
+  N2c63e78ea7024e0dae19db61da5bac6c -> Quantifier
+  N1fef6913363847fb89c33d52dca215d8 -> Quantifier
+  N59dc8ba451c44ba0b7e981676e0afdd8 -> Quantifier
+  N5c98f59305e447d291152a837b350a25 -> Quantifier
+  Ne88f23424efc4745a222d6bc077baa7b -> Quantifier
+  N23f39ad9e15740e39a95b8639f4487b7 -> Quantifier
+  N1b6638481cfe4f8fab0f2230afa33e77 -> Quantifier
+  N1f310d130f614402a84caa24fe0ae20c -> Cardinality
+  Nfe0ddfc7a1f24979aea577f50a1d14d6 -> TruthFunction
+  N80503fddc59849909bc87a034083f8eb -> TruthFunction
+  N1c0246691cc8454b9ab8ae91ac7ea3b1 -> TruthFunction
+  N763de95310014a04a6d9868c054f7015 -> TruthFunction
+  N479f1135e31e43a9be683802985a97b4 -> TruthFunction
+  N621b5dda45c841a08ddd64f8b25fd8e7 -> TruthFunction
+  N1c684419e4a1488f96cfa01bc2526707 -> TruthFunction
+  Nd922321f38b5485b95bdcc1f1182c2ea -> TruthFunction
+  Ncfa4dceba3354c1ba08db8a0e94a46ae -> TruthFunction
+  N55644a55e8f34a0ca58e03e34758d12f -> TruthFunction
+  N4b165ccbc2de481da5ef81402c403f75 -> TruthFunction
+  N117cd9ecbcfc4555aca0d2604dee072c -> TruthFunction
+  Ndb1fb4b12cfb4cf28ba3ccaf0aa5c058 -> TruthFunction
+  Nd7605fe9f1124e9984eb06278b69c891 -> TruthFunction
+  N20bc7727d1b2454a98270c4411b1f647 -> TruthFunction
+  N5a69b58bfb26498bb1da12abaecebb0b -> TruthFunction
+  N4cc7021fafc14b2c9b6498f48ae0a16d -> TruthFunction
+  N4c2d0305c7534eaeae56b1247fba2593 -> TruthFunction
+  N7f3129304e8f40dfb7aec90b56d321a3 -> TruthFunction
+  N3bbd19856a494bc28235392ff9037408 -> TruthFunction
+  N83121676d53b49159bcc3d4895343f01 -> TruthFunction
+  N19303d25a6ca4db487835b3f75c2b673 -> TruthFunction
+  N44f23baaf9514a46a3bf8ec24c0eecf1 -> TruthFunction
+  Nf62e371c547545569615d9bb544318d4 -> TruthFunction
+  N1fd94c75053f4ec39619831b8b479345 -> TruthFunction
+  Nebf4a4a9551e4bd8992b8d6119678adc -> TruthFunction
+  N4070cf5c070e4e27b458d313f0d1d58d -> TruthFunction
+  Nbc3b5f9cbeef40cdb425cbb909dd306a -> TruthFunction
+  N6bdccc65bb434629b11e26a971aaaeb6 -> OneOf
+  Nb743ffc4105b40c7afd0b3c9988f3a13 -> Value
+  Ne1fe44fd73ce4f3ebe97f20cf61f27db -> Value
+  N6b4b3469f7a8434baf1e40e410a99954 -> Value
+  N37c79ddbd7e34403b75b62f0654b5c1a -> Value
+  N0a7605bb671e41cdb6712ef157c979fa -> Value
+  N540cfd1534e14bc0a353e9d6fd050de2 -> Value
+  Classificate: 232
+
+--- FASE 2: Creazione da rdf:type ---
+  Create: 121
+
+--- FASE 3: Popolamento ---
+  Popolate: 672
+
+--- FASE 4: Group Axioms ---
+  AllDisjointClasses: N0f6dd0af214041159c8075ae0cde117b
+  AllDisjointClasses: N053fa682a7a345eea57d13c8897534b8
+  AllDisjointClasses: N23a4c17956fe4267b383e9d4bb2582db
+  AllDisjointClasses: Nea37410789e944398ac4ac30a1c50c46
+  AllDisjointClasses: N54b458e5b4ac4cedb98fc5599919a968
+  AllDisjointClasses: Ne4848321820d4bc8856ce5943fa638ea
+  AllDisjointClasses: N47c40c91a32441dabab2726470a6a4ca
+  AllDisjointClasses: N60cacd60ae594c34b52fa6c8e1f47938
+  AllDisjointClasses: Ne1d85706c35c4b3fbd49ee8983f264e3
+  AllDifferent: N5315cbd44e664a04b3bec31b6b19d2eb
+============================================================
+
+ HTML generated: output/pizza_ontology.html
+  Total instances: 356
+  Classes: 12
+
+=== Generating ICON Ontology HTML ===
+
+1448 triples loaded (via HTTP; fallback format: xml)
+
+============================================================
+ESTRAZIONE INSTANCES
+============================================================
+
+--- FASE 0: Datatypes ---
+  Creati 6 datatypes
+
+--- FASE 1: Classificazione predicati ---
+  N52ee4c9cc52b47e98a3299f044d11118 -> Quantifier
+  Nd0d40d5747db4988a2ce773c57d196bf -> Quantifier
+  Na79b0e7a4ae54831ad1edf10227118ad -> Quantifier
+  N64fb6625edee46399e19b81250906c87 -> Quantifier
+  Nce5ddba32c2e46b8834c1089364837e5 -> Quantifier
+  Nb8ae9f18ea4f4e4abf87ad52aab0ee02 -> Quantifier
+  N510550af34d04156a47871969f22e1a5 -> Quantifier
+  N4f5544f61b894cb4a99f905b5af3ffac -> Quantifier
+  N68e21f4e05e041b4b2ff359a8bbfb9b3 -> Quantifier
+  N979dee8d64464907bfbd67a9edc05850 -> TruthFunction
+  N7c4ff9910f1b417081c149ad8ba18536 -> Quantifier
+  Neea69a859820484a81c2d078d2afe25a -> Quantifier
+  Nd5f8c3cc3b3945c184edc54b46660ddd -> Quantifier
+  Nabcbc35647e74adea615e778362be71f -> TruthFunction
+  N9dea30471590454ab57743853d164732 -> TruthFunction
+  Na0db0c5e3c144ad68fe7965e3f6be2cd -> TruthFunction
+  Na3470f9eb78b4e6c802390d5f0d47b89 -> TruthFunction
+  N2679cf24c49c48348bfd8f6e3f32a34b -> TruthFunction
+  N1a262a91fa774c7dbf998b4593a25839 -> TruthFunction
+  Nae5293bb649a49e3b0a46787cf639f8b -> TruthFunction
+  N45ee2bd1071b4b0c9b974f920eb001d0 -> TruthFunction
+  N51ac50139a2541aea72f9b0586a7aa60 -> TruthFunction
+  N8a25709c2ae04841b46ce465ff63c417 -> TruthFunction
+  Ncfbab278d1814221a33a84c4a58a99bf -> TruthFunction
+  N3bba0463ff464533be962d9f1ea22c1a -> TruthFunction
+  N402bb64479254ae996193f4d124d239d -> TruthFunction
+  N75db61b1a620431093f4ed8aa1e2b7f8 -> TruthFunction
+  N86dd8f07a1de43998ab055d0b6f74d89 -> TruthFunction
+  N905a6da6c57240b5bf3e295045ac443c -> TruthFunction
+  N262e4ec4ca214f9a93c4085e40dad5d6 -> TruthFunction
+  Na63722624f74452a818eaa858658f14a -> TruthFunction
+  N4c3f29ccaaf6493e8549d24aa1a5208f -> TruthFunction
+  N0454ea176be8479388ee4840ae9d4e97 -> TruthFunction
+  Nc2a14340499949049bbe9845cf0b3eca -> TruthFunction
+  N3066398ded7e4b6fb93a539dd9a8d70d -> TruthFunction
+  Na9c6551926fa4c65b1cee1c5b3bb3671 -> TruthFunction
+  N633168750cc446628fe0675f080d6355 -> TruthFunction
+  Ne0e73a434b3c49c9a8a78bd69b1f00b3 -> TruthFunction
+  N9164229c02a04e0289e4766db783e21e -> TruthFunction
+  N30b0920d21624ede8ed0a7084f836ea0 -> TruthFunction
+  Nf83ec759ae0540d9bc78d498cc3d50ad -> TruthFunction
+  N5e91573794034121ad5551562493e0e8 -> TruthFunction
+  Na10b708eefb042acb3d84bd9cd00fe37 -> TruthFunction
+  Na5b819bc71ed42c888e4f843c19bc9a2 -> TruthFunction
+  Nf4b11c675ed84fcd8aecee9a356c9a44 -> TruthFunction
+  N34c70acff9444901876c44f2156d3f29 -> TruthFunction
+  N4371084da68543bb8945496b281cc8ed -> TruthFunction
+  Nee50a74523a643ae8ac8875c91901729 -> TruthFunction
+  N079e01111a9d4f9595420a55700c3350 -> TruthFunction
+  N6430b5ad82f84444b252feb18b22c90e -> TruthFunction
+  Nd6fab16a2a934d6e9024406ba48d30dc -> TruthFunction
+  N7977ad52ed7446ccb5c1f81a4116c352 -> Cardinality
+  N6e43219668b743738f1592e65ac9e57a -> Cardinality
+  N6d7612ac2c3b4ae4af0c2dc7ace149c1 -> Cardinality
+  N5b97958e34ed4715869457353bf32bd6 -> Cardinality
+  Nac23470bef7841259d8c3c9619cd5e20 -> Cardinality
+  N13085125aafa445b821691ca6d90f1a2 -> Cardinality
+  Nd68b7e03251d4fdaa87b57c25a37e124 -> Cardinality
+  N185e2541f9c54d28ac6c19c88338fe78 -> Cardinality
+  N0b56aab74e3249de8190218704d84bc8 -> Cardinality
+  Nfc355c3f02f948ef81154b54fe198384 -> Cardinality
+  N13b2fa2d948c4575b71528d6b89d74b4 -> Cardinality
+  N3c9f8f5e23f045ca9ac57e50c914ac97 -> Cardinality
+  N0b9ac252c2cb45c19e1dad6df3133016 -> Cardinality
+  N6ea39e55f4924bbab4941c3526baadb3 -> Cardinality
+  N87393f20fdaa482ea843fc68427e4ca8 -> Cardinality
+  N38cf7e1382404d8dad7d81b95ac2ae6a -> Cardinality
+  N753792c06c2b421fa66a3e2b83b61894 -> Cardinality
+  N620d112544aa4a8f95fab488c989784e -> Cardinality
+  Nb3caf7212c474d89a1cc48cbf6db27b3 -> Cardinality
+  N763efb3257c947a09234ecbd4f08669e -> Cardinality
+  Na464ac9d14a84a30aa705a04917daf2d -> Cardinality
+  N253c06dbdfa34273b3d43388f3ac029e -> Cardinality
+  Nd881db8f0af549a98b97b8fa54c8e25b -> Cardinality
+  Nec2be1c0924e41bfa180737bb45da8e9 -> Cardinality
+  Naeee42fe2cf84ac08ee77c6c575027d7 -> Cardinality
+  N4afa2e99f30b4eb5a8102c4426f3a843 -> Cardinality
+  N5acff3f8d6c44740874185fbd934ecdf -> Cardinality
+  Nbb69ab0c67724d2f8b065d3282a2bdc8 -> Cardinality
+  Classificate: 79
+
+--- FASE 2: Creazione da rdf:type ---
+  Create: 160
+
+--- FASE 3: Popolamento ---
+  Popolate: 506
+
+--- FASE 4: Group Axioms ---
+============================================================
+
+ HTML generated: output/icon_ontology.html
+  Total instances: 294
+  Classes: 12

@@ -1,0 +1,3648 @@
+
+# TEST 7: SKOS VOCABULARY - Extract all Concepts
+
+1448 triples loaded (via HTTP; fallback format: xml)
+
+============================================================
+ESTRAZIONE INSTANCES
+============================================================
+
+--- FASE 0: Datatypes ---
+  Creati 6 datatypes
+
+--- FASE 1: Classificazione predicati ---
+  N4ac52f3df38a432b82302c61b9c1069a -> Cardinality
+  Nec9021ef08ce4d498e9f26f3c1432848 -> Cardinality
+  Ne94e0f8d601542e08bff6f55365ec889 -> Cardinality
+  Ndcd8b1a43f40472fab101ebbd8b33cc8 -> Cardinality
+  N8e74783dcaba4af7a9522898c7924839 -> Cardinality
+  Necb6bad2df8a42c483e85e6787ed8b92 -> Cardinality
+  N9edd551572b9498c8e442de9189441f4 -> Cardinality
+  N610b9dc0dcde448cae29b971ef492aa6 -> Cardinality
+  Ne22db3b237e04029a3f16afaa29572f1 -> Cardinality
+  Nba233cc112004be4bdf27f3720e6ff59 -> Cardinality
+  Ne92774b625ab4bcf8782798ee30d2960 -> Cardinality
+  Nf771a4dcc3b34f499cfe4b581f636cee -> Cardinality
+  Ncfa38482b4e34044b2d5b83710f8a97a -> Cardinality
+  N7bb36b11b99049e6ab6662faa340a05e -> Cardinality
+  Ne47fea366f314600a75c5556508a744c -> Cardinality
+  Nb1865a702ebd44f295beabb4f32fdca3 -> Cardinality
+  Nff23cb5d38a14e1b97cd86a61df8c891 -> Cardinality
+  Nb7abf7878b144a8b81a70d8cb8be1d4e -> Cardinality
+  N0bb63ea19fe94d4dbbab9f363dc93ac4 -> Cardinality
+  N25f7a65cfd8943fb92996b03b2f21d37 -> TruthFunction
+  N2bbf56194579418db2e8aa1c993d55b9 -> Quantifier
+  N20634e22f2f840b6bba5f7e6c440d176 -> Quantifier
+  Ne0cde48f71cc44768c670f1b3ac0261c -> Quantifier
+  Nd50c34f3989d4931a453a97c8a5adac8 -> Quantifier
+  N17ae4c0d7a394f6ba95d56a25f5bb40c -> Quantifier
+  N6e3ad92db3494fa9853833e4784ce0d2 -> Quantifier
+  Nb027c74cc4e642dab5e8db0c217f331d -> Quantifier
+  N7ab22085eb0e452eb036b0fdcced42ca -> Quantifier
+  Nae993724c2ac4c518be6c5946ba407ee -> Quantifier
+  Nab762347fa6741b8bd1c4b2a94d5ad84 -> Cardinality
+  N7f0f77ab67e7468e82cb2b629727bfb5 -> Cardinality
+  N8b8c9bfe040d49f1bbd32d25330df9c7 -> Cardinality
+  Ne19d891caaca4b528dcc0ea09d48ca6c -> Cardinality
+  Nafea4c65ba76442a999c5be7595aaccc -> Cardinality
+  N20882ae00d48425899a7431732f7f2b8 -> Cardinality
+  N7169e1a2e49e45b9b7714ff5bd0bad65 -> Cardinality
+  Na5b049e3f4904bc3a2170d3dd8566b6b -> Cardinality
+  Nd1301f5f9b8347aca286952c4197acdf -> Cardinality
+  N95f9f5759c8f43d5b038d449871a9d8e -> TruthFunction
+  Nc113e3597d214903b169ba21613faf84 -> TruthFunction
+  N05d1f97718a64e34b51ba19250fd44f8 -> TruthFunction
+  N1eeb5683d71d4cd5b58816757ee8140b -> TruthFunction
+  N663545215d324142a0b4055f6996f870 -> TruthFunction
+  Nbbdd89cee34f4edca275529b120bb3c5 -> TruthFunction
+  Na94c4d4c2b9c40f690c89eda8f88ef81 -> TruthFunction
+  N6f8d9b6133bc449fb0ec14928e0c1a21 -> TruthFunction
+  N5b5efbb846bc49d0bfbee98c30594e8a -> TruthFunction
+  N6c6518fbe21343c3996b10b4b5f54c20 -> TruthFunction
+  Ndf798dd068f840dc9a468c1115a37907 -> TruthFunction
+  N2d184390e5294488ab04fa6565360e5f -> TruthFunction
+  N758bbb46f92b4b548cf0bd93353dbd11 -> TruthFunction
+  Nd07b5cf43bb84527aa2954bbb4f68572 -> TruthFunction
+  N42f1db34fac340339132b1d70d8b0101 -> TruthFunction
+  Nf535c51ebbb34b5183d46c6c66f28ecc -> TruthFunction
+  N0c51206d4e9242dda174a9d4dc977f03 -> TruthFunction
+  N641a121f36c84a4a96c327416961f544 -> TruthFunction
+  Ndd6846d479b54491ba354449a1c77bc8 -> TruthFunction
+  N58a757deaf6f47beb9035b646ab55a38 -> TruthFunction
+  Nfc6c4a76e8f144a38a657b4ea69bf9f5 -> TruthFunction
+  N8d2426987cbd4abe9f3484b5a14b3888 -> TruthFunction
+  Nfa4b8b2eb5a24fa3b570014a412c1676 -> TruthFunction
+  N72a64e82bad34592b7b877873910c358 -> TruthFunction
+  N568eb112113c4f6e8530834cc3e8ede1 -> TruthFunction
+  N3fa220a3b3cf4e3ba6b902f144296e72 -> TruthFunction
+  Na976f6472f6b462eaf1436054a4ff83b -> TruthFunction
+  N4f0f06c2fd124eb38955dac6aaf1a8cb -> TruthFunction
+  N1df77c616b2641e2873d86e7d67db75d -> TruthFunction
+  N47495db1f1744dc39f90149b9c5cf83f -> TruthFunction
+  N91a0ea9c229a4576b7a0558bd7312dc6 -> TruthFunction
+  N0b52cc578c82487aa5d1577d29d1c9d2 -> TruthFunction
+  N61208fa6112b49638e6ecd48812389dc -> TruthFunction
+  N2c10dd7ce07e42e6ad58589912a04a3a -> TruthFunction
+  N1214cd7ac4644a6abaa86beb2e13a848 -> TruthFunction
+  N798fb6c6fa794460af531a74202231e5 -> TruthFunction
+  N258f3c45598a4a17933eeb047ed38cb0 -> TruthFunction
+  N4e836960a50244e495d64d851752d6fa -> TruthFunction
+  N1be055c8f1f643fc8231d9881c9375b7 -> Quantifier
+  N7fb9a6ee986645169c583cc7db286c34 -> Quantifier
+  N4d027e55c5e04fd49a80d358c86b32fc -> Quantifier
+  Classificate: 79
+
+--- FASE 2: Creazione da rdf:type ---
+  Create: 160
+
+--- FASE 3: Popolamento ---
+  Popolate: 506
+
+--- FASE 4: Group Axioms ---
+============================================================
+
+
+======================================================================
+EXTRACTING ALL INSTANCES OF CLASS: Concept
+======================================================================
+
+Found 63 instance(s)
+
+
+----------------------------------------------------------------------
+INSTANCE #1
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E13_Attribute_Assignment
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E13_Attribute_Assignment"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #2
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E1_CRM_Entity
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E1_CRM_Entity"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #3
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E31_Document
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E31_Document"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #4
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E36_Visual_Item
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E36_Visual_Item"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #5
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E5_Event
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E5_Event"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #6
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E89_Propositional_Object
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E89_Propositional_Object"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #7
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E90_Symbolic_Object
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E90_Symbolic_Object"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #8
+----------------------------------------------------------------------
+Type: Concept
+URI: http://iflastandards.info/ns/fr/frbr/frbroo/F38
+----------------------------------------------------------------------
+
+  � has_identifier: "http://iflastandards.info/ns/fr/frbr/frbroo/F38"
+  � has_label: ["Character"@en, "Character"@en]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://erlangen-crm.org/current/E28_Conceptual_Object), Concept(http://erlangen-crm.org/current/E28_Conceptual_Object)]
+
+----------------------------------------------------------------------
+Total attributes: 4
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #9
+----------------------------------------------------------------------
+Type: Concept
+URI: http://w3id.org/vir#IC11_Personification
+----------------------------------------------------------------------
+
+  � has_identifier: "http://w3id.org/vir#IC11_Personification"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #10
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Action
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E5_Event), Concept(http://erlangen-crm.org/current/E5_Event)]
+  � has_comment: ["An event as recognized at level 1 of interpretation, e.g. a man who lifts one hand or a man riding a horse. Generally, all the actions should be described by this class.  When an action is identified, it is suggested to create a Composition with all the elements involved in this action"@en, "An event as recognized at level 1 of interpretation, e.g. a man who lifts one hand or a man riding a horse. Generally, all the actions should be described by this class.  When an action is identified, it is suggested to create a Composition with all the elements involved in this action"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Action"
+  � has_label: ["Action (ICON)"@en, "Action (ICON)"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Event), Concept(https://w3id.org/icon/ontology/PreiconographicalSubject), Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Event), Concept(https://w3id.org/icon/ontology/PreiconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #11
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/ArtisticMotif
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E36_Visual_Item), Concept(http://erlangen-crm.org/current/E36_Visual_Item)]
+  � has_comment: ["An ArtisticMotif is the output of a Pre Iconographic Recognition. It is a N-ary relationship class linking the physical unique representation depicted in an artwork to the corresponding real world meaning recognized. Each artistic motif describes exactly one meaning among: Natural Element, Action, Expression Quality. Qualities (e.g. colors) can be expressed.
+The N-ary structure allow first of all to maintain the distinction between the particular representation belonging to the artwork considered and the general meaning of which the representation is an expression. Furthermore, it allows to carefully describe in detail what is represented in the visual representation, since it gives the chance to identify uniquely details of objects and iconographies."@en, "An ArtisticMotif is the output of a Pre Iconographic Recognition. It is a N-ary relationship class linking the physical unique representation depicted in an artwork to the corresponding real world meaning recognized. Each artistic motif describes exactly one meaning among: Natural Element, Action, Expression Quality. Qualities (e.g. colors) can be expressed.
+The N-ary structure allow first of all to maintain the distinction between the particular representation belonging to the artwork considered and the general meaning of which the representation is an expression. Furthermore, it allows to carefully describe in detail what is represented in the visual representation, since it gives the chance to identify uniquely details of objects and iconographies."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/ArtisticMotif"
+  � has_label: ["Artistic Motif"@en, "Artistic Motif"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/VisualSubject), TruthFunction(Na976f6472f6b462eaf1436054a4ff83b), Cardinality(N4ac52f3df38a432b82302c61b9c1069a), Concept(https://w3id.org/icon/ontology/VisualSubject), TruthFunction(Na976f6472f6b462eaf1436054a4ff83b), Cardinality(N4ac52f3df38a432b82302c61b9c1069a)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #12
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Artwork
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E36_Visual_Item), Concept(http://erlangen-crm.org/current/E36_Visual_Item)]
+  � has_comment: ["The artwork is a visual representation that may be relevant from an iconographical or an iconological point of view, carried by a physical cultural object (dul:InformationRealization) usually created by a person."@en, "The artwork is a visual representation that may be relevant from an iconographical or an iconological point of view, carried by a physical cultural object (dul:InformationRealization) usually created by a person."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Artwork"
+  � has_label: ["Artwork"@en, "Artwork"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#InformationObject), Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#InformationObject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #13
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Character
+----------------------------------------------------------------------
+
+  � has_comment: ["A Character is a real or imaginary being identifiable as a subject in the Iconographical Analysis (level 2 of interpretation)"@en, "A Character is a real or imaginary being identifiable as a subject in the Iconographical Analysis (level 2 of interpretation)"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Character"
+  � has_label: ["Character"@en, "Character"@en]
+  � has_narrow_match: [Concept(http://iflastandards.info/ns/fr/frbr/frbroo/F38), Concept(http://iflastandards.info/ns/fr/frbr/frbroo/F38)]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconographicalSubject), Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #14
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Composition
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E36_Visual_Item), Concept(http://erlangen-crm.org/current/E36_Visual_Item)]
+  � has_comment: ["A Composition is a jointly of ArtisticMotif having a meaning. It can be recognized as corresponding to the same image at the second level or interpretation, or can explicit groupings of level 1 elements that the descriptor considers significant. Its is suggested to express the level 1 elements involved every time that there is an action (e.g. the action "lifting" in the context of "man lifting a woman" should be grouped in a composition including the artistic motifs corresponding respectively to "man", "woman, "lifting")"@en, "A Composition is a jointly of ArtisticMotif having a meaning. It can be recognized as corresponding to the same image at the second level or interpretation, or can explicit groupings of level 1 elements that the descriptor considers significant. Its is suggested to express the level 1 elements involved every time that there is an action (e.g. the action "lifting" in the context of "man lifting a woman" should be grouped in a composition including the artistic motifs corresponding respectively to "man", "woman, "lifting")"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Composition"
+  � has_label: ["Composition"@en, "Composition"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/VisualSubject), Cardinality(N8b8c9bfe040d49f1bbd32d25330df9c7), Cardinality(Nec9021ef08ce4d498e9f26f3c1432848), Concept(https://w3id.org/icon/ontology/VisualSubject), Cardinality(N8b8c9bfe040d49f1bbd32d25330df9c7), Cardinality(Nec9021ef08ce4d498e9f26f3c1432848)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #15
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Event
+----------------------------------------------------------------------
+
+  � has_comment: ["An Event is an action that is depicted as subject by an artwork. It differs from the first level Action since it requires deeper interpretation to be identified. For example, the act of hurling the Trident (Action) held by Neptune in some iconographies is interpreted as the act of calming the storm (Event) provoked by Juno in Virgil's Aeneid book 1. Furthermore, an Event is linked to a icon:Image, and not to a icon:Artistic Motif. This class includes also events having a proper identity, such as historical events (e.g. the Battle of Cascina)."@en, "An Event is an action that is depicted as subject by an artwork. It differs from the first level Action since it requires deeper interpretation to be identified. For example, the act of hurling the Trident (Action) held by Neptune in some iconographies is interpreted as the act of calming the storm (Event) provoked by Juno in Virgil's Aeneid book 1. Furthermore, an Event is linked to a icon:Image, and not to a icon:Artistic Motif. This class includes also events having a proper identity, such as historical events (e.g. the Battle of Cascina)."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Event"
+  � has_label: ["Event"@en, "Event"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_related_to: [Concept(http://erlangen-crm.org/current/E89_Propositional_Object), Concept(http://erlangen-crm.org/current/E89_Propositional_Object)]
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconographicalSubject), Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #16
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/ExpressionalQuality
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E1_CRM_Entity), Concept(http://erlangen-crm.org/current/E1_CRM_Entity)]
+  � has_comment: ["An Expression Quality corresponds to the "expressional subject matter" described by Panofsky (1939), which belongs, along with the factual ones, to the Primary or natural subject matter of a work of art. Indeed, it individuates, by way of example, emotions, an atmosphere, the character of a person."@en, "An Expression Quality corresponds to the "expressional subject matter" described by Panofsky (1939), which belongs, along with the factual ones, to the Primary or natural subject matter of a work of art. Indeed, it individuates, by way of example, emotions, an atmosphere, the character of a person."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/ExpressionalQuality"
+  � has_label: ["Expressional Quality"@en, "Expressional Quality"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#SocialObject), Concept(https://w3id.org/icon/ontology/PreiconographicalSubject), Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#SocialObject), Concept(https://w3id.org/icon/ontology/PreiconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #17
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Image
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E36_Visual_Item), Concept(http://erlangen-crm.org/current/E36_Visual_Item)]
+  � has_comment: ["Image is a reification class linking the identified second level subject (namely: Characters, Events, Places, Named Objects, Symbols and Personifications) to the specific interpretation that recognizes it. It represents the subject depicted as a manifestation in the specific artwork taken into account, in contrast to the second level subjects cited and Invenzione, identifying iconographies from an abstract and general point of view. This distinction between the general subject level and the artwork-specific one is functional to identify the variants of a subject in relation to the specific context."@en, "Image is a reification class linking the identified second level subject (namely: Characters, Events, Places, Named Objects, Symbols and Personifications) to the specific interpretation that recognizes it. It represents the subject depicted as a manifestation in the specific artwork taken into account, in contrast to the second level subjects cited and Invenzione, identifying iconographies from an abstract and general point of view. This distinction between the general subject level and the artwork-specific one is functional to identify the variants of a subject in relation to the specific context."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Image"
+  � has_label: ["Image"@en, "Image"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/VisualSubject), TruthFunction(N0b52cc578c82487aa5d1577d29d1c9d2), Cardinality(Nba233cc112004be4bdf27f3720e6ff59), Concept(https://w3id.org/icon/ontology/VisualSubject), TruthFunction(N0b52cc578c82487aa5d1577d29d1c9d2), Cardinality(Nba233cc112004be4bdf27f3720e6ff59)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #18
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/InterpretationDescription
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E31_Document), Concept(http://erlangen-crm.org/current/E31_Document)]
+  � has_comment: ["The Interpretation Description is a class collecting all the triples describing each recognition in each level that shares a unique interpretative perspective. For example, it allows to collect claims agreeing each other or to describe the situation in which an art historian attributes to other art historians some details of the general interpretation he claims. Recognitions in disagree with each other should be documented in different descriptions. For example, the interpretation made in 1699 recognising Regnaudin's statuette as depicting "Time carrying off the Truth" is listed in a different description form the interpretation recognising "The rape of Cybele" as its subject (Wittkower)."@en, "The Interpretation Description is a class collecting all the triples describing each recognition in each level that shares a unique interpretative perspective. For example, it allows to collect claims agreeing each other or to describe the situation in which an art historian attributes to other art historians some details of the general interpretation he claims. Recognitions in disagree with each other should be documented in different descriptions. For example, the interpretation made in 1699 recognising Regnaudin's statuette as depicting "Time carrying off the Truth" is listed in a different description form the interpretation recognising "The rape of Cybele" as its subject (Wittkower)."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/InterpretationDescription"
+  � has_label: ["Interpretation Description"@en, "Interpretation Description"@en]
+  � is_defined_by: [Literal(empty), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Description), Quantifier(Ne0cde48f71cc44768c670f1b3ac0261c), Quantifier(Nd50c34f3989d4931a453a97c8a5adac8), Quantifier(N17ae4c0d7a394f6ba95d56a25f5bb40c), Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Description), Quantifier(Ne0cde48f71cc44768c670f1b3ac0261c), Quantifier(Nd50c34f3989d4931a453a97c8a5adac8), Quantifier(N17ae4c0d7a394f6ba95d56a25f5bb40c)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #19
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IntrinsicMeaning
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E36_Visual_Item), Concept(http://erlangen-crm.org/current/E36_Visual_Item)]
+  � has_comment: ["N-ary relatioship class linking the identified cultural phenomenon or deeper meaning to the whole artwork or to the specific part of its representation and to the interpretation that identifies it. From a theoretical point of view, it corresponds to the manifestation in the specific artwork of the concepts and cultural phenomena identified by the iconological analysis. The terminology is taken from Panofsky (1939, 1955)."@en, "N-ary relatioship class linking the identified cultural phenomenon or deeper meaning to the whole artwork or to the specific part of its representation and to the interpretation that identifies it. From a theoretical point of view, it corresponds to the manifestation in the specific artwork of the concepts and cultural phenomena identified by the iconological analysis. The terminology is taken from Panofsky (1939, 1955)."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/IntrinsicMeaning"
+  � has_label: ["Intrinsic Meaning"@en, "Intrinsic Meaning"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/VisualSubject), TruthFunction(N1214cd7ac4644a6abaa86beb2e13a848), Cardinality(Ne47fea366f314600a75c5556508a744c), Concept(https://w3id.org/icon/ontology/VisualSubject), TruthFunction(N1214cd7ac4644a6abaa86beb2e13a848), Cardinality(Ne47fea366f314600a75c5556508a744c)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #20
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Invenzione
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E1_CRM_Entity), Concept(http://erlangen-crm.org/current/E1_CRM_Entity)]
+  � has_comment: ["An Invenzione, term taken from Panofsky's Studies in Iconology (1939), is the subject matter represented by the combination of the single images recognized. The recognition of an Invenzione happens in the context of the iconographical recognition and it is included in the Iconographical Description. This definition slightly differs from the Panofsky's one: while he describes an invenzione as a form expressing the subject, we consider it as an individual belonging to the "sphere of secondary or conventional subject matter, viz., the world of specific themes or concepts manifested in images [...]". This new definition has been introduced to allow to formalize and recognize subjects represented in different artworks. Nevertheless, the identity of form and subject is already included in the definition of the class Artwork. Story and Allegory are subclasses of Invenzione."@en, "An Invenzione, term taken from Panofsky's Studies in Iconology (1939), is the subject matter represented by the combination of the single images recognized. The recognition of an Invenzione happens in the context of the iconographical recognition and it is included in the Iconographical Description. This definition slightly differs from the Panofsky's one: while he describes an invenzione as a form expressing the subject, we consider it as an individual belonging to the "sphere of secondary or conventional subject matter, viz., the world of specific themes or concepts manifested in images [...]". This new definition has been introduced to allow to formalize and recognize subjects represented in different artworks. Nevertheless, the identity of form and subject is already included in the definition of the class Artwork. Story and Allegory are subclasses of Invenzione."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Invenzione"
+  � has_label: ["Invenzione"@en, "Invenzione"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/arco/ontology/context-description/Subject), Concept(https://w3id.org/arco/ontology/context-description/Subject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #21
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/NamedObject
+----------------------------------------------------------------------
+
+  � has_comment: ["A named object is a non-living unique element that is often used as an attribute for the recognition of specific characters or as the individuals of a more general concept class. (e.g. Bible for the Book class)"@en, "A named object is a non-living unique element that is often used as an attribute for the recognition of specific characters or as the individuals of a more general concept class. (e.g. Bible for the Book class)"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/NamedObject"
+  � has_label: ["Named Object"@en, "Named Object"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_related_to: [Concept(http://erlangen-crm.org/current/E89_Propositional_Object), Concept(http://erlangen-crm.org/current/E89_Propositional_Object)]
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconographicalSubject), Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #22
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/NaturalElement
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E1_CRM_Entity), Concept(http://erlangen-crm.org/current/E1_CRM_Entity)]
+  � has_comment: ["Comprises objects, human beings, natural elements that can be experienced. They are recognized at the first level of interpretation."@en, "Comprises objects, human beings, natural elements that can be experienced. They are recognized at the first level of interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/NaturalElement"
+  � has_label: ["Natural Element"@en, "Natural Element"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/PreiconographicalSubject), Concept(https://w3id.org/icon/ontology/PreiconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #23
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Personification
+----------------------------------------------------------------------
+
+  � has_close_match: [Concept(http://w3id.org/vir#IC11_Personification), Concept(http://w3id.org/vir#IC11_Personification)]
+  � has_comment: ["A representation of a concept through a human figure"@en, "A representation of a concept through a human figure"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Personification"
+  � has_label: ["Personification (ICON)"@en, "Personification (ICON)"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconographicalSubject), Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #24
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Place
+----------------------------------------------------------------------
+
+  � has_comment: ["An identified setting, e.g. the city of Bologna, which is recognized as a Level 2 subject. The recognition of a generic city is formally represented by the Natural Element class (level 1)."@en, "An identified setting, e.g. the city of Bologna, which is recognized as a Level 2 subject. The recognition of a generic city is formally represented by the Natural Element class (level 1)."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Place"
+  � has_label: ["Place (ICON)"@en, "Place (ICON)"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_related_to: [Concept(http://erlangen-crm.org/current/E89_Propositional_Object), Concept(http://erlangen-crm.org/current/E89_Propositional_Object)]
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconographicalSubject), Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #25
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Recognition
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E13_Attribute_Assignment), Concept(http://erlangen-crm.org/current/E13_Attribute_Assignment)]
+  � has_comment: ["A recognition, in the context of this ontology, is an interpretation act made by an agent (biological or electronic being) that links works of arts to something related to their content. More specific recognitions are available as subclasses for specific types of recognition according to the level of interpretation."@en, "A recognition, in the context of this ontology, is an interpretation act made by an agent (biological or electronic being) that links works of arts to something related to their content. More specific recognitions are available as subclasses for specific types of recognition according to the level of interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Recognition"
+  � has_label: ["Recognition"@en, "Recognition"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://purl.org/emmedi/hico/InterpretationAct), Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Situation), Cardinality(Nb7abf7878b144a8b81a70d8cb8be1d4e), Cardinality(N0bb63ea19fe94d4dbbab9f363dc93ac4), Concept(http://purl.org/emmedi/hico/InterpretationAct), Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Situation), Cardinality(Nb7abf7878b144a8b81a70d8cb8be1d4e), Cardinality(N0bb63ea19fe94d4dbbab9f363dc93ac4)]
+
+----------------------------------------------------------------------
+Total attributes: 7
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #26
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Symbol
+----------------------------------------------------------------------
+
+  � has_broad_match: [Concept(http://erlangen-crm.org/current/E90_Symbolic_Object), Concept(http://erlangen-crm.org/current/E90_Symbolic_Object)]
+  � has_comment: ["A Symbol is the class representing the unity of a symbol and its symbolic meaning that can be expressed by an Image. The represented object (Simulacrum) and the symbolical meaning expressed (Reality Counterpart) along with the type of relation linking them if further represented by the Simulation Ontology."@en, "A Symbol is the class representing the unity of a symbol and its symbolic meaning that can be expressed by an Image. The represented object (Simulacrum) and the symbolical meaning expressed (Reality Counterpart) along with the type of relation linking them if further represented by the Simulation Ontology."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Symbol"
+  � has_label: ["Symbol"@en, "Symbol"@en]
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology), Literal(empty)]
+  � is_deprecated: False
+  � is_equivalent_to: [Concept(https://www.w3id.org/simulation/ontology/Simulation), Concept(https://www.w3id.org/simulation/ontology/Simulation)]
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconographicalSubject), Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 8
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #27
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E28_Conceptual_Object
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E28_Conceptual_Object"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #28
+----------------------------------------------------------------------
+Type: Concept
+URI: http://erlangen-crm.org/current/E53_Place
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/E53_Place"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #29
+----------------------------------------------------------------------
+Type: Concept
+URI: http://purl.org/emmedi/hico/InterpretationAct
+----------------------------------------------------------------------
+
+  � has_identifier: "http://purl.org/emmedi/hico/InterpretationAct"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #30
+----------------------------------------------------------------------
+Type: Concept
+URI: http://w3id.org/vir#IC1_Iconographical_Atom
+----------------------------------------------------------------------
+
+  � has_identifier: "http://w3id.org/vir#IC1_Iconographical_Atom"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #31
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/arco/ontology/arco/HistoricOrArtisticProperty
+----------------------------------------------------------------------
+
+  � has_identifier: "https://w3id.org/arco/ontology/arco/HistoricOrArtisticProperty"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #32
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/arco/ontology/context-description/Subject
+----------------------------------------------------------------------
+
+  � has_identifier: "https://w3id.org/arco/ontology/context-description/Subject"
+  � is_deprecated: False
+  � is_disjoint_with: [Concept(https://w3id.org/icon/ontology/VisualSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #33
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/ArtGenre
+----------------------------------------------------------------------
+
+  � has_comment: ["This class is substituted by the the solution adopted by linked.art using crm:P2_has_type as follows: <subject>, crm:P2_has_type, <specific style term>.  <specific style term> crm:P2_has_type, <http://vocab.getty.edu/aat/300015646> # the AAT term indicating the concept of style."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/ArtGenre"
+  � has_label: ["Art Genre"@en]
+  � is_deprecated: True
+
+----------------------------------------------------------------------
+Total attributes: 4
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #34
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Attitude
+----------------------------------------------------------------------
+
+  � has_comment: ["Example term taken from Panofsky's studies, can be used as a specification of a cultural phenomemon if it can be considered an Attitude"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Attitude"
+  � has_label: ["Attitude"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/CulturalPhenomenon)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #35
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Belief
+----------------------------------------------------------------------
+
+  � has_comment: ["Example term taken from Panofsky's studies, can be used as a specification of a cultural phenomemon if it can be considered a Belief"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Belief"
+  � has_label: ["Belief"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/CulturalPhenomenon)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #36
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Color
+----------------------------------------------------------------------
+
+  � has_comment: ["Class representing the color of an entity represented in an Artistic Motif or Image"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Color"
+  � has_label: ["Color"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Quality)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #37
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/CompositionalStructure
+----------------------------------------------------------------------
+
+  � has_comment: ["The compositional structure identifies relevant structures that can be recognized in the layout of Artistic Motifs in a Composition, e.g. pyramidal, symmetrical."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/CompositionalStructure"
+  � has_label: ["Compositional Structure"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #38
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/CulturalPhenomenon
+----------------------------------------------------------------------
+
+  � has_comment: ["The cultural phenomenon entity expresses the cultural, social and historical aspects of which the work of art can be document. The iconographical evolution of subjects can have a cultural meaning as well. Also the personal characteristics of the artist, or of the patron, can be involved (Wittkower, Van Straten). The cultural phenomena are the object of investigation of an iconological interpretation (Van Straten, 2012, p. 12), which is considered, in the current work, a level 3 interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/CulturalPhenomenon"
+  � has_label: ["Cultural Phenomenon"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconologicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #39
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/CulturalValue
+----------------------------------------------------------------------
+
+  � has_comment: ["Example term taken from Panofsky's studies, can be used as a specification of a cultural phenomemon if it can be considered a CulturalValue"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/CulturalValue"
+  � has_label: ["Cultural Value"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/CulturalPhenomenon)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #40
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/FormalMotifRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["The act of recognizing that subjects depicted by different artworks has the same formal motifs although the content represented may be different. The need of the usage of this class emerged from a bottom-up approach, rather than Panofsky's theory. It describes that certain subjects are prototypes of others, including preliminary drawings, but also cases in which another artist copied only the composition or gestures from another artwork. This recognition can link every specific part of a representation to the specific prototypes. The relation is between level 1 objects, i.e. Artistic Motifs and Composition, since it describes a formal aspect. Example of usage: if Hercules carrying the Boar is the prototype for a Christ carrying a deer, symbol of the human souls, it's possible to relate directly the boar represented in the former artwork to the deer represented in the latter."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/FormalMotifRecognition"
+  � has_label: ["Formal Motif Recognition"@en]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/Recognition), TruthFunction(N4f0f06c2fd124eb38955dac6aaf1a8cb), TruthFunction(N1df77c616b2641e2873d86e7d67db75d)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #41
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IconographicalDescription
+----------------------------------------------------------------------
+
+  � has_comment: ["An Iconographical Description is the enumeration of iconographical recognitions of images or invenzioni recognized by one or more agents. It is thus a collection of triples. It is the summary of what would be called in Panofsky's term the second level of interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/IconographicalDescription"
+  � has_label: ["Iconographical Description"@en]
+  � is_deprecated: True
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/InterpretationDescription), Quantifier(N1be055c8f1f643fc8231d9881c9375b7)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #42
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IconographicalRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["A Iconographical Recognition is a n-ary relationship class that links the artwork described (and, if available, the Artistic Motifs recognized at the previous level along with their compositions) to the Images recognized, or directly to the Invenzione that results from the grouping of the subject depicted by each single image. The N-ary structure is necessary in order to include relevant additional information concerning the visual interpretation claimed."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/IconographicalRecognition"
+  � has_label: ["Iconographical Recognition"@en]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/Recognition), TruthFunction(N47495db1f1744dc39f90149b9c5cf83f)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #43
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IconographicalSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["This class represents all the iconographical subjects of an artwork recognized in images"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/IconographicalSubject"
+  � has_label: ["Iconographical Subject"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/arco/ontology/context-description/Subject)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #44
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IconographicalSynthesis
+----------------------------------------------------------------------
+
+  � has_comment: ["An Iconographical Synthesis is the enumeration of iconological recognitions of intrinsic meanings recognized by one or more agents concerning a work of art. It is thus a collection of triples. It is the summary of what would be called in Panofsky's term the third level of interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/IconographicalSynthesis"
+  � has_label: ["Iconographical Synthesis"@en]
+  � is_deprecated: True
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/InterpretationDescription), Quantifier(N7fb9a6ee986645169c583cc7db286c34)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #45
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IconologicalRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["An Iconological Recognition is a n-ary relationship class that links the artwork described (and optionally all the subjects represented at the first and second level of interpretation) to the Intrinsic Meanings recognized. The N-ary structure is necessary in order to include relevant additional information concerning the visual interpretation claimed. This class can represent: (1) the third level act of Interpretation described by Panofsky (1939), without a distinction between a overall artwork symbolic meaning and a societal aspect, (2) the third and second level described by Van Straten, according to the value associated to the intrinsic meaning, (3) the iconic act of interpretation described by Imdahl (2012), when the intrinsic meaning is directly linked to level 1 characteristics of the image."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/IconologicalRecognition"
+  � has_label: ["Iconological Recognition"@en]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/Recognition), Cardinality(Ne22db3b237e04029a3f16afaa29572f1)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #46
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/IconologicalSubject
+----------------------------------------------------------------------
+
+  � has_identifier: "https://w3id.org/icon/ontology/IconologicalSubject"
+  � has_label: ["Iconological Subject"@en, "This class represents all the iconological subjects of an artwork recognized through an intrinstic meaning"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/arco/ontology/context-description/Subject)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #47
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Material
+----------------------------------------------------------------------
+
+  � has_comment: ["This class represent the material expressed in an artistic motif or image (referring to the element recognized in them)"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Material"
+  � has_label: ["Material"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Quality)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #48
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/PreiconographicalDescription
+----------------------------------------------------------------------
+
+  � has_comment: ["A Pre-iconographical description is the enumeration of the Pre-Iconographical Recognitions of a certain work of art, performed by one or more agents. It is thus a collection of triples constituting the documentation of the interpretation at level 1. The term and its definition is taken from Panofsky's Studies in Iconology (1939)."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/PreiconographicalDescription"
+  � has_label: ["Preiconographical Description"@en]
+  � is_deprecated: True
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/InterpretationDescription), Quantifier(N4d027e55c5e04fd49a80d358c86b32fc)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #49
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/PreiconographicalRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["A Pre-iconographical recognition is a n-ary relationship class that links the artwork described (and optionally the Pure Forms composing it) to the Artistic Motifs recognized as carrier of meaning at the first level of analysis. The N-ary structure is necessary in order to include relevant additional information concerning the visual interpretation claimed."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/PreiconographicalRecognition"
+  � has_label: ["Preiconographical Recognition"@en]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/Recognition), TruthFunction(N258f3c45598a4a17933eeb047ed38cb0)]
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #50
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/PreiconographicalSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["This class is used to represent all the preiconographical subjects that can be recognized in an artistic motif"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/PreiconographicalSubject"
+  � has_label: ["Pre-iconographical Subject"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/arco/ontology/context-description/Subject)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #51
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/PureForm
+----------------------------------------------------------------------
+
+  � has_comment: ["A pure form represents the physical portion of the work of art in which artistic motifs are found. It has been introduced as a way to include the results of analysis performed by computational agents, that are able to classify images and give image coordinates for specific recognition. It is not recommended to be used by manual annotators or in any case in which the coordinates of the image of the work of art are not considered. If available, the Pure form can represent the region of an image identified by IIIF Image API."@en, "Change the definition to the formal representation that can be enclosed in a certain coordinate."]
+  � has_identifier: "https://w3id.org/icon/ontology/PureForm"
+  � has_label: ["Pure Form"@en]
+  � is_deprecated: True
+
+----------------------------------------------------------------------
+Total attributes: 4
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #52
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Role
+----------------------------------------------------------------------
+
+  � has_comment: ["This class represents the Role of an element recognized in an artistic motif or an image."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Role"
+  � has_label: ["Role"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Quality)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #53
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/Tendency
+----------------------------------------------------------------------
+
+  � has_comment: ["Example term taken from Panofsky's studies, can be used as a specification of a cultural phenomemon if it can be considered a tendency"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/Tendency"
+  � has_label: ["Tendency"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/CulturalPhenomenon)]
+
+----------------------------------------------------------------------
+Total attributes: 6
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #54
+----------------------------------------------------------------------
+Type: Concept
+URI: https://w3id.org/icon/ontology/VisualSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["A visual subject is the representation of the subject in specific artwork, in contrast with the arco:Subject which is used to define a general subject which can be shared by multiple artworks. For example, the image representing Christ in the Last Supper is a visual Subject because it is intended as only that representation for that specific artwork. The character referred by that image (Christ) would be an arco:Subject, and it can shared by all the artworks that have a specific image that refers to Christ."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/VisualSubject"
+  � has_label: ["Visual Subject"@en]
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 5
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #55
+----------------------------------------------------------------------
+Type: Concept
+URI: https://www.w3id.org/simulation/ontology/Simulation
+----------------------------------------------------------------------
+
+  � has_identifier: "https://www.w3id.org/simulation/ontology/Simulation"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #56
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#SocialObject
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#SocialObject"
+  � is_deprecated: False
+  � is_sub_concept_of: [Concept(https://w3id.org/icon/ontology/IconologicalSubject)]
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #57
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Agent
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Agent"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #58
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#InformationObject
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#InformationObject"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #59
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Place
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Place"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #60
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Event
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Event"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #61
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Situation
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Situation"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #62
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Description
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Description"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #63
+----------------------------------------------------------------------
+Type: Concept
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Quality
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Quality"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+======================================================================
+EXTRACTING ALL INSTANCES OF CLASS: Property
+======================================================================
+
+Found 7 instance(s)
+
+
+----------------------------------------------------------------------
+INSTANCE #1
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #2
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasPart
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasPart"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #3
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasQuality
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasQuality"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #4
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#satisfies
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#satisfies"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #5
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSatisfiedBy
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSatisfiedBy"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #6
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPartOf
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPartOf"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #7
+----------------------------------------------------------------------
+Type: Property
+URI: http://www.w3.org/2002/07/owl#topObjectProperty
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.w3.org/2002/07/owl#topObjectProperty"
+  � is_deprecated: False
+  � is_functional: False
+
+----------------------------------------------------------------------
+Total attributes: 3
+----------------------------------------------------------------------
+
+======================================================================
+EXTRACTING ALL INSTANCES OF CLASS: Relation
+======================================================================
+
+Found 85 instance(s)
+
+
+----------------------------------------------------------------------
+INSTANCE #1
+----------------------------------------------------------------------
+Type: Relation
+URI: http://erlangen-crm.org/231027/P14_carried_out_by
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/231027/P14_carried_out_by"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #2
+----------------------------------------------------------------------
+Type: Relation
+URI: http://erlangen-crm.org/current/P138_represents
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/P138_represents"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #3
+----------------------------------------------------------------------
+Type: Relation
+URI: http://erlangen-crm.org/current/P140_assigned_attribute_to
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/P140_assigned_attribute_to"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #4
+----------------------------------------------------------------------
+Type: Relation
+URI: http://erlangen-crm.org/current/P141_assigned
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/P141_assigned"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #5
+----------------------------------------------------------------------
+Type: Relation
+URI: http://erlangen-crm.org/current/P70_documents
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/P70_documents"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #6
+----------------------------------------------------------------------
+Type: Relation
+URI: http://purl.org/spar/cito/citesAsEvidence
+----------------------------------------------------------------------
+
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Recognition)]
+  � has_identifier: "http://purl.org/spar/cito/citesAsEvidence"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 10
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #7
+----------------------------------------------------------------------
+Type: Relation
+URI: http://purl.org/spar/cito/citesForInformation
+----------------------------------------------------------------------
+
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Recognition)]
+  � has_identifier: "http://purl.org/spar/cito/citesForInformation"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 10
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #8
+----------------------------------------------------------------------
+Type: Relation
+URI: http://purl.org/spar/cito/givesSupportTo
+----------------------------------------------------------------------
+
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Recognition)]
+  � has_identifier: "http://purl.org/spar/cito/givesSupportTo"
+  � has_range: [Individual(https://w3id.org/icon/ontology/Recognition)]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 11
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #9
+----------------------------------------------------------------------
+Type: Relation
+URI: http://w3id.org/vir#K4_is_visual_prototype_of
+----------------------------------------------------------------------
+
+  � has_identifier: "http://w3id.org/vir#K4_is_visual_prototype_of"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #10
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/aboutWorkOfArt
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates each Recognition directly to the artwork. In this way, it is possible to retrieve easily all the interpretations about an artwork. Therefore, it a highly recommended good practice to declare it for each interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Recognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/aboutWorkOfArt"
+  � has_label: ["About Work Of Art"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Artwork)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/hasRecognition)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #11
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/associatedColor
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an artistic motif or an image to one of the (recognized) colors of the elements recognized in those artistic motifs or images. For instance, expressing "red" in  the artistic motif representing a scarf in a work or art."@en]
+  � has_domain: [TruthFunction(N95f9f5759c8f43d5b038d449871a9d8e)]
+  � has_identifier: "https://w3id.org/icon/ontology/associatedColor"
+  � has_label: ["associated Color"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Color)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasQuality)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #12
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/associatedForm
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates a Pure Form to the Pre-iconographical Recognition that describes it at the first level of interpretation."]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/associatedForm"
+  � has_label: ["Associated Form"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/PureForm)]
+  � is_asymmetric: False
+  � is_deprecated: True
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isPureFormOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(http://erlangen-crm.org/current/P140_assigned_attribute_to)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #13
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/associatedMaterial
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an artistic motif or an image to one of the (recognized) materials of the element that are recognized in those artistic motifs or images. For instance, expressing that the artistic motif representing a crown in a portrait denotes also that the crown is made of bronze. Or that the image of the Thor's Hammer is denoting that the hammer is made of steel."@en]
+  � has_domain: [TruthFunction(Nc113e3597d214903b169ba21613faf84)]
+  � has_identifier: "https://w3id.org/icon/ontology/associatedMaterial"
+  � has_label: ["associated Material"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Material)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasQuality)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #14
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/composedOf
+----------------------------------------------------------------------
+
+  � has_comment: ["This Property links an invenzione with its components, which may vary from Characters, Events, Named Objects, Places to Personifications, Symbols according to the kind of Invenzione is being described."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Invenzione)]
+  � has_identifier: "https://w3id.org/icon/ontology/composedOf"
+  � has_label: ["Composed Of"@en]
+  � has_range: [TruthFunction(N05d1f97718a64e34b51ba19250fd44f8)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/takesPartIn)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #15
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasArtisticMotif
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an Intrinsic Meaning to the Artistic Motif recognized at the first level of interpretation. It should be used to express that the third level meaning associated to the Intrinsic Meaning refers specifically to this Artistic Motif, and not only to the general artwork."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasArtisticMotif"
+  � has_label: ["Has Artistic Motif"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isArtisticMotifOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #16
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasCharacter
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an image to the Character depicted"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasCharacter"
+  � has_label: ["Has Character"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Character)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isCharacterOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #17
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasComposition
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an Intrinsic Meaning to the Composition recognized at the first level of interpretation. It should be used to express that the third level meaning associated to the Intrinsic Meaning refers specifically to this Composition, and not only to the general artwork."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasComposition"
+  � has_label: ["Has Composition"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Composition)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isCompositionOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #18
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasCompositionalStructure
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation describes the arrangement of the Artistic Motifs composing the Composition. It is suggested to use it only when they are arranged in a relevant observable structure (e.g. pyramidal, oblique)"]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Composition)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasCompositionalStructure"
+  � has_label: ["Has Compositional Structure"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/CompositionalStructure)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isCompositionalStructureOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #19
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasCopiedMotif
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates to the act of Formal Motif Recognition the Artistic Motif representing the copied visual pattern. To be used when it is affirmed that a specific feature has as a prototype the same feature of a specific visual item."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/FormalMotifRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasCopiedMotif"
+  � has_label: ["Has Copied Motif"@en]
+  � has_range: [TruthFunction(N1eeb5683d71d4cd5b58816757ee8140b)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isCopiedMotifOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #20
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasEvent
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an image to the Event depicted"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasEvent"
+  � has_label: ["Has Event"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Event)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isEventOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #21
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasExpressionalMeaning
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links the Expressional Meaning recognized to the Artistic Motif"]
+  � has_domain: [TruthFunction(N663545215d324142a0b4055f6996f870)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasExpressionalMeaning"
+  � has_label: ["Has Expressional Meaning"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/ExpressionalQuality)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isExpressionalMeaningOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasPreiconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #22
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasFactualMeaning
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links the Factual Meaning recognized (Actions or Natural Elements) to the Artistic Motif"]
+  � has_domain: [TruthFunction(Nbbdd89cee34f4edca275529b120bb3c5)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasFactualMeaning"
+  � has_label: ["Has Factual Meaning"@en]
+  � has_range: [TruthFunction(Na94c4d4c2b9c40f690c89eda8f88ef81)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isFactualMeaningOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasPreiconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #23
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasIconographicalSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an image to the iconographical subject it represents, it is used when it is difficult to distinguish between the different iconographical subjects (for instance in the case of an automatic conversion of data into the ICON ontology)"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasIconographicalSubject"
+  � has_label: ["has Iconographical Subject"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconographicalSubject)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/visuallyRepresents)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #24
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasIconologicalSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an intrinstic meaning to the iconological subject it represents. It is useful in the cases where it is difficult to identify the type of the iconological subject (cultural phenomenon, abstract concept...) especially in cases of automatic conversions of data to the ICON ontology structure"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasIconologicalSubject"
+  � has_label: ["has Iconological Subject"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconologicalSubject)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/visuallyRepresents)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #25
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasImage
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an Intrinsic Meaning to the Image recognized at the second level of interpretation. It should be used to express that the third level meaning associated to the Intrinsic Meaning refers specifically to this Image, and not only to the general artwork."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasImage"
+  � has_label: ["Has Image"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isImageOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #26
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasInvenzione
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an Intrinsic Meaning to the Invenzione recognized at the second level of interpretation. It should be used to express that the third level meaning associated to the Intrinsic Meaning refers specifically to this invenzione, and not only to the general artwork."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasInvenzione"
+  � has_label: ["Has Invenzione"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Invenzione)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isInvenzioneOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #27
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasNamedObject
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an image to the Named Object depicted"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasNamedObject"
+  � has_label: ["Has Named Object"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/NamedObject)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isNamedObjectOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #28
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasPart
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links a Composition to the Artistic Motifs of which it consists."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Composition)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasPart"
+  � has_label: ["Has Part (ICON)"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/partOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasPart)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #29
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasPersonification
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an image to the Personification depicted"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasPersonification"
+  � has_label: ["Has Personification"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Personification)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isPersonificationOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #30
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasPlace
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an image to the Place depicted"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasPlace"
+  � has_label: ["Has Place"@en]
+  � has_range: [TruthFunction(N6f8d9b6133bc449fb0ec14928e0c1a21)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isPlaceOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #31
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasPreiconographicalSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["This property links an artistic motif with a pre-iconographical subject represented by it, it is used when it is difficult to distinguish between the different types of pre-iconographical subjects (for example in situations where the conversion from interpretation to ICON is made automatically)"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasPreiconographicalSubject"
+  � has_label: ["has Pre-iconographical Subject"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/PreiconographicalSubject)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/visuallyRepresents)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #32
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasPrototypicalMotif
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates to the act of the Recognition of a formal motif to the artistic motif from which the visual pattern derives. It should be used when it is affirmed that a specific feature has as a prototype the same feature of a specific visual item."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/FormalMotifRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasPrototypicalMotif"
+  � has_label: ["Has Prototypical Motif"@en]
+  � has_range: [TruthFunction(N5b5efbb846bc49d0bfbee98c30594e8a)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isPrototypicalMotifOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #33
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasRecAttribute
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation identifies objects belonging to the level 1 as fundamental for the recognition of a certain subject. It is suggested that the Artistic Motif of the object is included in the Composition corresponding to the subject."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasRecAttribute"
+  � has_label: ["Has Rec Attribute"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isRecAttributeOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #34
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of aboutWorkOfArt"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Artwork)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasRecognition"
+  � has_label: ["Has Recognition"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Recognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #35
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasResponsibleAgent
+----------------------------------------------------------------------
+
+  � has_comment: ["This property links the Interpretation Description with all the agents responsible for the recognitions that are part of it"@en]
+  � has_identifier: "https://w3id.org/icon/ontology/hasResponsibleAgent"
+  � has_label: ["has Responsible Agent"@en]
+  � has_property_chain: [[Relation(https://w3id.org/icon/ontology/isCompliantWithIconographicalRecognition), Relation(http://erlangen-crm.org/231027/P14_carried_out_by)], [Relation(https://w3id.org/icon/ontology/isCompliantWithIconographicalRecognition), Relation(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent)], [Relation(https://w3id.org/icon/ontology/isCompliantWithIconologicalRecognition), Relation(http://erlangen-crm.org/231027/P14_carried_out_by)], [Relation(https://w3id.org/icon/ontology/isCompliantWithIconologicalRecognition), Relation(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent)], [Relation(https://w3id.org/icon/ontology/isCompliantWithPreiconographicalRecognition), Relation(http://erlangen-crm.org/231027/P14_carried_out_by)], [Relation(https://w3id.org/icon/ontology/isCompliantWithPreiconographicalRecognition), Relation(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent)]]
+  � is_asymmetric: False
+  � is_defined_by: [Individual(https://w3id.org/icon/ontology/ICONOntology)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 13
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #36
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasRole
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an artistic motif or an image to one of the (recognized) roles of the elements recognized in those artistic motifs or images. For instance, expressing that the role of the man recognized in a painting is "butcher", "prince", etc..."@en]
+  � has_domain: [TruthFunction(N6c6518fbe21343c3996b10b4b5f54c20)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasRole"
+  � has_label: [Literal(empty), "has Role"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Role)]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 13
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #37
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/hasSymbol
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation links an image to the Symbol depicted"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/hasSymbol"
+  � has_label: ["Has Symbol"@en]
+  � has_range: [TruthFunction(Ndf798dd068f840dc9a468c1115a37907)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isSymbolOf)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconographicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #38
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/iconographicallyCompliesWith
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link all the iconographical recognitions that take part in one or more interpretation(s), to that/those interpretation(s)"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/iconographicallyCompliesWith"
+  � has_label: ["iconographically complies with"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/InterpretationDescription)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isCompliantWithIconographicalRecognition)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#satisfies)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #39
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/iconographicallyDepicts
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an artwork to the element of the second level of interpretation (iconographical) which it depicts. This elements can be Characters, Symbols, Personifications, Places, Stories, Allegories (and the element these stories and allegories are composed of).
+
+Example: There is an IconographicalRecognition of Artwork1 of Image1, which is linked to the character Thor through the hasCharacter property.
+
+Then Artwork1 iconographicallyDepicts Thor.
+
+Example2: There is an IconographicalRecognition of Artwork1 of Story1, which is the story of the death of Julius C. This story is composed by the Place Rome and the character Julius C. (and more...)
+
+Then Artwork1 IconographicallyDepicts the story of the death of Julius C., Julius C., and the city of Rome.
+
+This link can be created automatically through inference thanks to the super property chain, or it can be written by users who are not planning of including contextual information to the interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/iconographicallyDepicts"
+  � has_label: ["Iconographically Depicts"@en]
+  � has_property_chain: [[Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedImage), Relation(https://w3id.org/icon/ontology/hasCharacter)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedImage), Relation(https://w3id.org/icon/ontology/hasEvent)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedImage), Relation(https://w3id.org/icon/ontology/hasNamedObject)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedImage), Relation(https://w3id.org/icon/ontology/hasPersonification)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedImage), Relation(https://w3id.org/icon/ontology/hasPlace)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedImage), Relation(https://w3id.org/icon/ontology/hasSymbol)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedInvenzione)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedInvenzione), Relation(https://w3id.org/icon/ontology/composedOf)]]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 12
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #40
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/iconologicallyCompliesWith
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link all the iconological recognitions that take part in one or more interpretation(s), to that/those interpretation(s)"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IconologicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/iconologicallyCompliesWith"
+  � has_label: ["iconologically complies with"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/InterpretationDescription)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/isCompliantWithIconologicalRecognition)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#satisfies)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #41
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/iconologicallyRepresents
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an artwork to the element of the third level of interpretation (iconological) which it represents. This elements can be Cultural Phenomena, Social Objects (abstract concepts).
+
+Example: There is an IconologicalRecognition of Artwork1 of IntrinsicMeaning1, which is linked to the cultural phenomenon of ImitationOfClassics
+Then Artwork1 iconologicallyRepresents  ImitationOfClassics.
+
+Example2: There is an IconologicalRecognition of Artwork1 of IntrinsicMeaning2, which is linked to the social object "Absurdity" (and to other elements from other levels that suppor this claim...)
+
+Then Artwork1 IconologicallyRepresents Absurdity
+
+This link can be created automatically through inference thanks to the super property chain, or it can be written by users who are not planning of including contextual information to the interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/iconologicallyRepresents"
+  � has_label: ["Iconologically Represents"@en]
+  � has_property_chain: [[Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedIntrinsicMeaning), Relation(https://w3id.org/icon/ontology/recognizedConcept)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedIntrinsicMeaning), Relation(https://w3id.org/icon/ontology/recognizedCulturalPhenomenon)]]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 12
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #42
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isArtisticMotifOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of has artistic motif"]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � has_identifier: "https://w3id.org/icon/ontology/isArtisticMotifOf"
+  � has_label: ["Is artistic motif of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #43
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCharacterOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasCharacter"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Character)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCharacterOf"
+  � has_label: ["Is Character Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #44
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCompliantWithIconographicalRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse of iconographically complies with"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/InterpretationDescription)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCompliantWithIconographicalRecognition"
+  � has_label: ["is compliant with iconographical recognition"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSatisfiedBy)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #45
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCompliantWithIconologicalRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["inverse of iconologically complies with"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/InterpretationDescription)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCompliantWithIconologicalRecognition"
+  � has_label: ["is compliant with iconological recognition"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSatisfiedBy)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #46
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCompliantWithPreiconographicalRecognition
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse of pre-iconographically complies with"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/InterpretationDescription)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCompliantWithPreiconographicalRecognition"
+  � has_label: ["is compliant with pre-iconographical recognition"@en]
+  � has_range: [TruthFunction(N2d184390e5294488ab04fa6565360e5f)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/preiconographicallyCompliesWith)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSatisfiedBy)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 16
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #47
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCompositionOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of has composition"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Composition)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCompositionOf"
+  � has_label: ["Is composition of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #48
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCompositionalStructureOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasCompositionalStructure"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/CompositionalStructure)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCompositionalStructureOf"
+  � has_label: ["Is Compositional Structure Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Composition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #49
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCopiedMotifOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasCopiedMotif"@en]
+  � has_domain: [TruthFunction(N758bbb46f92b4b548cf0bd93353dbd11)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCopiedMotifOf"
+  � has_label: ["Is Copied Motif Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/FormalMotifRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #50
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isCulturalPhenomenonOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognizedCulturalPhenomenon"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/CulturalPhenomenon)]
+  � has_identifier: "https://w3id.org/icon/ontology/isCulturalPhenomenonOf"
+  � has_label: ["Is Cultural Phenomenon Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedCulturalPhenomenon)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #51
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isEventOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasEvent"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Event)]
+  � has_identifier: "https://w3id.org/icon/ontology/isEventOf"
+  � has_label: ["Is Event Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #52
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isExpressionalMeaningOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasExpressionalMeaning"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/ExpressionalQuality)]
+  � has_identifier: "https://w3id.org/icon/ontology/isExpressionalMeaningOf"
+  � has_label: ["Is Expressional Meaning Of"@en]
+  � has_range: [TruthFunction(Nd07b5cf43bb84527aa2954bbb4f68572)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #53
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isFactualMeaningOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasFactualMeaning"@en]
+  � has_domain: [TruthFunction(N42f1db34fac340339132b1d70d8b0101)]
+  � has_identifier: "https://w3id.org/icon/ontology/isFactualMeaningOf"
+  � has_label: ["Is Factual Meaning Of"@en]
+  � has_range: [TruthFunction(Nf535c51ebbb34b5183d46c6c66f28ecc)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #54
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isIconographicallyRecognizedBy
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognizedImage"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/isIconographicallyRecognizedBy"
+  � has_label: ["Is Iconographically Recognized By"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedImage)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #55
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isIconographicallyReferredBy
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of refers to artistic motif"]
+  � has_domain: [TruthFunction(N0c51206d4e9242dda174a9d4dc977f03)]
+  � has_identifier: "https://w3id.org/icon/ontology/isIconographicallyReferredBy"
+  � has_label: ["Is iconographically referred by"]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/refersToArtisticMotif)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #56
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isImageOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of has image"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Image)]
+  � has_identifier: "https://w3id.org/icon/ontology/isImageOf"
+  � has_label: ["Is image of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #57
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isIntrinsicMeaningOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognized intrinsic meaning"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/isIntrinsicMeaningOf"
+  � has_label: ["Is Intrinsic Meaning Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconologicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedIntrinsicMeaning)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #58
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isInvenzioneOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasInvenzione"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Invenzione)]
+  � has_identifier: "https://w3id.org/icon/ontology/isInvenzioneOf"
+  � has_label: ["Is Invenzione Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #59
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isNamedObjectOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasNamedObject"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/NamedObject)]
+  � has_identifier: "https://w3id.org/icon/ontology/isNamedObjectOf"
+  � has_label: ["Is Named Object Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #60
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isPersonificationOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasPersonification"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Personification)]
+  � has_identifier: "https://w3id.org/icon/ontology/isPersonificationOf"
+  � has_label: ["Is Personification Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #61
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isPlaceOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasPlace"@en]
+  � has_domain: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Place)]
+  � has_identifier: "https://w3id.org/icon/ontology/isPlaceOf"
+  � has_label: ["Is Place Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #62
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isPrototypicalMotifOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasPrototypicalMotif"@en]
+  � has_domain: [TruthFunction(N641a121f36c84a4a96c327416961f544)]
+  � has_identifier: "https://w3id.org/icon/ontology/isPrototypicalMotifOf"
+  � has_label: ["Is Prototypical Motif Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/FormalMotifRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #63
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isPureFormOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of associatedForm"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/PureForm)]
+  � has_identifier: "https://w3id.org/icon/ontology/isPureFormOf"
+  � has_label: ["Is Pure Form Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � is_asymmetric: False
+  � is_deprecated: True
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 13
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #64
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isRecAttributeOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasRecAttribute"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � has_identifier: "https://w3id.org/icon/ontology/isRecAttributeOf"
+  � has_label: ["Is Rec Attribute Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #65
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isRecognOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognizedInvenzione"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Invenzione)]
+  � has_identifier: "https://w3id.org/icon/ontology/isRecognOf"
+  � has_label: ["Is Recogn Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedInvenzione)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #66
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isRecognizedArtisticMotifOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognized artistic motif"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � has_identifier: "https://w3id.org/icon/ontology/isRecognizedArtisticMotifOf"
+  � has_label: ["Is Recognized Artistic Motif Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedArtisticMotif)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #67
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isRecognizedCompositionOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognizedComposition"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Composition)]
+  � has_identifier: "https://w3id.org/icon/ontology/isRecognizedCompositionOf"
+  � has_label: ["Is Recognized Composition Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedComposition)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #68
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isRecognizedConceptOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of recognizedConcept"@en]
+  � has_domain: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#SocialObject)]
+  � has_identifier: "https://w3id.org/icon/ontology/isRecognizedConceptOf"
+  � has_label: ["Is Recognized Concept Of"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_inverse_of: Relation(https://w3id.org/icon/ontology/recognizedConcept)
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #69
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/isSymbolOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of has symbol"@en]
+  � has_domain: [TruthFunction(Ndd6846d479b54491ba354449a1c77bc8)]
+  � has_identifier: "https://w3id.org/icon/ontology/isSymbolOf"
+  � has_label: ["Is Symbol Of"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #70
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/partOf
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of hasPart"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � has_identifier: "https://w3id.org/icon/ontology/partOf"
+  � has_label: ["Part Of (ICON)"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Composition)]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPartOf)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #71
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/preiconographicallyCompliesWith
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link all the pre-iconographical and formal motif recognitions recognitions that take part in one or more interpretation(s), to that/those interpretation(s)"@en]
+  � has_domain: [TruthFunction(N58a757deaf6f47beb9035b646ab55a38)]
+  � has_identifier: "https://w3id.org/icon/ontology/preiconographicallyCompliesWith"
+  � has_label: ["pre-iconographically complies with"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/InterpretationDescription)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#satisfies)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #72
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/preiconographicallyDepicts
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link an artwork to the element of the first level of interpretation (pre-iconographical) which it depicts. This element can be a Natural Element, an Action, Expression, or an element included in a recognized Composition (again, natural element, action, expression).
+
+Example: There is a PreiconographicalRecognition of Artwork1 of ArtisticMotif1, which is linked to the natural element bear.
+Then Artwork1 preiconographicallyDepicts  bear.
+
+Example2: There is a PreiconographicalRecognition of Artwork1 of ArtisticMotif2, which is linked to the composition1, composed by a bear and the action of eating.
+Then Artwork1 preiconographicallyDepicts bear and eating.
+
+This link can be created automatically through inference thanks to the super property chain, or it can be written by users who are not planning of including contextual information to the interpretation."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/preiconographicallyDepicts"
+  � has_label: ["Pre-iconographically Depicts"@en]
+  � has_property_chain: [[Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedArtisticMotif), Relation(http://erlangen-crm.org/current/P138_represents)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedArtisticMotif), Relation(https://w3id.org/icon/ontology/hasExpressionalMeaning)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedArtisticMotif), Relation(https://w3id.org/icon/ontology/hasFactualMeaning)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedComposition), Relation(https://w3id.org/icon/ontology/hasPart), Relation(http://erlangen-crm.org/current/P138_represents)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedComposition), Relation(https://w3id.org/icon/ontology/hasPart), Relation(https://w3id.org/icon/ontology/hasExpressionalMeaning)], [Relation(https://w3id.org/icon/ontology/hasRecognition), Relation(https://w3id.org/icon/ontology/recognizedComposition), Relation(https://w3id.org/icon/ontology/hasPart), Relation(https://w3id.org/icon/ontology/hasFactualMeaning)]]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 12
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #73
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedArtisticMotif
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates the Artistic Motif to the Pre-iconographical Recognition that recognizes it at the first level of interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedArtisticMotif"
+  � has_label: ["Recognized Artistic Motif"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/ArtisticMotif)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/recognizedVisualSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #74
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedComposition
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates the Composition to the Pre-iconographical Recognition that recognizes it at the first level of interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/PreiconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedComposition"
+  � has_label: ["Recognized Composition"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Composition)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/recognizedVisualSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #75
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedConcept
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation expresses the Concept that is related to the Intrinsic Meaning"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedConcept"
+  � has_label: ["Recognized Concept"@en]
+  � has_range: [Concept(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#SocialObject)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconologicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #76
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedCulturalPhenomenon
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation expresses the Cultural Phenomenon that is related to the Intrinsic Meaning"@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedCulturalPhenomenon"
+  � has_label: ["Recognized Cultural Phenomenon"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/CulturalPhenomenon)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/hasIconologicalSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #77
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedGenre
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is substituted by the the solution adopted by linked.art using crm:P2_has_type as follows: <subject>, crm:P2_has_type, <specific style term>.  <specific style term> crm:P2_has_type, <http://vocab.getty.edu/aat/300015646> # the AAT term indicating the concept of style."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Recognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedGenre"
+  � has_label: ["Recognized Genre"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/ArtGenre)]
+  � is_asymmetric: False
+  � is_deprecated: True
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(http://erlangen-crm.org/current/P141_assigned)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #78
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedImage
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates the Image to the Iconographical Recognition that recognizes it at the second level of interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedImage"
+  � has_label: ["Recognized Image"@en]
+  � has_range: [Individual(https://w3id.org/icon/ontology/Image)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/recognizedVisualSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #79
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedIntrinsicMeaning
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates the Intrinsic Meaning to the Iconological Recognition that recognizes it at the third level of interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IconologicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedIntrinsicMeaning"
+  � has_label: ["Recognized Intrinsic Meaning"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/IntrinsicMeaning)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(https://w3id.org/icon/ontology/recognizedVisualSubject)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #80
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedInvenzione
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates the Invenzione to the Iconographical Recognition that recognizes it at the second level of interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedInvenzione"
+  � has_label: ["Recognized Invenzione"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Invenzione)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Property(http://www.w3.org/2002/07/owl#topObjectProperty)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 15
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #81
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/recognizedVisualSubject
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link a Recognition to the recognized Visual Subject."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/Recognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/recognizedVisualSubject"
+  � has_label: ["Recognized Visual Subject"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/VisualSubject)]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 13
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #82
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/refersToArtisticMotif
+----------------------------------------------------------------------
+
+  � has_comment: ["This relation associates a Composition or an Artistic Motif to the Iconographical Recognition that describes it at the second level of interpretation."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/IconographicalRecognition)]
+  � has_identifier: "https://w3id.org/icon/ontology/refersToArtisticMotif"
+  � has_label: ["Refers To Artistic Motif"@en]
+  � has_range: [TruthFunction(Nfc6c4a76e8f144a38a657b4ea69bf9f5)]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_sub_property_of: [Relation(http://erlangen-crm.org/current/P140_assigned_attribute_to)]
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #83
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/takesPartIn
+----------------------------------------------------------------------
+
+  � has_comment: ["Inverse property of composed of"@en]
+  � has_domain: [TruthFunction(N8d2426987cbd4abe9f3484b5a14b3888)]
+  � has_identifier: "https://w3id.org/icon/ontology/takesPartIn"
+  � has_label: ["Takes part in"@en]
+  � has_range: [Concept(https://w3id.org/icon/ontology/Invenzione)]
+  � is_asymmetric: False
+  � is_defined_by: [Literal(empty)]
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 14
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #84
+----------------------------------------------------------------------
+Type: Relation
+URI: https://w3id.org/icon/ontology/visuallyRepresents
+----------------------------------------------------------------------
+
+  � has_comment: ["This property is used to link a Visual Subject (the subject visually represented in the specific artwork) with the general subject entity (for instance the controlled vocabulary entry). Example: the image of Hercules in the Farnese Hercules linked to the general Hercules subject expressed in Iconclass (94L) or the URI of the "general" Hercules in the KG. For specific interpretation-level relationships, see and use one of this property's subproperties."@en]
+  � has_domain: [Concept(https://w3id.org/icon/ontology/VisualSubject)]
+  � has_identifier: "https://w3id.org/icon/ontology/visuallyRepresents"
+  � has_label: ["Visually Represents"@en]
+  � has_range: [Concept(https://w3id.org/arco/ontology/context-description/Subject)]
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 13
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #85
+----------------------------------------------------------------------
+Type: Relation
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#includesAgent"
+  � is_asymmetric: False
+  � is_deprecated: False
+  � is_functional: False
+  � is_inverse_functional: False
+  � is_irreflexive: False
+  � is_reflexive: False
+  � is_symmetric: False
+  � is_transitive: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+======================================================================
+EXTRACTING ALL INSTANCES OF CLASS: Collection
+======================================================================
+
+ No instances found for class Collection
+
+
+======================================================================
+EXTRACTING ALL INSTANCES OF CLASS: Model
+======================================================================
+
+Found 7 instance(s)
+
+
+----------------------------------------------------------------------
+INSTANCE #1
+----------------------------------------------------------------------
+Type: Model
+URI: https://w3id.org/icon/ontology/
+----------------------------------------------------------------------
+
+  � has_change_note: ["**Version 2.2.0 Changelog**
+
+Introduction of two new properties:
+
+visually Represents
+recognized Visual Subject
+
+Refer to the classes and properties in protege or in the documentation for more explanations on them"@en]
+  � has_comment: ["The ICON ontology deals with high granularity art interpretation. It was developed by conceptualizing Panofsky's theory of levels of interpretation, therefore artworks can be described according to Pre-iconographical, Iconographical and Iconological information."@en]
+  � has_identifier: "https://w3id.org/icon/ontology/"
+  � has_prior_version: "2.1.0"@en
+  � has_version: [Model(https://w3id.org/icon/ontology/2.2.0/)]
+  � has_version_info: ["2.2.0"@en]
+  � imports: [Model(http://erlangen-crm.org/current/), Model(http://purl.org/emmedi/hico/2020-03-31), Model(http://www.ontologydesignpatterns.org/ont/dul/DUL.owl), Model(http://www.w3.org/2004/02/skos/core), Model(https://www.w3id.org/simulation/ontology/)]
+  � is_backward_compatible_with: ["2.1.0"@en]
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 9
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #2
+----------------------------------------------------------------------
+Type: Model
+URI: https://w3id.org/icon/ontology/2.2.0/
+----------------------------------------------------------------------
+
+  � has_identifier: "https://w3id.org/icon/ontology/2.2.0/"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #3
+----------------------------------------------------------------------
+Type: Model
+URI: http://erlangen-crm.org/current/
+----------------------------------------------------------------------
+
+  � has_identifier: "http://erlangen-crm.org/current/"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #4
+----------------------------------------------------------------------
+Type: Model
+URI: http://purl.org/emmedi/hico/2020-03-31
+----------------------------------------------------------------------
+
+  � has_identifier: "http://purl.org/emmedi/hico/2020-03-31"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #5
+----------------------------------------------------------------------
+Type: Model
+URI: http://www.ontologydesignpatterns.org/ont/dul/DUL.owl
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #6
+----------------------------------------------------------------------
+Type: Model
+URI: http://www.w3.org/2004/02/skos/core
+----------------------------------------------------------------------
+
+  � has_identifier: "http://www.w3.org/2004/02/skos/core"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+INSTANCE #7
+----------------------------------------------------------------------
+Type: Model
+URI: https://www.w3id.org/simulation/ontology/
+----------------------------------------------------------------------
+
+  � has_identifier: "https://www.w3id.org/simulation/ontology/"
+  � is_deprecated: False
+
+----------------------------------------------------------------------
+Total attributes: 2
+----------------------------------------------------------------------
+
+======================================================================
+EXTRACTING ALL INSTANCES OF CLASS: Resource
+======================================================================
+
+ No instances found for class Resource
+

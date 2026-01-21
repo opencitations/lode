@@ -1,0 +1,170 @@
+# reader.py - ORCHESTRATOR GENERICO
+from rdflib import URIRef, RDF, Node, BNode
+from rdflib.namespace import RDF, RDFS, OWL, XSD
+from loader import Loader
+from config_manager import get_configuration
+from models import *
+
+
+class Reader:
+    """
+    Generic RDF Reader/Orchestrator.
+    
+    Responsibilities:
+    - Calls the loader to parse input RDF (via rdflib)
+    - Oreschestrates Python model population phases 
+    - Delegates specific logics for extraction and population to other modules
+    """
+    
+    def __init__(self):
+        self._instance_cache = {}
+        self._logic = None  # Logic specializzata (OWL, SKOS, RDF, RDFS)
+        self._graph = None
+        self._configuration = None
+    
+    def load_instances(self, graph_path: str, read_as: str):
+        """Carica e processa grafo RDF"""
+        # 1. Parse generico
+        loader = Loader(graph_path)
+        self._graph = loader.get_graph()
+        
+        # 2. Seleziona strategia
+        self._configuration = get_configuration(read_as)
+        
+        # 3. Crea Logic specializzata
+        self._logic = self._configuration.create_logic(self._graph, self._instance_cache)
+        
+        # 4. Esecuzione fasi
+        self._extract_instances()
+    
+    def get_instance(self, uri: str, instance_type=None):
+        """Ottiene istanze per URI"""
+        uri_identifier = None
+        
+        for identifier in self._instance_cache.keys():
+            if str(identifier) == uri:
+                uri_identifier = identifier
+                break
+        
+        if uri_identifier is None:
+            return None
+        
+        instances = self._instance_cache[uri_identifier]
+        
+        if instance_type is None:
+            return instances
+        
+        for instance in instances:
+            if isinstance(instance, instance_type):
+                return instance
+        
+        return None
+    
+    def get_instances(self) -> dict:
+        """Raggruppa istanze per tipo"""
+        grouped = {}
+        
+        for uri_identifier, instances in self._instance_cache.items():
+            if isinstance(uri_identifier, str) and uri_identifier.startswith("LITERAL::"):
+                continue
+            
+            instances_list = instances if isinstance(instances, set) else [instances]
+            
+            for instance in instances_list:
+                class_name = instance.__class__.__name__
+                if class_name not in grouped:
+                    grouped[class_name] = []
+                grouped[class_name].append(instance)
+        
+        return grouped
+    
+    def get_triples_for_instance(self, instance):
+        """Ottiene le triple RDF associate a un'istanza Python"""
+        if self._logic and hasattr(self._logic, '_triples_map'):
+            return self._logic._triples_map.get(instance, set())
+        return set()
+
+    def get_all_triples_map(self) -> dict:
+        """Ottiene la mappa completa instance → triple"""
+        if self._logic and hasattr(self._logic, '_triples_map'):
+            return self._logic._triples_map
+        return {}
+    
+    def clear_cache(self):
+        """Pulisce la cache"""
+        self._instance_cache.clear()
+        if self._logic:
+            self._logic.clear_cache()
+    
+    # ==================== ESTRAZIONE (ORCHESTRAZIONE) ====================
+    
+    def _extract_instances(self):
+        """Estrazione in 6 fasi orchestrate"""
+        print("\n" + "="*60)
+        print("ESTRAZIONE INSTANCES")
+        print("="*60)
+        
+        # FASE 0: Pre-crea datatypes (comune a tutti)
+        # self._phase0_create_datatypes()
+        
+       # FASE 1-4: Delegate alla Logic specifica
+        self._logic.phase1_classify_from_predicates()
+        self._logic.phase2_create_from_types()
+        self._logic.phase3_populate_properties()
+        self._logic.phase4_process_group_axioms()
+        
+        # FASE 5: Fallback (comune)
+        self._logic.phase5_fallback()
+        
+        # FASE 6: Statements (solo RDF)
+        self._logic.phase6_create_statements()
+    
+    # def _phase0_create_datatypes(self):
+    #     """Pre-crea tutti i Datatype (comune a tutti i formati)"""
+    #     print("\n--- FASE 0: Datatypes ---")
+        
+    #     created = 0
+        
+    #     # 1. URI XSD
+    #     for s, p, o in self._graph:
+    #         if isinstance(s, URIRef) and str(s).startswith(str(XSD)):
+    #             if s not in self._instance_cache:
+    #                 self._logic.create_empty_instance(s, Datatype)
+    #                 created += 1
+            
+    #         if isinstance(o, URIRef) and str(o).startswith(str(XSD)):
+    #             if o not in self._instance_cache:
+    #                 self._logic.create_empty_instance(o, Datatype)
+    #                 created += 1
+        
+    #     # 2. rdfs:Literal
+    #     if RDFS.Literal not in self._instance_cache:
+    #         self._logic.create_empty_instance(RDFS.Literal, Datatype)
+    #         created += 1
+        
+    #     # 3. BNode Datatypes
+    #     for bnode in self._graph.subjects(RDF.type, RDFS.Datatype):
+    #         if isinstance(bnode, BNode) and bnode not in self._instance_cache:
+    #             self._logic.create_empty_instance(bnode, Datatype)
+    #             created += 1
+        
+    #     print(f"  Creati {created} datatypes")
+    
+    def _phase5_fallback(self):
+        """Fallback per risorse non categorizzate (comune)"""
+        print("\n--- FASE 5: Fallback ---")
+        
+        fallback_class = self._configuration.get_fallback_class()
+        if not fallback_class:
+            print("  Nessun fallback configurato")
+            return
+        
+        all_subjects = set(self._graph.subjects())
+        fallback_count = 0
+        
+        for subj in all_subjects:
+            if subj not in self._instance_cache:
+                self._logic.get_or_create(subj, fallback_class)
+                fallback_count += 1
+        
+        print(f"  Fallback: {fallback_count} risorse -> {fallback_class.__name__}")

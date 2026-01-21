@@ -1,0 +1,187 @@
+name: OWL
+
+# ======================
+# MAPPER
+# ======================
+mapper:
+  # ========== Property characteristics - Differenze da base ==========
+  owl:ObjectProperty:
+    is: class
+    target_class: Relation
+  
+  owl:DatatypeProperty:
+    is: class
+    target_class: Attribute
+  
+  owl:AsymmetricProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_asymmetric: True]
+  
+  owl:SymmetricProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_symmetric: True]
+  
+  owl:InverseFunctionalProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_inverse_functional: True]
+  
+  owl:TransitiveProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_transitive: True]
+  
+  owl:IrreflexiveProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_irreflexive: True]
+  
+  owl:ReflexiveProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_reflexive: True]
+
+  # ========== Individuals - Differenza da base ==========
+  owl:NamedIndividual:
+    is: class
+    target_class: Individual
+  
+  # ========== Concepts - Differenza da base ==========
+  owl:Axiom:
+    is: class
+    target_class: Restriction
+
+  owl:Restriction:
+    is: class
+    target_class: Restriction
+  
+  # ========== Relation - Solo in OWL ==========
+  owl:inverseOf:
+    is: predicate
+    target_classes: [Relation]
+    setters: [set_is_inverse_of: Relation]
+    
+  owl:propertyChainAxiom:
+    is: predicate
+    target_classes: [Relation]
+    handler: handle_property_chain
+
+  rdfs:range:
+    is: predicate
+    target_classes: [Relation]
+    setters: [set_has_range: Concept]
+
+  # ========== TRUTH FUNCTIONS - Con handlers ==========
+  owl:intersectionOf:
+    is: predicate
+    inferred_class: TruthFunction
+    target_classes: [TruthFunction]
+    handler: handle_intersection
+    
+  owl:unionOf:
+    is: predicate
+    inferred_class: TruthFunction
+    target_classes: [TruthFunction]
+    handler: handle_union
+    
+  owl:complementOf:
+    is: predicate
+    inferred_class: TruthFunction
+    target_classes: [TruthFunction]
+    handler: handle_complement
+
+  # ========== VALUE - Con setters ==========
+  owl:hasValue:
+    is: predicate
+    inferred_class: Value
+    target_classes: [Value]
+    setters: [set_applies_on_resource: Resource]
+
+  # ========== ONE OF - Con handler ==========
+  owl:oneOf:
+    is: predicate
+    inferred_class: OneOf
+    target_classes: [OneOf]
+    handler: handle_one_of
+  
+  # ========== QUANTIFIERS - Con handlers ==========
+  owl:someValuesFrom:
+    is: predicate
+    inferred_class: Quantifier
+    target_classes: [Quantifier]
+    handler: handle_quantifier_exist
+    
+  owl:allValuesFrom:
+    is: predicate
+    inferred_class: Quantifier
+    target_classes: [Quantifier]
+    handler: handle_quantifier_all
+  
+  # ========== CARDINALITY - Con handlers ==========
+  owl:cardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_exact
+    
+  owl:minCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_min
+    
+  owl:maxCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_max
+    
+  owl:qualifiedCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_exact_qualified
+    
+  owl:minQualifiedCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_min_qualified
+    
+  owl:maxQualifiedCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_max_qualified
+
+  # ========== Restrictions - Target diverso ==========
+  owl:onProperty:
+    is: predicate
+    target_classes: [Restriction]
+    setters: [set_applies_on_property: Property]
+    
+  owl:onClass:
+    is: predicate
+    target_classes: [Restriction]
+    setters: [set_applies_on_concept: Concept]
+
+  # ========== Individual - Target diverso ==========
+  owl:sameAs:
+    is: predicate
+    target_classes: [Individual]
+    setters: [set_is_same_as: Individual]
+    
+  owl:differentFrom:
+    is: predicate
+    target_classes: [Individual]
+    setters: [set_is_different_from: Individual]
+
+# ======================
+# ENRICHER
+# ======================
+enricher:
+  owl:AllDisjointClasses: process_all_disjoint_classes
+  owl:AllDifferent: process_all_different
+  owl:AllDisjointProperties: process_all_disjoint_properties
