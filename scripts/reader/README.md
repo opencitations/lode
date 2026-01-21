@@ -59,7 +59,7 @@ reader.load_instances(
 instances = reader.get_instance("http://example.org/resource1")
 
 # Get specific type instance for a URI
-from models import Class
+from models import Concept
 
 class_instance = reader.get_instance(
     uri="http://example.org/MyClass",
