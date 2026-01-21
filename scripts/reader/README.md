@@ -155,16 +155,6 @@ python run test/html_generator_v2.py
 
 ```
 
-**Test Structure:**
-```
-test/
-└── html_generator_v2/
-    ├── test_reader.py          # Reader tests
-    ├── test_logic.py           # Logic strategy tests
-    ├── test_config.py          # Configuration tests
-    └── fixtures/               # Test RDF files
-```
-
 ## API Reference
 
 ### `Reader` Class
