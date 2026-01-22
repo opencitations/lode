@@ -708,69 +708,69 @@ def generate_custom_html(ontology_url: str, read_as: str = 'RDF', output_path: s
 
 # ========== TEST CASES ==========
 
-def test_owl():
-    """Test OWL con default domain/range"""
-    print("\n🦉 TEST OWL")
-    generate_custom_html(
-        ontology_url="https://raw.githubusercontent.com/br0ast/ICON/main/Ontology/current/icon.rdf",
-        read_as='OWL',
-        output_path="output/test_owl.html",
-        title="OWL Test - FOAF"
-    )
+# def test_owl():
+#     """Test OWL con default domain/range"""
+#     print("\n🦉 TEST OWL")
+#     generate_custom_html(
+#         ontology_url="https://raw.githubusercontent.com/br0ast/ICON/main/Ontology/current/icon.rdf",
+#         read_as='OWL',
+#         output_path="output/test_owl.html",
+#         title="OWL Test - FOAF"
+#     )
 
 
-def test_skos():
-    """Test SKOS senza default"""
-    print("\n📚 TEST SKOS")
-    generate_custom_html(
-        ontology_url="https://raw.githubusercontent.com/br0ast/ICON/main/Ontology/current/icon.rdf",
-        read_as='SKOS',
-        output_path="output/test_skos.html",
-        title="SKOS Test - ICON"
-    )
+# def test_skos():
+#     """Test SKOS senza default"""
+#     print("\n📚 TEST SKOS")
+#     generate_custom_html(
+#         ontology_url="https://raw.githubusercontent.com/br0ast/ICON/main/Ontology/current/icon.rdf",
+#         read_as='SKOS',
+#         output_path="output/test_skos.html",
+#         title="SKOS Test - ICON"
+#     )
 
 
-def test_rdf():
-    """Test RDF puro con Statement"""
-    print("\n📄 TEST RDF")
-    generate_custom_html(
-        ontology_url="https://raw.githubusercontent.com/br0ast/ICON/main/Ontology/current/icon.rdf",
-        read_as='RDF',
-        output_path="output/test_rdf.html",
-        title="RDF Test - Core"
-    )
+# def test_rdf():
+#     """Test RDF puro con Statement"""
+#     print("\n📄 TEST RDF")
+#     generate_custom_html(
+#         ontology_url="https://raw.githubusercontent.com/br0ast/ICON/main/Ontology/current/icon.rdf",
+#         read_as='RDF',
+#         output_path="output/test_rdf.html",
+#         title="RDF Test - Core"
+#     )
 
 
-def test_rdfs():
-    """Test RDFS"""
-    print("\n📋 TEST RDFS")
-    generate_custom_html(
-        ontology_url="http://www.w3.org/2000/01/rdf-schema#",
-        read_as='RDF',
-        output_path="output/test_rdfs.html",
-        title="RDFS Test - Schema"
-    )
+# def test_rdfs():
+#     """Test RDFS"""
+#     print("\n📋 TEST RDFS")
+#     generate_custom_html(
+#         ontology_url="http://www.w3.org/2000/01/rdf-schema#",
+#         read_as='RDF',
+#         output_path="output/test_rdfs.html",
+#         title="RDFS Test - Schema"
+#     )
 
 
-def test_skos_to_skos():
-    """Test RDFS"""
-    print("\n📋 TEST SKOS TO SKOS")
-    generate_custom_html(
-        ontology_url="https://raw.githubusercontent.com/WenDAng-project/thesaurus/refs/heads/main/writeThesaurus_v.1.0.ttl",
-        read_as='SKOS',
-        output_path="output/test_skos_to_skos.html",
-        title="Weng Dang Skos Test to SKOS"
-    )
+# def test_skos_to_skos():
+#     """Test RDFS"""
+#     print("\n📋 TEST SKOS TO SKOS")
+#     generate_custom_html(
+#         ontology_url="https://raw.githubusercontent.com/WenDAng-project/thesaurus/refs/heads/main/writeThesaurus_v.1.0.ttl",
+#         read_as='SKOS',
+#         output_path="output/test_skos_to_skos.html",
+#         title="Weng Dang Skos Test to SKOS"
+#     )
 
-def test_skos_to_rdf():
-    """Test RDFS"""
-    print("\n📋 TEST SKOS TO RDF")
-    generate_custom_html(
-        ontology_url="https://raw.githubusercontent.com/WenDAng-project/thesaurus/refs/heads/main/writeThesaurus_v.1.0.ttl",
-        read_as='RDF',
-        output_path="output/test_skos_to_rdf.html",
-        title="Weng Dang Skos Test to RDF"
-    )
+# def test_skos_to_rdf():
+#     """Test RDFS"""
+#     print("\n📋 TEST SKOS TO RDF")
+#     generate_custom_html(
+#         ontology_url="https://raw.githubusercontent.com/WenDAng-project/thesaurus/refs/heads/main/writeThesaurus_v.1.0.ttl",
+#         read_as='RDF',
+#         output_path="output/test_skos_to_rdf.html",
+#         title="Weng Dang Skos Test to RDF"
+#     )
 
 def test_pizza_owl_to_owl():
     """TEST PIZZA OWL TO OWL"""
@@ -802,45 +802,35 @@ def test_icon_owl_to_rdf():
         title="ICON ontology OWL to RDF"
     )
 
-def test_space_owl_to_owl():
-    """TEST SPACE OWL TO OWL"""
-    print("\n📋 TEST ICON OWL TO OWL")
-    generate_custom_html(
-        ontology_url="C:\\Users\\valep\\Documents\\GitHub\\lode2\\reader2\\test\\semantic_artefacts\\ontology_v2.0-rc2.owl", 
-        read_as='OWL',
-        output_path="output/test_space_owl_to_owl.html",
-        title="SPACE ontology OWL to OWL"
-    )
+# def test_owl_to_rdf():
+#     """Test RDFS"""
+#     print("\n📋 TEST OWL TO OWL")
+#     generate_custom_html(
+#         ontology_url="https://protege.stanford.edu/ontologies/pizza/pizza.owl",
+#         read_as='RDF',
+#         output_path="output/test_owl_to_rdf.html",
+#         title="Pizza ontology OWL to RDF"
+#     )
 
-def test_owl_to_rdf():
-    """Test RDFS"""
-    print("\n📋 TEST OWL TO OWL")
-    generate_custom_html(
-        ontology_url="https://protege.stanford.edu/ontologies/pizza/pizza.owl",
-        read_as='RDF',
-        output_path="output/test_owl_to_rdf.html",
-        title="Pizza ontology OWL to RDF"
-    )
+# def test_owl_to_rdfs():
+#     """Test RDFS"""
+#     print("\n📋 TEST OWL TO RDFS")
+#     generate_custom_html(
+#         ontology_url="https://protege.stanford.edu/ontologies/pizza/pizza.owl",
+#         read_as='RDF',
+#         output_path="output/test_owl_to_rdfs.html",
+#         title="Pizza ontology OWL to RDFS"
+#     )
 
-def test_owl_to_rdfs():
-    """Test RDFS"""
-    print("\n📋 TEST OWL TO RDFS")
-    generate_custom_html(
-        ontology_url="https://protege.stanford.edu/ontologies/pizza/pizza.owl",
-        read_as='RDF',
-        output_path="output/test_owl_to_rdfs.html",
-        title="Pizza ontology OWL to RDFS"
-    )
-
-def test_owl_to_skos():
-    """Test RDFS"""
-    print("\n📋 TEST OWL TO OWL")
-    generate_custom_html(
-        ontology_url="https://protege.stanford.edu/ontologies/pizza/pizza.owl",
-        read_as='SKOS',
-        output_path="output/test_owl_to_skos.html",
-        title="Pizza ontology OWL to SKOS"
-    )
+# def test_owl_to_skos():
+#     """Test RDFS"""
+#     print("\n📋 TEST OWL TO OWL")
+#     generate_custom_html(
+#         ontology_url="https://protege.stanford.edu/ontologies/pizza/pizza.owl",
+#         read_as='SKOS',
+#         output_path="output/test_owl_to_skos.html",
+#         title="Pizza ontology OWL to SKOS"
+#     )
 
 if __name__ == "__main__":
     import argparse
@@ -867,9 +857,5 @@ if __name__ == "__main__":
             raise Exception(e)
         try:
             test_pizza_owl_to_owl()
-        except Exception as e:
-            raise Exception(e)
-        try:
-            test_space_owl_to_owl()
         except Exception as e:
             raise Exception(e)
