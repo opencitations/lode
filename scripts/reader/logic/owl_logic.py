@@ -166,39 +166,87 @@ class OwlLogic(BaseLogic):
         return python_class
 
     def _apply_owl_defaults(self, property_instance):
-        """Applica owl:Thing se domain/range mancano"""
+        """Applica owl:Thing se domain/range mancano risalendo la gerarchia"""
         
         owl_thing = None  # Lazy creation
         
-        # Check domain
-        needs_domain = True
-        try:
-            domain = property_instance.get_has_domain()
-            # Se ritorna qualcosa di non vuoto, ha già domain
-            if domain and (isinstance(domain, list) and len(domain) > 0 or not isinstance(domain, list)):
-                needs_domain = False
-        except:
-            pass
+        # Check domain (con risalita gerarchia)
+        inherited_domain = self._get_inherited_domain(property_instance)
+        if not inherited_domain:
+            owl_thing = self.get_or_create(OWL.Thing, Concept)
+            property_instance.set_has_domain(owl_thing)
+            print(property_instance, property_instance.get_has_domain())
         
-        if needs_domain and hasattr(property_instance, 'set_has_domain'):
-            if owl_thing is None:
-                owl_thing = self.get_or_create(OWL.Thing, Concept)
-            property_instance.set_has_domain([owl_thing])
+        # Check range (con risalita gerarchia)
+        inherited_range = self._get_inherited_range(property_instance)
+        if not inherited_range:
+            owl_thing = self.get_or_create(OWL.Thing, Concept)
+            property_instance.set_has_range(owl_thing)
+            print(property_instance, property_instance.get_has_range())
+
+    def _get_inherited_domain(self, property_instance):
+        """Risale rdfs:subPropertyOf per trovare domain"""
+        visited = set()
+        queue = [property_instance]
         
-        # Check range
-        needs_range = True
-        try:
-            range_val = property_instance.get_has_range()
-            # Se ritorna qualcosa di non vuoto, ha già range
-            if range_val and (isinstance(range_val, list) and len(range_val) > 0 or not isinstance(range_val, list)):
-                needs_range = False
-        except:
-            pass
+        while queue:
+            current = queue.pop(0)
+            if id(current) in visited:
+                continue
+            visited.add(id(current))
+            
+            # Check domain diretto
+            try:
+                domain = current.get_has_domain()
+                if domain and (isinstance(domain, list) and len(domain) > 0 or domain):
+                    return domain
+            except:
+                pass
+            
+            # Risali ai super-properties
+            try:
+                supers = current.get_subproperty_of()
+                if supers:
+                    if not isinstance(supers, list):
+                        supers = [supers]
+                    queue.extend(supers)
+            except:
+                pass
         
-        if needs_range and hasattr(property_instance, 'set_has_range'):
-            if owl_thing is None:
-                owl_thing = self.get_or_create(OWL.Thing, Concept)
-            property_instance.set_has_range([owl_thing])
+        return None
+
+    def _get_inherited_range(self, property_instance):
+        """Risale rdfs:subPropertyOf per trovare range"""
+        visited = set()
+        queue = [property_instance]
+        
+        while queue:
+            current = queue.pop(0)
+            if id(current) in visited:
+                continue
+            visited.add(id(current))
+            
+            # Check range diretto
+            try:
+                range_val = current.get_has_range()
+                if range_val and (isinstance(range_val, list) and len(range_val) > 0 or range_val):
+                    return range_val
+            except:
+                pass
+            
+            # Risali ai super-properties
+            try:
+                supers = current.get_subproperty_of()
+                if supers:
+                    if not isinstance(supers, list):
+                        supers = [supers]
+                    queue.extend(supers)
+            except:
+                pass
+        
+        return None
+
+
 
     def phase4_process_group_axioms(self):
         """Processa assiomi OWL (equivalentClass, etc.)"""
