@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from rdflib import URIRef, Graph, Node
 from models import *
 
-
 class ConfigManager(ABC):
     """Strategia basata su config YAML unico"""
     
@@ -163,7 +162,7 @@ class ConfigManager(ABC):
 
 class OwlConfigManager(ConfigManager):
     def create_logic(self, graph: Graph, cache: dict):
-        from logic import OwlLogic
+        from .logic import OwlLogic
         return OwlLogic(graph, cache, self)
 
 
@@ -175,13 +174,13 @@ class OwlConfigManager(ConfigManager):
 
 class RdfConfigManager(ConfigManager):
     def create_logic(self, graph: Graph, cache: dict):
-        from logic import RdfLogic
+        from .logic import RdfLogic
         return RdfLogic(graph, cache, self)
 
 
 class SkosConfigManager(ConfigManager):
     def create_logic(self, graph: Graph, cache: dict):
-        from logic import SkosLogic
+        from .logic import SkosLogic
         return SkosLogic(graph, cache, self)
 
 
