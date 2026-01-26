@@ -1,0 +1,241 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <title>LODE 2.0</title>
+    <style>
+    </style>
+</head>
+<body>
+    <div class="container main-container py-5">
+        <div class="mb-5">
+            <h1 class="display-4 fw-bold text-primary mb-2">LODE 2.0</h1>
+            <p class="subtitle text-muted"></p>
+        </div>
+        
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form id="extractForm">
+                    <!-- Read As Format -->
+                    <div class="mb-4">
+                        <label for="readAs" class="form-label fw-semibold">
+                            Format <span class="text-danger">*</span>
+                        </label>
+                        <select id="readAs" name="read_as" class="form-select" required>
+                            {% for format in formats %}
+                            <option value="{{ format }}">{{ format.upper() }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose how to interpret the Semantic Artefact</div>
+                    </div>
+                    
+                    <!-- Resource URI (optional) -->
+                    <div class="mb-4">
+                        <label for="resource" class="form-label fw-semibold">
+                            Resource URI <span class="text-muted">(optional)</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="resource" 
+                            name="resource" 
+                            class="form-control"
+                            placeholder="http://example.org/Resource"
+                        >
+                        <div class="form-text">Leave empty to extract all resources</div>
+                    </div>
+                    
+                    <!-- Semantic Artefact Source -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            Semantic Artefact <span class="text-danger">*</span>
+                        </label>
+                        <div class="d-flex gap-4 mb-3">
+                            <div class="form-check">
+                                <input 
+                                    class="form-check-input" 
+                                    type="radio" 
+                                    id="sourceUrl" 
+                                    name="source" 
+                                    value="url" 
+                                    checked
+                                >
+                                <label class="form-check-label" for="sourceUrl">
+                                    URL
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input 
+                                    class="form-check-input" 
+                                    type="radio" 
+                                    id="sourceFile" 
+                                    name="source" 
+                                    value="file"
+                                >
+                                <label class="form-check-label" for="sourceFile">
+                                    File Upload
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="urlSection" class="input-section">
+                            <input 
+                                type="text" 
+                                id="semanticArtefactUrl" 
+                                name="semantic_artefact_url" 
+                                class="form-control"
+                                placeholder="http://example.org/semantic_artefact.owl"
+                            >
+                        </div>
+                        
+                        <div id="fileSection" class="input-section d-none">
+                            <input 
+                                type="file" 
+                                id="semanticArtefactFile" 
+                                name="semantic_artefact_file"
+                                class="form-control"
+                                accept=".rdf,.owl,.ttl,.n3,.nt,.xml"
+                            >
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
+                            Generate documentation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="result" class="d-none mt-4"></div>
+    </div>
+    
+    <script>
+        // Toggle URL/File input
+        const sourceRadios = document.querySelectorAll('input[name="source"]');
+        const urlSection = document.getElementById('urlSection');
+        const fileSection = document.getElementById('fileSection');
+        const urlInput = document.getElementById('semanticArtefactUrl');
+        const fileInput = document.getElementById('semanticArtefactFile');
+
+        sourceRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'url') {
+                    urlSection.classList.remove('d-none');
+                    fileSection.classList.add('d-none');
+                    fileInput.value = '';
+                } else {
+                    urlSection.classList.add('d-none');
+                    fileSection.classList.remove('d-none');
+                    urlInput.value = '';
+                }
+            });
+        });
+                
+        // Form submission
+        const form = document.getElementById('extractForm');
+        const resultDiv = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const sourceType = document.querySelector('input[name="source"]:checked').value;
+            
+            // Se URL, usa GET e reindirizza
+            if (sourceType === 'url') {
+                const url = urlInput.value.trim();
+                if (!url) {
+                    showError('Please provide a URL');
+                    return;
+                }
+                
+                const readAs = document.getElementById('readAs').value;
+                const resource = document.getElementById('resource').value.trim();
+                
+                // Costruisci URL GET
+                const params = new URLSearchParams({
+                    read_as: readAs,
+                    semantic_artefact_url: url
+                });
+                
+                if (resource) {
+                    params.append('resource', resource);
+                }
+                
+                // Reindirizza alla risposta JSON
+                window.location.href = `/api/extract?${params.toString()}`;
+                return;
+            }
+            
+            // Se FILE, usa POST e poi reindirizza al blob
+            const formData = new FormData();
+            formData.append('read_as', document.getElementById('readAs').value);
+            
+            const resource = document.getElementById('resource').value.trim();
+            if (resource) {
+                formData.append('resource', resource);
+            }
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                showError('Please select a file');
+                return;
+            }
+            formData.append('semantic_artefact_file', file);
+            
+            // Show loading
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing semantic artefact...</p>
+                </div>
+            `;
+            resultDiv.classList.remove('hidden');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/extract', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    showError(data.detail || 'Error processing request');
+                    return;
+                }
+                
+                // Ottieni il JSON e crea un blob
+                const data = await response.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Reindirizza al blob
+                window.location.href = blobUrl;
+                
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                resultDiv.classList.add('hidden');
+            }
+        });
+        
+        function showError(message) {
+            resultDiv.className = 'result error';
+            resultDiv.innerHTML = `
+                <h3>✗ Error</h3>
+                <p>${message}</p>
+            `;
+            resultDiv.classList.remove('hidden');
+            submitBtn.disabled = false;
+        }
+    </script>
+</body>
+</html>
