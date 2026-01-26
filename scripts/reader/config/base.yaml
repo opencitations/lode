@@ -116,8 +116,9 @@ mapper:
     
   rdfs:range:
     is: predicate
-    target_classes: [Relation, Property, Attribute]
-    handler: handle_range
+    target_classes: [Property]
+    # handler: handle_range
+    setters: [set_has_range: Resource]
     
   rdfs:subPropertyOf:
     is: predicate
