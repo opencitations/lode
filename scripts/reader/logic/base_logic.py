@@ -6,9 +6,8 @@ from rdflib.collection import Collection as RDFLibCollection
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from models import *
 
+from models import *
 
 # ========== ALLOWED CLASSES PER FORMATO ==========
 
@@ -458,7 +457,7 @@ class BaseLogic(ABC):
         
         self._statements_created.add(stmt_key)
 
-
+    # call by the config file
     # def handle_range(self, instance, uri, predicate, obj, setter=None):
     #     """
     #     Handler intelligente per rdfs:range:
