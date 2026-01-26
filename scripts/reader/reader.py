@@ -1,10 +1,9 @@
 # reader.py - ORCHESTRATOR GENERICO
 from rdflib import URIRef, RDF, Node, BNode
 from rdflib.namespace import RDF, RDFS, OWL, XSD
-from loader import Loader
-from config_manager import get_configuration
+from .loader import Loader
+from .config_manager import get_configuration
 from models import *
-
 
 class Reader:
     """
@@ -89,6 +88,48 @@ class Reader:
         if self._logic and hasattr(self._logic, '_triples_map'):
             return self._logic._triples_map
         return {}
+    
+     
+    # function reused by the api to push instances
+    def to_dict(self, instance) -> dict:
+        """Serializza un'istanza Python in dict JSON, includendo le triple RDF"""
+        result = {
+            "instance": str(instance),
+            "type": type(instance).__name__,
+            "uri": str(instance.has_identifier) if instance.has_identifier else None,
+            "properties": {},
+            "rdf_triples": []
+        }
+        
+        # Serializza le proprietà dell'istanza
+        for attr_name in instance.__dict__.keys():
+            value = getattr(instance, attr_name)
+            # removes empty values from the properties
+            if value is not None and not (isinstance(value, (list, set)) and not value):
+                result["properties"][attr_name] = str(value)
+        
+        # Aggiungi le triple RDF associate
+        triples = self.get_triples_for_instance(instance)
+        for s, p, o in triples:
+            triple_dict = {
+                "subject": str(s),
+                "predicate": str(p),
+                "object": str(o)
+            }
+            result["rdf_triples"].append(triple_dict)
+        
+        return result
+
+    def _serialize_value(self, value):
+        """Helper per serializzare diversi tipi di valori"""
+        if isinstance(value, (str, int, float, bool)):
+            return value
+        elif isinstance(value, (list, set)):
+            return [self._serialize_value(v) for v in value]
+        elif hasattr(value, 'uri'):
+            return str(value.uri)
+        else:
+            return str(value)
     
     def clear_cache(self):
         """Pulisce la cache"""
