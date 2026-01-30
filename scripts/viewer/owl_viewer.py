@@ -1,6 +1,6 @@
-# owlViewer.py
+# viewer/owl_viewer.py
 from viewer.base_viewer import BaseViewer
 
-class OWLViewer(BaseViewer):
-    """OWL Viewer - TO BE IMPLEMENTED AND CUSTOMISED """
+class OwlViewer(BaseViewer):
+    """Viewer OWL"""
     pass
