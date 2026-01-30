@@ -15,29 +15,7 @@
                 <h4>Error</h4>
                 <p>{{ error }}</p>
             </div>
-
-            {% elif single_resource %}
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Resource Details</h5>
-                    <table class="table">
-                        <tr>
-                            <th>Type</th>
-                            <td><span class="badge bg-secondary">{{ entity.type }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>URI</th>
-                            <td><code>{{ entity.uri }}</code></td>
-                        </tr>
-                        <tr>
-                            <th>Label</th>
-                            <td>{{ entity.label }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-
-            {% else %}
+        {% else %}
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-3">Entities ({{ entities|length }})</h5>
