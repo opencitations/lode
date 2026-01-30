@@ -4,9 +4,6 @@ from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
-import sys
-import os
-
 from models import *
 
 # ========== ALLOWED CLASSES PER FORMATO ==========

@@ -1,7 +1,7 @@
 # viewer/__init__.py
 
-from .base_viewer import BaseViewer
-from .owl_viewer import OWLViewer
+from viewer.base_viewer import BaseViewer
+from viewer.owl_viewer import OWLViewer
 
 __all__ = [
     'BaseViewer',

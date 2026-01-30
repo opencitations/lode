@@ -15,7 +15,6 @@ import os
 
 # Internal modules
 from reader.reader import Reader
-from viewer import get_viewer  
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
 templates = Jinja2Templates(directory="templates")
@@ -25,15 +24,6 @@ class ReadAsFormat(str, Enum):
     owl = "owl"
     rdf = "rdf"
     skos = "skos"
-
-
-# api.py - RIMUOVI gli endpoint extract, AGGIUNGI POST per view con file
-
-# ELIMINA QUESTI:
-# @app.post("/api/extract")
-# @app.get("/api/extract")
-
-# SOSTITUISCI CON:
 
 # api.py
 
@@ -50,7 +40,7 @@ async def view_semantic_artefact_get(
         reader.load_instances(semantic_artefact_url, read_as.value)
         
         viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource)  # PASSA resource
+        data = viewer.get_view_data(resource_uri=resource) 
         
         return templates.TemplateResponse("viewer.html", {
             "request": request,
@@ -67,7 +57,7 @@ async def view_semantic_artefact_post(
     request: Request,
     read_as: ReadAsFormat = Form(...),
     semantic_artefact_file: UploadFile = File(...),
-    resource: Optional[str] = Form(None)  # AGGIUNGI QUESTO
+    resource: Optional[str] = Form(None)  
 ):
     """Visualizza semantic artefact da file."""
     temp_file_path = None
@@ -82,7 +72,7 @@ async def view_semantic_artefact_post(
         reader.load_instances(temp_file_path, read_as.value)
         
         viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource)  # PASSA resource
+        data = viewer.get_view_data(resource_uri=resource) 
         
         return templates.TemplateResponse("viewer.html", {
             "request": request,

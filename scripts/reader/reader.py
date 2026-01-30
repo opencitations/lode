@@ -1,8 +1,6 @@
 # reader.py - ORCHESTRATOR GENERICO
-from rdflib import URIRef, RDF, Node, BNode
-from rdflib.namespace import RDF, RDFS, OWL, XSD
-from .loader import Loader
-from .config_manager import get_configuration
+from reader.loader import Loader
+from reader.config_manager import get_configuration
 from models import *
 
 class Reader:

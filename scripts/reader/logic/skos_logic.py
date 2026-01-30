@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from models import *
-from .base_logic import BaseLogic, ALLOWED_CLASSES
+from reader.logic.base_logic import BaseLogic, ALLOWED_CLASSES
 
 class SkosLogic(BaseLogic):
     """
