@@ -130,6 +130,13 @@ class Reader:
             return str(value.uri)
         else:
             return str(value)
+        
+    def get_viewer(self):
+        """Ottiene il viewer appropriato per il formato corrente."""
+        if not self._configuration:
+            raise ValueError("No configuration loaded. Call load_instances() first.")
+        
+        return self._configuration.create_viewer(self)
     
     def clear_cache(self):
         """Pulisce la cache"""

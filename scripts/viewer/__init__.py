@@ -1,4 +1,25 @@
-# viewer/owlViewer.py
+# viewer/__init__.py
 
-class OWLViewer():
-    pass
+from .base_viewer import BaseViewer
+from .owl_viewer import OWLViewer
+
+__all__ = [
+    'BaseViewer',
+    'OWLViewer'
+]
+
+def get_viewer(read_as: str, reader):
+    """
+    Factory function per creare il viewer appropriato.
+    
+    Args:
+        read_as: Formato ('owl', 'rdf', 'skos')
+        reader: Istanza di Reader già popolata
+        
+    Returns:
+        Istanza del viewer appropriato
+    """
+    if read_as.lower() == 'owl':
+        return OWLViewer(reader)
+    # To do : add RDFViewer, SKOSViewer
+    return BaseViewer(reader)

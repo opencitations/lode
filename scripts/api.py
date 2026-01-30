@@ -12,7 +12,10 @@ from enum import Enum
 from typing import Optional
 import tempfile
 import os
+
+# Internal modules
 from reader.reader import Reader
+from viewer import get_viewer  
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
 templates = Jinja2Templates(directory="templates")
@@ -23,215 +26,76 @@ class ReadAsFormat(str, Enum):
     rdf = "rdf"
     skos = "skos"
 
-@app.post("/api/extract")
-async def extract_resource(
-    read_as: ReadAsFormat = Form(..., description="Format to interpret the RDF graph"),
-    resource: Optional[str] = Form(None, description="URI of the resource to extract (optional, if not provided extracts all)"),
-    semantic_artefact_url: Optional[str] = Form(None, description="URI or URL of the semantic artefact"),
-    semantic_artefact_file: Optional[UploadFile] = File(None, description="RDF file to upload")
-):
-    """
-    Extract a single resource or all resources from a semantic artefact.
-    
-    **Parameters:**
-    - **read_as** (mandatory): Format interpretation (owl, rdf-rdfs, skos)
-    - **resource** (optional): URI of the resource to extract. If not provided, extracts all resources
-    - **semantic_artefact**: Either semantic_artefact_url OR semantic_artefact_file (mandatory)
-    
-    **Example extracting single resource using URL:**
-```
-    curl -X POST "http://localhost:8000/api/extract" \
-         -F "read_as=owl" \
-         -F "resource=http://example.org/MyClass" \
-         -F "semantic_artefact_url=http://example.org/ontology.owl"
-```
-    
-    **Example extracting all resources using file:**
-```
-    curl -X POST "http://localhost:8000/api/extract" \
-         -F "read_as=owl" \
-         -F "semantic_artefact_file=@ontology.owl"
-```
-    """
-    
-    # Validazione: almeno uno dei due semantic_artefact
-    if not semantic_artefact_url and not semantic_artefact_file:
-        raise HTTPException(
-            status_code=400,
-            detail="Either 'semantic_artefact_url' or 'semantic_artefact_file' must be provided"
-        )
-    
-    if semantic_artefact_url and semantic_artefact_file:
-        raise HTTPException(
-            status_code=400,
-            detail="Provide only ONE of 'semantic_artefact_url' or 'semantic_artefact_file'"
-        )
-    
-    # Validazione URI se resource è fornito
-    if resource and not resource.startswith(('http://', 'https://', 'urn:')):
-        raise HTTPException(
-            status_code=400,
-            detail=f"'resource' must be a valid URI (starts with http://, https://, or urn:)"
-        )
-    
-    temp_file_path = None
-    
-    try:
-        # Gestione semantic_artefact
-        if semantic_artefact_file:
-            # Salva file temporaneo
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".rdf") as tmp:
-                content = await semantic_artefact_file.read()
-                tmp.write(content)
-                temp_file_path = tmp.name
-            
-            graph_source = temp_file_path
-        else:
-            # Usa URL direttamente
-            if not semantic_artefact_url.startswith(('http://', 'https://', 'file://')):
-                raise HTTPException(
-                    status_code=400,
-                    detail="'semantic_artefact_url' must be a valid URI/URL"
-                )
-            graph_source = semantic_artefact_url
-        
-        # Carica grafo
-        reader = Reader()
-        reader.load_instances(graph_source, read_as.value)
-        
-        # Se resource non è fornito, estrai tutto
-        if not resource:
-            # get_instances() restituisce un dict: {class_name: [instance1, instance2, ...]}
-            grouped_instances = reader.get_instances()
-            
-            all_instances = []
-            for class_name, instances_list in grouped_instances.items():
-                for instance in instances_list:
-                    all_instances.append(reader.to_dict(instance))
-            
-            result = {
-                "semantic_artefact": graph_source if semantic_artefact_url else "uploaded_file",
-                "read_as": read_as.value,
-                "total_resources": len(all_instances),
-                "instances_by_type": {
-                    class_name: len(instances) 
-                    for class_name, instances in grouped_instances.items()
-                },
-                "instances": all_instances
-            }
-            return JSONResponse(content=result)
-        
-        # Altrimenti estrai risorsa specifica
-        instance = reader.get_instance(resource)
-        
-        if instance is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Resource '{resource}' not found in the semantic artefact"
-            )
-        
-        # Se instance è un set, prendi tutte le istanze
-        if isinstance(instance, set):
-            result = {
-                "resource_uri": resource,
-                "instances": [reader.to_dict(inst) for inst in instance]
-            }
-        else:
-            result = {
-                "resource_uri": resource,
-                "instance": reader.to_dict(instance)
-            }
-        
-        return JSONResponse(content=result)
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing semantic artefact: {str(e)}"
-        )
-    
-    finally:
-        # Cleanup
-        if temp_file_path and os.path.exists(temp_file_path):
-            os.unlink(temp_file_path)
 
-@app.get("/api/extract")
-async def extract_resource_get(
+# api.py - RIMUOVI gli endpoint extract, AGGIUNGI POST per view con file
+
+# ELIMINA QUESTI:
+# @app.post("/api/extract")
+# @app.get("/api/extract")
+
+# SOSTITUISCI CON:
+
+# api.py
+
+@app.get("/api/view", response_class=HTMLResponse)
+async def view_semantic_artefact_get(
+    request: Request,
     read_as: ReadAsFormat,
     semantic_artefact_url: str,
-    resource: Optional[str] = None
+    resource: Optional[str] = None  # AGGIUNGI QUESTO
 ):
-    """Versione GET - solo per URL, no file upload"""
-    
-    # Validazione URI se resource è fornito
-    if resource and not resource.startswith(('http://', 'https://', 'urn:')):
-        raise HTTPException(
-            status_code=400,
-            detail=f"'resource' must be a valid URI"
-        )
-    
-    if not semantic_artefact_url.startswith(('http://', 'https://', 'file://')):
-        raise HTTPException(
-            status_code=400,
-            detail="'semantic_artefact_url' must be a valid URI/URL"
-        )
-    
+    """Visualizza semantic artefact da URL."""
     try:
         reader = Reader()
         reader.load_instances(semantic_artefact_url, read_as.value)
         
-        # Se resource non è fornito, estrai tutto
-        if not resource:
-            grouped_instances = reader.get_instances()
-            
-            all_instances = []
-            for class_name, instances_list in grouped_instances.items():
-                for instance in instances_list:
-                    all_instances.append(reader.to_dict(instance))
-            
-            result = {
-                "semantic_artefact": semantic_artefact_url,
-                "read_as": read_as.value,
-                "total_resources": len(all_instances),
-                "instances_by_type": {
-                    class_name: len(instances) 
-                    for class_name, instances in grouped_instances.items()
-                },
-                "instances": all_instances
-            }
-            return JSONResponse(content=result)
+        viewer = reader.get_viewer()
+        data = viewer.get_view_data(resource_uri=resource)  # PASSA resource
         
-        # Altrimenti estrai risorsa specifica
-        instance = reader.get_instance(resource)
-        
-        if instance is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Resource '{resource}' not found"
-            )
-        
-        if isinstance(instance, set):
-            result = {
-                "resource_uri": resource,
-                "instances": [reader.to_dict(inst) for inst in instance]
-            }
-        else:
-            result = {
-                "resource_uri": resource,
-                "instance": reader.to_dict(instance)
-            }
-        
-        return JSONResponse(content=result)
-    
-    except HTTPException:
-        raise
+        return templates.TemplateResponse("viewer.html", {
+            "request": request,
+            **data
+        })
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error: {str(e)}"
-        )
+        return templates.TemplateResponse("viewer.html", {
+            "request": request,
+            "error": str(e)
+        })
+
+@app.post("/api/view", response_class=HTMLResponse)
+async def view_semantic_artefact_post(
+    request: Request,
+    read_as: ReadAsFormat = Form(...),
+    semantic_artefact_file: UploadFile = File(...),
+    resource: Optional[str] = Form(None)  # AGGIUNGI QUESTO
+):
+    """Visualizza semantic artefact da file."""
+    temp_file_path = None
+    
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".rdf") as tmp:
+            content = await semantic_artefact_file.read()
+            tmp.write(content)
+            temp_file_path = tmp.name
+        
+        reader = Reader()
+        reader.load_instances(temp_file_path, read_as.value)
+        
+        viewer = reader.get_viewer()
+        data = viewer.get_view_data(resource_uri=resource)  # PASSA resource
+        
+        return templates.TemplateResponse("viewer.html", {
+            "request": request,
+            **data
+        })
+    except Exception as e:
+        return templates.TemplateResponse("viewer.html", {
+            "request": request,
+            "error": str(e)
+        })
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
 
 @app.get("/api/info")
 async def root():
@@ -239,9 +103,11 @@ async def root():
         "message": "LODE 2.0 API",
         "version": "1.0.0",
         "endpoints": {
-            "extract": "/api/extract [GET, POST]"
+            "extract": "/api/extract [GET, POST] - Extract resources as JSON",
+            "view": "/api/view [GET] - View resources as HTML"
         }
     }
+
 
 # Nuova route per l'interfaccia web
 @app.get("/", response_class=HTMLResponse)
@@ -252,9 +118,11 @@ async def input_web_interface(request: Request):
         "formats": [format.value for format in ReadAsFormat]
     })
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
 
 if __name__ == "__main__":
     import uvicorn

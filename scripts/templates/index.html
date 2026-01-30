@@ -140,13 +140,13 @@
         const form = document.getElementById('extractForm');
         const resultDiv = document.getElementById('result');
         const submitBtn = document.getElementById('submitBtn');
-        
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const sourceType = document.querySelector('input[name="source"]:checked').value;
             
-            // Se URL, usa GET e reindirizza
+            // URL → GET
             if (sourceType === 'url') {
                 const url = urlInput.value.trim();
                 if (!url) {
@@ -155,29 +155,27 @@
                 }
                 
                 const readAs = document.getElementById('readAs').value;
-                const resource = document.getElementById('resource').value.trim();
+                const resource = document.getElementById('resource').value.trim(); // AGGIUNGI
                 
-                // Costruisci URL GET
                 const params = new URLSearchParams({
                     read_as: readAs,
                     semantic_artefact_url: url
                 });
                 
-                if (resource) {
+                if (resource) {  // AGGIUNGI
                     params.append('resource', resource);
                 }
                 
-                // Reindirizza alla risposta JSON
-                window.location.href = `/api/extract?${params.toString()}`;
+                window.location.href = `/api/view?${params.toString()}`;
                 return;
             }
             
-            // Se FILE, usa POST e poi reindirizza al blob
+            // FILE → POST
             const formData = new FormData();
             formData.append('read_as', document.getElementById('readAs').value);
             
-            const resource = document.getElementById('resource').value.trim();
-            if (resource) {
+            const resource = document.getElementById('resource').value.trim(); // AGGIUNGI
+            if (resource) {  // AGGIUNGI
                 formData.append('resource', resource);
             }
             
@@ -188,54 +186,25 @@
             }
             formData.append('semantic_artefact_file', file);
             
-            // Show loading
-            resultDiv.className = 'result';
-            resultDiv.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Processing semantic artefact...</p>
-                </div>
-            `;
-            resultDiv.classList.remove('hidden');
             submitBtn.disabled = true;
             
             try {
-                const response = await fetch('/api/extract', {
+                const response = await fetch('/api/view', {
                     method: 'POST',
                     body: formData
                 });
                 
-                if (!response.ok) {
-                    const data = await response.json();
-                    showError(data.detail || 'Error processing request');
-                    return;
-                }
-                
-                // Ottieni il JSON e crea un blob
-                const data = await response.json();
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const blobUrl = URL.createObjectURL(blob);
-                
-                // Reindirizza al blob
-                window.location.href = blobUrl;
+                const html = await response.text();
+                document.open();
+                document.write(html);
+                document.close();
                 
             } catch (error) {
                 showError('Network error: ' + error.message);
             } finally {
                 submitBtn.disabled = false;
-                resultDiv.classList.add('hidden');
             }
         });
-        
-        function showError(message) {
-            resultDiv.className = 'result error';
-            resultDiv.innerHTML = `
-                <h3>✗ Error</h3>
-                <p>${message}</p>
-            `;
-            resultDiv.classList.remove('hidden');
-            submitBtn.disabled = false;
-        }
     </script>
 </body>
 </html>

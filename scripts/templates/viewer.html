@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LODE 2.0 - Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="mb-4">LODE 2.0 - Semantic Artefact Viewer</h1>
+
+        {% if error %}
+            <div class="alert alert-danger">
+                <h4>Error</h4>
+                <p>{{ error }}</p>
+            </div>
+
+            {% elif single_resource %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Resource Details</h5>
+                    <table class="table">
+                        <tr>
+                            <th>Type</th>
+                            <td><span class="badge bg-secondary">{{ entity.type }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>URI</th>
+                            <td><code>{{ entity.uri }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Label</th>
+                            <td>{{ entity.label }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Entities ({{ entities|length }})</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>URI</th>
+                                    <th>Label</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entity in entities %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ entity.type }}</span></td>
+                                    <td><code>{{ entity.uri }}</code></td>
+                                    <td>{{ entity.label }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

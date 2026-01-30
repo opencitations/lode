@@ -28,6 +28,11 @@ class ConfigManager(ABC):
         
         return config
     
+    @abstractmethod
+    def create_viewer(self, reader):
+        """Factory method per creare Viewer specifico"""
+        pass
+    
     # ========== NAMESPACE MAP ==========
     NAMESPACES = {
         'owl': 'http://www.w3.org/2002/07/owl#',
@@ -158,31 +163,36 @@ class ConfigManager(ABC):
         return None
 
 
-# ========== CONCRETE STRATEGIES ==========
+# config_manager.py - aggiungi nei concrete managers
 
 class OwlConfigManager(ConfigManager):
     def create_logic(self, graph: Graph, cache: dict):
         from .logic import OwlLogic
         return OwlLogic(graph, cache, self)
-
-
-# class RdfsConfigManager(ConfigManager):
-#     def create_logic(self, graph: Graph, cache: dict):
-#         from logic import RdfsLogic
-#         return RdfsLogic(graph, cache, self)
+    
+    def create_viewer(self, reader):
+        from viewer.owl_viewer import OWLViewer
+        return OWLViewer(reader)
 
 
 class RdfConfigManager(ConfigManager):
     def create_logic(self, graph: Graph, cache: dict):
         from .logic import RdfLogic
         return RdfLogic(graph, cache, self)
+    
+    def create_viewer(self, reader):
+        from viewer.base_viewer import BaseViewer # COMING SOOND
+        return BaseViewer(reader)
 
 
 class SkosConfigManager(ConfigManager):
     def create_logic(self, graph: Graph, cache: dict):
         from .logic import SkosLogic
         return SkosLogic(graph, cache, self)
-
+    
+    def create_viewer(self, reader):
+        from viewer.base_viewer import BaseViewer # COMING SOON
+        return BaseViewer(reader)
 
 # ========== CONFIGURATIONS REGISTRY ==========
 
