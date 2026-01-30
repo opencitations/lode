@@ -17,7 +17,7 @@ import os
 from reader.reader import Reader
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="scripts/templates")
 
 
 class ReadAsFormat(str, Enum):

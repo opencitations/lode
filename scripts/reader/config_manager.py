@@ -171,8 +171,8 @@ class OwlConfigManager(ConfigManager):
         return OwlLogic(graph, cache, self)
     
     def create_viewer(self, reader):
-        from viewer.owl_viewer import OWLViewer
-        return OWLViewer(reader)
+        from viewer.owl_viewer import OwlViewer
+        return OwlViewer(reader)
 
 
 class RdfConfigManager(ConfigManager):
@@ -198,7 +198,6 @@ class SkosConfigManager(ConfigManager):
 
 CONFIGURATION_REGISTRY = {
     'OWL': OwlConfigManager,
-    # 'RDFS': RdfsConfigManager,
     'SKOS': SkosConfigManager,
     'RDF': RdfConfigManager
 }

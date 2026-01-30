@@ -1,11 +1,11 @@
 # viewer/__init__.py
 
 from viewer.base_viewer import BaseViewer
-from viewer.owl_viewer import OWLViewer
+from viewer.owl_viewer import OwlViewer
 
 __all__ = [
     'BaseViewer',
-    'OWLViewer'
+    'OwlViewer'
 ]
 
 def get_viewer(read_as: str, reader):
@@ -20,6 +20,6 @@ def get_viewer(read_as: str, reader):
         Istanza del viewer appropriato
     """
     if read_as.lower() == 'owl':
-        return OWLViewer(reader)
+        return OwlViewer(reader)
     # To do : add RDFViewer, SKOSViewer
     return BaseViewer(reader)
