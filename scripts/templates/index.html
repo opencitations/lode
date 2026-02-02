@@ -1,210 +1,294 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <title>LODE 2.0</title>
-    <style>
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
-    <div class="container main-container py-5">
-        <div class="mb-5">
-            <h1 class="display-4 fw-bold text-primary mb-2">LODE 2.0</h1>
-            <p class="subtitle text-muted"></p>
-        </div>
-        
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <form id="extractForm">
-                    <!-- Read As Format -->
-                    <div class="mb-4">
-                        <label for="readAs" class="form-label fw-semibold">
-                            Format <span class="text-danger">*</span>
-                        </label>
-                        <select id="readAs" name="read_as" class="form-select" required>
-                            {% for format in formats %}
-                            <option value="{{ format }}">{{ format.upper() }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Choose how to interpret the Semantic Artefact</div>
-                    </div>
-                    
-                    <!-- Resource URI (optional) -->
-                    <div class="mb-4">
-                        <label for="resource" class="form-label fw-semibold">
-                            Resource URI <span class="text-muted">(optional)</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            id="resource" 
-                            name="resource" 
-                            class="form-control"
-                            placeholder="http://example.org/Resource"
-                        >
-                        <div class="form-text">Leave empty to extract all resources</div>
-                    </div>
-                    
-                    <!-- Semantic Artefact Source -->
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">
-                            Semantic Artefact <span class="text-danger">*</span>
-                        </label>
-                        <div class="d-flex gap-4 mb-3">
-                            <div class="form-check">
-                                <input 
-                                    class="form-check-input" 
-                                    type="radio" 
-                                    id="sourceUrl" 
-                                    name="source" 
-                                    value="url" 
-                                    checked
-                                >
-                                <label class="form-check-label" for="sourceUrl">
-                                    URL
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input 
-                                    class="form-check-input" 
-                                    type="radio" 
-                                    id="sourceFile" 
-                                    name="source" 
-                                    value="file"
-                                >
-                                <label class="form-check-label" for="sourceFile">
-                                    File Upload
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div id="urlSection" class="input-section">
-                            <input 
-                                type="text" 
-                                id="semanticArtefactUrl" 
-                                name="semantic_artefact_url" 
-                                class="form-control"
-                                placeholder="http://example.org/semantic_artefact.owl"
-                            >
-                        </div>
-                        
-                        <div id="fileSection" class="input-section d-none">
-                            <input 
-                                type="file" 
-                                id="semanticArtefactFile" 
-                                name="semantic_artefact_file"
-                                class="form-control"
-                                accept=".rdf,.owl,.ttl,.n3,.nt,.xml"
-                            >
-                        </div>
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
-                            Generate documentation
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <div id="result" class="d-none mt-4"></div>
+    <div class="main">
+<div class="row align-items-center submission-form-container">
+    <div class="col-md-4">
+        <img class="img-fluid" src="https://essepuntato.it/assets/img/lode/logo.png" alt="LODE logo">
     </div>
-    
+    <div class="col-md-8">
+        <div class="submission-form">
+            <form id="extractForm">
+                
+                <!-- Semantic Artefact Source -->
+                <div class="mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-info-circle-fill info-icon" 
+                            data-bs-toggle="popover" 
+                            data-bs-placement="right"
+                            data-bs-content="Provide either a URL or upload a file (RDF, OWL, Turtle, N-Triples, etc.)"
+                            data-bs-trigger="hover focus"></i>
+                        </div>
+                                            
+                        <div class="col">
+                            <!-- URL Input with Floating Label -->
+                            <div id="urlSection">
+                                <div class="form-floating">
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="semanticArtefactUrl" 
+                                        name="semantic_artefact_url" 
+                                        placeholder="Semantic artefact URL"
+                                    >
+                                    <label for="semanticArtefactUrl">Semantic artefact URL<span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                            
+                            <!-- File Input (non supporta floating label nativamente) -->
+                            <div id="fileSection" class="hide">
+                                <input 
+                                    class="form-control" 
+                                    type="file" 
+                                    id="semanticArtefactFile" 
+                                    name="semantic_artefact_file"
+                                    accept=".rdf,.owl,.ttl,.n3,.nt,.xml"
+                                    style="height: calc(3.5rem + 2px); padding: 1rem 0.75rem;"
+                                >
+                            </div>
+                        </div>
+                        
+                        <div class="col-auto">
+                            <div class="toggle-switch" id="sourceToggle">
+                                <div class="toggle-slider url-mode" id="toggleSlider"></div>
+                                <span class="toggle-option active" data-mode="url">
+                                    <i class="bi bi-link-45deg"></i> URL
+                                </span>
+                                <span class="toggle-option inactive" data-mode="file">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> File
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resource URI -->
+                <div class="mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-info-circle-fill info-icon" 
+                            data-bs-toggle="popover" 
+                            data-bs-placement="right"
+                            data-bs-content="Leave empty to extract all resources from the semantic artefact"
+                            data-bs-trigger="hover focus"></i>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input 
+                                    type="text" 
+                                    id="resource" 
+                                    name="resource"
+                                    class="form-control"
+                                    placeholder="http://example.org/MyResource"
+                                >
+                                <label for="resource">Resource URI <span class="text-muted">(optional)</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Format Selection -->
+                <div class="mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="bi bi-info-circle-fill info-icon" 
+                            data-bs-toggle="popover" 
+                            data-bs-placement="right"
+                            data-bs-content="Choose how to interpret the RDF graph (OWL, RDF, or SKOS)"
+                            data-bs-trigger="hover focus"></i>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select id="readAs" name="read_as" class="form-select" required>
+                                    {% for format in formats %}
+                                    {% if format.lower() == 'owl' %}
+                                        <option value="{{ format }}">{{ format.upper() }} ontology</option>
+                                    {% else %}
+                                        <option value="{{ format }}">{{ format.upper() }} vocabulary</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label for="readAs">Select a format<span class="text-danger">*</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" id="submitBtn">
+                    Generate Documentation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+        <div class="lode-documentation row p-5">
+            <p>Live <a href="http://www.github.com/essepuntato/LODE">OWL Documentation Environment</a> (LODE) is a service that automatically extracts classes, object properties, data properties, named individuals, annotation properties, general axioms and namespace declarations from an OWL and OWL2 ontology, and renders them as ordered lists, together with their textual definitions, in a human-readable HTML page designed for browsing and navigation by means of embedded links.</p>
+            <p>This LODE service is an open source development, and can be freely used, as described in this document. It may be used in conjunction with content negotiation to display this human-readable version of an OWL ontology when the user accesses the ontology using a web browser, or alternatively to deliver the OWL ontology itself when the user accesses the ontology using an ontology editing tool such as Protégé and NeOn Toolkit. An exemplar implementation of such content negotiation is given in the Best Practice Recipes for Publishing RDF Vocabularies by using the .htaccess file:</p>
+            <pre>
+AddType application/rdf+xml .rdf
+
+# Rewrite engine setup
+RewriteEngine On
+            
+# Rewrite rule to serve HTML content
+RewriteCond %{HTTP_ACCEPT} !application/rdf\+xml.*(text/html|application/xhtml\+xml)
+RewriteCond %{HTTP_ACCEPT} text/html [OR]
+RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml [OR]
+RewriteCond %{HTTP_USER_AGENT} ^Mozilla/.*
+<span style='font-weight: 600;'>RewriteRule ^ontology\$ https://w3id.org/lode/http://www.mydomain.com/ontology [R=303,L]</span>
+
+# Rewrite rule to serve RDF/XML content if requested
+RewriteCond %{HTTP_ACCEPT} application/rdf\+xml
+RewriteRule ^ontology\$ ontology.owl [R=303]
+
+# Choose the default response
+RewriteRule ^ontology\$ ontology.owl [R=303]
+            </pre>
+        </div>
+    </div>
     <script>
-        // Toggle URL/File input
-        const sourceRadios = document.querySelectorAll('input[name="source"]');
+        // Initialize all popovers
+        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+        
+        // Custom Toggle Switch Logic
+        const sourceToggle = document.getElementById('sourceToggle');
+        const toggleSlider = document.getElementById('toggleSlider');
+        const toggleOptions = document.querySelectorAll('.toggle-option');
         const urlSection = document.getElementById('urlSection');
         const fileSection = document.getElementById('fileSection');
         const urlInput = document.getElementById('semanticArtefactUrl');
         const fileInput = document.getElementById('semanticArtefactFile');
 
-        sourceRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.value === 'url') {
-                    urlSection.classList.remove('d-none');
-                    fileSection.classList.add('d-none');
-                    fileInput.value = '';
-                } else {
-                    urlSection.classList.add('d-none');
-                    fileSection.classList.remove('d-none');
-                    urlInput.value = '';
-                }
-            });
-        });
-                
-        // Form submission
-        const form = document.getElementById('extractForm');
-        const resultDiv = document.getElementById('result');
-        const submitBtn = document.getElementById('submitBtn');
+        let isFileMode = false;
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const sourceType = document.querySelector('input[name="source"]:checked').value;
-            
-            // URL → GET
-            if (sourceType === 'url') {
-                const url = urlInput.value.trim();
-                if (!url) {
-                    showError('Please provide a URL');
-                    return;
-                }
+        sourceToggle.addEventListener('click', (e) => {
+            // Toggle mode
+            isFileMode = !isFileMode;
+
+            if (isFileMode) {
+                // Switch to File mode
+                toggleSlider.classList.remove('url-mode');
+                toggleSlider.classList.add('file-mode');
+                toggleOptions[0].classList.remove('active');
+                toggleOptions[0].classList.add('inactive');
+                toggleOptions[1].classList.remove('inactive');
+                toggleOptions[1].classList.add('active');
                 
-                const readAs = document.getElementById('readAs').value;
-                const resource = document.getElementById('resource').value.trim(); // AGGIUNGI
+                urlSection.classList.add('hide');
+                fileSection.classList.remove('hide');
+                urlInput.value = '';
+            } else {
+                // Switch to URL mode
+                toggleSlider.classList.remove('file-mode');
+                toggleSlider.classList.add('url-mode');
+                toggleOptions[1].classList.remove('active');
+                toggleOptions[1].classList.add('inactive');
+                toggleOptions[0].classList.remove('inactive');
+                toggleOptions[0].classList.add('active');
                 
-                const params = new URLSearchParams({
-                    read_as: readAs,
-                    semantic_artefact_url: url
-                });
-                
-                if (resource) {  // AGGIUNGI
-                    params.append('resource', resource);
-                }
-                
-                window.location.href = `/api/view?${params.toString()}`;
-                return;
-            }
-            
-            // FILE → POST
-            const formData = new FormData();
-            formData.append('read_as', document.getElementById('readAs').value);
-            
-            const resource = document.getElementById('resource').value.trim(); // AGGIUNGI
-            if (resource) {  // AGGIUNGI
-                formData.append('resource', resource);
-            }
-            
-            const file = fileInput.files[0];
-            if (!file) {
-                showError('Please select a file');
-                return;
-            }
-            formData.append('semantic_artefact_file', file);
-            
-            submitBtn.disabled = true;
-            
-            try {
-                const response = await fetch('/api/view', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const html = await response.text();
-                document.open();
-                document.write(html);
-                document.close();
-                
-            } catch (error) {
-                showError('Network error: ' + error.message);
-            } finally {
-                submitBtn.disabled = false;
+                urlSection.classList.remove('hide');
+                fileSection.classList.add('hide');
+                fileInput.value = '';
             }
         });
+        
+    // Form submission
+    const form = document.getElementById('extractForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Rimuovi eventuali classi di errore precedenti
+        urlInput.classList.remove('is-invalid');
+        fileInput.classList.remove('is-invalid');
+        
+        // URL → GET
+        if (!isFileMode) {
+            const url = urlInput.value.trim();
+            if (!url) {
+                urlInput.classList.add('is-invalid');
+                return;
+            }
+            
+            const readAs = document.getElementById('readAs').value;
+            const resource = document.getElementById('resource').value.trim();
+            
+            const params = new URLSearchParams({
+                read_as: readAs,
+                semantic_artefact_url: url
+            });
+            
+            if (resource) {
+                params.append('resource', resource);
+            }
+            
+            window.location.href = `/api/view?${params.toString()}`;
+            return;
+        }
+        
+        // FILE → POST
+        const formData = new FormData();
+        formData.append('read_as', document.getElementById('readAs').value);
+        
+        const resource = document.getElementById('resource').value.trim();
+        if (resource) {
+            formData.append('resource', resource);
+        }
+        
+        const file = fileInput.files[0];
+        if (!file) {
+            fileInput.classList.add('is-invalid');
+            return;
+        }
+        formData.append('semantic_artefact_file', file);
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Processing...';
+        
+        try {
+            const response = await fetch('/api/view', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error('Request failed');
+            }
+            
+            const html = await response.text();
+            document.open();
+            document.write(html);
+            document.close();
+            
+        } catch (error) {
+            fileInput.classList.add('is-invalid');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Generate Documentation';
+        }
+    });
+
+    // Removes the red border when user start typing
+    urlInput.addEventListener('input', () => {
+        urlInput.classList.remove('is-invalid');
+    });
+
+    fileInput.addEventListener('change', () => {
+        fileInput.classList.remove('is-invalid');
+    });
     </script>
 </body>
 </html>

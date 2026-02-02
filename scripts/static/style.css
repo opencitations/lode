@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+body {
+    margin-left: 5rem;
+    border-left: 2px solid #193564;
+    color: black;
+    /* to fix powered by lode image */
+    background-image: url(https://www.essepuntato.it/assets/img/lode/LODELogo.png);
+    background-position: top left;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    /* font */
+    font-family: "DM Sans", sans-serif;
+    font-optical-sizing: auto;    
+    font-weight: 300;
+    font-style: normal;
+    font-size: small;
+}
+
+ /* INDEX PAGE STYLE */
+.submission-form-container {
+    border-bottom:2px solid #193564;
+    padding-left: 6rem;
+    padding-right: 4rem;
+    padding-bottom: 2rem;
+    padding-top: 2rem;
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background-color: white;
+    color: #193564;
+    border: solid 2px #193564;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 50px;
+}
+/* blue = #193564 red = ##F3563C beige= #F6E8DD , white = white*/
+
+button[type="submit"]:hover {
+    background-color: #193564;
+    color:white
+}
+
+.hide {
+    display: none;
+}
+
+.info-icon {
+    cursor: pointer;
+    color: #F3563C;
+    font-size: 1.1rem;
+}
+
+.info-icon:hover {
+    color: #193564;
+}
+
+/* Customised switch (e.g., url vs. file) */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    background: white;
+    border: 2px solid #F3563C;
+    border-radius: 50px;
+    overflow: hidden;
+    cursor: pointer;
+    user-select: none;
+    padding: 0;
+}
+
+.toggle-option {
+    display: inline-block;
+    padding: 8px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.toggle-option.inactive {
+    color: #F3563C;
+    opacity: 0.5;
+}
+
+.toggle-option.active {
+    color: white;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #F3563C;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.toggle-slider.url-mode {
+    left: 0;
+    width: 50%;
+}
+
+.toggle-slider.file-mode {
+    left: 50%;
+    width: 50%;
+}
+
+.text-danger {color: #F3563C}
+
+/* code */
+pre {
+    background-color: #f6e8dd;
+    border-radius: 20px;
+    border: 2px dotted #193564;
+    padding: 1rem;
+    color:#193564;
+}
+
+/* links */
+a {
+  color: #193564;
+  text-decoration: underline;
+  background-image: linear-gradient(#193564, #193564);
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  transition: background-size 0.3s ease;
+}
+
+a:hover {
+  background-size: 100% 100%;
+  color: white;
+}
+
+
+
