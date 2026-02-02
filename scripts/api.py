@@ -18,14 +18,12 @@ from reader.reader import Reader
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
 templates = Jinja2Templates(directory="scripts/templates")
-
+app.mount("/static", StaticFiles(directory="scripts/static"), name="static")
 
 class ReadAsFormat(str, Enum):
     owl = "owl"
     rdf = "rdf"
     skos = "skos"
-
-# api.py
 
 @app.get("/api/view", response_class=HTMLResponse)
 async def view_semantic_artefact_get(
