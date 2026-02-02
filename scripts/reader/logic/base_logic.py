@@ -24,8 +24,8 @@ ALLOWED_CLASSES = {
         Collection, Restriction
     },
     'SKOS': {
-        Collection, Literal, Container,
-        Concept, Model, Resource, Datatype
+        Collection, Literal, Resource,
+        Concept, Model, Datatype
     }
 }
 
@@ -414,29 +414,34 @@ class BaseLogic(ABC):
         if not hasattr(self, '_statements_created'):
             self._statements_created = set()
         
-        stmt_key = ('TRIPLE', subj, pred, obj)
+        # Usa la tripla come chiave per evitare duplicati
+        triple_key = (subj, pred, obj)
         
-        if stmt_key in self._statements_created:
+        if triple_key in self._statements_created:
             return
         
         statement = Statement()
+        
+        # Crea un BNode come identificatore (approccio RDF standard)
+        stmt_bnode = BNode()
+        statement.set_has_identifier(str(stmt_bnode))
         
         # TRACCIA e salva LA TRIPLA per lo Statement
         if statement not in self._triples_map:
             self._triples_map[statement] = set()
         self._triples_map[statement].add((subj, pred, obj))
         
-        # Subject: usa get_or_create con Resource
+        # Subject
         subj_obj = self.get_or_create(subj, Resource)
         if subj_obj:
             statement.set_has_subject(subj_obj)
         
-        # Predicate: SEMPRE Property
+        # Predicate
         pred_inst = self.get_or_create(pred, Property)
         if pred_inst:
             statement.set_has_predicate(pred_inst)
         
-        # Object: dipende dal tipo
+        # Object
         if self._is_rdf_collection(obj):
             obj_inst = self._convert_collection_to_container(obj)
         elif isinstance(obj, RDFlibLiteral):
@@ -447,12 +452,12 @@ class BaseLogic(ABC):
         if obj_inst:
             statement.set_has_object(obj_inst)
         
-        # Cache statement
-        if stmt_key not in self._instance_cache:
-            self._instance_cache[stmt_key] = set()
-        self._instance_cache[stmt_key].add(statement)
+        # Cache statement usando il BNode come chiave
+        if stmt_bnode not in self._instance_cache:
+            self._instance_cache[stmt_bnode] = set()
+        self._instance_cache[stmt_bnode].add(statement)
         
-        self._statements_created.add(stmt_key)
+        self._statements_created.add(triple_key)
 
     # call by the config file
     # def handle_range(self, instance, uri, predicate, obj, setter=None):
