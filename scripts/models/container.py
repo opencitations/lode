@@ -9,7 +9,7 @@ class Container(Resource):
     
     def set_has_member(self, member):
         """Aggiunge un singolo membro"""
-        if member not in self._members:
+        if member not in self.members:
             self.members.append(member)
     
     def set_has_members(self, members: list):
