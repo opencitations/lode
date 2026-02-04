@@ -50,8 +50,8 @@ class OwlLogic(BaseLogic):
         
         # Crea istanze
         for uri, py_class in classified.items():
-            self.create_empty_instance(uri, py_class)
-        
+            self.get_or_create(uri, py_class, populate=False)
+
         print(f"  Classificate: {len(classified)}")
     
     def phase2_create_from_types(self):
@@ -69,7 +69,7 @@ class OwlLogic(BaseLogic):
             for uri in self.graph.subjects(RDF.type, rdf_type):
                 # Crea istanza solo se non esiste
                 if uri not in self._instance_cache:
-                    self.create_empty_instance(uri, py_class)
+                    self.get_or_create(uri, py_class, populate=False)
                     created += 1
                 
                 # APPLICA SETTERS SEMPRE (anche se istanza già esisteva)
@@ -300,21 +300,17 @@ class OwlLogic(BaseLogic):
         
         # 1. Proprietà usate ma non definite → Annotation
         all_predicates = set(self.graph.predicates())
-        annotation_count = 0
         
         for pred in all_predicates:
             if pred not in self._instance_cache and isinstance(pred, BNode):
-                self.create_empty_instance(pred, Annotation)
-                annotation_count += 1
+                self.get_or_create(uri, Annotation, populate=False)
                 
         # 2. Soggetti non categorizzati → Individual
         all_subjects = set(self.graph.subjects())
-        individual_count = 0
         
         for subj in all_subjects:
             if subj not in self._instance_cache and isinstance(subj, RDFLibCollection) :
                 self.get_or_create(subj, Individual)
-                individual_count += 1
                 
         # 3. Oggetti di proprietà non categorizzati → Individual
         for s, p, o in self.graph:
@@ -324,7 +320,6 @@ class OwlLogic(BaseLogic):
                     exclude_namespaces = [OWL, RDF, RDFS, SKOS]
                     if not any(str(o).startswith(str(ns)) for ns in exclude_namespaces):
                         self.get_or_create(o, Individual)
-                        individual_count += 1
             
     # Handler group axioms
     def process_all_disjoint_classes(self, uri: Node):
@@ -409,12 +404,17 @@ class OwlLogic(BaseLogic):
     
     def _create_statement_for_triple(self, subj, pred, obj):
         """Crea Statement"""
-        stmt_key = ('TRIPLE', subj, pred, obj)
-        
-        if stmt_key in self._statements_created:
-            return
-        
+
         statement = Statement()
+
+        # Crea un BNode come identificatore (approccio RDF standard)
+        stmt_bnode = BNode()
+        statement.set_has_identifier(str(stmt_bnode))
+        
+        # TRACCIA e salva LA TRIPLA per lo Statement
+        if statement not in self._triples_map:
+            self._triples_map[statement] = set()
+        self._triples_map[statement].add((subj, pred, obj))
 
         if pred != RDF.type:
             # Subject: usa get_or_create con Resource
@@ -437,17 +437,11 @@ class OwlLogic(BaseLogic):
 
             statement.set_has_object(obj_inst)
             
-            # Cache statement
-            if stmt_key not in self._instance_cache:
-                self._instance_cache[stmt_key] = set()
-            self._instance_cache[stmt_key].add(statement)
-            
-            self._statements_created.add(stmt_key)
+            # Cache statement usando il BNode come chiave
+            if stmt_bnode not in self._instance_cache:
+                self._instance_cache[stmt_bnode] = set()
+            self._instance_cache[stmt_bnode].add(statement)           
 
-            # Saves the triple in triples_map
-            if statement not in self._triples_map:
-                self._triples_map[statement] = set()
-            self._triples_map[statement].add((subj, pred, obj))
 
     # ========== HANDLER Restriction ==========
     

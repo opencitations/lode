@@ -91,21 +91,13 @@ class BaseLogic(ABC):
     def phase6_create_statements(self):
         """Crea Statement per triple non mappate"""
         
-        if not hasattr(self, '_statements_created'):
-            self._statements_created = set()
-        
-        statements_count = 0
-        
         for subj, pred, obj in self.graph:
             if pred not in [ RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members ]:
                 if self._is_triple_mapped(subj, pred, obj):
                     continue
                 
                 self._create_statement_for_triple(subj, pred, obj)
-                statements_count += 1
-        
-        print(f"  Creati {statements_count} Statement")
-    
+            
     # ========== RISOLUZIONE CLASSI AMMESSE ==========
     
     def _resolve_allowed_class(self, python_class: type, id: Node = None) -> type:
@@ -233,7 +225,7 @@ class BaseLogic(ABC):
     
     # ========== FACTORY METHODS (comuni) ==========
     
-    def get_or_create(self, id: Node, python_class: type = None):
+    def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
         """Get or create instance CON RISOLUZIONE AUTOMATICA"""
         try:
             # Literals
@@ -266,24 +258,15 @@ class BaseLogic(ABC):
                 self._instance_cache[id] = set()
             self._instance_cache[id].add(instance)
             
-            # Populate
-            self.populate_instance(instance, id)
-            return instance
+            # Populate (opzionale)
+            if populate:
+                self.populate_instance(instance, id)
             
+            return instance
+        
         except Exception as e:
             print(f"Cannot create {python_class.__name__ if python_class else 'Unknown'} for {id}: {e}")
             return None
-    
-    def create_empty_instance(self, uri: Node, python_class: type):
-        """Crea istanza vuota (senza populate) CON RISOLUZIONE"""
-        # RISOLVI CLASSE
-        python_class = self._resolve_allowed_class(python_class, uri)
-        
-        instance = python_class()
-        if uri not in self._instance_cache:
-            self._instance_cache[uri] = set()
-        self._instance_cache[uri].add(instance)
-        return instance
     
     def populate_instance(self, instance, uri: Node):
         """
@@ -411,14 +394,6 @@ class BaseLogic(ABC):
     
     def _create_statement_for_triple(self, subj, pred, obj):
         """Crea Statement per una tripla (usato in phase6)"""
-        if not hasattr(self, '_statements_created'):
-            self._statements_created = set()
-        
-        # Usa la tripla come chiave per evitare duplicati
-        triple_key = (subj, pred, obj)
-        
-        if triple_key in self._statements_created:
-            return
         
         statement = Statement()
         
@@ -457,8 +432,7 @@ class BaseLogic(ABC):
             self._instance_cache[stmt_bnode] = set()
         self._instance_cache[stmt_bnode].add(statement)
         
-        self._statements_created.add(triple_key)
-
+        
     # call by the config file
     # def handle_range(self, instance, uri, predicate, obj, setter=None):
     #     """
