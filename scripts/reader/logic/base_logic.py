@@ -49,7 +49,7 @@ class BaseLogic(ABC):
         self._property_mapping = strategy.get_property_mapping()
         self._allowed_classes = self._get_allowed_classes()
         self._triples_map = {}
-        self._allowed_namespaces = self._get_allowed_namespaces()  # AGGIUNGI
+        self._allowed_namespaces = self._get_allowed_namespaces() 
     
     # ========== METODI ASTRATTI (implementati dalle subclass) ==========
     
@@ -98,7 +98,7 @@ class BaseLogic(ABC):
                 
                 self._create_statement_for_triple(subj, pred, obj)
             
-    # ========== RISOLUZIONE CLASSI AMMESSE ==========
+    # ========== RISOLUZIONE base CLASSI AMMESSE ==========
     
     def _resolve_allowed_class(self, python_class: type, id: Node = None) -> type:
         """
@@ -223,7 +223,7 @@ class BaseLogic(ABC):
         """Pulisce cache"""
         self._instance_cache.clear()
     
-    # ========== FACTORY METHODS (comuni) ==========
+    # ========== LOGIC CORE METHODS (comuni) ==========
     
     def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
         """Get or create instance CON RISOLUZIONE AUTOMATICA"""
@@ -235,7 +235,7 @@ class BaseLogic(ABC):
             # RISOLVI CLASSE AMMESSA
             if python_class:
                 python_class = self._resolve_allowed_class(python_class, id)
-            
+
             # Individual case
             if python_class == Individual and id in self._instance_cache:
                 for existing in self._instance_cache[id]:
