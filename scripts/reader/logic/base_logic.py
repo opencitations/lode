@@ -236,6 +236,13 @@ class BaseLogic(ABC):
             if python_class:
                 python_class = self._resolve_allowed_class(python_class, id)
 
+            # Skips all entities which share the structural namespaces declared in self._allowed_namespaces
+            if isinstance(id, URIRef):
+                uri_str = str(id)
+                for ns in self._allowed_namespaces:
+                    if uri_str.startswith(ns):
+                        return None
+
             # Individual case
             if python_class == Individual and id in self._instance_cache:
                 for existing in self._instance_cache[id]:
