@@ -54,7 +54,7 @@ class RdfLogic(BaseLogic):
                 py_class = config.get('target_class')
                 
                 if py_class:
-                    self.create_empty_instance(subj, py_class)
+                    self.get_or_create(subj, py_class, populate=False)
                     created += 1
         
         print(f"  Creati {created} da rdf:type")
@@ -103,7 +103,7 @@ class RdfLogic(BaseLogic):
         for pred in all_predicates:
             if pred not in self._instance_cache and pred not in exclude_predicates:
                 if not any(str(pred).startswith(str(ns)) for ns in exclude_namespaces):
-                    self.create_empty_instance(pred, Property)
+                    self.get_or_create(pred, Property, populate=False)
                     property_count += 1
         
         print(f"  Property: {property_count} predicati")
@@ -118,7 +118,7 @@ class RdfLogic(BaseLogic):
                 if not self._is_rdf_collection(subj):
                     exclude_namespaces = [RDF, RDFS, OWL, SKOS, XSD]
                     if not any(str(subj).startswith(str(ns)) for ns in exclude_namespaces):
-                        self.create_empty_instance(subj, Resource)
+                        self.get_or_create(subj, Resource, populate=False)
                         subject_count += 1
         
         print(f"  Resource (soggetti): {subject_count}")
@@ -132,99 +132,13 @@ class RdfLogic(BaseLogic):
                 if not self._is_rdf_collection(o):
                     exclude_namespaces = [RDF, RDFS, OWL, SKOS, XSD]
                     if not any(str(o).startswith(str(ns)) for ns in exclude_namespaces):
-                        self.create_empty_instance(o, Resource)
+                        self.get_or_create(o, Resource, populate=False)
                         object_count += 1
         
         print(f"  Resource (oggetti): {object_count}")
     
-    def phase6_create_statements(self):
-        """
-        Crea Statement per TUTTE le triple non mappate.
-        Esclude predicati strutturali Collection.
-        """
-        print("\n--- FASE 6: Statements RDF ---")
-        
-        statements_count = 0
-        
-        # Predicati da escludere completamente
-        exclude_predicates = {RDF.first, RDF.rest, RDF.nil, OWL.members, OWL.distinctMembers}
-        
-        for subj, pred, obj in self.graph:
-            # Skip predicati strutturali
-            if pred in exclude_predicates:
-                continue
-            
-            # Skip se già mappata
-            if self._is_triple_mapped(subj, pred, obj):
-                continue
-            
-            # Crea Statement
-            stmt = self._create_statement_for_triple(subj, pred, obj)
-            if stmt:
-                statements_count += 1
-        
-        print(f"  Creati {statements_count} Statement")
-    
     # ========== HELPER METHODS ==========
     
-    def _create_statement_for_triple(self, subj, pred, obj):
-        """
-        Crea Statement per una tripla.
-        
-        Subject → Resource (già creato in phase5)
-        Predicate → Property (già creato in phase5)
-        Object → Resource o Literal
-        
-        Returns: Statement creato o None se già esistente
-        """
-        stmt_key = (str(subj), str(pred), str(obj))
-        
-        if stmt_key in self._statements_created:
-            return None
-        
-        # Crea Statement
-        statement = Statement()
-        
-        # Genera URI univoco come BNode
-        self._statement_counter += 1
-        stmt_uri = BNode(f"statement_{self._statement_counter}")
-        
-        # Subject → Resource
-        subj_instance = self.get_or_create(subj, Resource)
-        if subj_instance:
-            statement.set_has_subject(subj_instance)
-        
-        # Predicate → Property
-        pred_instance = self.get_or_create(pred, Property)
-        if pred_instance:
-            statement.set_has_predicate(pred_instance)
-        
-        # Object → Literal o Resource
-        if isinstance(obj, RDFlibLiteral):
-            obj_instance = self._create_literal(obj)
-        elif self._is_rdf_collection(obj):
-            # Gestione Collection RDF (rdf:List)
-            obj_instance = self._handle_collection_as_container(obj)
-        else:
-            obj_instance = self.get_or_create(obj, Resource)
-        
-        if obj_instance:
-            statement.set_has_object(obj_instance)
-        
-        # CRITICO: Salva Statement nella cache
-        self._instance_cache[stmt_uri] = {statement}
-        
-        # Marca come creato
-        self._statements_created.add(stmt_key)
-        
-        # CRITICO: Registra SOLO la tripla originale per provenance
-        if statement not in self._triples_map:
-            self._triples_map[statement] = set()
-        
-        # Aggiungi SOLO la tripla originale
-        self._triples_map[statement].add((subj, pred, obj))
-        
-        return statement
     
     def _handle_collection_as_container(self, collection_node):
         """

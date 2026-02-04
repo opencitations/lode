@@ -44,7 +44,7 @@ class SkosLogic(BaseLogic):
             
             for uri in self.graph.subjects(RDF.type, rdf_type):
                 if uri not in self._instance_cache:
-                    self.create_empty_instance(uri, py_class)
+                    self.get_or_create(uri, py_class, populate=False)
                     created += 1
         
         print(f"  Create: {created}")
