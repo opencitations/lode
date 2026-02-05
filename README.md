@@ -34,13 +34,19 @@ This project uses [UV](https://docs.astral.sh/uv/) for dependency management.
 ```bash
 # Clone the repository
 git clone https://github.com/username/lode.git
-cd lode
 
 # Install dependencies
 uv sync --all-extras --dev
+
+# run locally
+uv run python main.py
+
+# open at 
+localhost:8000
 ```
 
-### Running tests
+
+<!-- ### Running tests
 
 ```bash
 uv run pytest tests/
@@ -52,7 +58,7 @@ uv run pytest tests/
 cd docs
 npm install
 npm run dev
-```
+``` -->
 
 ## License
 
