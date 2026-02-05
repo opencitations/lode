@@ -1,0 +1,535 @@
+name: BASE
+
+# ======================
+# MAPPER
+# ======================
+mapper:
+  # ========== Classification, no behavior ==========
+
+  rdfs:Literal:
+    is: class
+    target_class: Literal
+
+  # rdfs:Container, rdfs:ContainerMembershipProperty, rdfs:member
+  # skos:memberList, skos:narrower [!!], skos:inScheme [!!!], skos:narrowerTransitive, skos:semanticRelation, skos:broaderTransitive, skos:mappingRelation
+
+  rdfs:Datatype:
+    is: class
+    target_class: Datatype 
+
+  owl:ObjectProperty:
+    is: class
+    target_class: Relation
+
+  rdf:Property:
+    is: class
+    target_class: Property
+  
+  owl:DatatypeProperty:
+    is: class
+    target_class: Attribute
+  
+  owl:AnnotationProperty:
+    is: class
+    target_class: Annotation
+
+  owl:OntologyProperty:
+    is: class
+    target_class: Property
+  
+  owl:DeprecatedProperty:
+    is: class
+    target_class: Relation
+  
+  # ========== Property characteristics (with behavior) ==========
+  owl:AsymmetricProperty:
+    is: class
+    target_class: Relation
+    setters: 
+    - set_is_asymmetric: True
+  
+  owl:SymmetricProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_symmetric: True]
+
+  owl:FunctionalProperty:
+    is: class
+    target_class: Property
+    setters: 
+    - set_is_functional: True
+  
+  owl:InverseFunctionalProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_inverse_functional: True]
+  
+  owl:TransitiveProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_transitive: True]
+  
+  owl:IrreflexiveProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_irreflexive: True]
+  
+  owl:ReflexiveProperty:
+    is: class
+    target_class: Relation
+    setters: [set_is_reflexive: True]
+    
+  owl:NegativePropertyAssertion:
+    is: class
+    target_class: Statement
+    setters: [set_is_positive_statement: False]
+  
+  # ========== Datatypes ==========
+  owl:DataRange:
+    is: class
+    target_class: Datatype
+  
+  # ========== Model ==========
+  owl:Ontology:
+    is: class
+    target_class: Model
+  
+  skos:ConceptScheme:
+    is: class
+    target_class: Model
+  
+  # ========== Individuals ==========
+  owl:NamedIndividual:
+    is: class
+    target_class: Individual
+  
+  # ========== Statements ==========
+  owl:Annotation:
+    is: class
+    target_class: Statement
+  
+  # ========== Property ==========
+  rdfs:domain:
+    is: predicate
+    target_classes: [Property]
+    setters: [set_has_domain: Concept]
+    
+  rdfs:range:
+    is: predicate
+    target_classes: [Property]
+    # handler: handle_range
+    setters: [set_has_range: Resource]
+    
+  rdfs:subPropertyOf:
+    is: predicate
+    target_classes: [Property]
+    setters: [set_is_sub_property_of: Property]
+    
+  owl:propertyDisjointWith:
+    is: predicate
+    target_classes: [Property]
+    setters: [set_is_disjoint_with: Property]
+    
+  owl:equivalentProperty:
+    is: predicate
+    target_classes: [Property]
+    setters: [set_is_equivalent_to: Property]
+  
+  # ========== Concept ==========
+  rdfs:subClassOf:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_is_sub_concept_of: Concept]
+    
+  owl:disjointWith:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_is_disjoint_with: Concept]
+    
+  owl:equivalentClass:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_is_equivalent_to: Concept]
+  
+  # ========== Model ==========
+  owl:imports:
+    is: predicate
+    target_classes: [Model]
+    setters: [set_imports: Model]
+    
+  owl:versionIRI:
+    is: predicate
+    target_classes: [Model]
+    setters: [set_has_version: Model]
+    
+  owl:priorVersion:
+    is: predicate
+    target_classes: [Model]
+    setters: [set_has_prior_version: Model]
+    
+  owl:backwardCompatibleWith:
+    is: predicate
+    target_classes: [Model]
+    setters: [set_is_backward_compatible_with: Model]
+    
+  owl:incompatibleWith:
+    is: predicate
+    target_classes: [Model]
+    setters: [set_is_incompatible_with: Model]
+    
+  skos:hasTopConcept:
+    is: predicate
+    target_classes: [Model]
+    setters: [set_has_top_concept: Concept]
+
+  # inverse skos:hasTopConcept
+  skos:isTopConceptOf:
+    is: predicate
+    target_classes: [Concept]
+    setter: [set_has_top_concept: Model]
+
+  skos:inScheme:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_is_defined_by: Resource]
+  
+  # ========== Statement/Annotation ==========
+
+  owl:annotatedProperty:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_predicate: Property]
+  
+  owl:annotatedSource:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_subject: Resource]
+  
+  owl:annotatedTarget:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_object: Resource]
+
+  owl:assertionProperty:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_predicate: Property]
+
+  # ========== Concepts ==========
+  
+  skos:Concept:
+    is: class
+    target_class: Concept
+
+  owl:Class:
+    is: class
+    target_class: Concept
+  
+  rdfs:Class:
+    is: class
+    target_class: Concept
+  
+  owl:DeprecatedClass:
+    is: class
+    target_class: Concept
+    setters: [set_is_deprecated: True]
+  
+  owl:Thing:
+    is: class
+    target_class: Concept
+  
+  owl:Nothing:
+    is: class
+    target_class: Concept
+  
+  # ========== SKOS Concept Relations ==========
+  skos:broader:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_is_sub_concept_of: Concept]
+
+  skos:narrower:
+    is: predicate
+    target_classes: [Concept]
+    handler: handle_narrower
+    
+  skos:related:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_is_related_to: Concept]
+    
+  skos:broadMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_has_broad_match: Concept]
+    
+  skos:narrowMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_has_narrow_match: Concept]
+    
+  skos:relatedMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_has_related_match: Concept]
+    
+  skos:exactMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_has_exact_match: Concept]
+    
+  skos:closeMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters: [set_has_close_match: Concept]
+  
+  # ========== Collection ==========
+  
+  skos:Collection:
+    is: class
+    target_class: Collection
+
+  skos:OrderedCollection:
+    is: class
+    target_class: Collection
+    setter: [is_ordered: True]
+
+  skos:member:
+    is: predicate
+    target_classes: [Collection]
+    handler: handle_membership
+
+
+  # ========== Resource ==========
+
+  rdfs:Resource:
+    is: class 
+    target_class: Resource
+
+  rdfs:label:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_label: Literal]
+    
+  rdfs:comment:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_comment: Literal]
+  
+  # ========== SKOS Resource to Literals ==========
+  skos:prefLabel:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_preferred_label: Literal]
+    
+  skos:altLabel:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_alternative_label: Literal]
+    
+  skos:hiddenLabel:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_hidden_label: Literal]
+    
+  skos:definition:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_definition: Literal]
+    
+  skos:example:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_example: Literal]
+    
+  skos:note:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_note: Literal]
+    
+  skos:scopeNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_scope_note: Literal]
+    
+  skos:historyNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_history_note: Literal]
+    
+  skos:editorialNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_editorial_note: Literal]
+    
+  skos:changeNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_change_note: Literal]
+    
+  skos:notation:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_notation: Literal]
+  
+  # ========== Resource Object Properties ==========
+  rdfs:seeAlso:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_see_also: Resource]
+
+  rdfs:isDefinedBy:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_is_defined_by: Resource]
+    
+  owl:versionInfo:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_version_info: Resource]
+  
+  # ========== Boolean Properties ==========
+  owl:deprecated:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_is_deprecated: True]
+
+    # ========== Concepts - Differenza da base ==========
+  owl:Axiom:
+    is: class
+    target_class: Restriction
+
+  owl:Restriction:
+    is: class
+    target_class: Restriction
+  
+  # ========== Relation - Solo in OWL ==========
+  owl:inverseOf:
+    is: predicate
+    target_classes: [Relation]
+    setters: [set_is_inverse_of: Relation]
+    
+  owl:propertyChainAxiom:
+    is: predicate
+    target_classes: [Relation]
+    handler: handle_property_chain
+
+  # ========== TRUTH FUNCTIONS - Con handlers ==========
+  owl:intersectionOf:
+    is: predicate
+    inferred_class: TruthFunction
+    target_classes: [TruthFunction]
+    handler: handle_intersection
+    
+  owl:unionOf:
+    is: predicate
+    inferred_class: TruthFunction
+    target_classes: [TruthFunction]
+    handler: handle_union
+    
+  owl:complementOf:
+    is: predicate
+    inferred_class: TruthFunction
+    target_classes: [TruthFunction]
+    handler: handle_complement
+
+  # ========== VALUE - Con setters ==========
+  owl:hasValue:
+    is: predicate
+    inferred_class: Value
+    target_classes: [Value]
+    setters: [set_applies_on_resource: Resource]
+
+  # ========== ONE OF - Con handler ==========
+  owl:oneOf:
+    is: predicate
+    inferred_class: OneOf
+    target_classes: [OneOf]
+    handler: handle_one_of
+  
+  # ========== QUANTIFIERS - Con handlers ==========
+  owl:someValuesFrom:
+    is: predicate
+    inferred_class: Quantifier
+    target_classes: [Quantifier]
+    handler: handle_quantifier_exist
+    
+  owl:allValuesFrom:
+    is: predicate
+    inferred_class: Quantifier
+    target_classes: [Quantifier]
+    handler: handle_quantifier_all
+  
+  # ========== CARDINALITY - Con handlers ==========
+  owl:cardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_exact
+    
+  owl:minCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_min
+    
+  owl:maxCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_max
+    
+  owl:qualifiedCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_exact_qualified
+    
+  owl:minQualifiedCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_min_qualified
+    
+  owl:maxQualifiedCardinality:
+    is: predicate
+    inferred_class: Cardinality
+    target_classes: [Cardinality]
+    handler: handle_cardinality_max_qualified
+
+  # ========== Restrictions - Target diverso ==========
+  owl:onProperty:
+    is: predicate
+    target_classes: [Restriction]
+    setters: [set_applies_on_property: Property]
+    
+  owl:onClass:
+    is: predicate
+    target_classes: [Restriction]
+    setters: [set_applies_on_concept: Concept]
+
+  # ========== Individual - Target diverso ==========
+  owl:sameAs:
+    is: predicate
+    target_classes: [Individual]
+    setters: [set_is_same_as: Individual]
+    
+  owl:differentFrom:
+    is: predicate
+    target_classes: [Individual]
+    setters: [set_is_different_from: Individual]
+  
+  rdf:type:
+    is: predicate
+    target_classes: [Individual, Resource]
+    setters: [set_has_type: Concept]
+
+# ======================
+# ENRICHER
+# ======================
+enricher:
+  owl:AllDisjointClasses: process_all_disjoint_classes
+  owl:AllDifferent: process_all_different
+  owl:AllDisjointProperties: process_all_disjoint_properties
+  rdfs:range: infer_range
+  rdfs:domain: infer_domain

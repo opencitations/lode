@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<Subject xmlns="http://vocab.getty.edu/ontology#" rdf:about="http://vocab.getty.edu/aat/300010955">
+	<rdf:type rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+	<rdf:type rdf:resource="http://vocab.getty.edu/ontology#Concept"/>
+	<rdfs:label xml:lang="en">admiralty metal</rdfs:label>
+	<rdfs:label xml:lang="en">admiralty brass</rdfs:label>
+	<rdfs:label xml:lang="en">admiralty bronze</rdfs:label>
+	<rdfs:label xml:lang="en">metal, admiralty</rdfs:label>
+	<rdfs:label xml:lang="nl">admiraliteitslegering</rdfs:label>
+	<rdfs:label xml:lang="fr">laiton 70-29 à 1 % d'étain</rdfs:label>
+	<rdfs:label xml:lang="es">metal almirantazgo</rdfs:label>
+	<rdfs:seeAlso rdf:resource="http://www.getty.edu/vow/AATFullDisplay?find=&amp;logic=AND&amp;note=&amp;subjectid=300010955"/>
+	<created xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1988-01-01T00:00:00</created>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1993-03-23T00:00:00</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-10-26T09:04:41</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2008-01-29T15:28:42</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2010-04-23T00:12:17</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-01-08T00:20:26</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1993-03-16T00:00:00</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-10-26T09:05:46</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-11-07T13:00:41</modified>
+	<modified xmlns="http://purl.org/dc/terms/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-01-08T00:20:27</modified>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032286"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093315"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093316"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093317"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093318"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093319"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093320"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001680772"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001706830"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001706831"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002221572"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002912915"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032285"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032287"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001684608"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001690648"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001706829"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002221580"/>
+	<changeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002912924"/>
+	<broader xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300264091"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010357"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010360"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010901"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010358"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300212963"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010942"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300011014"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300241441"/>
+	<broaderGenericExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010900"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300264091"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010357"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010360"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010901"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010358"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300212963"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010942"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300011014"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300241441"/>
+	<broaderExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010900"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300264091"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010357"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010360"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010901"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010358"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300212963"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010942"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300011014"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300241441"/>
+	<broaderPreferredExtended xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010900"/>
+	<parentString xmlns="http://vocab.getty.edu/ontology#">brass (alloy), copper alloy, &lt;copper and copper alloy&gt;, nonferrous metal, &lt;metal by composition or origin&gt;, metal, inorganic material, &lt;materials by composition&gt;, materials (substances), Materials (hierarchy name), Materials Facet</parentString>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/scopeNote/45382"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/scopeNote/60491"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/scopeNote/98431"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032286"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093315"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093316"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093317"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093318"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093319"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001093320"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001680772"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001706830"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001706831"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002221572"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002912915"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032285"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032287"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001684608"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001690648"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5001706829"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002221580"/>
+	<note xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/rev/5002912924"/>
+	<parentStringAbbrev xmlns="http://vocab.getty.edu/ontology#">brass (alloy), copper alloy, ... Materials Facet</parentStringAbbrev>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">1</displayOrder>
+	<prefLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000010955-en"/>
+	<prefLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000469868-nl"/>
+	<prefLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000313085-fr"/>
+	<prefLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000417290-es"/>
+	<prefLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="en">admiralty metal</prefLabel>
+	<prefLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="nl">admiraliteitslegering</prefLabel>
+	<prefLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="fr">laiton 70-29 à 1 % d'étain</prefLabel>
+	<prefLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="es">metal almirantazgo</prefLabel>
+	<altLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000242139-en"/>
+	<altLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000010956-en"/>
+	<altLabel xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:resource="http://vocab.getty.edu/aat/term/1000147199-en"/>
+	<altLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="en">admiralty brass</altLabel>
+	<altLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="en">admiralty bronze</altLabel>
+	<altLabel xmlns="http://www.w3.org/2004/02/skos/core#" xml:lang="en">metal, admiralty</altLabel>
+	<broaderGeneric xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broader xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderGeneric xmlns="http://purl.org/iso25964/skos-thes#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<prefLabelGVP xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/term/1000010955-en"/>
+	<inScheme xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/"/>
+	<scopeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/scopeNote/45382"/>
+	<scopeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/scopeNote/60491"/>
+	<scopeNote xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/scopeNote/98431"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000205"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000131"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000159"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000048434"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000113770"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">300010955</identifier>
+	<broaderTransitive xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300010360"/>
+	<broaderTransitive xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300010946"/>
+	<broaderTransitive xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300010358"/>
+	<broaderTransitive xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300010942"/>
+	<broaderTransitive xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300011014"/>
+	<broaderTransitive xmlns="http://www.w3.org/2004/02/skos/core#" rdf:resource="http://vocab.getty.edu/aat/300010900"/>
+	<inDataset xmlns="http://rdfs.org/ns/void#" rdf:resource="http://vocab.getty.edu/dataset/aat"/>
+	<license xmlns="http://purl.org/dc/terms/" rdf:resource="http://opendatacommons.org/licenses/by/1.0/"/>
+	<license xmlns="http://creativecommons.org/ns#" rdf:resource="http://opendatacommons.org/licenses/by/1.0/"/>
+	<wasGeneratedBy xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/rev/5000032285"/>
+</Subject>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5000032286">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/"></description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1993-03-23T00:00:00</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001093315">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">admiralty metal (1000010955);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001093316">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">admiralty brass (1000242139);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001093317">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">admiralty bronze (1000010956);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001093318">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">brass, admiralty (1000242140);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001093319">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">bronze, admiralty (1000170738);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001093320">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">metal, admiralty (1000147199);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2001-07-26T22:01:11</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001680772">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">laiton 70-29 à 1 % d'étain (1000313085);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-10-26T09:04:41</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001706830">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">brass, admiralty (1000242140);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2008-01-29T15:28:42</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term deleted</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001706831">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">bronze, admiralty (1000170738);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2008-01-29T15:28:42</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term deleted</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5002221572">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">metal almirantazgo (1000417290);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2010-04-23T00:12:17</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5002912915">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/">admiraliteitslegering (1000469868);</description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-01-08T00:20:26</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">term added</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5000032285">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Create"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/"></description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1988-01-01T00:00:00</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">created</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5000032287">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/"></description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">1993-03-16T00:00:00</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">moved</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001684608">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/"></description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-10-26T09:05:46</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">updated</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001690648">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/"></description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2007-11-07T13:00:41</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">updated</type>
+</Activity>
+<Activity xmlns="http://www.w3.org/ns/prov#" rdf:about="http://vocab.getty.edu/aat/rev/5001706829">
+	<rdf:type rdf:resource="http://www.w3.org/ns/prov#Modify"/>
+	<used xmlns="http://www.w3.org/ns/prov#" rdf:resource="http://vocab.getty.edu/aat/300010955"/>
+	<description xmlns="http://purl.org/dc/elements/1.1/"></description>
+	<startedAtTime xmlns="http://www.w3.org/ns/prov#" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2008-01-29T15:28:42</startedAtTime>
+	<type xmlns="http://purl.org/dc/elements/1.1/">updated</type>
+</Activity>
+<ScopeNote xmlns="http://vocab.getty.edu/ontology#" rdf:about="http://vocab.getty.edu/aat/scopeNote/45382">
+	<rdf:value xml:lang="en">Alloy consisting of about 70% copper, 1% tin, and the remainder zinc.</rdf:value>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000027671"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">45382</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388277"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/en"/>
+</ScopeNote>
+<ScopeNote xmlns="http://vocab.getty.edu/ontology#" rdf:about="http://vocab.getty.edu/aat/scopeNote/60491">
+	<rdf:value xml:lang="es">Aleación consistente en aproximadamente 70% de cobre, 1% de estaño y el resto de zinc.&#xD;
+</rdf:value>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000131"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000051034"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">60491</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300389311"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/es"/>
+</ScopeNote>
+<ScopeNote xmlns="http://vocab.getty.edu/ontology#" rdf:about="http://vocab.getty.edu/aat/scopeNote/98431">
+	<rdf:value xml:lang="nl">Een legering bestaande uit ongeveer 70% koper, 1% tin en voor het overige zink.</rdf:value>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000205"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000113770"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">98431</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388256"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/nl"/>
+</ScopeNote>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000010955-en">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="en">admiralty metal</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">1</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="en">admiralty metal</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/Descriptor"/>
+	<termPOS xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/POS/Noun"/>
+	<contributorPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<sourcePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000048328-term-1000010955"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000027671"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000048328-term-1000010955"/>
+	<sourceAlternatePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000027671"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000010955</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388277"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/en"/>
+</Label>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000469868-nl">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="nl">admiraliteitslegering</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">5</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="nl">admiraliteitslegering</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/Descriptor"/>
+	<contributorPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000205"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000205"/>
+	<sourcePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000113770"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000113770"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000469868</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388256"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/nl"/>
+</Label>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000313085-fr">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="fr">laiton 70-29 à 1 % d'étain</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">6</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="fr">laiton 70-29 à 1 % d'étain</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/Descriptor"/>
+	<termPOS xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/POS/Noun"/>
+	<contributorPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000159"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000159"/>
+	<sourcePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000048434"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000048434"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000313085</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388306"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/fr"/>
+</Label>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000417290-es">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="es">metal almirantazgo</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">7</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="es">metal almirantazgo</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/Descriptor"/>
+	<contributorPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000131"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000131"/>
+	<sourcePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000048849"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000048849"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000417290</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300389311"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/es"/>
+</Label>
+<Document xmlns="http://purl.org/ontology/bibo/" rdf:about="http://vocab.getty.edu/aat/source/2000048328-term-1000010955">
+	<rdf:type rdf:resource="http://purl.org/ontology/bibo/DocumentPart"/>
+	<isPartOf xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000048328"/>
+	<locator xmlns="http://purl.org/ontology/bibo/">Candidate term - IAS - 12/89</locator>
+</Document>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000242139-en">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="en">admiralty brass</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">2</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="en">admiralty brass</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/UsedForTerm"/>
+	<termPOS xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/POS/Noun"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<contributorNonPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<sourcePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000092189-term-1000242139"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000092189-term-1000242139"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000242139</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388277"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/en"/>
+</Label>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000010956-en">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="en">admiralty bronze</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">3</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="en">admiralty bronze</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/UsedForTerm"/>
+	<termPOS xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/POS/Noun"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<contributorNonPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<sourcePreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000027671-term-1000010956"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000027671-term-1000010956"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000010956</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388277"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/en"/>
+</Label>
+<Label xmlns="http://www.w3.org/2008/05/skos-xl#" rdf:about="http://vocab.getty.edu/aat/term/1000147199-en">
+	<term xmlns="http://vocab.getty.edu/ontology#" xml:lang="en">metal, admiralty</term>
+	<displayOrder xmlns="http://vocab.getty.edu/ontology#" rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">4</displayOrder>
+	<literalForm xmlns="http://www.w3.org/2008/05/skos-xl#" xml:lang="en">metal, admiralty</literalForm>
+	<termType xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/type/UsedForTerm"/>
+	<termPOS xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/term/POS/Noun"/>
+	<contributor xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<contributorNonPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/contrib/10000000"/>
+	<source xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000094828"/>
+	<sourceNonPreferred xmlns="http://vocab.getty.edu/ontology#" rdf:resource="http://vocab.getty.edu/aat/source/2000094828"/>
+	<identifier xmlns="http://purl.org/dc/elements/1.1/">1000147199</identifier>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/300388277"/>
+	<language xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/language/en"/>
+</Label>
+<Document xmlns="http://purl.org/ontology/bibo/" rdf:about="http://vocab.getty.edu/aat/source/2000092189-term-1000242139">
+	<rdf:type rdf:resource="http://purl.org/ontology/bibo/DocumentPart"/>
+	<isPartOf xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000092189"/>
+	<locator xmlns="http://purl.org/ontology/bibo/">Tom Chase, Conservator, Freer Gallery of Art, S.I., Wash., D.C., consultancy 1/93. Prefers this form</locator>
+</Document>
+<Document xmlns="http://purl.org/ontology/bibo/" rdf:about="http://vocab.getty.edu/aat/source/2000027671-term-1000010956">
+	<rdf:type rdf:resource="http://purl.org/ontology/bibo/DocumentPart"/>
+	<isPartOf xmlns="http://purl.org/dc/terms/" rdf:resource="http://vocab.getty.edu/aat/source/2000027671"/>
+	<locator xmlns="http://purl.org/ontology/bibo/">18</locator>
+</Document>
+
+</rdf:RDF>

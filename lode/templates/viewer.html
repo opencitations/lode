@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LODE 2.0 - Semantic Artefact Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <style>
+        /* Custom styles for the Table of Contents and Sections */
+        .toc-card {
+            background-color: #f8f9fa;
+            border-left: 5px solid #0d6efd;
+        }
+        .section-header {
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+        /* Ensures the title isn't hidden behind browser chrome when jumping */
+        .anchor-offset {
+            scroll-margin-top: 20px;
+        }
+        .badge-type {
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="mb-5">
+            <h1 class="display-5 fw-bold text-primary">LODE 2.0</h1>
+            <p class="text-muted">Semantic Artefact Documentation</p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert-danger shadow-sm" role="alert">
+                <h4 class="alert-heading">Error</h4>
+                <p class="mb-0">{{ error }}</p>
+            </div>
+
+        {% else %}
+
+            {% if grouped_view and sections %}
+
+                <div class="card toc-card mb-5 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold text-primary mb-3">Table of Contents</h5>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for section in sections %}
+                            <a href="#{{ section.id }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                {{ section.title }}
+                                <span class="badge text-bg-primary ms-1 rounded-circle">{{ section.entities|length }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% for section in sections %}
+                <div id="{{ section.id }}" class="anchor-offset">
+                    <h3 class="section-header text-dark">{{ section.title }}</h3>
+
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40%" class="ps-4">URI</th>
+                                            <th style="width: 60%">Label</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in section.entities %}
+                                        <tr>
+                                            <td class="ps-4">
+                                                <code class="text-break text-primary">{{ item.uri }}</code>
+                                                    <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url | urlencode }}&resource={{ item.uri | urlencode }}"
+                                                   class="btn btn-sm btn-light border ms-2"
+                                                   title="View Details">
+                                                    ↗
+                                                </a>
+                                            </td>
+                                            <td class="fw-semibold text-secondary">{{ item.label }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            {% else %}
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0">
+                            {% if single_resource %}
+                                Resource Details
+                            {% else %}
+                                All Entities ({{ entities|length }})
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Type</th>
+                                        <th>URI</th>
+                                        <th>Label</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entity in entities %}
+                                    <tr>
+                                        <td class="ps-4"><span class="badge bg-secondary badge-type">{{ entity.type }}</span></td>
+                                        <td><code>{{ entity.uri }}</code></td>
+                                        <td>{{ entity.label }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {% if single_resource %}
+                <div class="mt-3">
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
+                </div>
+                {% endif %}
+
+            {% endif %} {% endif %} </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

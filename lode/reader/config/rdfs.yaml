@@ -1,0 +1,69 @@
+name: RDFS
+fallback_class: Statement
+
+type_mapping:
+  rdfs:Class: Concept
+  rdf:Property: Property
+  owl:Class: Concept
+  owl:ObjectProperty: Property
+  owl:DatatypeProperty: Attribute
+  owl:AnnotationProperty: Annotation
+  owl:Restriction: Concept
+  owl:Ontology: Model
+  skos:Concept: Concept
+  skos:ConceptScheme: Model
+
+properties:
+  # Literals
+  rdfs:label:
+    target_classes: [Resource]
+    setter: set_has_label
+    literal: true
+    
+  rdfs:comment:
+    target_classes: [Resource]
+    setter: set_has_comment
+    literal: true
+    
+  skos:prefLabel:
+    target_classes: [Resource]
+    setter: set_has_preferred_label
+    literal: true
+    
+  skos:altLabel:
+    target_classes: [Resource]
+    setter: set_has_alternative_label
+    literal: true
+    
+  skos:definition:
+    target_classes: [Resource]
+    setter: set_has_definition
+    literal: true
+  
+  # Object properties
+  rdfs:seeAlso:
+    target_classes: [Resource]
+    setter: set_see_also
+    object_type: Resource
+    
+  rdfs:subClassOf:
+    target_classes: [Concept]
+    setter: set_is_sub_concept_of
+    object_type: Concept
+    
+  rdfs:subPropertyOf:
+    target_classes: [Property]
+    setter: set_is_sub_property_of
+    object_type: Property
+    
+  rdfs:domain:
+    target_classes: [Property]
+    setter: set_has_domain
+    object_type: Concept
+    
+  rdfs:range:
+    target_classes: [Property]
+    setter: set_has_range
+    object_type: Resource
+
+group_axioms: {}
