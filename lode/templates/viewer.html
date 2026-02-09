@@ -5,26 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LODE 2.0 - Semantic Artefact Viewer</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <style>
-        /* Custom styles for the Table of Contents and Sections */
-        .toc-card {
-            background-color: #f8f9fa;
-            border-left: 5px solid #0d6efd;
-        }
-        .section-header {
-            margin-top: 3rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #dee2e6;
-        }
-        /* Ensures the title isn't hidden behind browser chrome when jumping */
-        .anchor-offset {
-            scroll-margin-top: 20px;
-        }
-        .badge-type {
-            font-size: 0.85em;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
     <div class="container py-5">
@@ -41,7 +22,8 @@
 
         {% else %}
 
-            {% if grouped_view and sections %}
+        {% if grouped_view and sections %}
+            <div class="section-header">
 
                 <div class="card toc-card mb-5 shadow-sm border-0">
                     <div class="card-body">
@@ -56,86 +38,89 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {% for section in sections %}
-                <div id="{{ section.id }}" class="anchor-offset">
-                    <h3 class="section-header text-dark">{{ section.title }}</h3>
+            {% for section in sections %}
+            <div id="{{ section.id }}" class="anchor-offset mb-5">
+                <h3 class="section-header text-dark d-flex align-items-center justify-content-between mb-4">
+                    {{ section.title }}
+                    <span class="badge bg-primary rounded-pill fs-6">{{ section.entities|length }}</span>
+                </h3>
 
-                    <div class="card shadow-sm border-0 mb-4">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 40%" class="ps-4">URI</th>
-                                            <th style="width: 60%">Label</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for item in section.entities %}
-                                        <tr>
-                                            <td class="ps-4">
-                                                <code class="text-break text-primary">{{ item.uri }}</code>
-                                                    <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url | urlencode }}&resource={{ item.uri | urlencode }}"
-                                                   class="btn btn-sm btn-light border ms-2"
-                                                   title="View Details">
-                                                    ↗
-                                                </a>
-                                            </td>
-                                            <td class="fw-semibold text-secondary">{{ item.label }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                <div class="card bg-light border-0 mb-4 shadow-sm">
+                    <div class="card-body p-3">
+                        <p class="text-muted small mb-2 text-uppercase fw-bold">Jump to:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for item in section.entities %}
+                            <a href="#{{ item.anchor_id }}" class="btn btn-sm btn-outline-primary bg-white text-truncate" style="max-width: 180px;">
+                                {{ item.label }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% for item in section.entities %}
+                <div class="card shadow-sm border-0 mb-4 anchor-offset" id="{{ item.anchor_id }}">
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <h4 class="text-primary fw-bold mb-0">{{ item.label }}</h4>
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill">
+                            {{ item.type }}
+                        </span>
+                    </div>
+
+                    <div class="card-body px-4 pb-4">
+                        <div class="mb-4">
+                            <small class="text-muted text-uppercase fw-bold d-block mb-1">URI</small>
+                            <div class="d-flex align-items-center">
+                                <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
+                                <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ item.uri }}"
+                                   class="btn btn-sm btn-outline-secondary ms-2" title="Detailed View">↗</a>
                             </div>
+                        </div>
+
+                        <div class="row g-3">
+                            {% if item.relations %}
+                                {% for rel_name, rel_value in item.relations.items() %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="p-3 border rounded bg-light-subtle h-100">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                            {{ rel_name }}
+                                        </h6>
+                                        <div class="text-secondary small">
+                                            {% if rel_value is iterable and rel_value is not string %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for val in rel_value %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
+                                                {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                {{ rel_value }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="col-12 text-center py-2">
+                                    <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 {% endfor %}
+            </div>
+            {% endfor %}
 
-            {% else %}
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0">
-                            {% if single_resource %}
-                                Resource Details
-                            {% else %}
-                                All Entities ({{ entities|length }})
-                            {% endif %}
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="ps-4">Type</th>
-                                        <th>URI</th>
-                                        <th>Label</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for entity in entities %}
-                                    <tr>
-                                        <td class="ps-4"><span class="badge bg-secondary badge-type">{{ entity.type }}</span></td>
-                                        <td><code>{{ entity.uri }}</code></td>
-                                        <td>{{ entity.label }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        {% if single_resource %}
+        <div class="mt-3">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
+        </div>
+        {% endif %}
 
-                {% if single_resource %}
-                <div class="mt-3">
-                    <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
-                </div>
-                {% endif %}
-
-            {% endif %} {% endif %} </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        {% endif %} {% endif %}
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
 </body>
 </html>
