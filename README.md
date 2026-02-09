@@ -25,7 +25,7 @@ print(result)
 
 Full documentation is available at: https://username.github.io/lode/
 
-## Development
+## Prerequisites
 
 This project uses [UV](https://docs.astral.sh/uv/) for dependency management.
 
@@ -33,7 +33,10 @@ This project uses [UV](https://docs.astral.sh/uv/) for dependency management.
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/lode.git
+git clone https://github.com/opencitations/lode.git
+
+# Enter the repo
+cd lode
 
 # Install dependencies
 uv sync --all-extras --dev
