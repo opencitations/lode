@@ -240,7 +240,7 @@ class BaseLogic(ABC):
             if isinstance(id, URIRef):
                 uri_str = str(id)
                 for ns in self._allowed_namespaces:
-                    if uri_str.startswith(ns) and id != OWL.Thing and id != OWL.Nothing and id != RDFS.Literal:
+                    if uri_str.startswith(ns) and id != OWL.Thing and id != OWL.Nothing and id != RDFS.Literal and id != RDFS.Resource and id != RDFS.Class:
                         return None
 
             # Individual case
