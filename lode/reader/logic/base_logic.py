@@ -264,6 +264,9 @@ class BaseLogic(ABC):
             if id not in self._instance_cache:
                 self._instance_cache[id] = set()
             self._instance_cache[id].add(instance)
+
+            # Always set identifier (even if populate=False)
+            instance.set_has_identifier(str(id))
             
             # Populate (opzionale)
             if populate:
