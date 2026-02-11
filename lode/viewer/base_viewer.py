@@ -1,4 +1,5 @@
 # base_viewer.py
+import hashlib
 from typing import Dict, List, Optional, Tuple
 from lode.models import Resource
 
@@ -19,7 +20,7 @@ class BaseViewer:
             
             instance_list = instance_set if isinstance(instance_set, set) else [instance_set]
             instances.extend(instance_list)
-        
+
         return instances
     
     def get_instances_from_single_resource(self, resource_uri: str) -> Optional[set]:
@@ -132,10 +133,24 @@ class BaseViewer:
         """
         entities = []
         for instance in instances:
+            uri = instance.has_identifier
+            #Create a safe HTML ID to facilitate on-page navigation
+            safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
+
+            # Extract internal attributes (SuperClasses, etc.)
+            relations = {}
+            for attr, value in instance.__dict__.items():
+                if not attr.startswith('_') and value: #Skip internal python attributes
+                    # Clean up attribute name (e.g., 'has_super_class' -> 'Super Class')
+                    clean_name = attr.replace('has_', '').replace('_', ' ').title()
+                    relations[clean_name] = value
+
             entities.append({
                 'type': type(instance).__name__,
-                'uri': instance.has_identifier,
-                'label': self._get_best_label(instance, language)
+                'uri': uri,
+                'label': self._get_best_label(instance, language),
+                'anchor_id': f"id_{safe_id}",
+                'relations': relations
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
