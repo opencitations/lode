@@ -1,0 +1,1115 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0 -- C:\Users\valep\Documents\GitHub\lode\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\valep\Documents\GitHub\lode
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collecting ... collected 30 items
+
+tests/test_reader.py::TestOntologyLoading::test_ontology_loads[pizza] 
+======================================================================
+ONTOLOGY: PIZZA
+======================================================================
+Cache size: 823 entries
+FAILED
+tests/test_reader.py::TestOntologyLoading::test_ontology_loads[icon] 
+======================================================================
+ONTOLOGY: ICON
+======================================================================
+Cache size: 579 entries
+FAILED
+tests/test_reader.py::TestOntologyLoading::test_ontology_loads[write] 
+--- FASE 1: Classificazione SKOS ---
+  Skip (SKOS usa solo types)
+
+--- FASE 2: Types SKOS ---
+  Create: 97
+
+--- FASE 3: Popolamento SKOS ---
+  Popolate: 534
+
+--- FASE 4: Axioms SKOS ---
+  Nessun axiom SKOS
+
+--- FASE 5: FALLBACK - TO BE IMPLEMENTED SOON ---
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+
+======================================================================
+ONTOLOGY: WRITE
+======================================================================
+Cache size: 828 entries
+FAILED
+tests/test_reader.py::TestOntologyLoading::test_viewer_works[pizza] 
+======================================================================
+VIEWER: PIZZA
+======================================================================
+Total instances: 514
+FAILED
+tests/test_reader.py::TestOntologyLoading::test_viewer_works[icon] 
+======================================================================
+VIEWER: ICON
+======================================================================
+Total instances: 343
+FAILED
+tests/test_reader.py::TestOntologyLoading::test_viewer_works[write] 
+--- FASE 1: Classificazione SKOS ---
+  Skip (SKOS usa solo types)
+
+--- FASE 2: Types SKOS ---
+  Create: 97
+
+--- FASE 3: Popolamento SKOS ---
+  Popolate: 534
+
+--- FASE 4: Axioms SKOS ---
+  Nessun axiom SKOS
+
+--- FASE 5: FALLBACK - TO BE IMPLEMENTED SOON ---
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+
+======================================================================
+VIEWER: WRITE
+======================================================================
+Total instances: 393
+FAILED
+tests/test_reader.py::TestPunning::test_detect_punning_cases[pizza] SKIPPED
+tests/test_reader.py::TestPunning::test_detect_punning_cases[icon] 
+======================================================================
+PUNNING DETECTION: ICON
+======================================================================
+Total punning cases found: 17
+
+First 5 examples:
+
+  1. URI: https://w3id.org/icon/ontology/Action
+     Types: Individual, Concept
+     Count: 2
+
+  2. URI: https://w3id.org/icon/ontology/ArtisticMotif
+     Types: Concept, Individual
+     Count: 2
+
+  3. URI: https://w3id.org/icon/ontology/Artwork
+     Types: Individual, Concept
+     Count: 2
+
+  4. URI: https://w3id.org/icon/ontology/Character
+     Types: Concept, Individual
+     Count: 2
+
+  5. URI: https://w3id.org/icon/ontology/Composition
+     Types: Concept, Individual
+     Count: 2
+FAILED
+tests/test_reader.py::TestPunning::test_detect_punning_cases[write] 
+--- FASE 1: Classificazione SKOS ---
+  Skip (SKOS usa solo types)
+
+--- FASE 2: Types SKOS ---
+  Create: 97
+
+--- FASE 3: Popolamento SKOS ---
+  Popolate: 534
+
+--- FASE 4: Axioms SKOS ---
+  Nessun axiom SKOS
+
+--- FASE 5: FALLBACK - TO BE IMPLEMENTED SOON ---
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+ Property  Resource (formato)
+SKIPPED
+tests/test_reader.py::TestPunning::test_punning_triples_are_separated[pizza] 
+
+================================== FAILURES ===================================
+_______________ TestOntologyLoading.test_ontology_loads[pizza] ________________
+
+self = <tests.test_reader.TestOntologyLoading object at 0x000001F244A042D0>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F2449D9940>
+
+    def test_ontology_loads(self, ontology_reader):
+        """Verifica caricamento"""
+        name = ontology_reader.config['name']
+        cache_size = len(ontology_reader._instance_cache)
+    
+        assert ontology_reader is not None
+        assert cache_size > 0
+    
+        print(f"\n{'='*70}")
+        print(f"ONTOLOGY: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Cache size: {cache_size} entries")
+>       print(f"Status: \u2713 Loaded successfully")
+
+tests\test_reader.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = 'Status: \u2713 Loaded successfully', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 8: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+________________ TestOntologyLoading.test_ontology_loads[icon] ________________
+
+self = <tests.test_reader.TestOntologyLoading object at 0x000001F244A04550>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F24527E5D0>
+
+    def test_ontology_loads(self, ontology_reader):
+        """Verifica caricamento"""
+        name = ontology_reader.config['name']
+        cache_size = len(ontology_reader._instance_cache)
+    
+        assert ontology_reader is not None
+        assert cache_size > 0
+    
+        print(f"\n{'='*70}")
+        print(f"ONTOLOGY: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Cache size: {cache_size} entries")
+>       print(f"Status: \u2713 Loaded successfully")
+
+tests\test_reader.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = 'Status: \u2713 Loaded successfully', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 8: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+_______________ TestOntologyLoading.test_ontology_loads[write] ________________
+
+self = <tests.test_reader.TestOntologyLoading object at 0x000001F24499D220>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F246652490>
+
+    def test_ontology_loads(self, ontology_reader):
+        """Verifica caricamento"""
+        name = ontology_reader.config['name']
+        cache_size = len(ontology_reader._instance_cache)
+    
+        assert ontology_reader is not None
+        assert cache_size > 0
+    
+        print(f"\n{'='*70}")
+        print(f"ONTOLOGY: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Cache size: {cache_size} entries")
+>       print(f"Status: \u2713 Loaded successfully")
+
+tests\test_reader.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = 'Status: \u2713 Loaded successfully', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 8: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+________________ TestOntologyLoading.test_viewer_works[pizza] _________________
+
+self = <tests.test_reader.TestOntologyLoading object at 0x000001F24499DA70>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F24679A3F0>
+
+    def test_viewer_works(self, ontology_reader):
+        """Verifica viewer"""
+        name = ontology_reader.config['name']
+        viewer = ontology_reader.get_viewer()
+        instances = viewer.get_all_instances()
+    
+        assert len(instances) > 0
+    
+        print(f"\n{'='*70}")
+        print(f"VIEWER: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Total instances: {len(instances)}")
+>       print(f"Status: \u2713 Viewer working correctly")
+
+tests\test_reader.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = 'Status: \u2713 Viewer working correctly', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 8: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+_________________ TestOntologyLoading.test_viewer_works[icon] _________________
+
+self = <tests.test_reader.TestOntologyLoading object at 0x000001F2449BE450>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F24679B820>
+
+    def test_viewer_works(self, ontology_reader):
+        """Verifica viewer"""
+        name = ontology_reader.config['name']
+        viewer = ontology_reader.get_viewer()
+        instances = viewer.get_all_instances()
+    
+        assert len(instances) > 0
+    
+        print(f"\n{'='*70}")
+        print(f"VIEWER: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Total instances: {len(instances)}")
+>       print(f"Status: \u2713 Viewer working correctly")
+
+tests\test_reader.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = 'Status: \u2713 Viewer working correctly', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 8: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+________________ TestOntologyLoading.test_viewer_works[write] _________________
+
+self = <tests.test_reader.TestOntologyLoading object at 0x000001F2449B9590>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F2471B9A30>
+
+    def test_viewer_works(self, ontology_reader):
+        """Verifica viewer"""
+        name = ontology_reader.config['name']
+        viewer = ontology_reader.get_viewer()
+        instances = viewer.get_all_instances()
+    
+        assert len(instances) > 0
+    
+        print(f"\n{'='*70}")
+        print(f"VIEWER: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Total instances: {len(instances)}")
+>       print(f"Status: \u2713 Viewer working correctly")
+
+tests\test_reader.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = 'Status: \u2713 Viewer working correctly', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]Traceback (most recent call last):
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\main.py", line 318, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\main.py", line 372, in _main
+    config.hook.pytest_runtestloop(session=session)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\logging.py", line 801, in pytest_runtestloop
+    return (yield)  # Run all the tests.
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\terminal.py", line 714, in pytest_runtestloop
+    result = yield
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\main.py", line 396, in pytest_runtestloop
+    item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\warnings.py", line 89, in pytest_runtest_protocol
+    return (yield)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\assertion\__init__.py", line 192, in pytest_runtest_protocol
+    return (yield)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\unittest.py", line 573, in pytest_runtest_protocol
+    return (yield)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\faulthandler.py", line 102, in pytest_runtest_protocol
+    return (yield)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 118, in pytest_runtest_protocol
+    runtestprotocol(item, nextitem=nextitem)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 131, in runtestprotocol
+    rep = call_and_report(item, "setup", log)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 244, in call_and_report
+    call = CallInfo.from_call(
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 353, in from_call
+    result: TResult | None = func()
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 245, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\logging.py", line 843, in pytest_runtest_setup
+    yield
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\capture.py", line 895, in pytest_runtest_setup
+    return (yield)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 165, in pytest_runtest_setup
+    item.session._setupstate.setup(item)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\runner.py", line 523, in setup
+    col.setup()
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\python.py", line 1723, in setup
+    self._request._fillfixtures()
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\fixtures.py", line 707, in _fillfixtures
+    item.funcargs[argname] = self.getfixturevalue(argname)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\fixtures.py", line 539, in getfixturevalue
+    fixturedef = self._get_active_fixturedef(argname)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\fixtures.py", line 627, in _get_active_fixturedef
+    fixturedef.execute(request=subrequest)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\fixtures.py", line 1110, in execute
+    result: FixtureValue = ihook.pytest_fixture_setup(
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 53, in run_old_style_hookwrapper
+    return result.get_result()
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_result.py", line 103, in get_result
+    raise exc.with_traceback(tb)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 38, in run_old_style_hookwrapper
+    res = yield
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\setuponly.py", line 36, in pytest_fixture_setup
+    return (yield)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\fixtures.py", line 1202, in pytest_fixture_setup
+    result = call_fixture_func(fixturefunc, request, kwargs)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\fixtures.py", line 915, in call_fixture_func
+    fixture_result = fixturefunc(**kwargs)
+  File "C:\Users\valep\Documents\GitHub\lode\tests\test_reader.py", line 42, in ontology_reader
+    reader.load_instances(config["url"], read_as=config["read_as"])
+  File "C:\Users\valep\Documents\GitHub\lode\lode\reader\reader.py", line 25, in load_instances
+    loader = Loader(graph_path)
+  File "C:\Users\valep\Documents\GitHub\lode\lode\reader\loader.py", line 17, in __init__
+    result = self.load(file_path)
+  File "C:\Users\valep\Documents\GitHub\lode\lode\reader\loader.py", line 30, in load
+    return self._load_from_url_with_content_negotiation(source)
+  File "C:\Users\valep\Documents\GitHub\lode\lode\reader\loader.py", line 48, in _load_from_url_with_content_negotiation
+    response = requests.get(url, headers=headers, timeout=10)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\requests\api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\requests\api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\requests\sessions.py", line 746, in send
+    r.content
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\requests\models.py", line 902, in content
+    self._content = b"".join(self.iter_content(CONTENT_CHUNK_SIZE)) or b""
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\requests\models.py", line 820, in generate
+    yield from self.raw.stream(chunk_size, decode_content=True)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\urllib3\response.py", line 1253, in stream
+    data = self.read(amt=amt, decode_content=decode_content)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\urllib3\response.py", line 1108, in read
+    data = self._raw_read(amt)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\urllib3\response.py", line 1024, in _raw_read
+    data = self._fp_read(amt, read1=read1) if not fp_closed else b""
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\urllib3\response.py", line 1007, in _fp_read
+    return self._fp.read(amt) if amt is not None else self._fp.read()
+  File "C:\Users\valep\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\http\client.py", line 479, in read
+    s = self.fp.read(amt)
+  File "C:\Users\valep\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+  File "C:\Users\valep\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+  File "C:\Users\valep\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Scripts\pytest.exe\__main__.py", line 10, in <module>
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\config\__init__.py", line 221, in console_main
+    code = main()
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\config\__init__.py", line 197, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\main.py", line 332, in wrap_session
+    config.hook.pytest_keyboard_interrupt(excinfo=excinfo)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\terminal.py", line 1006, in pytest_keyboard_interrupt
+    self._keyboardinterrupt_memo = excinfo.getrepr(funcargs=True)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\code.py", line 765, in getrepr
+    return fmt.repr_excinfo(self)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\code.py", line 1200, in repr_excinfo
+    reprtraceback = self.repr_traceback(excinfo_)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\code.py", line 1133, in repr_traceback
+    self.repr_traceback_entry(entry, excinfo if last == entry else None)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\code.py", line 1063, in repr_traceback_entry
+    source = self._getentrysource(entry)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\code.py", line 901, in _getentrysource
+    source = entry.getsource(self.astcache)
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\code.py", line 299, in getsource
+    astnode, _, end = getstatementrange_ast(
+  File "C:\Users\valep\Documents\GitHub\lode\.venv\Lib\site-packages\_pytest\_code\source.py", line 191, in getstatementrange_ast
+    astnode = ast.parse(content, "source", "exec")
+  File "C:\Users\valep\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\ast.py", line 50, in parse
+    return compile(source, filename, mode, flags,
+KeyboardInterrupt
+
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 8: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+_________________ TestPunning.test_detect_punning_cases[icon] _________________
+
+self = <tests.test_reader.TestPunning object at 0x000001F244A04A50>
+ontology_reader = <lode.reader.reader.Reader object at 0x000001F2453AC490>
+
+    def test_detect_punning_cases(self, ontology_reader):
+        """Rileva punning"""
+        name = ontology_reader.config['name']
+    
+        if not ontology_reader.config.get("expects_punning"):
+            pytest.skip(f"Punning not expected in {name}")
+    
+        punning_cases = []
+        for uri, inst_set in ontology_reader._instance_cache.items():
+            if isinstance(inst_set, set) and len(inst_set) > 1:
+                instance_types = [type(inst).__name__ for inst in inst_set]
+                punning_cases.append({
+                    'uri': str(uri),
+                    'types': instance_types,
+                    'count': len(inst_set)
+                })
+    
+        print(f"\n{'='*70}")
+        print(f"PUNNING DETECTION: {name.upper()}")
+        print(f"{'='*70}")
+        print(f"Total punning cases found: {len(punning_cases)}")
+    
+        if punning_cases:
+            print(f"\nFirst 5 examples:")
+            for i, case in enumerate(punning_cases[:5], 1):
+                print(f"\n  {i}. URI: {case['uri']}")
+                print(f"     Types: {', '.join(case['types'])}")
+                print(f"     Count: {case['count']}")
+    
+>       print(f"\\nStatus: \u2713 Punning cases detected")
+
+tests\test_reader.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalEncoder object at 0x000001F240BD4AD0>
+input = '\\r\\nStatus: \u2713 Punning cases detected', final = False
+
+    def encode(self, input, final=False):
+>       return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 10: character maps to <undefined>
+
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\encodings\cp1252.py:19: UnicodeEncodeError
+=========================== short test summary info ===========================
+FAILED tests/test_reader.py::TestOntologyLoading::test_ontology_loads[pizza]
+FAILED tests/test_reader.py::TestOntologyLoading::test_ontology_loads[icon]
+FAILED tests/test_reader.py::TestOntologyLoading::test_ontology_loads[write]
+FAILED tests/test_reader.py::TestOntologyLoading::test_viewer_works[pizza] - ...
+FAILED tests/test_reader.py::TestOntologyLoading::test_viewer_works[icon] - U...
+FAILED tests/test_reader.py::TestOntologyLoading::test_viewer_works[write] - ...
+FAILED tests/test_reader.py::TestPunning::test_detect_punning_cases[icon] - U...
+======================== 7 failed, 2 skipped in 18.36s ========================
+^C
