@@ -22,6 +22,117 @@
 
         {% else %}
 
+        {% if metadata %}
+        <div class="container my-5">
+            <div class="card shadow border-0 border-top border-4 border-primary">
+                <div class="card-body p-5">
+
+                    <h1 class="display-5 fw-bold text-dark mb-4">
+                        {% set titles = metadata.get_has_label() %}
+                        {% if titles %}
+                            {{ titles[0] }}
+                        {% else %}
+                            <span class="text-muted">Untitled Ontology</span>
+                        {% endif %}
+                    </h1>
+
+                    <dl class="row mb-0 lead fs-6">
+
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Ontology IRI</dt>
+                        <dd class="col-sm-9 mb-3">
+                            <code class="text-primary bg-light px-2 py-1 rounded border">{{ metadata.has_identifier }}</code>
+                            <a href="{{ metadata.has_identifier }}" class="ms-2 text-secondary small" target="_blank" title="Go to IRI">
+                                <i class="bi bi-box-arrow-up-right"></i> ↗
+                            </a>
+                        </dd>
+
+                        {% set versions = metadata.get_has_version() %}
+                        {% if versions %}
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Version IRI</dt>
+                        <dd class="col-sm-9 mb-3">
+                            {% for ver in versions %}
+                                <div class="mb-1">
+                                    <code class="text-muted bg-light px-2 py-1 rounded">{{ ver.has_identifier }}</code>
+                                </div>
+                            {% endfor %}
+                        </dd>
+                        {% endif %}
+
+                        {% set version_infos = metadata.get_has_version_info() %}
+                        {% if version_infos %}
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Version Info</dt>
+                        <dd class="col-sm-9 mb-3">
+                            <span class="badge bg-secondary rounded-pill">{{ version_infos[0] }}</span>
+                        </dd>
+                        {% endif %}
+
+                        {% set comments = metadata.get_has_comment() %}
+                        {% if comments %}
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Description</dt>
+                        <dd class="col-sm-9 mb-3 text-dark">
+                            {% for comment in comments %}
+                                <p class="mb-2">{{ comment }}</p>
+                            {% endfor %}
+                        </dd>
+                        {% endif %}
+
+                        {% if metadata.get_has_creator is defined %}
+                            {% set creators = metadata.get_has_creator() %}
+                            {% if creators %}
+                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Creators</dt>
+                            <dd class="col-sm-9 mb-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for creator in creators %}
+                                        <span class="badge bg-light text-dark border shadow-sm">{{ creator }}</span>
+                                    {% endfor %}
+                                </div>
+                            </dd>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if metadata.get_has_contributor is defined %}
+                            {% set contributors = metadata.get_has_contributor() %}
+                            {% if contributors %}
+                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Contributors</dt>
+                            <dd class="col-sm-9 mb-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for contributor in contributors %}
+                                        <span class="badge bg-light text-dark border shadow-sm">{{ contributor }}</span>
+                                    {% endfor %}
+                                </div>
+                            </dd>
+                            {% endif %}
+                        {% endif %}
+
+                        {% set imports = metadata.get_imports() %}
+                        {% if imports %}
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">Imports</dt>
+                        <dd class="col-sm-9 mb-3">
+                            <ul class="list-unstyled mb-0">
+                            {% for imported_model in imports %}
+                                <li class="mb-1">
+                                    <a href="{{ imported_model.has_identifier }}" target="_blank" class="text-decoration-none">
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                                            {{ imported_model.has_identifier }}
+                                        </span>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </dd>
+                        {% endif %}
+
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Visualizations</dt>
+                        <dd class="col-sm-9 mt-2">
+                            <a href="#" class="btn btn-sm btn-outline-dark me-2">WebVOWL</a>
+                            <a href="#" class="btn btn-sm btn-outline-dark">Turtle Source</a>
+                        </dd>
+
+                    </dl>
+                </div>
+            </div>
+        </div>
+        {% endif %}
         {% if grouped_view and sections %}
             <div class="section-header">
 

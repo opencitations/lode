@@ -1,4 +1,5 @@
 # reader.py - ORCHESTRATOR GENERICO
+from rdflib.namespace import DCTERMS, DC, OWL, RDF, RDFS
 from lode.reader.loader import Loader
 from lode.reader.config_manager import get_configuration
 from lode.models import *
@@ -9,7 +10,7 @@ class Reader:
     
     Responsibilities:
     - Calls the loader to parse input RDF (via rdflib)
-    - Oreschestrates Python model population phases 
+    - Orchestrates Python model population phases
     - Delegates specific logics for extraction and population to other modules
     """
     
@@ -133,7 +134,7 @@ class Reader:
         """Ottiene il viewer appropriato per il formato corrente."""
         if not self._configuration:
             raise ValueError("No configuration loaded. Call load_instances() first.")
-        
+
         return self._configuration.create_viewer(self)
     
     def clear_cache(self):
@@ -214,3 +215,68 @@ class Reader:
                 fallback_count += 1
         
         print(f"  Fallback: {fallback_count} risorse -> {fallback_class.__name__}")
+
+    def get_ontology_metadata(self) -> Model:
+        """
+        Extracts metadata and returns a populated Model object.
+        """
+        if self._graph is None:
+            return Model()
+
+        # 1. Create the Model instance
+        ontology_model = Model()
+
+        # 2. Find the owl:Ontology node
+        ontology_node = self._graph.value(predicate=RDF.type, object=OWL.Ontology)
+
+        if ontology_node:
+            # --- IDENTIFIER (IRI) ---
+            ontology_model.set_has_identifier(str(ontology_node))
+
+            # --- TITLE (Label) ---
+            title = (
+                    self._graph.value(ontology_node, DCTERMS.title) or
+                    self._graph.value(ontology_node, DC.title) or
+                    self._graph.value(ontology_node, RDFS.label)
+            )
+            if title:
+                ontology_model.set_has_label(str(title))
+
+            # --- DESCRIPTION (Comment) ---
+            comment = (
+                    self._graph.value(ontology_node, DCTERMS.description) or
+                    self._graph.value(ontology_node, RDFS.comment)
+            )
+            if comment:
+                ontology_model.set_has_comment(str(comment))
+
+            # --- VERSION INFO ---
+            version_info = self._graph.value(ontology_node, OWL.versionInfo)
+            if version_info:
+                ontology_model.set_has_version_info(str(version_info))
+
+            # --- VERSION IRI ---
+            version_iri = self._graph.value(ontology_node, OWL.versionIRI)
+            if version_iri:
+                v_model = Model()
+                v_model.set_has_identifier(str(version_iri))
+                ontology_model.set_has_version(v_model)
+
+            # --- IMPORTS ---
+            for imported_iri in self._graph.objects(ontology_node, OWL.imports):
+                imported_model = Model()
+                imported_model.set_has_identifier(str(imported_iri))
+                ontology_model.set_imports(imported_model)
+
+            # --- CREATORS (Custom handling) ---
+            for pred in [DCTERMS.creator, DC.creator]:
+                for creator in self._graph.objects(ontology_node, pred):
+                    ontology_model.set_has_creator(creator)
+
+
+            # --- CONTRIBUTORS (Custom handling) ---
+            for pred in [DCTERMS.contributor, DC.contributor]:
+                for contributor in self._graph.objects(ontology_node, pred):
+                    ontology_model.set_has_contributor(contributor)
+
+        return ontology_model

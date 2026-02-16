@@ -1,7 +1,6 @@
-# base_viewer.py
 import hashlib
 from typing import Dict, List, Optional, Tuple
-from lode.models import Resource
+from lode.models import Resource, model, Model
 
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
@@ -71,7 +70,10 @@ class BaseViewer:
         Subclasses should override this to define their specific view strategy
         """
         if resource_uri:
-            return self._handle_single_resource(resource_uri, language)
+            # Get the specific entity data
+            data = self._handle_single_resource(resource_uri, language)
+
+            return data
 
         # Fallback: generic flat list
         instances = self.get_all_instances()
@@ -137,13 +139,19 @@ class BaseViewer:
             #Create a safe HTML ID to facilitate on-page navigation
             safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
 
-            # Extract internal attributes (SuperClasses, etc.)
+            # 1. Extract and Format Relations
             relations = {}
+            # We filter out internal python attributes (starting with _)
             for attr, value in instance.__dict__.items():
-                if not attr.startswith('_') and value: #Skip internal python attributes
-                    # Clean up attribute name (e.g., 'has_super_class' -> 'Super Class')
-                    clean_name = attr.replace('has_', '').replace('_', ' ').title()
-                    relations[clean_name] = value
+                if attr.startswith('_') or not value:
+                    continue
+
+                # Clean the name: 'has_sub_class' -> 'Sub Class'
+                clean_name = attr.replace('has_', '').replace('is_', '').replace('_', ' ').title()
+
+                # 2. Convert Values to HTML Links (The Logic)
+                formatted_value = self._format_relation_value(value)
+                relations[clean_name] = formatted_value
 
             entities.append({
                 'type': type(instance).__name__,
@@ -155,3 +163,39 @@ class BaseViewer:
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
         return entities
+
+    def _format_relation_value(self, value: any) -> any:
+        """
+        Helper: Checks if a value is a Resource (Concept/Property) and converts it
+        to a clickable dictionary format for the template.
+        """
+        # Case A: Value is a List of items (e.g., disjoint classes)
+        if isinstance(value, list) or isinstance(value, set):
+            return [self._format_single_item(v) for v in value]
+
+        # Case B: Single Value
+        return self._format_single_item(value)
+
+    def _format_single_item(self, item: any) -> Dict[str, any]:
+        """
+        Helper: Formats a single item (Resource object or primitive).
+        """
+        # Check if it is a Resource AND has a valid identifier
+        if hasattr(item, 'has_identifier') and item.has_identifier:
+            uri = item.has_identifier
+
+            # Generate ID safely
+            safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
+
+            return {
+                'text': self._get_best_label(item),
+                'link': f"#id_{safe_id}",
+                'is_link': True
+            }
+
+        # Fallback for Primitives or Resources without IDs
+        return {
+            'text': str(item) if item is not None else "",
+            'link': None,
+            'is_link': False
+        }
