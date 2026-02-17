@@ -113,9 +113,9 @@
                                 <select id="readAs" name="read_as" class="form-select" required>
                                     {% for format in formats %}
                                     {% if format.lower() == 'owl' %}
-                                        <option value="{{ format }}">{{ format.upper() }} ontology</option>
+                                        <option value="{{ format.value }}">{{ format.upper() }} ontology</option>
                                     {% else %}
-                                        <option value="{{ format }}">{{ format.upper() }} vocabulary</option>
+                                        <option value="{{ format.value }}">{{ format.upper() }} vocabulary</option>
                                     {% endif %}
                                     {% endfor %}
                                 </select>
