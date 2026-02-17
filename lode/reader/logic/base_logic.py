@@ -236,11 +236,11 @@ class BaseLogic(ABC):
             if python_class:
                 python_class = self._resolve_allowed_class(python_class, id)
 
-            # Skips all entities which share the structural namespaces declared in self._allowed_namespaces
+            # Skips all entities which share the structural namespaces declared in self._allowed_namespaces (except OWL.Thing and OWL.Nothing and RDFS.Literal)
             if isinstance(id, URIRef):
                 uri_str = str(id)
                 for ns in self._allowed_namespaces:
-                    if uri_str.startswith(ns):
+                    if uri_str.startswith(ns) and id != OWL.Thing and id != OWL.Nothing and id != RDFS.Literal and id != RDFS.Resource and id != RDFS.Class:
                         return None
 
             # Individual case
@@ -264,6 +264,9 @@ class BaseLogic(ABC):
             if id not in self._instance_cache:
                 self._instance_cache[id] = set()
             self._instance_cache[id].add(instance)
+
+            # Always set identifier (even if populate=False)
+            instance.set_has_identifier(str(id))
             
             # Populate (opzionale)
             if populate:

@@ -70,12 +70,98 @@ class RdfLogic(BaseLogic):
             instances_list = instances if isinstance(instances, set) else [instances]
             
             for instance in instances_list:
+
+                # LOGICA RANGE/DOMAIN DEFAULT: default domain/range solo per Property
+                if isinstance(instance, Property):
+                    self._apply_rdf_defaults(instance)
+
                 # Popola solo se NON è uno Statement
                 if not isinstance(instance, Statement):
                     self.populate_instance(instance, uri)
                     populated += 1
         
         print(f"  Popolate {populated} istanze")
+
+    def _apply_rdf_defaults(self, property_instance):
+        """Applica owl:Thing se domain/range mancano risalendo la gerarchia"""
+        
+        rdfs_resource = None  # Lazy creation
+        
+        # Check domain (con risalita gerarchia)
+        inherited_domain = self._get_inherited_domain(property_instance)
+        if not inherited_domain:
+            rdfs_resource = self.get_or_create(RDFS.Resource, Concept)
+            property_instance.set_has_domain(rdfs_resource)
+            print(property_instance, property_instance.get_has_domain())
+        
+        # Check range (con risalita gerarchia)
+        inherited_range = self._get_inherited_range(property_instance)
+        if not inherited_range:
+            rdfs_class = self.get_or_create(RDFS.Class, Concept)
+            property_instance.set_has_range(rdfs_class)
+            print(property_instance, property_instance.get_has_range())
+
+    def _get_inherited_domain(self, property_instance):
+        """Risale rdfs:subPropertyOf per trovare domain"""
+        visited = set()
+        queue = [property_instance]
+        
+        while queue:
+            current = queue.pop(0)
+            if id(current) in visited:
+                continue
+            visited.add(id(current))
+            
+            # Check domain diretto
+            try:
+                domain = current.get_has_domain()
+                if domain and (isinstance(domain, list) and len(domain) > 0 or domain):
+                    return domain
+            except:
+                pass
+            
+            # Risali ai super-properties
+            try:
+                supers = current.get_subproperty_of()
+                if supers:
+                    if not isinstance(supers, list):
+                        supers = [supers]
+                    queue.extend(supers)
+            except:
+                pass
+        
+        return None
+
+    def _get_inherited_range(self, property_instance):
+        """Risale rdfs:subPropertyOf per trovare range"""
+        visited = set()
+        queue = [property_instance]
+        
+        while queue:
+            current = queue.pop(0)
+            if id(current) in visited:
+                continue
+            visited.add(id(current))
+            
+            # Check range diretto
+            try:
+                range_val = current.get_has_range()
+                if range_val and (isinstance(range_val, list) and len(range_val) > 0 or range_val):
+                    return range_val
+            except:
+                pass
+            
+            # Risali ai super-properties
+            try:
+                supers = current.get_subproperty_of()
+                if supers:
+                    if not isinstance(supers, list):
+                        supers = [supers]
+                    queue.extend(supers)
+            except:
+                pass
+        
+        return None
     
     def phase4_process_group_axioms(self):
         print("\n--- FASE 4: Axioms RDF ---")

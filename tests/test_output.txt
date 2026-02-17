@@ -1,0 +1,306 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0 -- C:\Users\valep\Documents\GitHub\lode\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\valep\Documents\GitHub\lode
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collecting ... collected 12 items
+
+tests/test_reader.py::TestPizzaOntology_OWLReaderToViewer::test_pizza_ontology_loads <lode.models.relation.Relation object at 0x00000140D54DFD90> [None]
+<lode.models.relation.Relation object at 0x00000140D56D82D0> [None]
+<lode.models.relation.Relation object at 0x00000140D56D8410> [None]
+<lode.models.relation.Relation object at 0x00000140D56D8550> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E663C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D56D8690> [None]
+<lode.models.annotation.Annotation object at 0x00000140D56D87D0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2E9E0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2EEA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F100> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F230> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F360> [None]
+
+=== CACHE SIZE: 823 ===
+PASSED
+tests/test_reader.py::TestPizzaOntology_OWLReaderToViewer::test_pizza_viewer_works <lode.models.relation.Relation object at 0x00000140D5963ED0> [None]
+<lode.models.relation.Relation object at 0x00000140D597C410> [None]
+<lode.models.relation.Relation object at 0x00000140D597C550> [None]
+<lode.models.relation.Relation object at 0x00000140D597C690> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F230> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2EEA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F100> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2FE10> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2FCE0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2D5B0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F360> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598C050> [None]
+
+=== TOTAL INSTANCES: 514 ===
+PASSED
+tests/test_reader.py::TestPunning::test_detect_punning_cases <lode.models.relation.Relation object at 0x00000140D59D7B10> [None]
+<lode.models.relation.Relation object at 0x00000140D59D7C50> [None]
+<lode.models.relation.Relation object at 0x00000140D59D7D90> [None]
+<lode.models.relation.Relation object at 0x00000140D59D7ED0> [None]
+<lode.models.relation.Relation object at 0x00000140D6BA8050> [None]
+<lode.models.relation.Relation object at 0x00000140D6BA8190> [None]
+<lode.models.relation.Relation object at 0x00000140D6BA82D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6BA8550> [None]
+<lode.models.relation.Relation object at 0x00000140D6BAA5D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6BAAAD0> [None]
+<lode.models.relation.Relation object at 0x00000140D6BAAD50> [None]
+<lode.models.relation.Relation object at 0x00000140D6BAD450> [None]
+<lode.models.attribute.Attribute object at 0x00000140D6BAE490> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F100> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F230> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2D6E0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2EEA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2FCE0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2FE10> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598C050> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CD60> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CE90> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CFC0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D0F0> [None]
+
+=== PUNNING CASES FOUND: 17 ===
+  https://w3id.org/icon/ontology/Action
+    Types: ['Concept', 'Individual']
+  https://w3id.org/icon/ontology/ArtisticMotif
+    Types: ['Concept', 'Individual']
+  https://w3id.org/icon/ontology/Artwork
+    Types: ['Concept', 'Individual']
+  https://w3id.org/icon/ontology/Character
+    Types: ['Individual', 'Concept']
+  https://w3id.org/icon/ontology/Composition
+    Types: ['Individual', 'Concept']
+  https://w3id.org/icon/ontology/Event
+    Types: ['Concept', 'Individual']
+  https://w3id.org/icon/ontology/ExpressionalQuality
+    Types: ['Individual', 'Concept']
+  https://w3id.org/icon/ontology/Image
+    Types: ['Individual', 'Concept']
+  https://w3id.org/icon/ontology/InterpretationDescription
+    Types: ['Individual', 'Concept']
+  https://w3id.org/icon/ontology/IntrinsicMeaning
+    Types: ['Individual', 'Concept']
+PASSED
+tests/test_reader.py::TestPunning::test_punning_triples_are_separated <lode.models.relation.Relation object at 0x00000140D6BB8690> [None]
+<lode.models.relation.Relation object at 0x00000140D6BB8550> [None]
+<lode.models.relation.Relation object at 0x00000140D6BB8410> [None]
+<lode.models.relation.Relation object at 0x00000140D6BB8050> [None]
+<lode.models.relation.Relation object at 0x00000140D6BBBC50> [None]
+<lode.models.relation.Relation object at 0x00000140D6BBB110> [None]
+<lode.models.relation.Relation object at 0x00000140D6BBAE90> [None]
+<lode.models.relation.Relation object at 0x00000140D6BBB4D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6D816D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6D81BD0> [None]
+<lode.models.relation.Relation object at 0x00000140D6D81E50> [None]
+<lode.models.relation.Relation object at 0x00000140D6D98550> [None]
+<lode.models.attribute.Attribute object at 0x00000140D6D996D0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2D6E0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DF30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DE00> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E650> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DCD0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E190> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E3F0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E2C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D5B0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D350> [None]
+
+=== TESTING PUNNING URI: https://w3id.org/icon/ontology/Action ===
+  Instances: 2
+
+  Individual:
+    Has 4 triples
+
+  Concept:
+    Has 6 triples
+
+  === CONFRONTO TRIPLE ===
+  Instance 1: 4 triples
+  Instance 2: 6 triples
+  Shared: 3 triples
+  Unique to Instance 1: 1
+  Unique to Instance 2: 3
+
+  === UNIQUE TO Individual ===
+    http://www.w3.org/1999/02/22-rdf-syntax-ns#type -> http://www.w3.org/2002/07/owl#NamedIndividual
+
+  === UNIQUE TO Concept ===
+    http://www.w3.org/2000/01/rdf-schema#subClassOf -> https://w3id.org/icon/ontology/PreiconographicalSubject
+    http://www.w3.org/2000/01/rdf-schema#subClassOf -> http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Event
+    http://www.w3.org/1999/02/22-rdf-syntax-ns#type -> http://www.w3.org/2002/07/owl#Class
+PASSED
+tests/test_reader.py::TestPunning::test_punning_triples_contain_correct_types <lode.models.relation.Relation object at 0x00000140D6DC6C10> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC5810> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC5950> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC5A90> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC74D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC7110> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC6E90> [None]
+<lode.models.relation.Relation object at 0x00000140D6DC60D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6F9D090> [None]
+<lode.models.relation.Relation object at 0x00000140D6F9D590> [None]
+<lode.models.relation.Relation object at 0x00000140D6F9D810> [None]
+<lode.models.relation.Relation object at 0x00000140D6F9FED0> [None]
+<lode.models.attribute.Attribute object at 0x00000140D6F91090> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2D6E0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DF30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598FA80> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F230> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F100> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DE00> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E2C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D350> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E650> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F950> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DCD0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D5B0> [None]
+
+=== VERIFICA rdf:type PER PUNNING: https://w3id.org/icon/ontology/Action ===
+
+  Concept:
+    rdf:type found: {'http://www.w3.org/2002/07/owl#Class'}
+
+  Individual:
+    rdf:type found: {'http://www.w3.org/2002/07/owl#NamedIndividual'}
+PASSED
+tests/test_reader.py::TestPunning::test_all_punning_cases_have_separated_triples <lode.models.relation.Relation object at 0x00000140D6FC65D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC51D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC5310> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC5450> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC6FD0> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC6AD0> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC6850> [None]
+<lode.models.relation.Relation object at 0x00000140D6FC5A90> [None]
+<lode.models.relation.Relation object at 0x00000140D7188A50> [None]
+<lode.models.relation.Relation object at 0x00000140D7188F50> [None]
+<lode.models.relation.Relation object at 0x00000140D71891D0> [None]
+<lode.models.relation.Relation object at 0x00000140D718B890> [None]
+<lode.models.attribute.Attribute object at 0x00000140D71D0A50> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DF30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598FE10> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DE00> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DCD0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598FCE0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598ED70> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598FBB0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F490> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2FE10> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2FCE0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D4E2F230> [None]
+
+=== TESTING ALL 17 PUNNING CASES ===
+
+ Tutti i 17 casi di punning hanno triple correttamente separate!
+PASSED
+tests/test_reader.py::TestGeneralAxioms::test_detect_general_axioms <lode.models.relation.Relation object at 0x00000140D6D81450> [None]
+<lode.models.relation.Relation object at 0x00000140D6D816D0> [None]
+<lode.models.relation.Relation object at 0x00000140D6D82990> [None]
+<lode.models.relation.Relation object at 0x00000140D6D83D90> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F5C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E190> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598EEA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F6F0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598EFD0> [None]
+
+=== GENERAL AXIOMS TROVATI ===
+  Cardinality: 1
+  TruthFunction: 43
+  Quantifier: 181
+  OneOf: 1
+PASSED
+tests/test_reader.py::TestGeneralAxioms::test_general_axiom_structure <lode.models.relation.Relation object at 0x00000140D4E979D0> [None]
+<lode.models.relation.Relation object at 0x00000140D4E974D0> [None]
+<lode.models.relation.Relation object at 0x00000140D4E97390> [None]
+<lode.models.relation.Relation object at 0x00000140D4E97250> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598EFD0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F6F0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DF30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DBA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F5C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+SKIPPED
+tests/test_reader.py::TestGeneralAxioms::test_blank_nodes_in_axioms <lode.models.relation.Relation object at 0x00000140D729E490> [None]
+<lode.models.relation.Relation object at 0x00000140D729E990> [None]
+<lode.models.relation.Relation object at 0x00000140D729EAD0> [None]
+<lode.models.relation.Relation object at 0x00000140D729EC10> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E9E0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F5C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E190> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598ED70> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598EFD0> [None]
+
+=== NODES ===
+  Blank Nodes: 390
+  Named Nodes: 0
+PASSED
+tests/test_reader.py::TestTriplesMapIntegrity::test_instances_triples_statistics <lode.models.relation.Relation object at 0x00000140D57CD810> [None]
+<lode.models.relation.Relation object at 0x00000140D57CDD10> [None]
+<lode.models.relation.Relation object at 0x00000140D57CDE50> [None]
+<lode.models.relation.Relation object at 0x00000140D57CDF90> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598EFD0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598ED70> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F6F0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DBA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E9E0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+
+=== TRIPLES STATISTICS ===
+  Instances with triples: 511
+  External references: 3
+  Total: 514
+
+=== EXTERNAL REFERENCES ===
+  Model: http://www.co-ode.org/ontologies/pizza/2.0.0
+  Datatype: http://www.w3.org/2001/XMLSchema#string
+  Individual: https://en.wikipedia.org/wiki/Pizza
+PASSED
+tests/test_reader.py::TestTriplesMapIntegrity::test_triples_map_keys_are_hashable <lode.models.relation.Relation object at 0x00000140D56F02D0> [None]
+<lode.models.relation.Relation object at 0x00000140D56F0B90> [None]
+<lode.models.relation.Relation object at 0x00000140D56F1090> [None]
+<lode.models.relation.Relation object at 0x00000140D56F1A90> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F5C0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DF30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598EFD0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598ED70> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DBA0> [None]
+
+=== TRIPLES_MAP KEYS ===
+  Total keys: 765
+PASSED
+tests/test_reader.py::TestTriplesMapIntegrity::test_no_duplicate_triples_across_instances <lode.models.relation.Relation object at 0x00000140D760C050> [None]
+<lode.models.relation.Relation object at 0x00000140D760C550> [None]
+<lode.models.relation.Relation object at 0x00000140D760C690> [None]
+<lode.models.relation.Relation object at 0x00000140D760C7D0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DBA0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598ED70> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598CC30> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598F6F0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598FBB0> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598E060> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598D220> [None]
+<lode.models.annotation.Annotation object at 0x00000140D598DF30> [None]
+
+=== TRIPLE STATISTICS ===
+  Total instance-triple pairs: 1466
+PASSED
+
+======================= 11 passed, 1 skipped in 30.21s ========================
