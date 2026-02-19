@@ -1,7 +1,9 @@
 # base_viewer.py
 import hashlib
 from typing import Dict, List, Optional, Tuple
-from lode.models import Resource
+from lode.models import Model, Resource, Statement
+from tests.test_reader import ontology_reader
+
 
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
@@ -60,8 +62,11 @@ class BaseViewer:
         
         # Fallback 3: Last part of the URI after "#" or "/"
         resource_id = resource.get_has_identifier()
-        clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
-        return clean_resource_id
+        if resource_id:
+            clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
+            return clean_resource_id
+
+        return None
     
     # ========Changes in the base_viewer=======
 
@@ -70,13 +75,18 @@ class BaseViewer:
         Main entry point called by the API
         Subclasses should override this to define their specific view strategy
         """
-        if resource_uri:
-            return self._handle_single_resource(resource_uri, language)
-
         # Fallback: generic flat list
-        instances = self.get_all_instances()
+        all_instances = self.get_all_instances()
+        metadata_dict = self._find_and_format_metadata(all_instances)
+
+        if resource_uri:
+            data = self._handle_single_resource(resource_uri, language)
+            data['metadata'] = metadata_dict
+            return data
+
         return {
-            'entities': self._format_entities(instances, language)
+            'metadata': metadata_dict,
+            'entities': self._format_entities(all_instances, language)
         }
 
     def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:
@@ -155,3 +165,63 @@ class BaseViewer:
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
         return entities
+
+    def _find_and_format_metadata(self, all_instances: List[Resource]) -> Dict:
+        """
+        Searches for the Model and its Statements and formatting them
+        for the template.
+        """
+        ontology_model = None
+
+        # 1. Find the Model
+        for instance in all_instances:
+            if isinstance(instance, Model):
+                ontology_model = instance
+                break
+
+        if not ontology_model:
+            return {}
+
+        # 2. Prepare Output
+        data = {
+            'uri': ontology_model.has_identifier,
+            'label': self._get_best_label(ontology_model)
+        }
+
+        # 3. Model.py fields
+        if ontology_model.get_has_version():
+            data['Version'] = [v.has_identifier for v in ontology_model.get_has_version()]
+
+        if ontology_model.get_has_version_info():
+            data['Version Info'] = [vi.has_value for vi in ontology_model.get_has_version_info()]
+
+        # 4. Statements
+        for instance in all_instances:
+            if isinstance(instance, Statement):
+                subj = instance.get_has_subject()
+
+                # Check if this statement is about our Ontology
+                if subj and subj.has_identifier == ontology_model.has_identifier:
+
+                    predicate = instance.get_has_predicate()
+                    obj = instance.get_has_object()
+
+                    # A. Handle Predicate Label
+                    pred_label = self._get_best_label(predicate) if predicate else "Annotation"
+
+                    if pred_label not in data:
+                        data[pred_label] = []
+
+                    obj_label = obj.has_value
+
+                    if obj_label not in data[pred_label]:
+                        data[pred_label].append(obj_label)
+
+        print(data)
+        return data
+
+
+
+
+
+

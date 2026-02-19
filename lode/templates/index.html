@@ -112,11 +112,9 @@
                             <div class="form-floating">
                                 <select id="readAs" name="read_as" class="form-select" required>
                                     {% for format in formats %}
-                                    {% if format.lower() == 'owl' %}
-                                        <option value="{{ format.value }}">{{ format.upper() }} ontology</option>
-                                    {% else %}
-                                        <option value="{{ format.value }}">{{ format.upper() }} vocabulary</option>
-                                    {% endif %}
+                                        <option value="{{ format.value if format.value is defined else format }}">
+                                            {{ format.name if format.name is defined else format }}
+                                        </option>
                                     {% endfor %}
                                 </select>
                                 <label for="readAs">Select a format<span class="text-danger">*</span></label>

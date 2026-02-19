@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
+
     <div class="container py-5">
         <div class="mb-5">
             <h1 class="display-5 fw-bold text-primary">LODE 2.0</h1>
@@ -21,6 +22,46 @@
             </div>
 
         {% else %}
+
+        {% if metadata %}
+            <div class="container my-5">
+                <div class="card shadow border-0 border-top border-4 border-primary">
+                    <div class="card-body p-5">
+
+                        <h1 class="display-5 fw-bold text-dark mb-2">
+                            {% if metadata.title %}
+                                {% for title in metadata.title %}
+                                    {{title}}
+                                {% endfor %}
+                            {% elif metadata.label %}
+                                {{ metadata.label }}
+                            {% endif %}
+                        </h1>
+                        <p class="text-muted small mb-4 font-monospace">{{ metadata.uri }}</p>
+
+                        <dl class="row mb-0 lead fs-6">
+                            {% for key, val_list in metadata.items() %}
+                                {% if key not in ['uri', 'label'] %}
+                                {% if val_list %}
+                                <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
+                                <dd class="col-sm-9 mb-3">
+                                    {% for val in val_list %}
+                                         <code class="text-dark bg-light px-2 py-1 rounded">{{ val }}</code><br>
+                                    {% endfor %}
+                                </dd>
+                                {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Actions</dt>
+                            <dd class="col-sm-9 mt-2">
+                                <a href="#" class="btn btn-sm btn-outline-dark me-2"><i class="bi bi-share"></i> WebVOWL</a>
+                                <a href="{{ semantic_artefact_url }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
 
         {% if grouped_view and sections %}
             <div class="section-header">
