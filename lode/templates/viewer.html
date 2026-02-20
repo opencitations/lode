@@ -31,13 +31,19 @@
                         <h1 class="display-5 fw-bold text-dark mb-2">
                             {% if metadata.title %}
                                 {% for title in metadata.title %}
-                                    {{title}}
+                                    {{title.text}}
                                 {% endfor %}
                             {% elif metadata.label %}
-                                {{ metadata.label }}
+                                {{ metadata.label.text }}
                             {% endif %}
                         </h1>
-                        <p class="text-muted small mb-4 font-monospace">{{ metadata.uri }}</p>
+                        <div class="d-flex align-items-center mb-5">
+                            <p class="text-muted medium mb-0 font-monospace text-truncate">
+                                {{ metadata.uri[0].text }}
+                            </p>
+                            <a href="{{ metadata.uri[0].link }}" target="_blank"
+                               class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
+                        </div>
 
                         <dl class="row mb-0 lead fs-6">
                             {% for key, val_list in metadata.items() %}
@@ -45,9 +51,25 @@
                                 {% if val_list %}
                                 <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
                                 <dd class="col-sm-9 mb-3">
-                                    {% for val in val_list %}
-                                         <code class="text-dark bg-light px-2 py-1 rounded">{{ val }}</code><br>
-                                    {% endfor %}
+                                    <div class="d-flex flex-column gap-1">
+                                        {% for item in val_list %}
+                                            <div>
+                                                {% if item.link %}
+                                                    {{ item.text }}
+                                                    <a href="{{ item.link }}" target="_blank"
+                                                        class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
+                                                {% else %}
+                                                    <span class="text-dark">{{ item.text }}</span>
+                                                {% endif %}
+
+                                                {% if item.language %}
+                                                    <span class="badge bg-light text-secondary border border-secondary-subtle ms-2 rounded-pill" style="font-size: 0.7em; vertical-align: middle;">
+                                                        {{ item.language }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 </dd>
                                 {% endif %}
                                 {% endif %}

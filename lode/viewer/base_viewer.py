@@ -1,7 +1,7 @@
 # base_viewer.py
 import hashlib
 from typing import Dict, List, Optional, Tuple
-from lode.models import Model, Resource, Statement
+from lode.models import Literal, Model, Resource, Statement
 from tests.test_reader import ontology_reader
 
 
@@ -184,16 +184,53 @@ class BaseViewer:
 
         # 2. Prepare Output
         data = {
-            'uri': ontology_model.has_identifier,
-            'label': self._get_best_label(ontology_model)
+            'uri': [self._resolve_resource_value(ontology_model)],
+            'label': [self._resolve_resource_value(self._get_best_label(ontology_model))]
         }
 
-        # 3. Model.py fields
-        if ontology_model.get_has_version():
-            data['Version'] = [v.has_identifier for v in ontology_model.get_has_version()]
+        #  3: Dynamic Extraction of Structural Data ---
+        # Methods we want to skip because they belong in the Header or Annotations
+        ignore_methods = [
+            'get_has_identifier',
+            'get_has_label',
+            'get_has_subject',
+            'get_has_predicate',
+            'get_has_object'
+        ]
+        entry = {'text': None, 'link': None}
+        # 1. Loop through ALL attributes and methods of the Model object
+        for attr_name in dir(ontology_model):
+            # 2. Look specifically for getter methods
+            if attr_name.startswith('get_') and attr_name not in ignore_methods:
 
-        if ontology_model.get_has_version_info():
-            data['Version Info'] = [vi.has_value for vi in ontology_model.get_has_version_info()]
+                method = getattr(ontology_model, attr_name)
+
+                if callable(method):
+                    try:
+                        values = method()
+                    except AttributeError:
+                        # skip attributes that are not initialized
+                        continue
+
+                    if values:
+                        # 4. Auto-format the key name
+                        clean_key = (attr_name.replace('get_has_', '').replace('get_', '').
+                                     replace('_', ' ').title())
+
+                        # 5. Ensure values are in a list
+                        if not isinstance(values, list):
+                            values = [values]
+
+                        # 6. Extract the actual text values
+                        extracted_values = []
+                        for val in values:
+                            entry = self._resolve_resource_value(val)
+                            if entry['text']:
+                                extracted_values.append(entry)
+
+                        # 7. Add to structural data ONLY if we found valid text
+                        if extracted_values:
+                            data[clean_key] = extracted_values
 
         # 4. Statements
         for instance in all_instances:
@@ -211,14 +248,54 @@ class BaseViewer:
 
                     if pred_label not in data:
                         data[pred_label] = []
-
-                    obj_label = obj.has_value
-
-                    if obj_label not in data[pred_label]:
+                    #B. Handle Object label and check if it is a Literal
+                    if (obj_label := self._resolve_resource_value(obj)) not in data[pred_label]:
                         data[pred_label].append(obj_label)
 
-        print(data)
         return data
+
+    def _resolve_resource_value(self, obj) -> dict:
+        """Helper: Extracts text and link from any object (Resource, Literal, or String)."""
+        handler_dic = {
+            'text': None,
+            'link': None,
+            'lan': None
+        }
+
+        if not obj: return handler_dic
+
+        # 1. Case: It is already a plain string
+        if isinstance(obj, str):
+            handler_dic['text'] = obj
+            return handler_dic
+
+        # --- THE NEW FIX: Check for Literal Objects ---
+        # If the object is a custom Literal class, it usually stores the actual text
+        # in an attribute like 'value', 'text', or 'lexical_form'.
+        if type(obj).__name__ == 'Literal':
+            if hasattr(obj, 'get_has_value') and obj.has_value:
+                if hasattr(obj, 'get_has_language'):
+                    handler_dic['text'] = str(obj.has_value)
+                    handler_dic['lan'] = obj.has_language
+                    return handler_dic
+                else:
+                    handler_dic['text'] = str(obj.has_value)
+                    return handler_dic
+
+            # If we still can't find it, try standard string conversion
+            raw_str = str(obj)
+            if "object at" not in raw_str:
+                handler_dic['text'] = raw_str
+                return handler_dic
+
+        # 2. Case: It is a Resource Object
+        if hasattr(obj, 'get_has_identifier'):
+            handler_dic['link'] = obj.get_has_identifier()
+
+        # 3. Fallbacks
+        if not handler_dic['text'] and handler_dic['link']: handler_dic['text'] = handler_dic['link']
+
+        return handler_dic
 
 
 
