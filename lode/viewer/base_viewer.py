@@ -139,26 +139,51 @@ class BaseViewer:
         Converts Python Models -> HTML Template Dictionary.
         Ensures consistent keys ('type', 'uri', 'label') across all viewers.
         """
+        all_instances = self.get_all_instances()
+
         entities = []
         for instance in instances:
-            uri = instance.has_identifier
+            uri = instance.has_identifier if hasattr(instance, 'has_identifier') else None
+
+            if not uri:
+                continue
+
             #Create a safe HTML ID to facilitate on-page navigation
             safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
 
             # Extract internal attributes (SuperClasses, etc.)
             relations = {}
-            for attr, value in instance.__dict__.items():
-                if not attr.startswith('_') and value: #Skip internal python attributes
-                    # Clean up attribute name (e.g., 'has_super_class' -> 'Super Class')
-                    clean_name = attr.replace('has_', '').replace('_', ' ').title()
-                    relations[clean_name] = value
+            if hasattr(instance, '__dict__'):
+                for attr, value in instance.__dict__.items():
+                    if not attr.startswith('_') and value:
+                        # Skip attributes that are handled elsewhere or are empty
+                        # Clean up name:
+                        clean_name = attr.replace('has_', '').replace('_', ' ').title()
+
+                        # Process value (could be a list of objects)
+                        # We use the helper to get clean text for each item
+                        formatted_values = []
+                        if isinstance(value, list):
+                            for v in value:
+                                val_dict = self._resolve_resource_value(v)
+                                if val_dict['text']: formatted_values.append(val_dict)
+                        else:
+                            val_dict = self._resolve_resource_value(value)
+                            if val_dict['text']: formatted_values.append(val_dict)
+
+                        if formatted_values:
+                            relations[clean_name] = formatted_values
+
+            # Extract Statement Entities
+            statements =  self._format_statement(all_instances, uri)
 
             entities.append({
                 'type': type(instance).__name__,
                 'uri': uri,
                 'label': self._get_best_label(instance, language),
                 'anchor_id': f"id_{safe_id}",
-                'relations': relations
+                'relations': relations,
+                'statements': statements
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
@@ -299,27 +324,46 @@ class BaseViewer:
 
         return handler_dic
 
-    def _format_statement(self, instances, identifier:str) -> Dict:
-
+    def _format_statement(self, instances, identifier: str) -> Dict:
+        """
+        Extracts all statements where the subject matches the given identifier.
+        """
         statements = {}
+
+        # 1. Normalize the target identifier to a clean string
+        target_id = str(identifier).strip() if identifier else ""
+        if not target_id:
+            return statements
 
         for instance in instances:
             if isinstance(instance, Statement):
                 subj = instance.get_has_subject()
 
-                if subj and subj.has_identifier == identifier:
+                # 2. Extract and normalize the subject's identifier
+                subj_id = ""
+                if hasattr(subj, 'has_identifier') and subj.has_identifier:
+                    subj_id = str(subj.has_identifier).strip()
+                elif isinstance(subj, str):
+                    subj_id = subj.strip()
+
+                # 3. String Comparison
+                if subj_id == target_id:
                     predicate = instance.get_has_predicate()
                     obj = instance.get_has_object()
 
-                    if predicate:
-                        pred_label = self._get_best_label(predicate)
-                        if pred_label not in statements:
-                            statements[pred_label] = []
+                    # 4. Predicate Resolution
+                    pred_label = self._get_best_label(predicate) if predicate else "Annotation"
 
+                    if pred_label not in statements:
+                        statements[pred_label] = []
+
+                    # 5. Resolve Object and Prevent Duplicates
                     if obj:
-                        obj_label = self._resolve_resource_value(obj)
-                        if pred_label in statements:
-                            statements[pred_label].append(obj_label)
+                        obj_data = self._resolve_resource_value(obj)
+
+
+                        if obj_data not in statements[pred_label]:
+                            statements[pred_label].append(obj_data)
 
         return statements
 

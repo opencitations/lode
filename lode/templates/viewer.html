@@ -169,6 +169,32 @@
                                     <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
                                 </div>
                             {% endif %}
+                            {% if item.statements %}
+                                {% for stat_name, stat_value in item.statements.items() %}
+                                <div class="row g-3">
+                                    <div class="p-3 border rounded bg-light-subtle h-100">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                            {{ stat_name }}
+                                        </h6>
+                                        <div class="text-secondary small">
+                                            {% if stat_value is iterable and stat_value is not string %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for val in stat_value %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
+                                                {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                {{ stat_value }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="col-12 text-center py-2">
+                                    <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
