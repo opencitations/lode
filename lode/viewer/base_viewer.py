@@ -67,8 +67,6 @@ class BaseViewer:
             return clean_resource_id
 
         return None
-    
-    # ========Changes in the base_viewer=======
 
     def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
         """
@@ -233,6 +231,8 @@ class BaseViewer:
                             data[clean_key] = extracted_values
 
         # 4. Statements
+        data.update(self._format_statement(all_instances, ontology_model.has_identifier))
+        '''
         for instance in all_instances:
             if isinstance(instance, Statement):
                 subj = instance.get_has_subject()
@@ -248,9 +248,10 @@ class BaseViewer:
 
                     if pred_label not in data:
                         data[pred_label] = []
-                    #B. Handle Object label and check if it is a Literal
+                    #B. Handle Object label
                     if (obj_label := self._resolve_resource_value(obj)) not in data[pred_label]:
                         data[pred_label].append(obj_label)
+        '''
 
         return data
 
@@ -275,11 +276,11 @@ class BaseViewer:
         if type(obj).__name__ == 'Literal':
             if hasattr(obj, 'get_has_value') and obj.has_value:
                 if hasattr(obj, 'get_has_language'):
-                    handler_dic['text'] = str(obj.has_value)
+                    handler_dic['text'] = obj.get_has_value()
                     handler_dic['lan'] = obj.has_language
                     return handler_dic
                 else:
-                    handler_dic['text'] = str(obj.has_value)
+                    handler_dic['text'] = obj.get_has_value()
                     return handler_dic
 
             # If we still can't find it, try standard string conversion
@@ -293,10 +294,34 @@ class BaseViewer:
             handler_dic['link'] = obj.get_has_identifier()
 
         # 3. Fallbacks
-        if not handler_dic['text'] and handler_dic['link']: handler_dic['text'] = handler_dic['link']
+        if not handler_dic['text'] and handler_dic['link']:
+            handler_dic['text'] = handler_dic['link']
 
         return handler_dic
 
+    def _format_statement(self, instances, identifier:str) -> Dict:
+
+        statements = {}
+
+        for instance in instances:
+            if isinstance(instance, Statement):
+                subj = instance.get_has_subject()
+
+                if subj and subj.has_identifier == identifier:
+                    predicate = instance.get_has_predicate()
+                    obj = instance.get_has_object()
+
+                    if predicate:
+                        pred_label = self._get_best_label(predicate)
+                        if pred_label not in statements:
+                            statements[pred_label] = []
+
+                    if obj:
+                        obj_label = self._resolve_resource_value(obj)
+                        if pred_label in statements:
+                            statements[pred_label].append(obj_label)
+
+        return statements
 
 
 
