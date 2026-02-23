@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
-
     <div class="container py-5">
         <div class="mb-5">
             <h1 class="display-5 fw-bold text-primary">LODE 2.0</h1>
@@ -22,68 +21,6 @@
             </div>
 
         {% else %}
-
-        {% if metadata %}
-            <div class="container my-5">
-                <div class="card shadow border-0 border-top border-4 border-primary">
-                    <div class="card-body p-5">
-
-                        <h1 class="display-5 fw-bold text-dark mb-2">
-                            {% if metadata.title %}
-                                {% for title in metadata.title %}
-                                    {{title.text}}
-                                {% endfor %}
-                            {% elif metadata.label %}
-                                {{ metadata.label.text }}
-                            {% endif %}
-                        </h1>
-                        <div class="d-flex align-items-center mb-5">
-                            <p class="text-muted medium mb-0 font-monospace text-truncate">
-                                {{ metadata.uri[0].text }}
-                            </p>
-                            <a href="{{ metadata.uri[0].link }}" target="_blank"
-                               class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
-                        </div>
-
-                        <dl class="row mb-0 lead fs-6">
-                            {% for key, val_list in metadata.items() %}
-                                {% if key not in ['uri', 'label'] %}
-                                {% if val_list %}
-                                <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
-                                <dd class="col-sm-9 mb-3">
-                                    <div class="d-flex flex-column gap-1">
-                                        {% for item in val_list %}
-                                            <div>
-                                                {% if item.link %}
-                                                    {{ item.text }}
-                                                    <a href="{{ item.link }}" target="_blank"
-                                                        class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
-                                                {% else %}
-                                                    <span class="text-dark">{{ item.text }}</span>
-                                                {% endif %}
-
-                                                {% if item.language %}
-                                                    <span class="badge bg-light text-secondary border border-secondary-subtle ms-2 rounded-pill" style="font-size: 0.7em; vertical-align: middle;">
-                                                        {{ item.language }}
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </dd>
-                                {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Actions</dt>
-                            <dd class="col-sm-9 mt-2">
-                                <a href="#" class="btn btn-sm btn-outline-dark me-2"><i class="bi bi-share"></i> WebVOWL</a>
-                                <a href="{{ semantic_artefact_url }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
 
         {% if grouped_view and sections %}
             <div class="section-header">
@@ -145,7 +82,7 @@
                         <div class="row g-3">
                             {% if item.relations %}
                                 {% for rel_name, rel_value in item.relations.items() %}
-                                <div class="row g-3">
+                                <div class="col-md-6 col-lg-4">
                                     <div class="p-3 border rounded bg-light-subtle h-100">
                                         <h6 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
                                             {{ rel_name }}
@@ -169,33 +106,14 @@
                                     <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
                                 </div>
                             {% endif %}
-                            {% if item.statements %}
-                                {% for stat_name, stat_value in item.statements.items() %}
-                                <div class="row g-3">
-                                    <div class="p-3 border rounded bg-light-subtle h-100">
-                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
-                                            {{ stat_name }}
-                                        </h6>
-                                        <div class="text-secondary small">
-                                            {% if stat_value is iterable and stat_value is not string %}
-                                                <ul class="list-unstyled mb-0">
-                                                {% for val in stat_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
-                                                {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                {{ stat_value }}
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                                {% else %}
-                                <div class="col-12 text-center py-2">
-                                    <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
-                                </div>
-                            {% endif %}
                         </div>
+                    </div>
+                    <div class="card-body px-4 pb-4">
+                        {% if item.statements != [] %}
+                            {% for statement in item.statements %}
+                                <div><span class="fw-bold text-dark">{{ statement.predicate }}:</span> {{ statement.object }}</div>
+                            {% endfor %}
+                        {% endif %} 
                     </div>
                 </div>
                 {% endfor %}
