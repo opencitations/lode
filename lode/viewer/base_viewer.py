@@ -101,7 +101,9 @@ class BaseViewer:
 
         return {
             'single_resource': True,
-            'entities': self._format_entities(instances, language)
+            'entities': self._format_entities(instances, language),
+            'groupped_view': False,
+            'sections': None
         }
 
     def _build_grouped_view(self, group_definitions: List[Tuple[str, str, str]], language: Optional[str] = None) -> Dict:
@@ -366,8 +368,3 @@ class BaseViewer:
                             statements[pred_label].append(obj_data)
 
         return statements
-
-
-
-
-
