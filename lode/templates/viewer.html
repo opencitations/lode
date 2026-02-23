@@ -116,11 +116,20 @@
                                             {% if rel_value is iterable and rel_value is not string %}
                                                 <ul class="list-unstyled mb-0">
                                                 {% for val in rel_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
+                                                    {% if val.link %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    {% else %}
+                                                        {{ val.text }}
+                                                    </li>
+                                                    {% endif %}
                                                 {% endfor %}
                                                 </ul>
                                             {% else %}
-                                                {{ rel_value }}
+                                                <li class="text-truncate" title="{{ val.text }}">
+                                                    {{ rel_value.text }}
+                                                </li>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -139,14 +148,43 @@
                                             {{ stat_name }}
                                         </h6>
                                         <div class="text-secondary small">
-                                            {% if stat_value is iterable and stat_value is not string %}
+                                            {% if rel_value is iterable and rel_value is not string %}
                                                 <ul class="list-unstyled mb-0">
-                                                {% for val in stat_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
+                                                {% for val in rel_value %}
+                                                    {% if val.link %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    {% else %}
+                                                        {{ val.text }}
+                                                    </li>
+                                                    {% endif %}
                                                 {% endfor %}
                                                 </ul>
                                             {% else %}
-                                                {{ stat_value }}
+                                                <li class="text-truncate" title="{{ val.text }}">
+                                                    {{ rel_value.text }}
+                                                </li>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-secondary small">
+                                            {% if stat_value is iterable and stat_value is not string %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for val in stat_value %}
+                                                    {% if val.link %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    {% else %}
+                                                        {{ val.text }}
+                                                    </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <li class="text-truncate" title="{{ val.text }}">
+                                                    {{ rel_value.text }}
+                                                </li>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -233,12 +271,23 @@
                                         <div class="text-secondary small">
                                             {% if rel_value is iterable and rel_value is not string %}
                                                 <ul class="list-unstyled mb-0">
-                                                {% for val in rel_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
-                                                {% endfor %}
+                                                    {% for val in rel_value %}
+                                                        {% if val.link %}
+                                                            <li>{{ val.text }}
+                                                                <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}"
+                                                                class="ms-2" title="Detailed View" target="_blank">↗</a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li class="text-truncate" title="{{ val }}">{{ val.text }}</li>
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 </ul>
                                             {% else %}
-                                                {{ rel_value }}
+                                                <ul>
+                                                    <li>
+                                                        {{ rel_value.text }}
+                                                    </li>
+                                                </ul>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -259,12 +308,23 @@
                                         <div class="text-secondary small">
                                             {% if stat_value is iterable and stat_value is not string %}
                                                 <ul class="list-unstyled mb-0">
-                                                {% for val in stat_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
-                                                {% endfor %}
+                                                    {% for val in stat_value %}
+                                                        {% if val.link %}
+                                                            <li>{{ val.text }}
+                                                                <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}"
+                                                                class="ms-2" title="Detailed View" target="_blank">↗</a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li class="text-truncate" title="{{ val }}">{{ val.text }}</li>
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 </ul>
                                             {% else %}
-                                                {{ stat_value }}
+                                                <ul>
+                                                    <li>
+                                                        {{ stat_value.text }}
+                                                    </li>
+                                                </ul>
                                             {% endif %}
                                         </div>
                                     </div>
