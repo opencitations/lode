@@ -84,7 +84,125 @@
                 </div>
             </div>
         {% endif %}
+        {% if single_resource %}
+            {% for item in entities %}
+                <div class="card shadow-sm border-0 mb-4 anchor-offset" id="{{ item.anchor_id }}">
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <h4 class="text-primary fw-bold mb-0">{{ item.label }}</h4>
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill">
+                            {{ item.type }}
+                        </span>
+                    </div>
 
+                    <div class="card-body px-4 pb-4">
+                        <div class="mb-4">
+                            <small class="text-muted text-uppercase fw-bold d-block mb-1">URI</small>
+                            <div class="d-flex align-items-center">
+                                <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
+                                <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ item.uri }}"
+                                   class="btn btn-sm btn-outline-secondary ms-2" title="Detailed View">↗</a>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            {% if item.relations %}
+                                {% for rel_name, rel_value in item.relations.items() %}
+                                <div class="row g-3">
+                                    <div class="p-3 border rounded bg-light-subtle h-100">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                            {{ rel_name }}
+                                        </h6>
+                                        <div class="text-secondary small">
+                                            {% if rel_value is iterable and rel_value is not string %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for val in rel_value %}
+                                                    {% if val.link %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    {% else %}
+                                                        {{ val.text }}
+                                                    </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <li class="text-truncate" title="{{ val.text }}">
+                                                    {{ rel_value.text }}
+                                                </li>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="col-12 text-center py-2">
+                                    <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
+                                </div>
+                            {% endif %}
+                            {% if item.statements %}
+                                {% for stat_name, stat_value in item.statements.items() %}
+                                <div class="row g-3">
+                                    <div class="p-3 border rounded bg-light-subtle h-100">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                            {{ stat_name }}
+                                        </h6>
+                                        <div class="text-secondary small">
+                                            {% if rel_value is iterable and rel_value is not string %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for val in rel_value %}
+                                                    {% if val.link %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    {% else %}
+                                                        {{ val.text }}
+                                                    </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <li class="text-truncate" title="{{ val.text }}">
+                                                    {{ rel_value.text }}
+                                                </li>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-secondary small">
+                                            {% if stat_value is iterable and stat_value is not string %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for val in stat_value %}
+                                                    {% if val.link %}
+                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    {% else %}
+                                                        {{ val.text }}
+                                                    </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <li class="text-truncate" title="{{ val.text }}">
+                                                    {{ rel_value.text }}
+                                                </li>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="col-12 text-center py-2">
+                                    <p class="text-muted small italic mb-0">No statements defined.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            <div class="mt-3">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
+            </div>
+        {% endif %}
         {% if grouped_view and sections %}
             <div class="section-header">
 
@@ -153,12 +271,23 @@
                                         <div class="text-secondary small">
                                             {% if rel_value is iterable and rel_value is not string %}
                                                 <ul class="list-unstyled mb-0">
-                                                {% for val in rel_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
-                                                {% endfor %}
+                                                    {% for val in rel_value %}
+                                                        {% if val.link %}
+                                                            <li>{{ val.text }}
+                                                                <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}"
+                                                                class="ms-2" title="Detailed View" target="_blank">↗</a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li class="text-truncate" title="{{ val }}">{{ val.text }}</li>
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 </ul>
                                             {% else %}
-                                                {{ rel_value }}
+                                                <ul>
+                                                    <li>
+                                                        {{ rel_value.text }}
+                                                    </li>
+                                                </ul>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -179,12 +308,23 @@
                                         <div class="text-secondary small">
                                             {% if stat_value is iterable and stat_value is not string %}
                                                 <ul class="list-unstyled mb-0">
-                                                {% for val in stat_value %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val }}</li>
-                                                {% endfor %}
+                                                    {% for val in stat_value %}
+                                                        {% if val.link %}
+                                                            <li>{{ val.text }}
+                                                                <a href="?read_as={{ request.query_params.read_as }}&semantic_artefact_url={{ request.query_params.semantic_artefact_url }}&resource={{ val.link }}"
+                                                                class="ms-2" title="Detailed View" target="_blank">↗</a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li class="text-truncate" title="{{ val }}">{{ val.text }}</li>
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 </ul>
                                             {% else %}
-                                                {{ stat_value }}
+                                                <ul>
+                                                    <li>
+                                                        {{ stat_value.text }}
+                                                    </li>
+                                                </ul>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -192,7 +332,7 @@
                                 {% endfor %}
                                 {% else %}
                                 <div class="col-12 text-center py-2">
-                                    <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
+                                    <p class="text-muted small italic mb-0">No statements defined.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -201,12 +341,6 @@
                 {% endfor %}
             </div>
             {% endfor %}
-
-        {% if single_resource %}
-        <div class="mt-3">
-            <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
-        </div>
-        {% endif %}
 
         {% endif %} {% endif %}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

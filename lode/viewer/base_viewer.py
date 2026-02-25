@@ -1,5 +1,6 @@
 # base_viewer.py
 import hashlib
+import re
 from typing import Dict, List, Optional, Tuple
 from lode.models import Literal, Model, Resource, Statement
 from tests.test_reader import ontology_reader
@@ -42,29 +43,29 @@ class BaseViewer:
             labels = resource.get_has_preferred_label()
             for label in labels:
                 if hasattr(label, 'get_has_language') and label.get_has_language() == language:
-                    return label.get_has_value()
+                    return self._clean_name(label.get_has_value())
             
             # then, label in language
             labels = resource.get_has_label()
             for label in labels:
                 if hasattr(label, 'get_has_language') and label.get_has_language() == language:
-                    return label.get_has_value()
+                    return self._clean_name(label.get_has_value())
         
         # Fallback: first preferred label (in any language)
         labels = resource.get_has_preferred_label()
         if labels:
-            return labels[0].get_has_value()
+            return self._clean_name(labels[0].get_has_value())
         
         # Fallback 2: first label (in any language)
         labels = resource.get_has_label()
         if labels:
-            return labels[0].get_has_value()
+            return self._clean_name(labels[0].get_has_value())
         
         # Fallback 3: Last part of the URI after "#" or "/"
         resource_id = resource.get_has_identifier()
         if resource_id:
             clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
-            return clean_resource_id
+            return self._clean_name(clean_resource_id)
 
         return None
 
@@ -101,7 +102,9 @@ class BaseViewer:
 
         return {
             'single_resource': True,
-            'entities': self._format_entities(instances, language)
+            'entities': self._format_entities(instances, language),
+            'groupped_view': False,
+            'sections': None
         }
 
     def _build_grouped_view(self, group_definitions: List[Tuple[str, str, str]], language: Optional[str] = None) -> Dict:
@@ -158,9 +161,9 @@ class BaseViewer:
                     if not attr.startswith('_') and value:
                         # Skip attributes that are handled elsewhere or are empty
                         # Clean up name:
-                        clean_name = attr.replace('has_', '').replace('_', ' ').title()
+                        clean_name = self._clean_name(attr)
 
-                        # Process value (could be a list of objects)
+                        # Process value (could be a list of objects)clean
                         # We use the helper to get clean text for each item
                         formatted_values = []
                         if isinstance(value, list):
@@ -236,9 +239,9 @@ class BaseViewer:
                         continue
 
                     if values:
+                        print(f"DEBUG:att-name:{attr_name}")
                         # 4. Auto-format the key name
-                        clean_key = (attr_name.replace('get_has_', '').replace('get_', '').
-                                     replace('_', ' ').title())
+                        clean_key = self._clean_name(attr_name.title())
 
                         # 5. Ensure values are in a list
                         if not isinstance(values, list):
@@ -317,6 +320,10 @@ class BaseViewer:
         # 2. Case: It is a Resource Object
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
+            try:
+                handler_dic['text'] = self._get_best_label(obj)
+            except AttributeError:
+                handler_dic['text'] = handler_dic['link']
 
         # 3. Fallbacks
         if not handler_dic['text'] and handler_dic['link']:
@@ -367,6 +374,16 @@ class BaseViewer:
 
         return statements
 
+    @staticmethod
+    def _clean_name(name: str) -> str:
+        import re
+        if not name: return ""
+
+        name = re.sub(r'^(get_has_|get_|has_)', '', name)
+        name = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', name)
+        name = name.replace('_', ' ')
+
+        return ' '.join(name.split()).title()
 
 
 
