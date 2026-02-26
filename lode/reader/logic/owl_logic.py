@@ -65,9 +65,9 @@ class OwlLogic(BaseLogic):
             
             for uri in self.graph.subjects(RDF.type, rdf_type):
                 # Crea istanza solo se non esiste
-                if uri not in self._instance_cache:
-                    self.get_or_create(uri, py_class, populate=False)
-                    created += 1
+                # if uri not in self._instance_cache: -> dèl as it is in charg of get_or_create
+                self.get_or_create(uri, py_class, populate=False)
+                created += 1
                 
                 # APPLICA SETTERS SEMPRE (anche se istanza già esisteva)
                 if 'setters' in config:
