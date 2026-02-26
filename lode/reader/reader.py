@@ -146,9 +146,9 @@ class Reader:
     
     def _extract_instances(self):
         """Estrazione in 6 fasi orchestrate"""
-        print("\n" + "="*60)
-        print("ESTRAZIONE INSTANCES")
-        print("="*60)
+        # print("\n" + "="*60)
+        # print("ESTRAZIONE INSTANCES")
+        # print("="*60)
         
         # FASE 0: Pre-crea datatypes (comune a tutti)
         # self._phase0_create_datatypes()
@@ -198,7 +198,7 @@ class Reader:
     
     def _phase5_fallback(self):
         """Fallback per risorse non categorizzate (comune)"""
-        print("\n--- FASE 5: Fallback ---")
+        #print("\n--- FASE 5: Fallback ---")
         
         fallback_class = self._configuration.get_fallback_class()
         if not fallback_class:
@@ -213,7 +213,7 @@ class Reader:
                 self._logic.get_or_create(subj, fallback_class)
                 fallback_count += 1
         
-        print(f"  Fallback: {fallback_count} risorse -> {fallback_class.__name__}")
+        #print(f"  Fallback: {fallback_count} risorse -> {fallback_class.__name__}")
 
     # def get_ontology_metadata(self) -> Model:
     #     """
