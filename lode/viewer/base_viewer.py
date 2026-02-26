@@ -175,7 +175,11 @@ class BaseViewer:
                             if val_dict['text']: formatted_values.append(val_dict)
 
                         if formatted_values:
-                            relations[clean_name] = formatted_values
+                            if clean_name not in relations:
+                                relations[clean_name] = []
+                            for v in formatted_values:
+                                if v not in relations[clean_name]:  # Valentina FIX: this do not add duplicates in metadata values  
+                                    relations[clean_name].append(v)
 
             # Extract Statement Entities
             statements =  self._format_statement(all_instances, uri)
