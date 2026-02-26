@@ -26,7 +26,8 @@ class OwlLogic(BaseLogic):
     
     def phase1_classify_from_predicates(self):
         """Classifica blank nodes OWL"""
-        print("\n--- FASE 1: Classificazione OWL ---")
+        # print("\n--- FASE 1: Classificazione OWL ---")
+        pass
         
         classifier_preds = self._strategy.get_classifier_predicates()
         if not classifier_preds:
@@ -49,14 +50,13 @@ class OwlLogic(BaseLogic):
         for uri, py_class in classified.items():
             self.get_or_create(uri, py_class, populate=False)
 
-        print(f"  Classificate: {len(classified)}")
+        #print(f"  Classificate: {len(classified)}")
     
     def phase2_create_from_types(self):
         """Crea da rdf:type + applica default OWL"""
-        print("\n--- FASE 2: Types OWL ---")
+        #print("\n--- FASE 2: Types OWL ---")
         
         type_mapping = self._strategy.get_type_mapping()
-        created = 0
         
         for rdf_type, config in type_mapping.items():
             py_class = config.get('target_class')
@@ -67,7 +67,6 @@ class OwlLogic(BaseLogic):
                 # Crea istanza solo se non esiste
                 # if uri not in self._instance_cache: -> dèl as it is in charg of get_or_create
                 self.get_or_create(uri, py_class, populate=False)
-                created += 1
                 
                 # APPLICA SETTERS SEMPRE (anche se istanza già esisteva)
                 if 'setters' in config:
@@ -77,7 +76,7 @@ class OwlLogic(BaseLogic):
             
     def phase3_populate_properties(self):
         """Popola proprietà OWL + applica default domain/range + default type per Individual"""
-        print("\n--- FASE 3: Popolamento OWL ---")
+        #print("\n--- FASE 3: Popolamento OWL ---")
         
         for uri in list(self._instance_cache.keys()):
             for instance in list(self._instance_cache[uri]):
@@ -172,14 +171,14 @@ class OwlLogic(BaseLogic):
         if not inherited_domain:
             owl_thing = self.get_or_create(OWL.Thing, Concept)
             property_instance.set_has_domain(owl_thing)
-            print(property_instance, property_instance.get_has_domain())
+            #print(property_instance, property_instance.get_has_domain())
         
         # Check range (con risalita gerarchia)
         inherited_range = self._get_inherited_range(property_instance)
         if not inherited_range:
             owl_thing = self.get_or_create(OWL.Thing, Concept)
             property_instance.set_has_range(owl_thing)
-            print(property_instance, property_instance.get_has_range())
+            #print(property_instance, property_instance.get_has_range())
 
     def _get_inherited_domain(self, property_instance):
         """Risale rdfs:subPropertyOf per trovare domain"""
@@ -247,7 +246,7 @@ class OwlLogic(BaseLogic):
 
     def phase4_process_group_axioms(self):
         """Processa assiomi OWL (equivalentClass, etc.)"""
-        print("\n--- FASE 4: Axioms OWL ---")
+        # print("\n--- FASE 4: Axioms OWL ---")
         
         axioms = self._strategy.get_group_axioms()
         for axiom_type, handler_name in axioms.items():
@@ -293,7 +292,7 @@ class OwlLogic(BaseLogic):
         - Oggetti di proprietà → Individual
         - Triple non parsate → Statement
         """
-        print("\n--- FASE 5: Fallback OWL ---")
+        # print("\n--- FASE 5: Fallback OWL ---")
         
         # 1. Proprietà usate ma non definite → Annotation
         all_predicates = set(self.graph.predicates())
@@ -308,15 +307,18 @@ class OwlLogic(BaseLogic):
         for subj in all_subjects:
             if subj not in self._instance_cache and isinstance(subj, RDFLibCollection) :
                 self.get_or_create(subj, Individual)
-                
-        # 3. Oggetti di proprietà non categorizzati → Individual
+
+        # 3. Oggetti di proprietà non categorizzati → Individual (except if they are object of RDF.type, then they are already categorised as Concepts skip)
+        rdf_type_objects = set(self.graph.objects(None, RDF.type))  # tutti i tipi usati
+
         for s, p, o in self.graph:
             if not isinstance(o, RDFlibLiteral) and o not in self._instance_cache:
                 if not self._is_rdf_collection(o):
                     # Controlla se l'URI appartiene a namespace che va escluso
                     exclude_namespaces = [OWL, RDF, RDFS, SKOS]
                     if not any(str(o).startswith(str(ns)) for ns in exclude_namespaces):
-                        self.get_or_create(o, Individual)
+                        if o not in rdf_type_objects: # if they are not used as object of RDF.type (in this case they are already Concepts)
+                            self.get_or_create(o, Individual)
             
     # Handler group axioms
     def process_all_disjoint_classes(self, uri: Node):
