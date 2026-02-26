@@ -245,9 +245,12 @@ class BaseLogic(ABC):
 
             # Individual case
             if python_class == Individual and id in self._instance_cache:
-                for existing in self._instance_cache[id]:
-                    if not isinstance(existing, Individual):
-                        return existing
+                # Punning reale solo se owl:NamedIndividual è dichiarato esplicitamente
+                is_named_individual = (id, RDF.type, OWL.NamedIndividual) in self.graph
+                if not is_named_individual:
+                    for existing in self._instance_cache[id]:
+                        if not isinstance(existing, Individual):
+                            return existing
             
             # Check cache
             if id in self._instance_cache:
