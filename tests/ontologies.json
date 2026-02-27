@@ -1,0 +1,1912 @@
+{
+  "total_unique": 474,
+  "in_common": 0,
+  "sources": {
+    "report": {
+      "count": 467,
+      "exclusive": 467
+    },
+    "fairsharing": {
+      "count": 7,
+      "exclusive": 7
+    }
+  },
+  "uris": [
+    {
+      "uri": "http://advene.org/ns/cinelab/ld",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdf.insee.fr/def/demo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://archivi.ibc.regione.emilia-romagna.it/ontology/eac-cpf/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://bag.basisregistraties.overheid.nl/def/bag",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://biohackathon.org/resource/faldo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://brk.basisregistraties.overheid.nl/def/brk",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://brt.basisregistraties.overheid.nl/def/top10nl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://comicmeta.org/cbo/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://contsem.unizar.es/def/sector-publico/pproc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://cookingbigdata.com/linkeddata/ccinstances",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://cookingbigdata.com/linkeddata/ccpricing",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://cookingbigdata.com/linkeddata/ccregions",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://cookingbigdata.com/linkeddata/ccsla",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://d-nb.info/standards/elementset/agrelon",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://d-nb.info/standards/elementset/dnb",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://d-nb.info/standards/elementset/gnd#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.europa.eu/eli/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.europa.eu/esco/model",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.europa.eu/s66#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.ign.fr/def/geofla",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.ign.fr/def/geometrie",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.ign.fr/def/ignf",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.ign.fr/def/topo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.totl.net/game/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://data.vlaanderen.be/ns/persoon",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://datashapes.org/graphql",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://dati.beniculturali.it/cultural-ON/cultural-ON.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://dati.cdec.it/lod/shoah/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://dati.san.beniculturali.it/SAN/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://dbpedia.org/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://delicias.dia.fi.upm.es/ontologies/ObjectWithStates.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://dh.aks.ac.kr/ontologies/ekc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://elite.polito.it/ontologies/dogont.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://elite.polito.it/ontologies/eupont.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://erlangen-crm.org/current/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://gov.genealogy.net/ontology.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://id.loc.gov/vocabulary/relators",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://inference-web.org/2.0/ds.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://inference-web.org/2.0/pml-provenance.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://kgc.knowledge-graph.jp/ontology/kgc.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://lexvo.org/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://lod.taxonconcept.org/ontology/sci_people.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://lod.taxonconcept.org/ontology/txn.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://lsq.aksw.org/vocab",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://meta.icos-cp.eu/ontologies/cpmeta/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://metadataregistry.org/uri/schema/RDARelationshipsGR2",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://mex.aksw.org/mex-algo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://mex.aksw.org/mex-core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://mex.aksw.org/mex-perf",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://modellen.geostandaarden.nl/def/nen3610",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ndl.go.jp/dcndl/terms/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/ast/sql#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/ludo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/ludo/v1/gamemodel#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/ludo/v1/gamepresentation#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/ludo/v1/virtualcontext#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/ludo/v1/xapi",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/munc/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/nicetag/2010/09/09/voc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/nrv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/prissma/v2#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/provoc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/s4ac/v2",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ns.inria.fr/semed/eduprogression/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.cybershare.utep.edu/ELSEWeb/elseweb-data.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.cybershare.utep.edu/ELSEWeb/elseweb-edac.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.cybershare.utep.edu/ELSEWeb/elseweb-lifemapper-parameters.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.cybershare.utep.edu/ELSEWeb/elseweb-lifemapper.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.cybershare.utep.edu/ELSEWeb/elseweb-modelling.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.cybershare.utep.edu/ELSEWeb/mappings/elseweb-mappings.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://ontology.ethereal.cz/irao",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://open-services.net/ns/asset#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://open-services.net/ns/core#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://paul.staroch.name/thesis/SmartHomeWeather.owl#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://persistence.uni-leipzig.org/nlp2rdf/ontologies/rlog#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://premon.fbk.eu/ontology/fn",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://premon.fbk.eu/ontology/nb",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://premon.fbk.eu/ontology/pb",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://premon.fbk.eu/ontology/vn",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://privatealpha.com/ontology/certification/1#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.obolibrary.org/obo/obi.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.oclc.org/NET/UNIS/fiware/iot-lite#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.oclc.org/NET/mvco.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.oclc.org/NET/ssnx/cf/cf-feature",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.oclc.org/NET/ssnx/cf/cf-property",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.oclc.org/NET/ssnx/meteo/aws",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.oclc.org/NET/ssnx/qu/qu",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/biodiversity/taxon/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/biotop/biotop.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/cerif/frapo/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/cld/cdtype/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/cld/terms/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/coreo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/dc/dcam/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/dc/dcmitype/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/dc/elements/1.1/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/dc/terms/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/dpn",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/dqm-vocabulary/v1/dqm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/goodrelations/v1",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/healthcarevocab/v1",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/holy/ns#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/iot/ontology/fiesta-iot",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/iot/ontology/fiesta-priv#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/iot/vocab/iot-taxonomy-lite#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/iot/vocab/m3-lite#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/iso25964/skos-thes",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/linked-data/cube",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/linked-data/sdmx",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/linked-data/sdmx/2009/code",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/linked-data/sdmx/2009/dimension",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/lobid/lv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/nemo/gufo#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/VideoGameOntology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/cartCoord#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/lio",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/nknouf/ns/bibtex",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/ns/ex",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/ns/ontology-annot",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/p-plan#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/tsn#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/tsnchange#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/wf-invocation",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/net/wf-motifs",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/olia/ubyCat.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/ontology/bibo/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/ontology/dvia",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/ontology/ecpo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/ontology/holding",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/ontology/service",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/oslo/ns/localgov",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/pav/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/poso/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/poso/common/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/procurement/public-contracts",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/qb4olap/cubes",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/query/voidext",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/biro",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/c4o",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/cito",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/datacite",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/deo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/doco",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/fabio",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/pro",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/pso",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/pwo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/spar/scoro/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/tio/ns#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/twc/dpo/ont/diabetes_pharmacology_ontology.ttl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/twc/ontology/cdm.owl#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/twc/vocab/conversion/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/umu/uneskos",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/vocommons/voaf",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/vso/ns",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/wf4ever/ro",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/wf4ever/wfdesc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/wf4ever/wfprov",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.org/xapi/ontology#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://purl.uniprot.org/core/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://qudt.org/2.1/vocab/sou",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://qudt.org/schema/qudt",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdf-vocabulary.ddialliance.org/discovery",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdf-vocabulary.ddialliance.org/xkos",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdf.insee.fr/def/geo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdf.muninn-project.org/ontologies/appearances",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdf.muninn-project.org/ontologies/military",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdfs.org/scot/ns#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdfs.org/sioc/ns#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdfs.org/sioc/types#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdfunit.aksw.org/ns/core#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdvocab.info/Elements",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdvocab.info/ElementsGr2",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdvocab.info/ElementsGr3",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdvocab.info/RDARelationshipsWEMI",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdvocab.info/roles",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rdvocab.info/uri/schema/FRBRentitiesRDA",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://reegle.info/schema",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://resource.geosciml.org/ontology/timescale/gts",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://resource.geosciml.org/ontology/timescale/thors",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rhizomik.net/ontologies/copyrightonto.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://rs.tdwg.org/ac/terms/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semanticscience.org/ontology/sio.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semweb.mmlab.be/ns/apps4X",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semweb.mmlab.be/ns/linkedconnections#Ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semweb.mmlab.be/ns/odapps",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semweb.mmlab.be/ns/oh",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semweb.mmlab.be/ns/stoptimes#Ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://semwebquality.org/ontologies/dq-constraints",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://sensormeasurement.appspot.com/ont/home/homeActivity#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://spinrdf.org/sp",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://spinrdf.org/spin",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://vcharpenay.github.io/hto/hto.xml",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://vivoweb.org/ontology/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://vocab.datex.org/terms#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://vocab.resc.info/communication",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://vocab.resc.info/incident",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/actor/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/actorODP/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/cvn/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/energy/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/material/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/plan/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/process/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/processODP/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/product/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/resourceODP/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/CEON/ontology/value/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/amlo/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/dstv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/emmo-bto/bto",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/emmo-hpo/hpo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/emmo-maeo/maeo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/ioc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/medred/medred#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/nfdi4ing/metadata4ing#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/roh",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://w3id.org/um/cbcm/eu-cm-ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://wikiba.se/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.biopax.org/release/biopax-level3.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.cidoc-crm.org/cidoc-crm/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.disit.org/km4city/schema",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.geonames.org/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.isibang.ac.in/ns/mod",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ivoa.net/rdf/messenger",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.kanzaki.com/ns/music",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.kanzaki.com/ns/whois",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.lexinfo.net/ontology/2.0/lexinfo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.linkedmodel.org/schema/dtype",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.linkedmodel.org/schema/vaem",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.loc.gov/premis/rdf/v1",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.molmod.info/semantics/pims-ii.ttl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/informationrealization.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/participation.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/semiotics.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/sequence.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/situation.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/timeindexedsituation.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/cp/owl/timeinterval.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/ont/dul/IOLite.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/ont/dul/ontopic.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/ont/lmm/LMM_L1.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/ont/lmm/LMM_L2.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/ont/web/irw.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.ontologydesignpatterns.org/schemas/cpannotationschema.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.openarchives.org/ore/terms/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.opengis.net/ont/geosparql",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.opengis.net/ont/gml",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.opengis.net/ont/sf",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.purl.org/drammar",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.sealitproject.eu/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.sensormeasurement.appspot.com/ont/transport/traffic",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.tele.pw.edu.pl/~sims-onto/ConnectivityType.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2000/01/rdf-schema#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2000/10/swap/log",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2000/10/swap/pim/contact",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2000/10/swap/pim/doc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2001/02pd/rec54#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2002/07/owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2003/01/geo/wgs84_pos",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2003/06/sw-vocab-status/ns",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2003/12/exif/ns",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2003/g/data-view",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2004/02/skos/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2004/03/trix/rdfg-1/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2004/03/trix/swp-1",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2004/09/fresnel",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2006/03/test-description",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2006/gen/ont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2006/time",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2006/time-entry",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2006/timezone",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2006/vcard/ns",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2007/05/powder-s",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2007/uwa/context/deliverycontext.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2008/05/skos-xl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2011/content",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/2011/http",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/TR/2003/PR-owl-guide-20031209/wine",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/TR/2003/PR-owl-guide-20031215/food",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/adms",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/auth/acl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/auth/cert#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/csvw#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/dcat",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/dqv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/duv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/dx/prof",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/earl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/hydra/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/ldp#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/lemon/decomp",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/lemon/lime",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/lemon/ontolex",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/lemon/synsem",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/lemon/vartrans",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/locn",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/ma-ont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/mls",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/oa#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/odrl/2/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/org#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/person",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/prov#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/r2rml#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/radion#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/rdfa#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/rdftest",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/regorg",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/shacl#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/solid/terms",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/sosa/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/sparql-service-description",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/ssn/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3.org/ns/ui",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3id.org/def/caso#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3id.org/urban-iot/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3id.org/urban-iot/electric",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://www.w3id.org/urban-iot/sharing",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://xmlns.com/foaf/0.1/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "http://zbw.eu/namespaces/zbw-extensions",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.1h49c6",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.4ndncv",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.5k1aqq",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.ca63ce",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.ed7d61",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.jkj6ah",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://doi.org/10.25504/FAIRsharing.s54t82",
+      "provenance": "FAIRsharing"
+    },
+    {
+      "uri": "https://glaciation-project.eu/MetadataReferenceModel",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://opendata.aragon.es/def/ei2a/ei2a.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://privatealpha.com/ontology/content-inventory/1#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://privatealpha.com/ontology/ibis/1#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://privatealpha.com/ontology/transformation/1#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://purl.org/cityexplorer",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://purl.org/edifact/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://purl.org/psn/vocab#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/airs-linked-data/lov/latest/src/airs_vocabulary.ttl#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/core/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4agri/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4bldg/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4city/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4ehaw/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4ener/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4envi/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4inma/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4syst/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4watr/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://saref.etsi.org/saref4wear/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://schema.edu.ee/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/CEMontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/CPSWatch",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/EUTaxO",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/GConsent",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/GDPRov",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/GDPRtEXT",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/OntoGSN/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/TRO",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/airo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/arco",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/catalogue",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/context-description",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/cultural-event",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/denotative-description",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/arco/ontology/location",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/bcom",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/bot",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/cdc",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/citedcat-ap",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/cmd#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/coach#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/cocoon/v1.0",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/con-tax",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/cto",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dba/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dingo/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dio",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dot#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dpv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dpv/pd",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dsd",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dseco/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/dsv#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ecfo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/eeo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/emmo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/emmo/domain/characterisation-methodology/chameo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/env/puv",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ep-plan",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/fog",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/foodwaste/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/gom",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/hpont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/i40/sto#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/iadopt/ont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ibp/CTRLont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/icon/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/iddo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/idsa/core",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ifc/IFC4_ADD1",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/inrupt/namespace/vocab/authn_provider/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ishikawa-diagram-ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/isoprops",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/legalhtml/ov",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/loin",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/nen2660/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/noria/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ofo#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/okn/o/sd",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/okn/o/sdm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/omg",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ontouml",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/ontouml-models/vocabulary",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/opm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/optimar",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/oseg/ont/okh",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/peco",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/pghdprovo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/pko",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/rail/topo#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/react",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/riverbench/schema/documentation",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/riverbench/schema/metadata",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/sao",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/sbeo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/seas/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/seas/BuildingOntology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/seas/EvaluationOntology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/seas/FeatureOfInterestOntology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/seas/SystemOntology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/semts/ontology#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/seo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/sri",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/stax/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/tido#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/timebank",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododfa",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododial",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododom",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododt",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododw",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/tree",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/usability",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vair",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/lingvoj",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/olca",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/sdm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/xbrll",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vpa",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/wfont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/yang/server#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/Base/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/EntityLegalForm/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/Geocoding/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/L1/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/L2/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/RegistrationAuthority/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/ReportingException/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.goudatijdmachine.nl/def",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.ica.org/standards/RiC/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.purl.org/mso-em",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/2019/wot/hypermedia#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/2019/wot/json-schema#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/2019/wot/td",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/ns/pim/space",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/ns/ssn",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3id.org/simulation/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3id.org/survey-ontology",
+      "provenance": "LOV"
+    }
+  ]
+}
