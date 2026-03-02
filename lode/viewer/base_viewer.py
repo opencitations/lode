@@ -3,8 +3,6 @@ import hashlib
 import re
 from typing import Dict, List, Optional, Tuple
 from lode.models import Literal, Model, Resource, Statement
-from tests.test_reader import ontology_reader
-
 
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
