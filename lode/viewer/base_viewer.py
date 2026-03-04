@@ -239,9 +239,8 @@ class BaseViewer:
                         continue
 
                     if values:
-                        print(f"DEBUG:att-name:{attr_name}")
                         # 4. Auto-format the key name
-                        clean_key = self._clean_name(attr_name.title())
+                        clean_key = self._clean_name(attr_name)
 
                         # 5. Ensure values are in a list
                         if not isinstance(values, list):
