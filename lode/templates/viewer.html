@@ -22,7 +22,7 @@
             </div>
 
         {% else %}
-
+        <!-- The model section -->
         {% if metadata %}
             <div class="container my-5">
                 <div class="card shadow border-0 border-top border-4 border-primary">
@@ -84,6 +84,7 @@
                 </div>
             </div>
         {% endif %}
+        <!-- Show information for single resource -->
         {% if single_resource %}
             {% for item in entities %}
                 <div class="card shadow-sm border-0 mb-4 anchor-offset" id="{{ item.anchor_id }}">
@@ -203,6 +204,9 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
             </div>
         {% endif %}
+
+        <!-- Grouped view section for all the entities -->
+        <!-- Table of contents -->
         {% if grouped_view and sections %}
             <div class="section-header">
 
@@ -221,6 +225,7 @@
                 </div>
             </div>
 
+            <!-- Title of the section -->
             {% for section in sections %}
             <div id="{{ section.id }}" class="anchor-offset mb-5">
                 <h3 class="section-header text-dark d-flex align-items-center justify-content-between mb-4">
@@ -240,7 +245,7 @@
                         </div>
                     </div>
                 </div>
-
+                <!-- Title of the card -->
                 {% for item in section.entities %}
                 <div class="card shadow-sm border-0 mb-4 anchor-offset" id="{{ item.anchor_id }}">
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
@@ -249,7 +254,7 @@
                             {{ item.type }}
                         </span>
                     </div>
-
+                    <!-- URI of the entity -->
                     <div class="card-body px-4 pb-4">
                         <div class="mb-4">
                             <small class="text-muted text-uppercase fw-bold d-block mb-1">URI</small>
@@ -259,7 +264,7 @@
                                    class="btn btn-sm btn-outline-secondary ms-2" title="Detailed View">↗</a>
                             </div>
                         </div>
-
+                        <!-- relations (annotations) -->
                         <div class="row g-3">
                             {% if item.relations %}
                                 {% for rel_name, rel_value in item.relations.items() %}
