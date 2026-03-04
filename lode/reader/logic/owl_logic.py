@@ -26,7 +26,8 @@ class OwlLogic(BaseLogic):
     
     def phase1_classify_from_predicates(self):
         """Classifica blank nodes OWL"""
-        print("\n--- FASE 1: Classificazione OWL ---")
+        # print("\n--- FASE 1: Classificazione OWL ---")
+        pass
         
         classifier_preds = self._strategy.get_classifier_predicates()
         if not classifier_preds:
@@ -49,14 +50,13 @@ class OwlLogic(BaseLogic):
         for uri, py_class in classified.items():
             self.get_or_create(uri, py_class, populate=False)
 
-        print(f"  Classificate: {len(classified)}")
+        #print(f"  Classificate: {len(classified)}")
     
     def phase2_create_from_types(self):
         """Crea da rdf:type + applica default OWL"""
-        print("\n--- FASE 2: Types OWL ---")
+        #print("\n--- FASE 2: Types OWL ---")
         
         type_mapping = self._strategy.get_type_mapping()
-        created = 0
         
         for rdf_type, config in type_mapping.items():
             py_class = config.get('target_class')
@@ -65,9 +65,8 @@ class OwlLogic(BaseLogic):
             
             for uri in self.graph.subjects(RDF.type, rdf_type):
                 # Crea istanza solo se non esiste
-                if uri not in self._instance_cache:
-                    self.get_or_create(uri, py_class, populate=False)
-                    created += 1
+                # if uri not in self._instance_cache: -> dèl as it is in charg of get_or_create
+                self.get_or_create(uri, py_class, populate=False)
                 
                 # APPLICA SETTERS SEMPRE (anche se istanza già esisteva)
                 if 'setters' in config:
@@ -77,26 +76,16 @@ class OwlLogic(BaseLogic):
             
     def phase3_populate_properties(self):
         """Popola proprietà OWL + applica default domain/range + default type per Individual"""
-        print("\n--- FASE 3: Popolamento OWL ---")
+        #print("\n--- FASE 3: Popolamento OWL ---")
         
         for uri in list(self._instance_cache.keys()):
             for instance in list(self._instance_cache[uri]):
                 self.populate_instance(instance, uri)
-                
-                # LOGICA OWL: default domain/range solo per Property/Relation/Attribute
-                if isinstance(instance, (Property, Relation, Attribute)):
-                    self._apply_owl_defaults(instance)
-
-                # LOGICA OWL: default type per Individual
-                if isinstance(instance, Individual):
-                    try:
-                        if instance.get_has_type() == []:
-                            owl_thing = self.get_or_create(OWL.Thing, Concept)
-                            instance.set_has_type([owl_thing])
-                    except:
-                        # Se get_has_type fallisce, assegna comunque owl:Thing
-                        owl_thing = self.get_or_create(OWL.Thing, Concept)
-                        instance.set_has_type([owl_thing])
+        
+        # LOGICA OWL: default domain/range solo per Property/Relation/Attribute, default type Thing per Individual
+        for uri in list(self._instance_cache.keys()):
+            for instance in list(self._instance_cache[uri]):        
+                self._apply_owl_defaults(instance)
 
             
     def _resolve_allowed_class(self, python_class: type, id: Node = None) -> type:
@@ -162,92 +151,72 @@ class OwlLogic(BaseLogic):
         # Fallback per altri casi
         return python_class
 
-    def _apply_owl_defaults(self, property_instance):
-        """Applica owl:Thing se domain/range mancano risalendo la gerarchia"""
-        
-        owl_thing = None  # Lazy creation
-        
-        # Check domain (con risalita gerarchia)
-        inherited_domain = self._get_inherited_domain(property_instance)
-        if not inherited_domain:
-            owl_thing = self.get_or_create(OWL.Thing, Concept)
-            property_instance.set_has_domain(owl_thing)
-            print(property_instance, property_instance.get_has_domain())
-        
-        # Check range (con risalita gerarchia)
-        inherited_range = self._get_inherited_range(property_instance)
-        if not inherited_range:
-            owl_thing = self.get_or_create(OWL.Thing, Concept)
-            property_instance.set_has_range(owl_thing)
-            print(property_instance, property_instance.get_has_range())
+    def _apply_owl_defaults(self, instance):
+        "Applies OWL defaults for mandatory ..."
 
-    def _get_inherited_domain(self, property_instance):
-        """Risale rdfs:subPropertyOf per trovare domain"""
+        if isinstance(instance, (Property, Relation, Attribute)):
+
+            owl_thing = self.get_or_create(OWL.Thing, Concept)
+
+            # PROPERTIES DOMAIN
+            inherited_domain = self._get_inherited_property_values(instance, "get_has_domain")
+            if len(inherited_domain) == 0:
+                instance.set_has_domain(owl_thing)
+            else:
+                for domain in inherited_domain:
+                    instance.set_has_domain(domain)
+
+            # PROPERTIES RANGE
+            inherited_range = self._get_inherited_property_values(instance, "get_has_range")
+            if len(inherited_range) == 0:
+                instance.set_has_range(owl_thing)
+            else:
+                for range in inherited_range:
+                    instance.set_has_range(range)
+
+        # Default type per Individual
+        if isinstance(instance, Individual):
+            if not instance.get_has_type():
+                owl_thing = self.get_or_create(OWL.Thing, Concept)
+                instance.set_has_type(owl_thing)
+
+    def _get_inherited_property_values(self, property_instance, getter_name):
+        """
+        Upward traversal along rdfs:subPropertyOf looking for values
+        exposed by a given getter (e.g. get_has_domain, get_has_range).
+        Always returns a list.
+        """
         visited = set()
         queue = [property_instance]
         
         while queue:
             current = queue.pop(0)
+
             if id(current) in visited:
                 continue
             visited.add(id(current))
-            
-            # Check domain diretto
-            try:
-                domain = current.get_has_domain()
-                if domain and (isinstance(domain, list) and len(domain) > 0 or domain):
-                    return domain
-            except:
-                pass
-            
-            # Risali ai super-properties
-            try:
-                supers = current.get_subproperty_of()
-                if supers:
-                    if not isinstance(supers, list):
-                        supers = [supers]
-                    queue.extend(supers)
-            except:
-                pass
-        
-        return None
 
-    def _get_inherited_range(self, property_instance):
-        """Risale rdfs:subPropertyOf per trovare range"""
-        visited = set()
-        queue = [property_instance]
-        
-        while queue:
-            current = queue.pop(0)
-            if id(current) in visited:
-                continue
-            visited.add(id(current))
-            
-            # Check range diretto
-            try:
-                range_val = current.get_has_range()
-                if range_val and (isinstance(range_val, list) and len(range_val) > 0 or range_val):
-                    return range_val
-            except:
-                pass
-            
-            # Risali ai super-properties
-            try:
-                supers = current.get_subproperty_of()
-                if supers:
-                    if not isinstance(supers, list):
-                        supers = [supers]
-                    queue.extend(supers)
-            except:
-                pass
-        
-        return None
+            # Check valore diretto
+            getter = getattr(current, getter_name, None)
+            if getter:
+                values = getter()
+                if values:
+                    if not isinstance(values, list):
+                        return [values]
+                    return values
 
+            # Risale recorsivamente la gerarchia
+            supers = current.get_is_sub_property_of()
+            if supers:
+                if not isinstance(supers, list):
+                    supers = [supers]
+                queue.extend(supers)
 
+        return []
 
     def phase4_process_group_axioms(self):
         """Processa assiomi OWL (equivalentClass, etc.)"""
-        print("\n--- FASE 4: Axioms OWL ---")
+        # print("\n--- FASE 4: Axioms OWL ---")
         
         axioms = self._strategy.get_group_axioms()
         for axiom_type, handler_name in axioms.items():
@@ -293,7 +262,7 @@ class OwlLogic(BaseLogic):
         - Oggetti di proprietà → Individual
         - Triple non parsate → Statement
         """
-        print("\n--- FASE 5: Fallback OWL ---")
+        # print("\n--- FASE 5: Fallback OWL ---")
         
         # 1. Proprietà usate ma non definite → Annotation
         all_predicates = set(self.graph.predicates())
@@ -308,15 +277,18 @@ class OwlLogic(BaseLogic):
         for subj in all_subjects:
             if subj not in self._instance_cache and isinstance(subj, RDFLibCollection) :
                 self.get_or_create(subj, Individual)
-                
-        # 3. Oggetti di proprietà non categorizzati → Individual
+
+        # 3. Oggetti di proprietà non categorizzati → Individual (except if they are object of RDF.type, then they are already categorised as Concepts skip)
+        rdf_type_objects = set(self.graph.objects(None, RDF.type))  # tutti i tipi usati
+
         for s, p, o in self.graph:
             if not isinstance(o, RDFlibLiteral) and o not in self._instance_cache:
                 if not self._is_rdf_collection(o):
                     # Controlla se l'URI appartiene a namespace che va escluso
                     exclude_namespaces = [OWL, RDF, RDFS, SKOS]
                     if not any(str(o).startswith(str(ns)) for ns in exclude_namespaces):
-                        self.get_or_create(o, Individual)
+                        if o not in rdf_type_objects: # if they are not used as object of RDF.type (in this case they are already Concepts)
+                            self.get_or_create(o, Individual)
             
     # Handler group axioms
     def process_all_disjoint_classes(self, uri: Node):

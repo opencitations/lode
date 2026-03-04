@@ -234,13 +234,13 @@ mapper:
     target_class: Concept
     setters: [set_is_deprecated: True]
   
-  owl:Thing:
-    is: class
-    target_class: Concept
+  # owl:Thing:
+  #   is: class
+  #   target_class: Individual
   
-  owl:Nothing:
-    is: class
-    target_class: Concept
+  # owl:Nothing:
+  #   is: class
+  #   target_class: Individual
   
   # ========== SKOS Concept Relations ==========
   skos:broader:

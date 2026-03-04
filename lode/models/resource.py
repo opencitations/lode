@@ -20,6 +20,8 @@ class Resource():
         self.has_example = []
         self.has_history_note = []
         self.has_scope_note = []
+        self.has_contributor = []
+        self.has_creator = []
         
         # Relations with Resources (0..*)
         self.see_also = []
@@ -191,3 +193,15 @@ class Resource():
     def get_is_included_in(self):
         """Restituisce una copia della lista is_included_in"""
         return list(set(self.is_included_in))
+
+    def set_has_contributor(self, literal):
+        self.has_contributor.append(literal)
+
+    def get_has_contributor(self):
+        return list(set(self.has_contributor))
+
+    def set_has_creator(self, literal):
+        self.has_creator.append(literal)
+
+    def get_has_creator(self):
+        return list(set(self.has_creator))
