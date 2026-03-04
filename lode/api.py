@@ -35,7 +35,9 @@ async def view_semantic_artefact_get(
     read_as: ReadAsFormat,
     semantic_artefact_url: str,
     resource: Optional[str] = None,
-    language: Optional[str] = None
+    language: Optional[bool] = None, 
+    imported: Optional[bool] = None,
+    closure: Optional[bool] = None
 ):
     """Visualizza semantic artefact da URL."""
     try:
@@ -45,7 +47,7 @@ async def view_semantic_artefact_get(
         logger.info(f"Resource: {resource}")
         
         reader = Reader()
-        reader.load_instances(semantic_artefact_url, read_as.value)
+        reader.load_instances(semantic_artefact_url, read_as.value, imported=imported, closure=closure)
         
         viewer = reader.get_viewer()
         data = viewer.get_view_data(resource_uri=resource, language=language) 
@@ -73,7 +75,9 @@ async def view_semantic_artefact_post(
     read_as: ReadAsFormat = Form(...),
     semantic_artefact_file: UploadFile = File(...),
     resource: Optional[str] = Form(None),
-    language: Optional[str] = Form(None)  
+    language: Optional[str] = Form(None),
+    imported: Optional[str] = Form(None),
+    closure: Optional[str] = Form(None)
 ):
     """Visualizza semantic artefact da file."""
     temp_file_path = None

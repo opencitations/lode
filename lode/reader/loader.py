@@ -6,12 +6,17 @@ from rdflib import Graph
 from typing import Dict, Optional
 from urllib.parse import urlparse
 
+import lode.reader.modules as modules
+
 
 class Loader:
     """Gestisce il caricamento di file RDF"""
 
-    def __init__(self, file_path: Optional[str] = None):
+    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None):
+        
         self.graph = Graph()
+        self._imported = imported
+        self._closure = closure
 
         if file_path:
             result = self.load(file_path)
@@ -27,9 +32,24 @@ class Loader:
         """Carica RDF da file locale o URL con content negotiation"""
 
         if self._is_url(source):
-            return self._load_from_url_with_content_negotiation(source)
+            result = self._load_from_url_with_content_negotiation(source)
         else:
-            return self._load_from_local_file(source)
+            result = self._load_from_local_file(source)
+        
+        if result["success"]:
+            self._apply_modules()
+
+        return result
+    
+    # ----------------------------------------------------------
+    #  MODULES MAIN HANDLER
+    # ----------------------------------------------------------
+
+    def _apply_modules(self) -> None:
+        if self._imported:
+            self.graph = modules.apply_imported(self.graph)
+        elif self._closure:
+            self.graph = modules.apply_closure(self.graph)
 
     # ----------------------------------------------------------
     #  CONTENT NEGOTIATION FOR URLS

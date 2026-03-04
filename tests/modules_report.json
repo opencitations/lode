@@ -1,0 +1,962 @@
+{
+  "summary": {
+    "total": 474,
+    "with_imports": 4,
+    "imported_passed": 14,
+    "imported_failed": 3,
+    "closure_passed": 14,
+    "closure_failed": 3,
+    "fail_reasons": {
+      "all_imports_unreachable": 4,
+      "load_error": 2
+    }
+  },
+  "results": {
+    "http://advene.org/ns/cinelab/ld": {
+      "declared_imports": {
+        "count": 2,
+        "reachable": [
+          "http://www.w3.org/ns/ma-ont",
+          "http://www.w3.org/ns/oa#"
+        ],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 329,
+        "entities": {
+          "Quantifier": 6,
+          "TruthFunction": 4,
+          "Datatype": 1,
+          "Relation": 20,
+          "Attribute": 10,
+          "Model": 3,
+          "Concept": 28,
+          "Individual": 9,
+          "Statement": 11,
+          "Annotation": 7
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 1003,
+        "entities": {
+          "Quantifier": 6,
+          "TruthFunction": 8,
+          "Datatype": 2,
+          "Relation": 77,
+          "Attribute": 39,
+          "Annotation": 37,
+          "Model": 4,
+          "Concept": 65,
+          "Individual": 32,
+          "Statement": 36
+        },
+        "error": null,
+        "added": 674,
+        "reason": "ok"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 1142,
+        "entities": {
+          "Quantifier": 6,
+          "TruthFunction": 8,
+          "Datatype": 2,
+          "Relation": 78,
+          "Attribute": 39,
+          "Annotation": 52,
+          "Model": 4,
+          "Concept": 65,
+          "Individual": 49,
+          "Statement": 113
+        },
+        "error": null,
+        "added": 813,
+        "reason": "ok"
+      }
+    },
+    "http://rdf.insee.fr/def/demo": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 0,
+        "entities": {},
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 0,
+        "entities": {},
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 0,
+        "entities": {},
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://archivi.ibc.regione.emilia-romagna.it/ontology/eac-cpf/": {
+      "declared_imports": {
+        "count": 2,
+        "reachable": [
+          "http://purl.org/dc/terms/",
+          "http://purl.org/dc/elements/1.1/"
+        ],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 269,
+        "entities": {
+          "Quantifier": 23,
+          "Relation": 19,
+          "Attribute": 21,
+          "Model": 3,
+          "Concept": 13,
+          "Annotation": 2,
+          "Individual": 19,
+          "Datatype": 2,
+          "Statement": 12
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 1076,
+        "entities": {
+          "Quantifier": 23,
+          "Datatype": 15,
+          "Relation": 47,
+          "Annotation": 47,
+          "Attribute": 21,
+          "Model": 3,
+          "Concept": 38,
+          "Individual": 52,
+          "Statement": 244
+        },
+        "error": null,
+        "added": 807,
+        "reason": "ok"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 1076,
+        "entities": {
+          "Quantifier": 23,
+          "Datatype": 15,
+          "Relation": 47,
+          "Annotation": 47,
+          "Attribute": 21,
+          "Model": 3,
+          "Concept": 38,
+          "Individual": 52,
+          "Statement": 244
+        },
+        "error": null,
+        "added": 807,
+        "reason": "ok"
+      }
+    },
+    "http://bag.basisregistraties.overheid.nl/def/bag": {
+      "declared_imports": {
+        "count": 8,
+        "reachable": [],
+        "unreachable": [
+          "http://bag.basisregistraties.overheid.nl/def/bag/AanvullendeObjectenLVBAG",
+          "http://bag.basisregistraties.overheid.nl/def/bag/BeheerObjectenLVBAG",
+          "http://bag.basisregistraties.overheid.nl/def/bag/DatatypenAlgemeen",
+          "http://bag.basisregistraties.overheid.nl/def/bag/Historie",
+          "http://bag.basisregistraties.overheid.nl/def/bag/HistorieLVBAG",
+          "http://bag.basisregistraties.overheid.nl/def/bag/KenmerkInOnderzoek",
+          "http://bag.basisregistraties.overheid.nl/def/bag/Objecten",
+          "http://bag.basisregistraties.overheid.nl/def/bag/nen5825"
+        ]
+      },
+      "base": {
+        "passed": true,
+        "triples": 3708,
+        "entities": {
+          "Relation": 28,
+          "Attribute": 38,
+          "Model": 9,
+          "Concept": 46,
+          "Individual": 404,
+          "Datatype": 2,
+          "Annotation": 21,
+          "Statement": 2917,
+          "Container": 2
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": false,
+        "triples": 3708,
+        "entities": {
+          "Relation": 28,
+          "Attribute": 38,
+          "Model": 9,
+          "Concept": 46,
+          "Individual": 404,
+          "Datatype": 2,
+          "Annotation": 21,
+          "Statement": 2917,
+          "Container": 2
+        },
+        "error": null,
+        "added": 0,
+        "reason": "all_imports_unreachable"
+      },
+      "closure": {
+        "passed": false,
+        "triples": 3708,
+        "entities": {
+          "Relation": 28,
+          "Attribute": 38,
+          "Model": 9,
+          "Concept": 46,
+          "Individual": 404,
+          "Datatype": 2,
+          "Annotation": 21,
+          "Statement": 2916,
+          "Container": 2
+        },
+        "error": null,
+        "added": 0,
+        "reason": "all_imports_unreachable"
+      }
+    },
+    "http://biohackathon.org/resource/faldo": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 235,
+        "entities": {
+          "Cardinality": 8,
+          "TruthFunction": 6,
+          "Quantifier": 1,
+          "Datatype": 3,
+          "Relation": 11,
+          "Attribute": 1,
+          "Model": 1,
+          "Concept": 17,
+          "Individual": 9,
+          "Statement": 6,
+          "Annotation": 1
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 235,
+        "entities": {
+          "Cardinality": 8,
+          "TruthFunction": 6,
+          "Quantifier": 1,
+          "Datatype": 3,
+          "Relation": 11,
+          "Attribute": 1,
+          "Model": 1,
+          "Concept": 17,
+          "Individual": 9,
+          "Statement": 6,
+          "Annotation": 1
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 235,
+        "entities": {
+          "Cardinality": 8,
+          "TruthFunction": 6,
+          "Quantifier": 1,
+          "Datatype": 3,
+          "Relation": 11,
+          "Attribute": 1,
+          "Model": 1,
+          "Concept": 17,
+          "Individual": 9,
+          "Statement": 6,
+          "Annotation": 1
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://brk.basisregistraties.overheid.nl/def/brk": {
+      "declared_imports": {
+        "count": 5,
+        "reachable": [],
+        "unreachable": [
+          "http://brk.basisregistraties.overheid.nl/def/brk/DKK-Product",
+          "http://brk.basisregistraties.overheid.nl/def/brk/Historie",
+          "http://brk.basisregistraties.overheid.nl/def/brk/KadastraalObject",
+          "http://brk.basisregistraties.overheid.nl/def/brk/OnroerendeZaak",
+          "http://brk.basisregistraties.overheid.nl/def/brk/Typen"
+        ]
+      },
+      "base": {
+        "passed": true,
+        "triples": 554,
+        "entities": {
+          "Relation": 9,
+          "Attribute": 26,
+          "Model": 6,
+          "Concept": 14,
+          "Individual": 64,
+          "Datatype": 2,
+          "Annotation": 18,
+          "Statement": 389
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": false,
+        "triples": 554,
+        "entities": {
+          "Relation": 9,
+          "Attribute": 26,
+          "Model": 6,
+          "Concept": 14,
+          "Individual": 64,
+          "Datatype": 2,
+          "Statement": 389,
+          "Annotation": 18
+        },
+        "error": null,
+        "added": 0,
+        "reason": "all_imports_unreachable"
+      },
+      "closure": {
+        "passed": false,
+        "triples": 554,
+        "entities": {
+          "Relation": 9,
+          "Attribute": 26,
+          "Model": 6,
+          "Concept": 14,
+          "Individual": 64,
+          "Datatype": 2,
+          "Statement": 389,
+          "Annotation": 18
+        },
+        "error": null,
+        "added": 0,
+        "reason": "all_imports_unreachable"
+      }
+    },
+    "http://brt.basisregistraties.overheid.nl/def/top10nl": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 2924,
+        "entities": {
+          "Relation": 49,
+          "Attribute": 39,
+          "Model": 1,
+          "Concept": 338,
+          "Individual": 674,
+          "Datatype": 1,
+          "Annotation": 3,
+          "Statement": 1195
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 2924,
+        "entities": {
+          "Relation": 49,
+          "Attribute": 39,
+          "Model": 1,
+          "Concept": 338,
+          "Individual": 674,
+          "Datatype": 1,
+          "Annotation": 3,
+          "Statement": 1195
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 2924,
+        "entities": {
+          "Relation": 49,
+          "Attribute": 39,
+          "Model": 1,
+          "Concept": 338,
+          "Individual": 674,
+          "Datatype": 1,
+          "Annotation": 3,
+          "Statement": 1195
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://comicmeta.org/cbo/": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 1733,
+        "entities": {
+          "Relation": 98,
+          "Attribute": 48,
+          "Annotation": 18,
+          "Model": 1,
+          "Individual": 153,
+          "Concept": 76,
+          "Statement": 214
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 1733,
+        "entities": {
+          "Relation": 98,
+          "Attribute": 48,
+          "Annotation": 18,
+          "Model": 1,
+          "Individual": 153,
+          "Concept": 76,
+          "Statement": 214
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 1733,
+        "entities": {
+          "Relation": 98,
+          "Attribute": 48,
+          "Annotation": 18,
+          "Model": 1,
+          "Individual": 153,
+          "Concept": 76,
+          "Statement": 214
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://contsem.unizar.es/def/sector-publico/pproc": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 1635,
+        "entities": {
+          "Quantifier": 3,
+          "TruthFunction": 5,
+          "Value": 4,
+          "Cardinality": 1,
+          "Datatype": 3,
+          "Relation": 79,
+          "Attribute": 81,
+          "Annotation": 1,
+          "Model": 4,
+          "Individual": 45,
+          "Concept": 108,
+          "Statement": 42
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 1635,
+        "entities": {
+          "Quantifier": 3,
+          "TruthFunction": 5,
+          "Value": 4,
+          "Cardinality": 1,
+          "Datatype": 3,
+          "Relation": 79,
+          "Attribute": 81,
+          "Annotation": 1,
+          "Model": 4,
+          "Individual": 45,
+          "Concept": 108,
+          "Statement": 42
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 1635,
+        "entities": {
+          "Quantifier": 3,
+          "TruthFunction": 5,
+          "Value": 4,
+          "Cardinality": 1,
+          "Datatype": 3,
+          "Relation": 79,
+          "Attribute": 81,
+          "Annotation": 1,
+          "Model": 4,
+          "Individual": 45,
+          "Concept": 108,
+          "Statement": 42
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://cookingbigdata.com/linkeddata/ccinstances": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 171,
+        "entities": {
+          "Annotation": 31,
+          "Model": 1,
+          "Concept": 10,
+          "Individual": 10,
+          "Datatype": 2,
+          "Relation": 4,
+          "Statement": 14
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 171,
+        "entities": {
+          "Annotation": 31,
+          "Model": 1,
+          "Concept": 10,
+          "Individual": 10,
+          "Datatype": 2,
+          "Relation": 4,
+          "Statement": 14
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 171,
+        "entities": {
+          "Annotation": 31,
+          "Model": 1,
+          "Concept": 10,
+          "Individual": 10,
+          "Datatype": 2,
+          "Relation": 4,
+          "Statement": 14
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://cookingbigdata.com/linkeddata/ccpricing": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 92,
+        "entities": {
+          "Annotation": 18,
+          "Model": 1,
+          "Concept": 7,
+          "Individual": 9,
+          "Datatype": 2,
+          "Statement": 15,
+          "Relation": 3
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 92,
+        "entities": {
+          "Annotation": 18,
+          "Model": 1,
+          "Concept": 7,
+          "Individual": 9,
+          "Datatype": 2,
+          "Statement": 15,
+          "Relation": 3
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 92,
+        "entities": {
+          "Annotation": 18,
+          "Model": 1,
+          "Concept": 7,
+          "Individual": 9,
+          "Datatype": 2,
+          "Statement": 15,
+          "Relation": 3
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://cookingbigdata.com/linkeddata/ccregions": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 111,
+        "entities": {
+          "Annotation": 19,
+          "Model": 1,
+          "Concept": 8,
+          "Individual": 11,
+          "Datatype": 2,
+          "Relation": 3,
+          "Statement": 17
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 111,
+        "entities": {
+          "Annotation": 19,
+          "Model": 1,
+          "Concept": 8,
+          "Individual": 11,
+          "Datatype": 2,
+          "Relation": 3,
+          "Statement": 17
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 111,
+        "entities": {
+          "Annotation": 19,
+          "Model": 1,
+          "Concept": 8,
+          "Individual": 11,
+          "Datatype": 2,
+          "Relation": 3,
+          "Statement": 17
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://cookingbigdata.com/linkeddata/ccsla": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 104,
+        "entities": {
+          "TruthFunction": 1,
+          "Relation": 8,
+          "Annotation": 11,
+          "Model": 1,
+          "Concept": 13,
+          "Individual": 8,
+          "Datatype": 3,
+          "Statement": 14
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 104,
+        "entities": {
+          "TruthFunction": 1,
+          "Relation": 8,
+          "Annotation": 11,
+          "Model": 1,
+          "Concept": 13,
+          "Individual": 8,
+          "Datatype": 3,
+          "Statement": 14
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 104,
+        "entities": {
+          "TruthFunction": 1,
+          "Relation": 8,
+          "Annotation": 11,
+          "Model": 1,
+          "Concept": 13,
+          "Individual": 8,
+          "Datatype": 3,
+          "Statement": 14
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://d-nb.info/standards/elementset/agrelon": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 1504,
+        "entities": {
+          "Relation": 85,
+          "Annotation": 26,
+          "Attribute": 5,
+          "Model": 3,
+          "Concept": 52,
+          "Individual": 8,
+          "Statement": 221,
+          "Datatype": 2
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 1504,
+        "entities": {
+          "Relation": 85,
+          "Annotation": 26,
+          "Attribute": 5,
+          "Model": 3,
+          "Concept": 52,
+          "Individual": 8,
+          "Statement": 221,
+          "Datatype": 2
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 1504,
+        "entities": {
+          "Relation": 85,
+          "Annotation": 26,
+          "Attribute": 5,
+          "Model": 3,
+          "Concept": 52,
+          "Individual": 8,
+          "Statement": 221,
+          "Datatype": 2
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://d-nb.info/standards/elementset/dnb": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 203,
+        "entities": {
+          "Quantifier": 2,
+          "Datatype": 5,
+          "Relation": 17,
+          "Attribute": 3,
+          "Model": 3,
+          "Concept": 12,
+          "Individual": 17,
+          "Annotation": 11,
+          "Statement": 25
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 203,
+        "entities": {
+          "Quantifier": 2,
+          "Datatype": 5,
+          "Relation": 17,
+          "Attribute": 3,
+          "Model": 3,
+          "Concept": 12,
+          "Individual": 17,
+          "Annotation": 11,
+          "Statement": 25
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 203,
+        "entities": {
+          "Quantifier": 2,
+          "Datatype": 5,
+          "Relation": 17,
+          "Attribute": 3,
+          "Model": 3,
+          "Concept": 12,
+          "Individual": 17,
+          "Annotation": 11,
+          "Statement": 25
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://d-nb.info/standards/elementset/gnd#": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": true,
+        "triples": 4693,
+        "entities": {
+          "TruthFunction": 178,
+          "Relation": 258,
+          "Annotation": 53,
+          "Attribute": 65,
+          "Model": 3,
+          "Concept": 80,
+          "Datatype": 2,
+          "Individual": 25,
+          "Statement": 420
+        },
+        "error": null
+      },
+      "imported": {
+        "passed": true,
+        "triples": 4693,
+        "entities": {
+          "TruthFunction": 178,
+          "Relation": 258,
+          "Annotation": 53,
+          "Attribute": 65,
+          "Model": 3,
+          "Concept": 80,
+          "Datatype": 2,
+          "Individual": 25,
+          "Statement": 420
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      },
+      "closure": {
+        "passed": true,
+        "triples": 4693,
+        "entities": {
+          "TruthFunction": 178,
+          "Relation": 258,
+          "Annotation": 53,
+          "Attribute": 65,
+          "Model": 3,
+          "Concept": 80,
+          "Datatype": 2,
+          "Individual": 25,
+          "Statement": 420
+        },
+        "error": null,
+        "added": 0,
+        "reason": "no_imports"
+      }
+    },
+    "http://data.europa.eu/eli/ontology": {
+      "declared_imports": {
+        "count": 0,
+        "reachable": [],
+        "unreachable": []
+      },
+      "base": {
+        "passed": false,
+        "triples": null,
+        "entities": null,
+        "error": "HTTP 403 loading http://data.europa.eu/eli/ontology"
+      },
+      "imported": {
+        "passed": false,
+        "triples": null,
+        "entities": null,
+        "error": "HTTP 403 loading http://data.europa.eu/eli/ontology",
+        "added": null,
+        "reason": "load_error"
+      },
+      "closure": {
+        "passed": false,
+        "triples": null,
+        "entities": null,
+        "error": "HTTP 403 loading http://data.europa.eu/eli/ontology",
+        "added": null,
+        "reason": "load_error"
+      }
+    }
+  }
+}
