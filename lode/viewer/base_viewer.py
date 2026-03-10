@@ -299,9 +299,8 @@ class BaseViewer:
             handler_dic['text'] = obj
             return handler_dic
 
-        # --- THE NEW FIX: Check for Literal Objects ---
-        # If the object is a custom Literal class, it usually stores the actual text
-        # in an attribute like 'value', 'text', or 'lexical_form'.
+        #  Check for Literal Objects
+
         if type(obj).__name__ == 'Literal':
             if hasattr(obj, 'get_has_value') and obj.has_value:
                 if hasattr(obj, 'get_has_language'):
