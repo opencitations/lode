@@ -23,13 +23,6 @@
                 <!-- Semantic Artefact Source -->
                 <div class="mb-3">
                     <div class="row align-items-center">
-                        <div class="col-auto">
-                            <i class="bi bi-info-circle-fill info-icon" 
-                            data-bs-toggle="popover" 
-                            data-bs-placement="right"
-                            data-bs-content="Provide either a URL or upload a file (RDF, OWL, Turtle, N-Triples, etc.)"
-                            data-bs-trigger="hover focus"></i>
-                        </div>
                                             
                         <div class="col">
                             <!-- URL Input with Floating Label -->
@@ -39,20 +32,20 @@
                                         type="text" 
                                         class="form-control" 
                                         id="semanticArtefactUrl" 
-                                        name="semantic_artefact_url" 
+                                        name="url" 
                                         placeholder="Semantic artefact URL"
                                     >
                                     <label for="semanticArtefactUrl">Semantic artefact URL<span class="text-danger">*</span></label>
                                 </div>
                             </div>
                             
-                            <!-- File Input (non supporta floating label nativamente) -->
+                            <!-- File Input -->
                             <div id="fileSection" class="hide">
                                 <input 
                                     class="form-control" 
                                     type="file" 
                                     id="semanticArtefactFile" 
-                                    name="semantic_artefact_file"
+                                    name="file"
                                     accept=".rdf,.owl,.ttl,.n3,.nt,.xml"
                                     style="height: calc(3.5rem + 2px); padding: 1rem 0.75rem;"
                                 >
@@ -76,13 +69,6 @@
                 <!-- Resource URI -->
                 <div class="mb-3">
                     <div class="row align-items-center">
-                        <div class="col-auto">
-                            <i class="bi bi-info-circle-fill info-icon" 
-                            data-bs-toggle="popover" 
-                            data-bs-placement="right"
-                            data-bs-content="Leave empty to extract all resources from the semantic artefact"
-                            data-bs-trigger="hover focus"></i>
-                        </div>
                         <div class="col">
                             <div class="form-floating">
                                 <input 
@@ -101,14 +87,7 @@
                 <!-- Format Selection -->
                 <div class="mb-3">
                     <div class="row align-items-center">
-                        <div class="col-auto">
-                            <i class="bi bi-info-circle-fill info-icon" 
-                            data-bs-toggle="popover" 
-                            data-bs-placement="right"
-                            data-bs-content="Choose how to interpret the RDF graph (OWL, RDF, or SKOS)"
-                            data-bs-trigger="hover focus"></i>
-                        </div>
-                        <div class="col">
+                        <div class="col-md-6">
                             <div class="form-floating">
                                 <select id="readAs" name="read_as" class="form-select" required>
                                     {% for format in formats %}
@@ -120,19 +99,33 @@
                                 <label for="readAs">Select a format<span class="text-danger">*</span></label>
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div id="owlModules" class="hide">
+                                <span class="form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="imported">
+                                    <label class="form-check-label" for="imported">Imported</label>
+                                </span>
+                                <span class="form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="closure">
+                                    <label class="form-check-label" for="closure">Closure</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activate modules (only visible when OWL is selected) -->
+                <div id="owlModules" class="hide">
+                    <div class="mb-3">
+                        <div class="row align-items-center">
+                            
+                        </div>
                     </div>
                 </div>
 
                 <!-- Language Code -->
                 <div class="mb-3">
                     <div class="row align-items-center">
-                        <div class="col-auto">
-                            <i class="bi bi-info-circle-fill info-icon" 
-                            data-bs-toggle="popover" 
-                            data-bs-placement="right"
-                            data-bs-content="Specify a language code (e.g., 'en', 'it', 'fr') to filter labels by language"
-                            data-bs-trigger="hover focus"></i>
-                        </div>
                         <div class="col">
                             <div class="form-floating">
                                 <input 
@@ -179,6 +172,141 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
 # Choose the default response
 RewriteRule ^ontology\$ ontology.owl [R=303]
             </pre>
+        <div> 
+            <p>Depending on the parameters specified, the HTML page created by LODE takes into account both ontological axioms and annotations. The CSSs used for the resulting HTML page are based on the W3C CSSs for Recommendation documents. </p>
+
+    <h2>API Documentation</h2>
+
+    <p>
+        The LODE 2.0 API exposes a single endpoint — <code>/extract</code> — available via both
+        <code>GET</code> (URL-based) and <code>POST</code> (file upload). It processes a semantic
+        artefact and returns a human-readable HTML documentation page.
+    </p>
+
+    <h3>Parameters</h3>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Method</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+                <th>Example</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>url</code></td>
+                <td><span class="badge bg-primary">GET</span></td>
+                <td>string</td>
+                <td>Yes</td>
+                <td>Full URL of the semantic artefact to process. Both semantic artefacts URIs and direct links to RDF files 
+(e.g. <code>.ttl</code>, <code>.rdf</code>, <code>.owl</code>) are accepted. </td>
+                <td><code>url=http://purl.org/spar/fabio.ttl</code> [or]<br><code>url=http://purl.org/spar/fabio/</code></td>
+            </tr>
+            <tr>
+                <td><code>file</code></td>
+                <td><span class="badge bg-warning text-dark">POST</span></td>
+                <td>file</td>
+                <td>Yes</td>
+                <td>
+                    The semantic artefact file to upload and process.
+                    Accepted formats: <code>.rdf</code>, <code>.owl</code>, <code>.ttl</code>,
+                    <code>.n3</code>, <code>.nt</code>, <code>.xml</code>.
+                </td>
+                <td><code>file={LOCAL_PATH}</code></td>
+            </tr>
+            <tr>
+                <td><code>read_as</code></td>
+                <td>
+                    <span class="badge bg-primary">GET</span>
+                    <span class="badge bg-warning text-dark">POST</span>
+                </td>
+                <td>enum</td>
+                <td>No</td>
+                <td>
+                    How to interpret the RDF graph. One of <code>owl</code>, <code>rdf</code>,
+                    <code>skos</code>. Defaults to <code>owl</code>.
+                </td>
+                <td><code>read_as=owl</code></td>
+            </tr>
+            <tr>
+                <td><code>resource</code></td>
+                <td>
+                    <span class="badge bg-primary">GET</span>
+                    <span class="badge bg-warning text-dark">POST</span>
+                </td>
+                <td>string (URI)</td>
+                <td>No</td>
+                <td>
+                    URI of a specific resource to render. If omitted, the full artefact is documented.
+                </td>
+                <td><code>resource=http://purl.org/spar/fabio/ArchivalDocument</code></td>
+            </tr>
+            <tr>
+                <td><code>lang</code></td>
+                <td>
+                    <span class="badge bg-primary">GET</span>
+                    <span class="badge bg-warning text-dark">POST</span>
+                </td>
+                <td>string</td>
+                <td>No</td>
+                <td>
+                    Preferred language code for annotations (e.g. <code>en</code>, <code>it</code>,
+                    <code>fr</code>). Defaults to <code>en</code>.
+                </td>
+                <td><code>lang=en</code></td>
+
+            </tr>
+            <tr>
+                <td><code>imported</code></td>
+                <td>
+                    <span class="badge bg-primary">GET</span>
+                    <span class="badge bg-warning text-dark">POST</span>
+                </td>
+                <td>boolean</td>
+                <td>No</td>
+                <td>
+                    <em>OWL only.</em> When set to <code>true</code>, the axioms contained in the
+                    ontologies <strong>directly imported</strong> by the target artefact are included
+                    in the documentation. If both <code>imported</code> and <code>closure</code> are
+                    specified, only <code>imported</code> is used.
+                </td>
+                <td><code>imports=True</code></td>
+            </tr>
+            <tr>
+                <td><code>closure</code></td>
+                <td>
+                    <span class="badge bg-primary">GET</span>
+                    <span class="badge bg-warning text-dark">POST</span>
+                </td>
+                <td>boolean</td>
+                <td>No</td>
+                <td>
+                    <em>OWL only.</em> When set to <code>true</code>, the transitive closure of all
+                    imported ontologies is included in the documentation. If both
+                    <code>imported</code> and <code>closure</code> are specified, only
+                    <code>imported</code> is used.
+                </td>
+                <td><code>closure=True</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Examples</h3>
+
+    <pre>
+/extract?url=http://purl.org/spar/fabio.ttl&amp;read_as=owl
+/extract?url=http://purl.org/spar/fabio&amp;read_as=owl
+/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;imported=true&amp;lang=en
+/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;closure=true
+/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;resource=http://purl.org/spar/fabio/Abstract&amp;lang=it</pre>
+
+</div>
+
+        
         </div>
     </div>
     <script>
@@ -186,147 +314,136 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
         const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
         const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
         
-        // Custom Toggle Switch Logic
+        // ── Toggle URL / File ──────────────────────────────────────────────────
         const sourceToggle = document.getElementById('sourceToggle');
         const toggleSlider = document.getElementById('toggleSlider');
         const toggleOptions = document.querySelectorAll('.toggle-option');
-        const urlSection = document.getElementById('urlSection');
-        const fileSection = document.getElementById('fileSection');
-        const urlInput = document.getElementById('semanticArtefactUrl');
-        const fileInput = document.getElementById('semanticArtefactFile');
+        const urlSection    = document.getElementById('urlSection');
+        const fileSection   = document.getElementById('fileSection');
+        const urlInput      = document.getElementById('semanticArtefactUrl');
+        const fileInput     = document.getElementById('semanticArtefactFile');
 
         let isFileMode = false;
 
-        sourceToggle.addEventListener('click', (e) => {
-            // Toggle mode
+        sourceToggle.addEventListener('click', () => {
             isFileMode = !isFileMode;
 
             if (isFileMode) {
-                // Switch to File mode
-                toggleSlider.classList.remove('url-mode');
-                toggleSlider.classList.add('file-mode');
-                toggleOptions[0].classList.remove('active');
-                toggleOptions[0].classList.add('inactive');
-                toggleOptions[1].classList.remove('inactive');
-                toggleOptions[1].classList.add('active');
-                
+                toggleSlider.classList.replace('url-mode', 'file-mode');
+                toggleOptions[0].classList.replace('active', 'inactive');
+                toggleOptions[1].classList.replace('inactive', 'active');
                 urlSection.classList.add('hide');
                 fileSection.classList.remove('hide');
                 urlInput.value = '';
             } else {
-                // Switch to URL mode
-                toggleSlider.classList.remove('file-mode');
-                toggleSlider.classList.add('url-mode');
-                toggleOptions[1].classList.remove('active');
-                toggleOptions[1].classList.add('inactive');
-                toggleOptions[0].classList.remove('inactive');
-                toggleOptions[0].classList.add('active');
-                
+                toggleSlider.classList.replace('file-mode', 'url-mode');
+                toggleOptions[1].classList.replace('active', 'inactive');
+                toggleOptions[0].classList.replace('inactive', 'active');
                 urlSection.classList.remove('hide');
                 fileSection.classList.add('hide');
                 fileInput.value = '';
             }
         });
-        
-    // Form submission
-    const form = document.getElementById('extractForm');
-    const submitBtn = document.getElementById('submitBtn');
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // Rimuovi eventuali classi di errore precedenti
-        urlInput.classList.remove('is-invalid');
-        fileInput.classList.remove('is-invalid');
-        
-        // URL → GET
-        if (!isFileMode) {
-            const url = urlInput.value.trim();
-            if (!url) {
-                urlInput.classList.add('is-invalid');
+        // ── Show/hide OWL modules when format changes ──────────────────────────
+        const readAsSelect = document.getElementById('readAs');
+        const owlModules   = document.getElementById('owlModules');
+
+        function updateOwlModulesVisibility() {
+            if (readAsSelect.value === 'owl') {
+                owlModules.classList.remove('hide');
+            } else {
+                owlModules.classList.add('hide');
+                // reset checkboxes when hidden
+                document.getElementById('imported').checked = false;
+                document.getElementById('closure').checked  = false;
+            }
+        }
+
+        readAsSelect.addEventListener('change', updateOwlModulesVisibility);
+        updateOwlModulesVisibility(); // run on page load
+
+        // ── Form submission ────────────────────────────────────────────────────
+        const form      = document.getElementById('extractForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            urlInput.classList.remove('is-invalid');
+            fileInput.classList.remove('is-invalid');
+
+            // ── GET (URL mode) ──
+            if (!isFileMode) {
+                const url = urlInput.value.trim();
+                if (!url) {
+                    urlInput.classList.add('is-invalid');
+                    return;
+                }
+
+                const params = new URLSearchParams({ url });
+
+                const readAs = readAsSelect.value;
+                params.append('read_as', readAs);
+
+                const resource = document.getElementById('resource').value.trim();
+                if (resource) params.append('resource', resource);
+
+                const language = document.getElementById('language').value.trim();
+                if (language) params.append('lang', language);
+
+                if (readAs === 'owl') {
+                    if (document.getElementById('imported').checked) params.append('imported', 'true');
+                    if (document.getElementById('closure').checked)  params.append('closure',  'true');
+                }
+
+                window.location.href = `/extract?${params.toString()}`;
                 return;
             }
-            
-            const readAs = document.getElementById('readAs').value;
+
+            // ── POST (File mode) ──
+            const file = fileInput.files[0];
+            if (!file) {
+                fileInput.classList.add('is-invalid');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('read_as', readAsSelect.value);
+
             const resource = document.getElementById('resource').value.trim();
+            if (resource) formData.append('resource', resource);
 
-            // Nel blocco GET (URL mode)
             const language = document.getElementById('language').value.trim();
+            if (language) formData.append('lang', language);
 
-            const params = new URLSearchParams({
-                read_as: readAs,
-                semantic_artefact_url: url
-            });
-
-            // language param handler
-            if (language) {
-                params.append('language', language);
+            if (readAsSelect.value === 'owl') {
+                if (document.getElementById('imported').checked) formData.append('imported', 'true');
+                if (document.getElementById('closure').checked)  formData.append('closure',  'true');
             }
-            
-            if (resource) {
-                params.append('resource', resource);
+
+            submitBtn.disabled    = true;
+            submitBtn.textContent = 'Processing...';
+
+            try {
+                const response = await fetch('/extract', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error('Request failed');
+                const html = await response.text();
+                document.open();
+                document.write(html);
+                document.close();
+            } catch (error) {
+                fileInput.classList.add('is-invalid');
+            } finally {
+                submitBtn.disabled    = false;
+                submitBtn.textContent = 'Generate Documentation';
             }
-            
-            window.location.href = `/api/view?${params.toString()}`;
-            return;
-        }
-        
-        // FILE → POST
-        const formData = new FormData();
-        formData.append('read_as', document.getElementById('readAs').value);
-        
-        const resource = document.getElementById('resource').value.trim();
-        if (resource) {
-            formData.append('resource', resource);
-        }
-        
-        const file = fileInput.files[0];
-        if (!file) {
-            fileInput.classList.add('is-invalid');
-            return;
-        }
-        formData.append('semantic_artefact_file', file);
+        });
 
-        // language param handler
-        const language = document.getElementById('language').value.trim();
-        if (language) {
-            formData.append('language', language);
-        }
-            
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Processing...';
-        
-        try {
-            const response = await fetch('/api/view', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) {
-                throw new Error('Request failed');
-            }
-            
-            const html = await response.text();
-            document.open();
-            document.write(html);
-            document.close();
-            
-        } catch (error) {
-            fileInput.classList.add('is-invalid');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Generate Documentation';
-        }
-    });
-
-    // Removes the red border when user start typing
-    urlInput.addEventListener('input', () => {
-        urlInput.classList.remove('is-invalid');
-    });
-
-    fileInput.addEventListener('change', () => {
-        fileInput.classList.remove('is-invalid');
-    });
+        // ── Clear validation on input ──────────────────────────────────────────
+        urlInput.addEventListener('input',  () => urlInput.classList.remove('is-invalid'));
+        fileInput.addEventListener('change', () => fileInput.classList.remove('is-invalid'));
     </script>
 </body>
 </html>

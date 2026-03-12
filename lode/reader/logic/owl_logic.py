@@ -426,124 +426,112 @@ class OwlLogic(BaseLogic):
         except Exception as e:
             print(f"Errore propertyChain: {e}")
 
-    def handle_quantifier_exist(self, instance, uri, predicate, obj, setter=None):
-        """Handler per someValuesFrom"""
-        instance.set_has_quantifier_type("exist")
-        concept = self.get_or_create(obj, Concept)
-        if concept:
-            instance.set_applies_on_concept(concept)
+    # def handle_quantifier_exist(self, instance, uri, predicate, obj, setter=None):
+    #     """Handler per someValuesFrom"""
+    #     instance.set_has_quantifier_type("some")
+    #     concept = self.get_or_create(obj, Concept)
+    #     if concept:
+    #         instance.set_applies_on_concept(concept)
 
-    def handle_quantifier_all(self, instance, uri, predicate, obj, setter=None):
-        """Handler per allValuesFrom"""
-        instance.set_has_quantifier_type("all")
-        concept = self.get_or_create(obj, Concept)
-        if concept:
-            instance.set_applies_on_concept(concept)
+    # def handle_quantifier_all(self, instance, uri, predicate, obj, setter=None):
+    #     """Handler per allValuesFrom"""
+    #     instance.set_has_quantifier_type("only")
+    #     concept = self.get_or_create(obj, Concept)
+    #     if concept:
+    #         instance.set_applies_on_concept(concept)
 
-    def handle_cardinality_exact(self, instance, uri, predicate, obj, setter=None):
+    def handle_cardinality_exactly(self, instance, uri, predicate, obj, setter=None):
         """Handler per cardinality"""
-        instance.set_has_cardinality_type("exact")
+        instance.set_has_cardinality_type("exactly")
         instance.set_has_cardinality(obj)
+        thing = self.get_or_create(OWL.Thing, Concept)
+        instance.set_applies_on_concept(thing)
 
     def handle_cardinality_min(self, instance, uri, predicate, obj, setter=None):
         """Handler per minCardinality"""
         instance.set_has_cardinality_type("min")
         instance.set_has_cardinality(obj)
+        thing = self.get_or_create(OWL.Thing, Concept)
+        instance.c(thing)
 
     def handle_cardinality_max(self, instance, uri, predicate, obj, setter=None):
         """Handler per maxCardinality"""
         instance.set_has_cardinality_type("max")
         instance.set_has_cardinality(obj)
+        thing = self.get_or_create(OWL.Thing, Concept)
+        instance.set_applies_on_concept(thing)
 
-    def handle_cardinality_exact_qualified(self, instance, uri, predicate, obj, setter=None):
-        """Handler per qualifiedCardinality"""
-        instance.set_has_cardinality_type("exact")
+    # def handle_cardinality_exact_qualified(self, instance, uri, predicate, obj, setter=None):
+    #     """Handler per qualifiedCardinality"""
+    #     instance.set_has_cardinality_type("exactly")
         
-        on_class = self.graph.value(uri, OWL.onClass)
-        if on_class:
-            concept = self.get_or_create(on_class, Concept)
-            if concept:
-                instance.set_applies_on_concept(concept)
-        instance.set_has_cardinality(obj)
+    #     on_class = self.graph.value(uri, OWL.onClass)
+    #     if on_class:
+    #         concept = self.get_or_create(on_class, Concept)
+    #         if concept:
+    #             instance.set_applies_on_concept(concept)
+    #     instance.set_has_cardinality(obj)
 
-    def handle_cardinality_min_qualified(self, instance, uri, predicate, obj, setter=None):
-        """Handler per minQualifiedCardinality"""
-        instance.set_has_cardinality_type("min")
+    # def handle_cardinality_min_qualified(self, instance, uri, predicate, obj, setter=None):
+    #     """Handler per minQualifiedCardinality"""
+    #     instance.set_has_cardinality_type("min")
         
-        on_class = self.graph.value(uri, OWL.onClass)
-        if on_class:
-            concept = self.get_or_create(on_class, Concept)
-            if concept:
-                instance.set_applies_on_concept(concept)
+    #     on_class = self.graph.value(uri, OWL.onClass)
+    #     if on_class:
+    #         concept = self.get_or_create(on_class, Concept)
+    #         if concept:
+    #             instance.set_applies_on_concept(concept)
         
-        instance.set_has_cardinality(obj)
+    #     instance.set_has_cardinality(obj)
 
-    def handle_cardinality_max_qualified(self, instance, uri, predicate, obj, setter=None):
-        """Handler per maxQualifiedCardinality"""
-        instance.set_has_cardinality_type("max")
+    # def handle_cardinality_max_qualified(self, instance, uri, predicate, obj, setter=None):
+    #     """Handler per maxQualifiedCardinality"""
+    #     instance.set_has_cardinality_type("max")
         
-        on_class = self.graph.value(uri, OWL.onClass)
-        if on_class:
-            concept = self.get_or_create(on_class, Concept)
-            if concept:
-                instance.set_applies_on_concept(concept)
+    #     on_class = self.graph.value(uri, OWL.onClass)
+    #     if on_class:
+    #         concept = self.get_or_create(on_class, Concept)
+    #         if concept:
+    #             instance.set_applies_on_concept(concept)
         
-        instance.set_has_cardinality(obj)
+    #     instance.set_has_cardinality(obj)
 
     def handle_intersection(self, instance, uri, predicate, obj, setter=None):
         """Handler per intersectionOf"""
         instance.set_has_logical_operator("and")
-
-        is_datatype = (uri, RDF.type, RDFS.Datatype) in self.graph
-
         try:
             collection = RDFLibCollection(self.graph, obj)
             for item in collection:
-                if is_datatype:
-                    datatype = self.get_or_create(item, Datatype)
-                    if datatype:
-                        instance.set_applies_on_concept(datatype)
-                else:
-                    concept = self.get_or_create(item, Concept)
-                    if concept:
-                        instance.set_applies_on_concept(concept)
+                concept = self.get_or_create(item, Concept)
+                if concept:
+                    instance.set_applies_on_concept(concept)
         except Exception as e:
             print(f"Errore intersectionOf: {e}")
 
     def handle_union(self, instance, uri, predicate, obj, setter=None):
         """Handler per unionOf"""
-        instance.set_has_logical_operator("or")
-
-        is_datatype = (uri, RDF.type, RDFS.Datatype) in self.graph
-        
+        instance.set_has_logical_operator("or")        
         try:
             collection = RDFLibCollection(self.graph, obj)
             for item in collection:
-                if is_datatype:
-                    datatype = self.get_or_create(item, Datatype)
-                    if datatype:
-                        instance.set_applies_on_concept(datatype)
-                else:
-                    concept = self.get_or_create(item, Concept)
-                    if concept:
-                        instance.set_applies_on_concept(concept)
+                concept = self.get_or_create(item, Concept)
+                if concept:
+                    instance.set_applies_on_concept(concept)
         except Exception as e:
-            print(f"Errore unionOf: {e}")
+            print(f"Errore unionOf (TruthFunction): {e}")
 
     def handle_complement(self, instance, uri, predicate, obj, setter=None):
         """Handler per complementOf"""
         instance.set_has_logical_operator("not")
 
-        is_datatype = (uri, RDF.type, RDFS.Datatype) in self.graph
-
-        if is_datatype:
-            datatype = self.get_or_create(uri, Datatype)
-            if datatype:
-                instance.set_applies_on_concept(datatype)
-        else:
-            concept = self.get_or_create(uri, Concept)
-            if concept:
-                instance.set_applies_on_concept(concept)
+        try:
+            collection = RDFLibCollection(self.graph, obj)
+            for item in collection:
+                concept = self.get_or_create(item, Concept)
+                if concept:
+                    instance.set_applies_on_concept(concept)
+        except Exception as e:
+            print(f"Errore complementOf (TruthFunction): {e}")
 
     def handle_one_of(self, instance, uri, predicate, obj, setter=None):
         """Handler per oneOf"""
@@ -554,7 +542,7 @@ class OwlLogic(BaseLogic):
                 if resource:
                     instance.set_applies_on_resource(resource)
         except Exception as e:
-            print(f"Errore oneOf: {e}")
+            print(f"Errore oneOf (TruthFunction): {e}")
 
 
             

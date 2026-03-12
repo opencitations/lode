@@ -19,10 +19,11 @@ class Reader:
         self._graph = None
         self._configuration = None
     
-    def load_instances(self, graph_path: str, read_as: str):
+    def load_instances(self, graph_path : str, read_as : str, imported=None, closure=None):
         """Carica e processa grafo RDF"""
+
         # 1. Parse generico
-        loader = Loader(graph_path)
+        loader = Loader(graph_path, imported=imported, closure=closure)
         self._graph = loader.get_graph()
         
         # 2. Seleziona strategia

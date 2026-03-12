@@ -1,6 +1,6 @@
 # lode/api.py
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi import FastAPI, File, UploadFile, Form, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from enum import Enum
@@ -29,26 +29,28 @@ class ReadAsFormat(str, Enum):
     rdf = "rdf"
     skos = "skos"
 
-@app.get("/api/view", response_class=HTMLResponse)
-async def view_semantic_artefact_get(
+@app.get("/extract", response_class=HTMLResponse)
+async def extract_get(
     request: Request,
     read_as: ReadAsFormat,
-    semantic_artefact_url: str,
+    url: str,
     resource: Optional[str] = None,
-    language: Optional[str] = None
+    lang: Optional[str] = None,
+    imported: Optional[bool] = None,
+    closure: Optional[bool] = None
 ):
     """Visualizza semantic artefact da URL."""
     try:
         logger.info(f"=== REQUEST START ===")
-        logger.info(f"URL: {semantic_artefact_url}")
+        logger.info(f"URL: {url}")
         logger.info(f"Format: {read_as.value}")
         logger.info(f"Resource: {resource}")
         
         reader = Reader()
-        reader.load_instances(semantic_artefact_url, read_as.value)
+        reader.load_instances(url, read_as.value, imported=imported, closure=closure)
         
         viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource, language=language) 
+        data = viewer.get_view_data(resource_uri=resource, language=lang) 
         
         logger.info(f"=== REQUEST SUCCESS ===")
         return templates.TemplateResponse("viewer.html", {
@@ -67,32 +69,34 @@ async def view_semantic_artefact_get(
             "error": f"{type(e).__name__}: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
         })
 
-@app.post("/api/view", response_class=HTMLResponse)
-async def view_semantic_artefact_post(
+@app.post("/extract", response_class=HTMLResponse)
+async def extract_post(
     request: Request,
     read_as: ReadAsFormat = Form(...),
-    semantic_artefact_file: UploadFile = File(...),
+    file: UploadFile = File(...),
     resource: Optional[str] = Form(None),
-    language: Optional[str] = Form(None)  
+    lang: Optional[str] = None,
+    imported: Optional[str] = Form(None),
+    closure: Optional[str] = Form(None)
 ):
     """Visualizza semantic artefact da file."""
     temp_file_path = None
     
     try:
         logger.info(f"=== FILE UPLOAD START ===")
-        logger.info(f"Filename: {semantic_artefact_file.filename}")
+        logger.info(f"Filename: {file.filename}")
         logger.info(f"Format: {read_as.value}")
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".rdf") as tmp:
-            content = await semantic_artefact_file.read()
+            content = await file.read()
             tmp.write(content)
             temp_file_path = tmp.name
         
         reader = Reader()
-        reader.load_instances(temp_file_path, read_as.value)
+        reader.load_instances(temp_file_path, read_as.value, imported=imported, closure=closure)
         
         viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource, language=language) 
+        data = viewer.get_view_data(resource_uri=resource, language=lang) 
         
         logger.info(f"=== UPLOAD SUCCESS ===")
         return templates.TemplateResponse("viewer.html", {
@@ -114,14 +118,13 @@ async def view_semantic_artefact_post(
         if temp_file_path and os.path.exists(temp_file_path):
             os.unlink(temp_file_path)
 
-@app.get("/api/info")
+@app.get("/info")
 async def root():
     return {
         "message": "LODE 2.0 API",
         "version": "1.0.0",
         "endpoints": {
-            "extract": "/api/extract [GET, POST] - Extract resources as JSON",
-            "view": "/api/view [GET] - View resources as HTML"
+            "extract": "/extract [GET] - View resources as HTML"
         }
     }
 

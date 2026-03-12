@@ -10,6 +10,10 @@ mapper:
     is: class
     target_class: Literal
 
+  # All definitions belonging to reasoning are excluded
+  # Restrictions owl:bottomObjectPorperty owl:topObjectProperty, owl:bottomObjectProperty, owl:topDataProperty, owl:bottomDataProperty, owl:Thing, owl:Nothing
+
+
   # rdfs:Container, rdfs:ContainerMembershipProperty, rdfs:member
   # skos:memberList, skos:narrower [!!], skos:inScheme [!!!], skos:narrowerTransitive, skos:semanticRelation, skos:broaderTransitive, skos:mappingRelation
 
@@ -107,6 +111,21 @@ mapper:
   owl:Annotation:
     is: class
     target_class: Statement
+
+  owl:sourceIndividual:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_subject: Individual]
+
+  owl:targetIndividual:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_object: Individual]
+
+  owl:targetValue:
+    is: predicate
+    target_classes: [Statement]
+    setters: [set_has_object: Literal]
   
   # ========== Property ==========
   rdfs:domain:
@@ -448,54 +467,84 @@ mapper:
     handler: handle_one_of
   
   # ========== QUANTIFIERS - Con handlers ==========
+  # owl:someValuesFrom:
+  #   is: predicate
+  #   inferred_class: Quantifier
+  #   target_classes: [Quantifier]
+  #   handler: handle_quantifier_exist
+    
+  # owl:allValuesFrom:
+  #   is: predicate
+  #   inferred_class: Quantifier
+  #   target_classes: [Quantifier]
+  #   handler: handle_quantifier_all
+
   owl:someValuesFrom:
     is: predicate
     inferred_class: Quantifier
     target_classes: [Quantifier]
-    handler: handle_quantifier_exist
-    
+    setters:
+      - set_has_quantifier_type: "some"
+      # needed as it is inferred, not explicitly declared
+      - set_applies_on_concept: Concept
+
   owl:allValuesFrom:
     is: predicate
     inferred_class: Quantifier
     target_classes: [Quantifier]
-    handler: handle_quantifier_all
+    setters:
+      - set_has_quantifier_type: "only"
+      # needed as it is inferred, not explicitly declared
+      - set_applies_on_concept: Concept
   
   # ========== CARDINALITY - Con handlers ==========
   owl:cardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    handler: handle_cardinality_exact
+    # needs an handler since it defaults set_applies_on_concept to OWL.Thing
+    handler: handle_cardinality_exactly
     
   owl:minCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    handler: handle_cardinality_min
-    
+    # needs an handler since it defaults set_applies_on_concept to OWL.Thing
+    handler: handle_cardinality_min 
+
   owl:maxCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    handler: handle_cardinality_max
+    # needs an handler since it defaults set_applies_on_concept to OWL.Thing
+    handler: handle_cardinality_min
     
   owl:qualifiedCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    handler: handle_cardinality_exact_qualified
+    setters:
+      - set_has_cardinality_type: "exactly"
+      # need set_applies_on_concept as it is inferred, not explicitly declared
+      - set_applies_on_concept: Concept
     
   owl:minQualifiedCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    handler: handle_cardinality_min_qualified
+    setters:
+      - set_has_cardinality_type: "min"
+      # need set_applies_on_concept as it is inferred, not explicitly declared
+      - set_applies_on_concept: Concept
     
   owl:maxQualifiedCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    handler: handle_cardinality_max_qualified
+    setters:
+      - set_has_cardinality_type: "max"
+      # need set_applies_on_concept as it is inferred, not explicitly declared
+      - set_applies_on_concept: Concept
 
   # ========== Restrictions - Target diverso ==========
   owl:onProperty:
@@ -507,6 +556,16 @@ mapper:
     is: predicate
     target_classes: [Restriction]
     setters: [set_applies_on_concept: Concept]
+
+  owl:onDatatype:
+    is: predicate
+    target_classes: [Restriction]
+    setters: [set_applies_on_concept: Datatype]
+
+  owl:onDataRange:
+    is: predicate
+    target_classes: [Restriction]
+    setters: [set_applies_on_concept: Datatype]
 
   # ========== Individual - Target diverso ==========
   owl:sameAs:

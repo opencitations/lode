@@ -175,7 +175,11 @@ class BaseLogic(ABC):
                             setter(lit_obj)
                         except:
                             continue
+                    # for setters with values true of false 
                     elif isinstance(value_type, bool):
+                        setter(value_type)
+                    # for setters such as "quantifier_type" = "some"
+                    elif isinstance(value_type, str):
                         setter(value_type)
                     elif isinstance(value_type, type):
                         obj_instance = self.get_or_create(obj, value_type)
@@ -231,6 +235,10 @@ class BaseLogic(ABC):
             # Literals
             if isinstance(id, RDFlibLiteral):
                 return self._create_literal(id)
+            
+            # recognises Datatypes from they XSD uri
+            if python_class == Concept and isinstance(id, URIRef) and str(id).startswith(str(XSD)):
+                python_class = Datatype
             
             # RISOLVI CLASSE AMMESSA
             if python_class:
