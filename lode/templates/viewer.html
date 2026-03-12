@@ -234,11 +234,11 @@
                 </h3>
 
                 <div class="card bg-light border-0 mb-4 shadow-sm">
-                    <div class="card-body p-3">
+                    <div class="card-body p-3" style="background-color:#F4FFFF">
                         <p class="text-muted small mb-2 text-uppercase fw-bold">Jump to:</p>
                         <div class="d-flex flex-wrap gap-2">
                             {% for item in section.entities %}
-                            <a href="#{{ item.anchor_id }}" class="btn btn-sm btn-outline-primary bg-white">
+                            <a href="#{{ item.anchor_id }}">
                                 {{ item.label }}
                             </a>
                             {% endfor %}

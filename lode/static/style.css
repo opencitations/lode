@@ -7,7 +7,7 @@ body {
     font-optical-sizing: auto;
     font-weight: 300;
     font-style: normal;
-    font-size: small;
+    font-size:  1rem;
     font-family: sans-serif; /* LODE uses standard sans-serif */
     color: black;
     background-color: white;
@@ -33,6 +33,7 @@ h1, h2, h3, h4,
 
  /* INDEX PAGE STYLE */
 .submission-form-container {
+    border-bottom:2px solid #193564;
     padding-left: 6rem;
     padding-right: 4rem;
     padding-bottom: 2rem;
@@ -143,16 +144,14 @@ h1.display-5 {
 
 /* Links - Classic web colors */
 a {
-    color: #0000CC; /* Standard Blue Link */
+    color: #00C !important; /* Standard Blue Link */
     text-decoration: underline;
     background-image: none !important;
     transition: background-size 0.3s ease;
 }
 
 a:hover {
-    text-decoration: None;
-    background-color: transparent !important;
-    color: white;
+    background-color: #ffa !important;
 }
 
 a:visited {
