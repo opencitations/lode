@@ -285,39 +285,47 @@ class BaseViewer:
         return data
 
     def _resolve_resource_value(self, obj) -> dict:
-        """Helper: Extracts text and link from any object (Resource, Literal, or String)."""
+        """Helper: Extracts text and link from any object."""
         handler_dic = {
             'text': None,
             'link': None,
-            'lan': None
+            'lan': None,
+            'parts': None  # This key is for restrictions
         }
 
         if not obj: return handler_dic
 
-        # 1. Case: It is already a plain string
+        # --- 1. INTERCEPT RESTRICTIONS ---
+        restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
+                             "OneOf", "Value"]
+        if type(obj).__name__ in restriction_types:
+            # Recursively parse the restriction into clickable parts
+            parts = self._parse_restriction(obj)
+
+            handler_dic['parts'] = parts
+            handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
+            handler_dic['link'] = None  # Forces Jinja to ignore the blank node URI
+            return handler_dic
+
+        # --- 2. String Handling ---
         if isinstance(obj, str):
             handler_dic['text'] = obj
             return handler_dic
 
-        #  Check for Literal Objects
-
+        # --- 3. Literal Handling ---
         if type(obj).__name__ == 'Literal':
-            if hasattr(obj, 'get_has_value') and obj.has_value:
+            if hasattr(obj, 'get_has_value') and obj.get_has_value():
+                handler_dic['text'] = obj.get_has_value()
                 if hasattr(obj, 'get_has_language'):
-                    handler_dic['text'] = obj.get_has_value()
-                    handler_dic['lan'] = obj.has_language
-                    return handler_dic
-                else:
-                    handler_dic['text'] = obj.get_has_value()
-                    return handler_dic
+                    handler_dic['lan'] = obj.get_has_language()
+                return handler_dic
 
-            # If we still can't find it, try standard string conversion
             raw_str = str(obj)
             if "object at" not in raw_str:
                 handler_dic['text'] = raw_str
                 return handler_dic
 
-        # 2. Case: It is a Resource Object
+        # --- 4. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
             try:
@@ -325,7 +333,7 @@ class BaseViewer:
             except AttributeError:
                 handler_dic['text'] = handler_dic['link']
 
-        # 3. Fallbacks
+        # Fallbacks
         if not handler_dic['text'] and handler_dic['link']:
             handler_dic['text'] = handler_dic['link']
 
@@ -385,6 +393,94 @@ class BaseViewer:
 
         return ' '.join(name.split()).title()
 
+    def _parse_restriction(self, obj) -> list:
+        """
+        Recursively unpacks nested restrictions into a list of display parts
+        (each part being a dict with 'text' and 'link').
+        """
+        if not obj: return []
 
+        # 1. Handle lists of restrictions/concepts (e.g., in TruthFunctions or OneOf)
+        if isinstance(obj, list) or isinstance(obj, set):
+            parts = []
+            for i, item in enumerate(obj):
+                if i > 0:
+                    parts.append({'text': ', ', 'link': None})
+                parts.extend(self._parse_restriction(item))
+            return parts
 
+        obj_type = type(obj).__name__
+        restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
+                             "OneOf", "Value"]
 
+        # 2. If it is a Restriction, recursively unpack its specific components
+        if obj_type in restriction_types:
+            parts = []
+
+            # Helper to safely call getter methods (e.g., get_applies_on_property)
+            def _get(instance, prop_name, default=None):
+                getter = f"get_{prop_name}"
+                if hasattr(instance, getter):
+                    res = getattr(instance, getter)()
+                    return res if res is not None else default
+                return getattr(instance, prop_name, default)
+
+            if obj_type == "Quantifier":
+                prop = _get(obj, 'applies_on_property')
+                quant = _get(obj, 'has_quantifier_type', "some")
+                concept = _get(obj, 'applies_on_concept')
+
+                parts.extend(self._parse_restriction(prop))
+                parts.append({'text': f' {quant} ', 'link': None})
+                parts.extend(self._parse_restriction(concept))
+
+            elif obj_type == "Cardinality":
+                prop = _get(obj, 'applies_on_property')
+                card = _get(obj, 'has_cardinality_type', "exactly")
+                concept = _get(obj, 'applies_on_concept')
+
+                parts.extend(self._parse_restriction(prop))
+                parts.append({'text': f' {card} ', 'link': None})
+                parts.extend(self._parse_restriction(concept))
+
+            elif obj_type == "TruthFunction":
+                operator = _get(obj, 'has_logical_operator', "and")
+                concepts = _get(obj, 'applies_on_concept', [])
+                if not isinstance(concepts, list): concepts = [concepts]
+
+                parts.append({'text': '(', 'link': None})
+                for i, c in enumerate(concepts):
+                    if i > 0:
+                        parts.append({'text': f' {operator} ', 'link': None})
+                    parts.extend(self._parse_restriction(c))
+                parts.append({'text': ')', 'link': None})
+
+            elif obj_type == "OneOf":
+                resources = _get(obj, 'applies_on_resource', [])
+                if not isinstance(resources, list): resources = [resources]
+
+                parts.append({'text': 'one of { ', 'link': None})
+                for i, r in enumerate(resources):
+                    if i > 0:
+                        parts.append({'text': ', ', 'link': None})
+                    parts.extend(self._parse_restriction(r))
+                parts.append({'text': ' }', 'link': None})
+
+            elif obj_type == "Value":
+                prop = _get(obj, 'applies_on_property')
+                resource = _get(obj, 'applies_on_resource')
+
+                parts.extend(self._parse_restriction(prop))
+                parts.append({'text': ' value ', 'link': None})
+                parts.extend(self._parse_restriction(resource))
+
+            return parts
+
+        # 3. Base Case: We hit a non-blank node (Concept, Relation, String)
+        # Send it to the main resolver to extract its URI link and clean text.
+        resolved = self._resolve_resource_value(obj)
+
+        if resolved.get('text'):
+            return [{'text': resolved['text'], 'link': resolved.get('link')}]
+
+        return []
