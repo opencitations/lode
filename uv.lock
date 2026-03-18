@@ -411,6 +411,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "jinja2" },
+    { name = "owlready2" },
     { name = "python-multipart" },
     { name = "rdflib" },
     { name = "requests" },
@@ -428,6 +429,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.104.1" },
     { name = "jinja2", specifier = ">=3.1.2" },
+    { name = "owlready2", specifier = ">=0.50" },
     { name = "python-multipart", specifier = ">=0.0.6" },
     { name = "rdflib", specifier = ">=7.4.0" },
     { name = "requests", specifier = ">=2.31.0" },
@@ -525,6 +527,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1a/8a/0402ba61a2f16038b48b39bccca271134be00c5c9f0f623208399333c448/markupsafe-3.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:4faffd047e07c38848ce017e8725090413cd80cbc23d86e55c587bf979e579c9", size = 15426, upload-time = "2025-09-27T18:37:27.316Z" },
     { url = "https://files.pythonhosted.org/packages/70/bc/6f1c2f612465f5fa89b95bead1f44dcb607670fd42891d8fdcd5d039f4f4/markupsafe-3.0.3-cp314-cp314t-win_arm64.whl", hash = "sha256:32001d6a8fc98c8cb5c947787c5d08b0a50663d139f1305bac5885d98d9b40fa", size = 14146, upload-time = "2025-09-27T18:37:28.327Z" },
 ]
+
+[[package]]
+name = "owlready2"
+version = "0.50"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/67/6fb3a628889d97f8a3d3c64d4597f0637db61a1856c835fe7c65d8e89658/owlready2-0.50.tar.gz", hash = "sha256:7be74c53a35497df138c8223dddcf65510def9b38494ae1fac4aa2a61c4677eb", size = 27328931, upload-time = "2026-02-05T10:42:01.733Z" }
 
 [[package]]
 name = "packaging"
