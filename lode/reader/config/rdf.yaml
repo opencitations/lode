@@ -1,6 +1,19 @@
 name: RDF
 fallback_class: Statement
 
+namespaces:
+  - "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  - "http://www.w3.org/2000/01/rdf-schema#"
+
+allowed_classes:
+  - Statement
+  - Property
+  - Container
+  - Datatype
+  - Literal
+  - Resource
+  - Concept
+
 mapper: 
 
   "*":  
