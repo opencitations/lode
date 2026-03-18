@@ -3,18 +3,32 @@
 body {
     margin-left: 5rem;
     border-left: 2px solid #193564;
+    /* font */
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+    font-size:  1rem;
+    font-family: sans-serif; /* LODE uses standard sans-serif */
     color: black;
-    /* to fix powered by lode image */
-    background-image: url(https://www.essepuntato.it/assets/img/lode/LODELogo.png);
+    background-color: white;
+    /* Replicating the LODE background logo */
+    background-image: url('https://www.essepuntato.it/assets/img/lode/LODELogo.png');
     background-position: top left;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    /* font */
-    font-family: "DM Sans", sans-serif;
-    font-optical-sizing: auto;    
-    font-weight: 300;
-    font-style: normal;
-    font-size: small;
+    /* Adjust padding to not overlap with logo */
+    padding-top: 2rem;
+    padding-left: 5rem; /* Space for the logo */
+}
+
+/* Headings - W3C Style Blue */
+h1, h2, h3, h4,
+.h1, .h2, .h3, .h4 {
+    color: #005A9C !important; /* The classic W3C Blue */
+    font-family: sans-serif;
+    font-weight: bold;
+    background: transparent;
+    border: none;
 }
 
  /* INDEX PAGE STYLE */
@@ -122,33 +136,35 @@ pre {
     color:#193564;
 }
 
-/* links */
+h1.display-5 {
+    font-size: 170%; /* Matching rec.css scaling */
+    border-bottom: 2px solid #005A9C;
+    padding-bottom: 10px;
+}
+
+/* Links - Classic web colors */
 a {
-  color: #193564;
-  text-decoration: underline;
-  background-image: linear-gradient(#193564, #193564);
-  background-size: 0% 100%;
-  background-repeat: no-repeat;
-  background-position: left bottom;
-  transition: background-size 0.3s ease;
+    color: #00C !important; /* Standard Blue Link */
+    text-decoration: underline;
+    background-image: none !important;
+    transition: background-size 0.3s ease;
 }
 
 a:hover {
-  background-size: 100% 100%;
-  color: white;
+    background-color: #ffa !important;
 }
 
-/* Custom styles for the Table of Contents and Sections */
-.toc-card {
-    background-color: #f8f9fa;
-    border-left: 5px solid #0d6efd;
+a:visited {
+    color: #600099; /* Standard Visited Purple */
 }
+
+
+/* Custom styles for the Table of Contents and Sections */
+
 .section-header {
     margin-top: 3rem;
     margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #dee2e6;
-}
+    padding-bottom: 0.5rem;}
 /* Ensures the title isn't hidden behind browser chrome when jumping */
 .anchor-offset {
     scroll-margin-top: 20px;
@@ -157,4 +173,159 @@ a:hover {
     font-size: 0.85em;
 }
 
+/* 2. Flattening Bootstrap (Removing "App-like" styles)
+   ========================================================================== */
+
+/* Remove rounded corners and shadows from everything */
+.card, .btn, .alert, .form-control, .badge, .rounded, .rounded-pill {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* 3. The "Entity" Card Style (Mapping .card to LODE .entity)
+   ========================================================================== */
+
+/* The main container for an entity definition */
+.card {
+    border: 1px solid navy !important; /* LODE signature border */
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+/* The Header (Entity Name) */
+.card-header {
+    background-color: transparent !important; /* Remove Bootstrap gray/white bg */
+    border-bottom: 1px dotted gray !important;
+    padding: 10px 15px;
+}
+
+/* The Entity Title */
+.card-header h4 {
+    font-size: 1.2rem;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+/* 4. Color Coding Types (Classes, Object Properties, etc.)
+   ========================================================================== */
+
+/* Bootstrap uses badges. We transform them to look like
+   LODE's colored text markers or superscript styles.
+*/
+
+.badge {
+    background-color: transparent !important; /* Remove bg color */
+    font-weight: normal;
+    font-size: 0.9em;
+    border: none !important;
+    padding: 0;
+}
+
+/* You might need to adjust Jinja logic to apply specific classes,
+   but here is a generic catch-all based on text color logic */
+
+/* If the text is "Class", make it Orange */
+.badge:contains("Class"),
+.text-info-emphasis {
+    color: orange !important;
+    font-weight: bold;
+}
+
+/* If the text is "Object Property", make it Navy */
+.badge:contains("Object Property") {
+    color: navy !important;
+}
+
+/* If the text is "Data Property", make it Green */
+.badge:contains("Data Property") {
+    color: green !important;
+}
+
+/* 5. Definition Lists (The core of LODE data display)
+   ========================================================================== */
+
+/* The gray box effect for descriptions/relations */
+.card-body .row {
+    margin: 0;
+}
+
+/* The label (URI, Relations, etc) */
+dt, .text-uppercase.fw-bold {
+    color: black !important;
+    font-weight: bold !important;
+    text-transform: none !important; /* LODE isn't usually uppercase */
+    margin-top: 5px;
+}
+
+/* The content blocks (Relations lists) */
+.bg-light-subtle {
+    background-color: rgb(242, 243, 244) !important; /* LODE .description bg */
+    border: 1px dashed gray !important; /* LODE dashed border */
+    border-radius: 0 !important;
+}
+
+/* URI Code block */
+code.bg-light {
+    background-color: transparent !important;
+    color: black;
+    font-family: monospace;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* 6. Buttons (Make them technical/minimal)
+   ========================================================================== */
+.btn-outline-secondary, .btn-outline-dark, .btn-outline-primary {
+    border: 1px solid #ccc !important;
+    color: #005A9C !important;
+    background: #f9f9f9;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    margin-left: 5px;
+}
+
+.btn:hover {
+    background: #005A9C !important;
+    color: white !important;
+}
+
+/* 7. Table of Contents (TOC)
+   ========================================================================== */
+.toc-card {
+    border: 1px solid navy !important;
+    border-left: 5px solid #005A9C !important;
+    background-color: #F4FFFF !important; /* LODE .hlist bg color */
+}
+
+.toc-card .btn-outline-primary {
+    border: none !important;
+    background: transparent !important;
+    color: #0000CC !important;
+    text-decoration: underline;
+    text-align: left;
+}
+
+/* 8. Specific Adjustments for Jinja Template Structure
+   ========================================================================== */
+
+/* Remove the heavy blue border top from the metadata card */
+.border-primary.border-top-4 {
+    border-top: none !important;
+}
+
+/* Adjust lists inside relationship boxes */
+.list-unstyled li {
+    margin-bottom: 4px;
+}
+
+/* Hide or style the scroll offset anchor */
+.anchor-offset {
+    scroll-margin-top: 60px;
+}
+
+/* Back to index button area */
+.mt-3 a.btn {
+    border: none !important;
+    text-decoration: underline;
+}
 
