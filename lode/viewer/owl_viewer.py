@@ -26,6 +26,6 @@ class OwlViewer(BaseViewer):
         ]
 
         # 3. Build the grouped view
-        data = self._build_grouped_view(toc_config)
+        data = self._build_grouped_view(toc_config, language)
         data['metadata'] = metadata_dict
         return data

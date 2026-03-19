@@ -32,34 +32,43 @@ class BaseViewer:
                 return self._cache[uri_id]
         
         return None
-    
+
     def _get_best_label(self, resource: Resource, language: Optional[str] = None) -> Optional[str]:
         """Gets the best label to display: language > preferred_label > label > identifier."""
-        # If language is specified in params, search for label in specified language
-        if language:
-            # first, preferred label in language
-            labels = resource.get_has_preferred_label()
-            for label in labels:
-                if hasattr(label, 'get_has_language') and label.get_has_language() == language:
+
+        # 1. Force 'en' as the absolute default if no language makes it this far
+        target_lang = language.strip().lower() if language else "en"
+
+        # Check Preferred Labels for the target language
+        labels = resource.get_has_preferred_label()
+        for label in labels:
+            if hasattr(label, 'get_has_language') and label.get_has_language():
+                if label.get_has_language().lower().startswith(target_lang):
                     return self._clean_name(label.get_has_value())
-            
-            # then, label in language
-            labels = resource.get_has_label()
-            for label in labels:
-                if hasattr(label, 'get_has_language') and label.get_has_language() == language:
+
+        # Check Normal Labels for the target language
+        labels = resource.get_has_label()
+        for label in labels:
+            if hasattr(label, 'get_has_language') and label.get_has_language():
+                if label.get_has_language().lower().startswith(target_lang):
                     return self._clean_name(label.get_has_value())
-        
-        # Fallback: first preferred label (in any language)
+
+        # --- DETERMINISTIC FALLBACKS ---
+        # If we reach here, no English label exists.
+        # We sort them by language tag so it doesn't randomly shuffle!
+
         labels = resource.get_has_preferred_label()
         if labels:
-            return self._clean_name(labels[0].get_has_value())
-        
-        # Fallback 2: first label (in any language)
+            # Sort alphabetically by language tag (e.g., 'es' then 'pt')
+            sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
+            return self._clean_name(sorted_labels[0].get_has_value())
+
         labels = resource.get_has_label()
         if labels:
-            return self._clean_name(labels[0].get_has_value())
-        
-        # Fallback 3: Last part of the URI after "#" or "/"
+            sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
+            return self._clean_name(sorted_labels[0].get_has_value())
+
+        # Final Fallback: The URI Identifier
         resource_id = resource.get_has_identifier()
         if resource_id:
             clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
@@ -72,9 +81,12 @@ class BaseViewer:
         Main entry point called by the API
         Subclasses should override this to define their specific view strategy
         """
+        # If no language is provided, the default would be English
+        language = language.strip() if language else "en"
+
         # Fallback: generic flat list
         all_instances = self.get_all_instances()
-        metadata_dict = self._find_and_format_metadata(all_instances)
+        metadata_dict = self._find_and_format_metadata(all_instances, language)
 
         if resource_uri:
             data = self._handle_single_resource(resource_uri, language)
@@ -166,10 +178,10 @@ class BaseViewer:
                         formatted_values = []
                         if isinstance(value, list):
                             for v in value:
-                                val_dict = self._resolve_resource_value(v)
+                                val_dict = self._resolve_resource_value(v, language)
                                 if val_dict['text']: formatted_values.append(val_dict)
                         else:
-                            val_dict = self._resolve_resource_value(value)
+                            val_dict = self._resolve_resource_value(value, language)
                             if val_dict['text']: formatted_values.append(val_dict)
 
                         if formatted_values:
@@ -180,7 +192,7 @@ class BaseViewer:
                                     relations[clean_name].append(v)
 
             # Extract Statement Entities
-            statements =  self._format_statement(all_instances, uri)
+            statements =  self._format_statement(all_instances, uri, language)
 
             entities.append({
                 'type': type(instance).__name__,
@@ -194,7 +206,7 @@ class BaseViewer:
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
         return entities
 
-    def _find_and_format_metadata(self, all_instances: List[Resource]) -> Dict:
+    def _find_and_format_metadata(self, all_instances: List[Resource], language=None) -> Dict:
         """
         Searches for the Model and its Statements and formatting them
         for the template.
@@ -212,8 +224,8 @@ class BaseViewer:
 
         # 2. Prepare Output
         data = {
-            'uri': [self._resolve_resource_value(ontology_model)],
-            'label': [self._resolve_resource_value(self._get_best_label(ontology_model))]
+            'uri': [self._resolve_resource_value(ontology_model, language)],
+            'label': [self._resolve_resource_value(self._get_best_label(ontology_model, language))]
         }
 
         #  3: Dynamic Extraction of Structural Data ---
@@ -251,7 +263,7 @@ class BaseViewer:
                         # 6. Extract the actual text values
                         extracted_values = []
                         for val in values:
-                            entry = self._resolve_resource_value(val)
+                            entry = self._resolve_resource_value(val, language)
                             if entry['text']:
                                 extracted_values.append(entry)
 
@@ -260,31 +272,11 @@ class BaseViewer:
                             data[clean_key] = extracted_values
 
         # 4. Statements
-        data.update(self._format_statement(all_instances, ontology_model.has_identifier))
-        '''
-        for instance in all_instances:
-            if isinstance(instance, Statement):
-                subj = instance.get_has_subject()
-
-                # Check if this statement is about our Ontology
-                if subj and subj.has_identifier == ontology_model.has_identifier:
-
-                    predicate = instance.get_has_predicate()
-                    obj = instance.get_has_object()
-
-                    # A. Handle Predicate Label
-                    pred_label = self._get_best_label(predicate) if predicate else "Annotation"
-
-                    if pred_label not in data:
-                        data[pred_label] = []
-                    #B. Handle Object label
-                    if (obj_label := self._resolve_resource_value(obj)) not in data[pred_label]:
-                        data[pred_label].append(obj_label)
-        '''
+        data.update(self._format_statement(all_instances, ontology_model.has_identifier, language))
 
         return data
 
-    def _resolve_resource_value(self, obj) -> dict:
+    def _resolve_resource_value(self, obj, language=None) -> dict:
         """Helper: Extracts text and link from any object."""
         handler_dic = {
             'text': None,
@@ -298,9 +290,11 @@ class BaseViewer:
         # --- 1. INTERCEPT RESTRICTIONS ---
         restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
                              "OneOf", "Value"]
-        if type(obj).__name__ in restriction_types:
+        obj_type = type(obj).__name__
+
+        if obj_type in restriction_types:
             # Recursively parse the restriction into clickable parts
-            parts = self._parse_restriction(obj)
+            parts = self._parse_restriction(obj, language)
 
             handler_dic['parts'] = parts
             handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
@@ -315,9 +309,21 @@ class BaseViewer:
         # --- 3. Literal Handling ---
         if type(obj).__name__ == 'Literal':
             if hasattr(obj, 'get_has_value') and obj.get_has_value():
+                lit_lang = obj.get_has_language()
+
+                # If a language is requested (e.g., 'pt')
+                if language:
+                    target_lang = language.strip().lower()
+
+                    # If the literal has a tag, and it DOES NOT match 'pt', destroy it.
+                    if lit_lang and not lit_lang.lower().startswith(target_lang):
+                        return handler_dic
+
+                    if not lit_lang:
+                         return handler_dic
+
                 handler_dic['text'] = obj.get_has_value()
-                if hasattr(obj, 'get_has_language'):
-                    handler_dic['lan'] = obj.get_has_language()
+                handler_dic['lan'] = lit_lang
                 return handler_dic
 
             raw_str = str(obj)
@@ -329,7 +335,7 @@ class BaseViewer:
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
             try:
-                handler_dic['text'] = self._get_best_label(obj)
+                handler_dic['text'] = self._get_best_label(obj, language)
             except AttributeError:
                 handler_dic['text'] = handler_dic['link']
 
@@ -339,7 +345,7 @@ class BaseViewer:
 
         return handler_dic
 
-    def _format_statement(self, instances, identifier: str) -> Dict:
+    def _format_statement(self, instances, identifier: str, language=None) -> Dict:
         """
         Extracts all statements where the subject matches the given identifier.
         """
@@ -367,14 +373,14 @@ class BaseViewer:
                     obj = instance.get_has_object()
 
                     # 4. Predicate Resolution
-                    pred_label = self._get_best_label(predicate) if predicate else "Annotation"
+                    pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
 
                     if pred_label not in statements:
                         statements[pred_label] = []
 
                     # 5. Resolve Object and Prevent Duplicates
                     if obj:
-                        obj_data = self._resolve_resource_value(obj)
+                        obj_data = self._resolve_resource_value(obj, language)
 
 
                         if obj_data not in statements[pred_label]:
@@ -384,7 +390,6 @@ class BaseViewer:
 
     @staticmethod
     def _clean_name(name: str) -> str:
-        import re
         if not name: return ""
 
         name = re.sub(r'^(get_has_|get_|has_)', '', name)
@@ -393,7 +398,7 @@ class BaseViewer:
 
         return ' '.join(name.split()).title()
 
-    def _parse_restriction(self, obj) -> list:
+    def _parse_restriction(self, obj, language=None) -> list:
         """
         Recursively unpacks nested restrictions into a list of display parts
         (each part being a dict with 'text' and 'link').
@@ -406,7 +411,7 @@ class BaseViewer:
             for i, item in enumerate(obj):
                 if i > 0:
                     parts.append({'text': ', ', 'link': None})
-                parts.extend(self._parse_restriction(item))
+                parts.extend(self._parse_restriction(item, language))
             return parts
 
         obj_type = type(obj).__name__
@@ -430,18 +435,18 @@ class BaseViewer:
                 quant = _get(obj, 'has_quantifier_type', "some")
                 concept = _get(obj, 'applies_on_concept')
 
-                parts.extend(self._parse_restriction(prop))
+                parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': f' {quant} ', 'link': None})
-                parts.extend(self._parse_restriction(concept))
+                parts.extend(self._parse_restriction(concept, language))
 
             elif obj_type == "Cardinality":
                 prop = _get(obj, 'applies_on_property')
                 card = _get(obj, 'has_cardinality_type', "exactly")
                 concept = _get(obj, 'applies_on_concept')
 
-                parts.extend(self._parse_restriction(prop))
+                parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': f' {card} ', 'link': None})
-                parts.extend(self._parse_restriction(concept))
+                parts.extend(self._parse_restriction(concept, language))
 
             elif obj_type == "TruthFunction":
                 operator = _get(obj, 'has_logical_operator', "and")
@@ -452,7 +457,7 @@ class BaseViewer:
                 for i, c in enumerate(concepts):
                     if i > 0:
                         parts.append({'text': f' {operator} ', 'link': None})
-                    parts.extend(self._parse_restriction(c))
+                    parts.extend(self._parse_restriction(c, language))
                 parts.append({'text': ')', 'link': None})
 
             elif obj_type == "OneOf":
@@ -463,22 +468,22 @@ class BaseViewer:
                 for i, r in enumerate(resources):
                     if i > 0:
                         parts.append({'text': ', ', 'link': None})
-                    parts.extend(self._parse_restriction(r))
+                    parts.extend(self._parse_restriction(r, language))
                 parts.append({'text': ' }', 'link': None})
 
             elif obj_type == "Value":
                 prop = _get(obj, 'applies_on_property')
                 resource = _get(obj, 'applies_on_resource')
 
-                parts.extend(self._parse_restriction(prop))
+                parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': ' value ', 'link': None})
-                parts.extend(self._parse_restriction(resource))
+                parts.extend(self._parse_restriction(resource, language))
 
             return parts
 
         # 3. Base Case: We hit a non-blank node (Concept, Relation, String)
         # Send it to the main resolver to extract its URI link and clean text.
-        resolved = self._resolve_resource_value(obj)
+        resolved = self._resolve_resource_value(obj, language)
 
         if resolved.get('text'):
             return [{'text': resolved['text'], 'link': resolved.get('link')}]

@@ -102,7 +102,7 @@
                             <small class="text-muted text-uppercase fw-bold d-block mb-1">URI</small>
                             <div class="d-flex align-items-center">
                                 <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
-                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&resource={{ item.uri }}"
+                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode}}&lang={{ request.query_params.lang }}&resource={{ item.uri | urlencode}}"
                                    class="btn btn-sm btn-outline-secondary ms-2" title="Detailed View">↗</a>
                             </div>
                         </div>
@@ -117,22 +117,31 @@
                                         </h6>
                                         <div class="text-secondary small">
                                             {% if rel_value is iterable and rel_value is not string %}
-                                                <ul class="list-unstyled mb-0">
-                                                {% for val in rel_value %}
-                                                    {% if val.link %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
-                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&resource={{ val.link }}" target="_blank"
-                                                           class="btn-outline-secondary ms-2">↗</a>
-                                                    {% else %}
-                                                        {{ val.text }}
-                                                    </li>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                </ul>
+                                                <div class="list-unstyled mb-0">
+                                                    {% for val in rel_value %}
+                                                        <div>
+                                                            {% if val.parts %}
+                                                                <span class="restriction-block">
+                                                                    {% for part in val.parts %}
+                                                                        {% if part.link %}
+                                                                            <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
+                                                                        {% else %}
+                                                                            <span class="text-dark">{{ part.text }}</span>
+                                                                        {% endif %}
+                                                                    {% endfor %}
+                                                                </span>
+                                                            {% elif val.link %}
+                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" class="text-decoration-none fw-bold">{{ val.text }}</a>
+                                                            {% else %}
+                                                                {{ val.text }}
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
                                             {% else %}
-                                                <li class="text-truncate" title="{{ val.text }}">
+                                                <span class="text-truncate" title="{{ val.text }}">
                                                     {{ rel_value.text }}
-                                                </li>
+                                                </span>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -151,33 +160,12 @@
                                             {{ stat_name }}
                                         </h6>
                                         <div class="text-secondary small">
-                                            {% if rel_value is iterable and rel_value is not string %}
-                                                <ul class="list-unstyled mb-0">
-                                                {% for val in rel_value %}
-                                                    {% if val.link %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
-                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&resource={{ val.link }}" target="_blank"
-                                                           class="btn-outline-secondary ms-2">↗</a>
-                                                    {% else %}
-                                                        {{ val.text }}
-                                                    </li>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                <li class="text-truncate" title="{{ val.text }}">
-                                                    {{ rel_value.text }}
-                                                </li>
-                                            {% endif %}
-                                        </div>
-                                        <div class="text-secondary small">
                                             {% if stat_value is iterable and stat_value is not string %}
                                                 <ul class="list-unstyled mb-0">
                                                 {% for val in stat_value %}
                                                     {% if val.link %}
-                                                    <li class="text-truncate" title="{{ val }}">{{ val.text }}
-                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&resource={{ val.link }}" target="_blank"
-                                                           class="btn-outline-secondary ms-2">↗</a>
+                                                    <li class="text-truncate" title="{{ val }}"> <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" target="_blank"
+                                                           class="btn-outline-secondary ms-2">{{ val.text }}</a>
                                                     {% else %}
                                                         {{ val.text }}
                                                     </li>
@@ -186,7 +174,7 @@
                                                 </ul>
                                             {% else %}
                                                 <li class="text-truncate" title="{{ val.text }}">
-                                                    {{ rel_value.text }}
+                                                    {{ stat_value.text }}
                                                 </li>
                                             {% endif %}
                                         </div>
@@ -207,7 +195,6 @@
         <!-- Table of contents -->
         {% if grouped_view and sections %}
             <div class="section-header">
-
                 <div class="mb-5 border-0">
                     <div class="card-body">
                         <h4 class="card-title fw-bold mb-3">Table of Contents</h4>
@@ -262,7 +249,7 @@
                             <small class="text-muted text-uppercase fw-bold d-block mb-1">URI</small>
                             <div class="d-flex align-items-center">
                                 <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
-                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&resource={{ item.uri }}"
+                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri }}"
                                    class="btn btn-sm btn-outline-secondary ms-2" title="Detailed View">↗</a>
                             </div>
                         </div>
@@ -284,7 +271,7 @@
                                                                 <span class="restriction-block">
                                                                     {% for part in item.parts %}
                                                                         {% if part.link %}
-                                                                            <a href="?read_as={{ request.query_params.read_as }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
+                                                                            <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
                                                                         {% else %}
                                                                             <span class="text-dark">{{ part.text }}</span>
                                                                         {% endif %}
@@ -292,15 +279,15 @@
                                                                 </span>
 
                                                             {% elif item.link %}
-                                                                <a href="?read_as={{ request.query_params.read_as }}&resource={{ item.link | urlencode }}" class="text-decoration-none fw-bold">{{ item.text }}</a>
+                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ item.link | urlencode }}" class="text-decoration-none fw-bold">{{ item.text }}</a>
 
                                                             {% else %}
                                                                 <span class="text-dark">{{ item.text }}</span>
                                                             {% endif %}
 
-                                                            <!-- {% if item.lan %}
-                                                                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7em;">{{ item.lan }}</span>
-                                                            {% endif %} -->
+                                                            <!-- {% if item.lan %} -->
+                                                            <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7em;">{{ rel_value.type }}</span>
+                                                        <!--    {% endif %}  -->
                                                         </div>
                                                     {% endfor %}
                                                 </div>
@@ -333,7 +320,7 @@
                                                     {% for val in stat_value %}
                                                         {% if val.link %}
                                                             <li>{{ val.text }}
-                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&resource={{ val.link }}"
+                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode}}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode}}"
                                                                 class="ms-2" title="Detailed View" target="_blank">↗</a>
                                                             </li>
                                                         {% else %}
