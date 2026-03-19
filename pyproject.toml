@@ -24,6 +24,7 @@ dependencies = [
     "rdflib>=7.4.0",
     "jinja2>=3.1.2",
     "requests>=2.31.0",
+    "owlready2>=0.50",
 ]
 
 [project.urls]

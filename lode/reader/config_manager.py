@@ -18,15 +18,43 @@ class ConfigManager(ABC):
     def create_logic(self, graph: Graph, cache: dict):
         """Factory method per creare Logic specifica"""
         pass
+
+    @property
+    @abstractmethod
+    def config_name(self) -> str:
+        """Nome del file config specifico: 'owl' | 'skos' | 'rdfs'"""
+        pass
     
     def _load_config(self) -> dict:
-        """Carica config da file YAML unico"""
-        config_path = Path(__file__).parent / 'config' / 'base.yaml'
+        config_dir = Path(__file__).parent / 'config'
         
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
+        with open(config_dir / 'base.yaml') as f:
+            base = yaml.safe_load(f)
         
-        return config
+        with open(config_dir / f'{self.config_name}.yaml') as f:
+            specific = yaml.safe_load(f)
+        
+        return self._deep_merge(base, specific)
+    
+    def _deep_merge(self, base: dict, override: dict) -> dict:
+        result = base.copy()
+        for key, value in override.items():
+            if key in ('name', 'inherits'):
+                continue
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+    
+    # def _load_config(self) -> dict:
+    #     """Carica config da file YAML unico"""
+    #     config_path = Path(__file__).parent / 'config' / 'base.yaml'
+        
+    #     with open(config_path, 'r') as f:
+    #         config = yaml.safe_load(f)
+        
+    #     return config
     
     @abstractmethod
     def create_viewer(self, reader):
@@ -166,6 +194,11 @@ class ConfigManager(ABC):
 # config_manager.py - aggiungi nei concrete managers
 
 class OwlConfigManager(ConfigManager):
+    
+    @property
+    def config_name(self) -> str:
+        return 'owl'
+    
     def create_logic(self, graph: Graph, cache: dict):
         from lode.reader.logic import OwlLogic
         return OwlLogic(graph, cache, self)

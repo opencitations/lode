@@ -4,7 +4,7 @@ from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import *
-from lode.reader.logic.base_logic import BaseLogic, ALLOWED_CLASSES
+from lode.reader.logic.base_logic import BaseLogic
 
 
 class RdfLogic(BaseLogic):
@@ -22,10 +22,6 @@ class RdfLogic(BaseLogic):
         super().__init__(graph, instance_cache, strategy)
         self._statements_created = set()
         self._statement_counter = 0
-    
-    def _get_allowed_classes(self) -> set:
-        """RDF puro ammette solo classi essenziali"""
-        return ALLOWED_CLASSES['RDF']
     
     def _get_allowed_namespaces(self) -> set:
         return {str(RDF), str(RDFS)}

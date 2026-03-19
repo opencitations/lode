@@ -4,7 +4,7 @@ from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import *
-from lode.reader.logic.base_logic import BaseLogic, ALLOWED_CLASSES
+from lode.reader.logic.base_logic import BaseLogic
 
 class SkosLogic(BaseLogic):
     """
@@ -16,10 +16,6 @@ class SkosLogic(BaseLogic):
     - NO default domain/range
     - NO Restriction, Individual, CompositeClass, Datatype, Attribute
     """
-    
-    def _get_allowed_classes(self) -> set:
-        """SKOS ammette solo classi orientate ai thesauri"""
-        return ALLOWED_CLASSES['SKOS']
     
     def _get_allowed_namespaces(self) -> set:
         return {str(RDF), str(RDFS), str(SKOS)}

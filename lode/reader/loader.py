@@ -7,6 +7,7 @@ from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import lode.reader.modules as modules
+from lode.exceptions import ArtefactLoadError, ArtefactNotFoundError
 
 
 class Loader:
@@ -19,33 +20,29 @@ class Loader:
         self._closure = closure
 
         if file_path:
-            result = self.load(file_path)
-            print(result["message"])
-
-            if not result["success"]:
-                raise Exception(result["message"])
+            self.load(file_path)
 
     # ----------------------------------------------------------
     #  MAIN LOAD METHOD
     # ----------------------------------------------------------
-    def load(self, source: str) -> Dict[str, any]:
-        """Carica RDF da file locale o URL con content negotiation"""
+    def load(self, source: str) -> None:
+        """Loads RDF from local file or from URL with content negotiation"""
 
         if self._is_url(source):
-            result = self._load_from_url_with_content_negotiation(source)
+            self._load_from_url_with_content_negotiation(source)
         else:
-            result = self._load_from_local_file(source)
+            self._load_from_local_file(source)
         
-        if result["success"]:
-            self._apply_modules()
-
-        return result
+        self._apply_modules()
     
     # ----------------------------------------------------------
     #  MODULES MAIN HANDLER
     # ----------------------------------------------------------
 
     def _apply_modules(self) -> None:
+
+        if self._imported and self._closure:
+            self.graph = modules.apply_closure(self.graph)
         if self._imported:
             self.graph = modules.apply_imported(self.graph)
         elif self._closure:
@@ -54,8 +51,8 @@ class Loader:
     # ----------------------------------------------------------
     #  CONTENT NEGOTIATION FOR URLS
     # ----------------------------------------------------------
-    def _load_from_url_with_content_negotiation(self, url: str) -> Dict[str, any]:
-        """Caricamento con content-negotiation per URL"""
+    def _load_from_url_with_content_negotiation(self, url: str) -> None:
+        """RDF graph loading with content-negotiation for semantic artefact loaded from URL"""
 
         headers = {
             "Accept": (
@@ -68,10 +65,10 @@ class Loader:
             response = requests.get(url, headers=headers, timeout=10)
 
             if response.status_code != 200:
-                return {
-                    "success": False,
-                    "message": f"HTTP {response.status_code} loading {url}"
-                }
+                raise ArtefactNotFoundError(
+                    "Cannot load provided Semantic Artefact",
+                    context={"url": url, "http_status": response.status_code}
+                )
 
             content = response.text
             content_type = response.headers.get("Content-Type", "").lower()
@@ -81,14 +78,11 @@ class Loader:
 
             self.graph = Graph()
 
-            # If we recognise the Content-Type → parse directly
+            # If it recognises the Content-Type → parse directly
             if guessed_format:
                 try:
                     self.graph.parse(data=content, format=guessed_format)
-                    return {
-                        "success": True,
-                        "message": f"{len(self.graph)} triples loaded (via HTTP; format: {guessed_format})"
-                    }
+                    return 
                 except:
                     pass  # fallback below
 
@@ -96,23 +90,20 @@ class Loader:
             for fmt in ["xml", "application/rdf+xml", "turtle", "json-ld", "nt", "n3"]:
                 try:
                     self.graph.parse(data=content, format=fmt)
-                    return {
-                        "success": True,
-                        "message": f"{len(self.graph)} triples loaded (via HTTP; fallback format: {fmt})"
-                    }
+                    return
                 except:
                     continue
 
-            return {
-                "success": False,
-                "message": f"Could not parse RDF from {url} even after content negotiation"
-            }
+            raise ArtefactLoadError(
+                "Could not parse RDF after content negotiation",
+                context={"url": url, "formats_tried": ["xml", "turtle", "json-ld", "nt", "n3"]}
+            )
 
-        except Exception as e:
-            return {
-                "success": False,
-                "message": f"Error fetching {url}: {str(e)}"
-            }
+        except requests.RequestException as e:
+            raise ArtefactNotFoundError(
+                "Network error fetching artefact",
+                context={"url": url, "original_error": str(e)}
+            )
 
     # ----------------------------------------------------------
     #  LOCAL FILE LOADING

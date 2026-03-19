@@ -40,6 +40,7 @@ async def extract_get(
     closure: Optional[bool] = None
 ):
     """Visualizza semantic artefact da URL."""
+    
     try:
         logger.info(f"=== REQUEST START ===")
         logger.info(f"URL: {url}")
