@@ -259,15 +259,16 @@
                                    class="ms-2" title="Detailed View">↗</a></small>
                         </div>
                         <!-- relations (annotations) -->
-                        <div class="row g-3">
-                            {% if item.relations %}
+                        {% if item.relations %}
+                            <div class="p-3 border-top border-bottom bg-light-subtle mb-1">
+
                                 {% for rel_name, rel_value in item.relations.items() %}
-                                <div class="row g-3">
-                                    <div class="p-3 border rounded bg-light-subtle h-100">
-                                        <h6 class="fw-bold pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem; text-transform: uppercase;">
                                             {{ rel_name }}
                                         </h6>
-                                        <div class="text-secondary small">
+
+                                        <div class="text-secondary small ms-2">
                                             {% if rel_value is iterable and rel_value is not string %}
                                                <div class="d-flex flex-column gap-1">
                                                     {% for item in rel_value %}
@@ -275,8 +276,10 @@
                                                             <div class="restriction-block">
                                                                 {% for part in item.parts %}
                                                                     {% if part.link %}
-                                                                        <span><a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
-                                                                        <sup class="badge bg-light text-secondary " style="font-size: 0.7em;">{{ part.type[:3] }}</sup></span>
+                                                                        <span>
+                                                                            <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
+                                                                            <sup class="badge text-secondary" style="font-size: 0.7em;">{{ part.type[:3] }}</sup>
+                                                                        </span>
                                                                     {% else %}
                                                                         <span class="text-dark">{{ part.text }}</span>
                                                                     {% endif %}
@@ -284,66 +287,61 @@
                                                             </div>
 
                                                         {% elif item.link %}
-                                                            <span><a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ item.link | urlencode }}" class="text-decoration-none fw-bold">{{ item.text }}, </a>
-                                                            <sup class="badge bg-light text-secondary" style="font-size: 0.7em;">{{ item.type[:3] }}</sup></span>
+                                                            <span>
+                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ item.link | urlencode }}" class="text-decoration-none fw-bold">{{ item.text }} </a>
+                                                                <sup class="badge text-secondary" style="font-size: 0.7em;">{{ item.type[:3] }}</sup>
+                                                            </span>
 
                                                         {% else %}
                                                             <span class="text-dark">{{ item.text }}</span>
-                                                       <!--     <sup class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7em;">{{ item.type }}</sup></span> -->
                                                         {% endif %}
                                                     {% endfor %}
                                                </div>
                                             {% else %}
-                                                <ul>
-                                                    <li>
-                                                        {{ rel_value.text }}
-                                                    </li>
-                                                </ul>
+                                                <div class="mb-0">
+                                                    {{ rel_value.text }}
+                                                </div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                </div>
                                 {% endfor %}
-                            {% else %}
-                                <div class="col-12 text-center py-2">
-                                    <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
-                                </div>
-                            {% endif %}
-                            {% if item.statements %}
+
+                            </div>
+                        {% endif %}
+
+                        {% if item.statements %}
+                            <div class="p-3 border-top border-bottom bg-light-subtle mb-1 statement">
                                 {% for stat_name, stat_value in item.statements.items() %}
-                                <div class="row g-3">
-                                    <div class="p-3 border rounded bg-light-subtle h-100">
-                                        <h6 class="fw-bold pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem; text-transform: uppercase;">
                                             {{ stat_name }}
                                         </h6>
-                                        <div class="text-secondary small">
+                                        <div class="text-secondary small ms-2">
                                             {% if stat_value is iterable and stat_value is not string %}
-                                                <ul class="list-unstyled mb-0">
+                                                <div class="d-flex flex-column gap-1">
                                                     {% for val in stat_value %}
                                                         {% if val.link %}
-                                                            <li>{{ val.text }}
-                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode}}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode}}"
-                                                                class="ms-2" title="Detailed View" target="_blank">↗</a>
-                                                            </li>
+                                                            <span>
+                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" class="text-decoration-none text-primary">{{ val.text }}</a>
+                                                                <sup class="badge text-secondary" style="font-size: 0.7em;">{{ val.type[:3] }}</sup>
+                                                            </span>
                                                         {% else %}
-                                                            <li class="text-truncate" title="{{ val }}">{{ val.text }}</li>
+                                                            <span class="text-truncate" title="{{ val }}">{{ val.text }}</span>
                                                         {% endif %}
                                                     {% endfor %}
-                                                </ul>
+                                                </div>
                                             {% else %}
-                                                <ul>
-                                                    <li>
+                                                <div>
+                                                    <span>
                                                         {{ stat_value.text }}
-                                                    </li>
-                                                </ul>
+                                                    </span>
+                                                </div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                </div>
                                 {% endfor %}
-                                {% else %}
-                            {% endif %}
-                        </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

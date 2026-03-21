@@ -347,3 +347,8 @@ code.bg-light {
     border: 1px dotted navy !important;
     background-color: #F4FFFF !important;
 }
+
+/* statements */
+.statement {
+    background-color: rgb(235, 242, 250) !important;
+}
