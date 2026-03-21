@@ -9,7 +9,7 @@
 </head>
 <body>
 
-    <div class="container py-5">
+    <div class="container-fluid px-4 py-4">
         <!--
         <div class="mb-5">
             <h1 class="display-5 fw-bold text-primary">LODE 2.0</h1>
@@ -18,7 +18,7 @@
         -->
 
         {% if error %}
-            <div class="alert alert-danger shadow-sm" role="alert">
+            <div class="alert alert-danger " role="alert">
                 <h4 class="alert-heading">Error</h4>
                 <p class="mb-0">{{ error }}</p>
             </div>
@@ -26,63 +26,60 @@
         {% else %}
         <!-- The model section -->
         {% if metadata %}
-            <div class="container my-5 border-bottom">
-                <div class="border-0 border-4">
-                    <div class="card-body p-5">
-
-                        <h1 class="fw-bold mb-2">
-                            {% if metadata.Title %}
-                                {% for title in metadata.Title %}
-                                    {{title.text}}
-                                {% endfor %}
-                            {% elif metadata.label %}
-                                {{ metadata.label.text }}
-                            {% endif %}
-                        </h1>
-                        <div class="d-flex align-items-center mb-5">
-                            <p class="text-muted medium mb-0 font-monospace text-truncate">
-                                {{ metadata.uri[0].link }}
-                            </p>
-                            <a href="{{ metadata.uri[0].link }}" target="_blank"
-                               class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
-                        </div>
-
-                        <dl class="row mb-0 lead fs-6">
-                            {% for key, val_list in metadata.items() %}
-                                {% if key not in ['uri', 'label'] %}
-                                {% if val_list %}
-                                <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
-                                <dd class="col-sm-9 mb-3">
-                                    <div class="d-flex flex-column gap-1">
-                                        {% for item in val_list %}
-                                            <div>
-                                                {% if item.link %}
-                                                    {{ item.text }}
-                                                    <a href="{{ item.link }}" target="_blank"
-                                                        class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
-                                                {% else %}
-                                                    <span class="text-dark">{{ item.text }}</span>
-                                                {% endif %}
-
-                                                {% if item.language %}
-                                                    <span class="badge bg-light text-secondary border border-secondary-subtle ms-2 rounded-pill" style="font-size: 0.7em; vertical-align: middle;">
-                                                        {{ item.language }}
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </dd>
-                                {% endif %}
-                                {% endif %}
+            <div class="mb-4 border-bottom pb-4">
+                <div class="p-3">
+                    <h1 class="fw-bold mb-2">
+                        {% if metadata.Title %}
+                            {% for title in metadata.Title %}
+                                {{title.text}}
                             {% endfor %}
-                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Actions</dt>
-                            <dd class="col-sm-9 mt-2">
-                                <a href="#" class="btn btn-sm btn-outline-dark me-2"><i class="bi bi-share"></i> WebVOWL</a>
-                                <a href="{{ url }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
-                            </dd>
-                        </dl>
+                        {% elif metadata.label %}
+                            {{ metadata.label.text }}
+                        {% endif %}
+                    </h1>
+                    <div class="d-flex align-items-center mb-5">
+                        <p class="text-muted medium mb-0 font-monospace text-truncate">
+                            {{ metadata.uri[0].link }}
+                        </p>
+                        <a href="{{ metadata.uri[0].link }}" target="_blank"
+                           class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
                     </div>
+
+                    <dl class="row mb-0 lead fs-6">
+                        {% for key, val_list in metadata.items() %}
+                            {% if key not in ['uri', 'label'] %}
+                            {% if val_list %}
+                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
+                            <dd class="col-sm-9 mb-3">
+                                <div class="d-flex flex-column gap-1">
+                                    {% for item in val_list %}
+                                        <div>
+                                            {% if item.link %}
+                                                {{ item.text }}
+                                                <a href="{{ item.link }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
+                                            {% else %}
+                                                <span class="text-dark">{{ item.text }}</span>
+                                            {% endif %}
+
+                                            {% if item.language %}
+                                                <span class="badge bg-light text-secondary border border-secondary-subtle ms-2 rounded-pill" style="font-size: 0.7em; vertical-align: middle;">
+                                                    {{ item.language }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </dd>
+                            {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Actions</dt>
+                        <dd class="col-sm-9 mt-2">
+                            <a href="#" class="btn btn-sm btn-outline-dark me-2"><i class="bi bi-share"></i> WebVOWL</a>
+                            <a href="{{ url }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
+                        </dd>
+                    </dl>
                 </div>
             </div>
         {% endif %}
@@ -91,7 +88,10 @@
             {% for item in entities %}
                 <div class="card shadow-sm border-0 mb-4 anchor-offset" id="{{ item.anchor_id }}">
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                        <h4 class="fw-bold mb-0">{{ item.label }}</h4>
+                        <h4 class="fw-bold mb-0">
+                            {{ item.label }}
+                            <sup class="badge bg-light text-secondary" style="font-size: 0.7em; margin-left: 1px;">{{ item.type[:3] }}</sup>
+                        </h4>
                         <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill">
                             {{ item.type }}
                         </span>
@@ -152,36 +152,38 @@
                                     <p class="text-muted small italic mb-0">No attributes or relations defined.</p>
                                 </div>
                             {% endif %}
-                            {% if item.statements %}
-                                {% for stat_name, stat_value in item.statements.items() %}
-                                <div class="row g-3">
-                                    <div class="p-3 border rounded bg-light-subtle h-100">
-                                        <h6 class="fw-bold pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
-                                            {{ stat_name }}
-                                        </h6>
-                                        <div class="text-secondary small">
-                                            {% if stat_value is iterable and stat_value is not string %}
-                                                <ul class="list-unstyled mb-0">
-                                                {% for val in stat_value %}
-                                                    {% if val.link %}
-                                                    <li class="text-truncate" title="{{ val }}"> <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" target="_blank"
-                                                           class="btn-outline-secondary ms-2">{{ val.text }}</a>
-                                                    {% else %}
-                                                        {{ val.text }}
-                                                    </li>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                <li class="text-truncate" title="{{ val.text }}">
-                                                    {{ stat_value.text }}
-                                                </li>
-                                            {% endif %}
+                            <div class="card-body row g-3" style="background-color: #ebf2fa">
+                                {% if item.statements %}
+                                    {% for stat_name, stat_value in item.statements.items() %}
+                                        <div class="p-3 rounded h-100">
+                                            <h6 class="fw-bold pb-2 mb-2" style="font-size: 0.85rem; text-transform: uppercase;">
+                                                {{ stat_name }}
+                                            </h6>
+                                            <div class="text-secondary small">
+                                                {% if stat_value is iterable and stat_value is not string %}
+                                                    <ul class="list-unstyled mb-0">
+                                                        {% for val in stat_value %}
+                                                            <li class="text-truncate" title="{{ val }}">
+                                                                {% if val.link %}
+                                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" target="_blank">{{ val.text }}</a>
+                                                                {% else %}
+                                                                    {{ val.text }}
+                                                                 {% endif %}
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <ul>
+                                                        <li class="text-truncate" title="{{ val.text }}">
+                                                            {{ stat_value.text }}
+                                                        </li>
+                                                    </ul>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -197,14 +199,14 @@
             <div class="section-header">
                 <div class="mb-5 border-0">
                     <div class="card-body">
-                        <h4 class="card-title fw-bold mb-3">Table of Contents</h4>
+                        <h4 id="toc" class="card-title fw-bold mb-3">Table of Contents</h4>
                         <div class="d-flex flex-wrap gap-3">
                             <ol>
                                 {% for section in sections %}
                                 <li>
                                     <a href="#{{ section.id }}" class="text-decoration-underline px-3">
                                         {{ section.title }}
-                                        <span class="badge text-bg-primary ms-1 rounded-circle">{{ section.entities|length }}</span>
+                                        <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ section.entities|length }}</span>
                                     </a>
                                     {% endfor %}
                                 </li>
@@ -216,10 +218,10 @@
 
             <!-- Title of the section -->
             {% for section in sections %}
-            <div id="{{ section.id }}" class="anchor-offset mb-5">
+            <div id="{{ section.id.lower() }}" class="anchor-offset mb-5">
                 <h3 class="section-header d-flex align-items-center justify-content-between mb-4">
                     {{ section.title }}
-                    <span class="badge bg-primary rounded-pill fs-6">{{ section.entities|length }}</span>
+                    <span class="btn btn-outline-secondary badge bg-primary rounded-pill fs-6">{{ section.entities|length }}</span>
                 </h3>
 
                 <div class="card bg-light border-0 mb-4 shadow-sm">
@@ -236,22 +238,25 @@
                 </div>
                 <!-- Title of the card -->
                 {% for item in section.entities %}
-                <div class="card shadow-sm border-0 mb-4 anchor-offset" id="{{ item.anchor_id }}">
-                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                        <h4 class="fw-bold mb-0">{{ item.label }}</h4>
-                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill">
-                            {{ item.type }}
+                <div class="card mb-4 anchor-offset" id="{{ item.anchor_id }}">
+                    <div class="card-header bg-white pt-2 px-1 d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold mb-0">
+                            {{ item.label }}
+                            <sup class="badge bg-light text-secondary" style="font-size: 0.7em; margin-left: 1px;">{{ item.type[:3] }}</sup>
+                        </h4>
+                        <span class="backlink">
+                            back to
+                            <a href="#toc">ToC</a>
+                            or
+                            <a href="#{{item.type.lower()}}s">{{item.type}} ToC</a>
                         </span>
                     </div>
                     <!-- URI of the entity -->
-                    <div class="card-body px-4 pb-4">
-                        <div class="mb-4">
-                            <small class="text-muted text-uppercase fw-bold d-block mb-1">URI</small>
-                            <div class="d-flex align-items-center">
-                                <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
+                    <div class="card-body px-1 pb-4">
+                        <div class="mb-2">
+                            <small class="text-muted text-uppercase fw-bold d-block mb-1">URI: <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
                                 <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri }}"
-                                   class="btn btn-sm btn-outline-secondary ms-2" title="Detailed View">↗</a>
-                            </div>
+                                   class="ms-2" title="Detailed View">↗</a></small>
                         </div>
                         <!-- relations (annotations) -->
                         <div class="row g-3">
@@ -266,31 +271,28 @@
                                             {% if rel_value is iterable and rel_value is not string %}
                                                <div class="d-flex flex-column gap-1">
                                                     {% for item in rel_value %}
-                                                        <div>
-                                                            {% if item.parts %}
-                                                                <span class="restriction-block">
-                                                                    {% for part in item.parts %}
-                                                                        {% if part.link %}
-                                                                            <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
-                                                                        {% else %}
-                                                                            <span class="text-dark">{{ part.text }}</span>
-                                                                        {% endif %}
-                                                                    {% endfor %}
-                                                                </span>
+                                                        {% if item.parts %}
+                                                            <div class="restriction-block">
+                                                                {% for part in item.parts %}
+                                                                    {% if part.link %}
+                                                                        <span><a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="text-decoration-none text-primary">{{ part.text }}</a>
+                                                                        <sup class="badge bg-light text-secondary " style="font-size: 0.7em;">{{ part.type[:3] }}</sup></span>
+                                                                    {% else %}
+                                                                        <span class="text-dark">{{ part.text }}</span>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </div>
 
-                                                            {% elif item.link %}
-                                                                <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ item.link | urlencode }}" class="text-decoration-none fw-bold">{{ item.text }}</a>
+                                                        {% elif item.link %}
+                                                            <span><a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ item.link | urlencode }}" class="text-decoration-none fw-bold">{{ item.text }}, </a>
+                                                            <sup class="badge bg-light text-secondary" style="font-size: 0.7em;">{{ item.type[:3] }}</sup></span>
 
-                                                            {% else %}
-                                                                <span class="text-dark">{{ item.text }}</span>
-                                                            {% endif %}
-
-                                                            <!-- {% if item.lan %} -->
-                                                            <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7em;">{{ rel_value.type }}</span>
-                                                        <!--    {% endif %}  -->
-                                                        </div>
+                                                        {% else %}
+                                                            <span class="text-dark">{{ item.text }}</span>
+                                                       <!--     <sup class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7em;">{{ item.type }}</sup></span> -->
+                                                        {% endif %}
                                                     {% endfor %}
-                                                </div>
+                                               </div>
                                             {% else %}
                                                 <ul>
                                                     <li>

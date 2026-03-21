@@ -282,7 +282,8 @@ class BaseViewer:
             'text': None,
             'link': None,
             'lan': None,
-            'parts': None  # This key is for restrictions
+            'parts': None,  # This key is for restrictions
+            'type': None
         }
 
         if not obj: return handler_dic
@@ -299,6 +300,7 @@ class BaseViewer:
             handler_dic['parts'] = parts
             handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
             handler_dic['link'] = None  # Forces Jinja to ignore the blank node URI
+            handler_dic['type'] = obj_type
             return handler_dic
 
         # --- 2. String Handling ---
@@ -320,7 +322,7 @@ class BaseViewer:
                         return handler_dic
 
                     if not lit_lang:
-                         return handler_dic
+                        return handler_dic
 
                 handler_dic['text'] = obj.get_has_value()
                 handler_dic['lan'] = lit_lang
@@ -336,12 +338,15 @@ class BaseViewer:
             handler_dic['link'] = obj.get_has_identifier()
             try:
                 handler_dic['text'] = self._get_best_label(obj, language)
+                handler_dic['type'] = obj_type
             except AttributeError:
                 handler_dic['text'] = handler_dic['link']
+                handler_dic['type'] = obj_type
 
         # Fallbacks
         if not handler_dic['text'] and handler_dic['link']:
             handler_dic['text'] = handler_dic['link']
+            handler_dic['type'] = obj_type
 
         return handler_dic
 
@@ -486,6 +491,6 @@ class BaseViewer:
         resolved = self._resolve_resource_value(obj, language)
 
         if resolved.get('text'):
-            return [{'text': resolved['text'], 'link': resolved.get('link')}]
+            return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type')}]
 
         return []
