@@ -23,6 +23,7 @@ allowed_classes:
   - Quantifier
   - Cardinality
   - PropertyConceptRestriction
+  - DatatypeRestriction
   - Collection
   - Restriction
   - Resource
@@ -161,11 +162,13 @@ mapper:
     target_classes: [Property]
     setters: [set_is_equivalent_to: Property]
 
-  rdfs:range: # overwrites BASE CONFIG
-    is: predicate
-    target_classes: [Property]
-    handler: handle_range
-    reclassifies: true
+  # overwrites BASE CONFIG
+  # it is needed here because attributes and properties have different ranges!
+  # respectively Resource and Datatype
+  # rdfs:range: 
+  #   is: predicate
+  #   target_classes: [Property]
+  #   handler: handle_range
   
   # ========== Concept ==========
   owl:disjointWith:
@@ -286,14 +289,15 @@ mapper:
 
   owl:withRestrictions:
     is: predicate
-    target_classes: [Restriction]
-    handler: handle_with_restrictions
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_datatype_restriction
   
   # ========== Relation - Solo in OWL ==========
   owl:inverseOf:
     is: predicate
     target_classes: [Relation]
-    setters: [set_is_inverse_of: Relation]
+    handler: handle_inverse_of
     
   owl:propertyChainAxiom:
     is: predicate
@@ -391,28 +395,19 @@ mapper:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    setters:
-      - set_has_cardinality_type: "exactly"
-      # need set_applies_on_concept as it is inferred, not explicitly declared
-      - set_applies_on_concept: Concept
-    
+    handler: handle_cardinality_exactly
+
   owl:minQualifiedCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    setters:
-      - set_has_cardinality_type: "min"
-      # need set_applies_on_concept as it is inferred, not explicitly declared
-      - set_applies_on_concept: Concept
-    
+    handler: handle_cardinality_min
+
   owl:maxQualifiedCardinality:
     is: predicate
     inferred_class: Cardinality
     target_classes: [Cardinality]
-    setters:
-      - set_has_cardinality_type: "max"
-      # need set_applies_on_concept as it is inferred, not explicitly declared
-      - set_applies_on_concept: Concept
+    handler: handle_cardinality_max
 
   # ========== Restrictions - Target diverso ==========
   owl:onProperty:
@@ -427,10 +422,11 @@ mapper:
 
   owl:onDatatype:
     is: predicate
-    inferred_class: Restriction
+    inferred_class: Datatype
     target_classes: [Restriction]
     setters: [set_applies_on_concept: Datatype]
 
+  # to be checked
   owl:onDataRange:
     is: predicate
     target_classes: [Restriction]

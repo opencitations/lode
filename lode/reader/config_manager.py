@@ -80,6 +80,8 @@ class ConfigManager(ABC):
         'Quantifier': Quantifier,
         'Cardinality': Cardinality,
         'TruthFunction': TruthFunction,
+        'PropertyConceptRestriction': PropertyConceptRestriction,
+        'DatatypeRestriction': DatatypeRestriction, 
         'Container': Container,
         'OneOf': OneOf,
         'Value': Value,
