@@ -38,27 +38,34 @@ class OwlLogic(BaseLogic):
     # ========== READER PHASES ==========
 
     def phase1_classify_from_predicates(self):
-        """Scans the RDF graph for blank nodes that carry predicates marked predicates and with inferred_class in the config (e.g. owl:someValuesFrom, owl:intersectionOf). For each matching BNode, resolves the target Python class via the strategy and registers it in the cache without populating instances yet. Recursively classifies nested BNodes found inside RDF collections hanging off already-classified nodes."""
-        
-        classifier_preds = self._strategy.get_classifier_predicates()
-        if not classifier_preds:
-            print("No classifier predicates found for phase 1")
-            return
-        
-        classified = {}
-        
-        for pred in classifier_preds:
-            for uri in self.graph.subjects(pred, None):
-                # handle OWL restrictions 
-                if isinstance(uri, BNode) and uri not in classified:
-                    python_class = self._strategy.classify_by_predicate(uri, self.graph)
-                    if python_class:
-                        classified[uri] = python_class
+        """Scans the RDF graph for subjects of mapped predicates.
+        - BNodes with inferred_class predicates -> classified and registered
+        - URIRefs with any mapped predicate but no rdf:type -> registered with
+        the inferred type from classify_by_predicate (only if unambiguous)
+        """
 
-        # Recursion on lists (to classify their contens as well)
-        self._classify_nested(classified, classifier_preds)
-        
-        # Create the instances without populating them
+        classified = {}
+
+        # Iterate ALL mapped predicates
+        for pred in self._property_mapping:
+            for uri in self.graph.subjects(pred, None):
+                if uri in self._instance_cache:
+                    continue
+                python_class = self._strategy.classify_by_predicate(uri, self.graph)
+                if not python_class:
+                    continue
+                # Goes for restrictions
+                if isinstance(uri, BNode):
+                    if uri not in classified:
+                        classified[uri] = python_class
+                # Goes for any other URI
+                elif isinstance(uri, URIRef):
+                    self.get_or_create(uri, python_class, populate=False)
+
+        # classify recursively restrictions
+        self._classify_nested(classified, self._strategy.get_classifier_predicates())
+
+        # creates classified restrictions after recursion
         for uri, py_class in classified.items():
             self.get_or_create(uri, py_class, populate=False)
 

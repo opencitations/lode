@@ -28,6 +28,9 @@ allowed_classes:
   - Restriction
   - Resource
 
+
+# IF TARGET CLASSES > 1 IT HAS TO HAVE AN HANDLER TO CHOOSE WHICH IS THE TARGET DEPENDING ON THRE CONTEXT
+
 # ======================
 # MAPPER
 # ======================
@@ -281,7 +284,7 @@ mapper:
     # ========== Concepts - Differenza da base ==========
   owl:Axiom:
     is: class
-    target_class: Restriction
+    target_class: Statement
 
   owl:Restriction:
     is: class
@@ -389,7 +392,7 @@ mapper:
     inferred_class: Cardinality
     target_classes: [Cardinality]
     # needs an handler since it defaults set_applies_on_concept to OWL.Thing
-    handler: handle_cardinality_min
+    handler: handle_cardinality_max
     
   owl:qualifiedCardinality:
     is: predicate
