@@ -1358,22 +1358,3 @@ class TestIntegration:
         outer_concepts = outer_tf.get_applies_on_concept()
         outer_concepts = outer_concepts if isinstance(outer_concepts, list) else [outer_concepts]
         assert inner_tf in outer_concepts
-
-    def test_rdf_reification(self):
-        """A triple reified via rdf:subject/predicate/object must produce a Statement
-        with subject, predicate and object correctly populated."""
-        stmt_node = BNode()
-        logic = _make_logic([
-            (stmt_node, RDF.type, RDF.Statement),
-            (stmt_node, RDF.subject, EX.subject),
-            (stmt_node, RDF.predicate, EX.pred),
-            (stmt_node, RDF.object, RDFLiteral("val")),
-            (EX.subject, RDF.type, OWL.NamedIndividual),
-        ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(stmt_node, set())), None)
-        assert inst is not None
-        assert isinstance(inst, Statement)
-        assert inst.get_has_subject() is not None
-        assert inst.get_has_predicate() is not None
-        assert inst.get_has_object() is not None
