@@ -9,16 +9,14 @@ from lode.reader.logic.base_logic import BaseLogic
 
 class OwlLogic(BaseLogic):
     """
-    Logica specifica OWL.
+    OWL-specific parsing logic.
 
-    Differenze rispetto a BaseLogic:
-    - Domain/Range default a owl:Thing
-    - Gestione restrictions (onProperty, someValuesFrom, etc.)
-    - Equivalenze e disgiunzioni
-    - Classi ammesse: tutte le OWL classes
-
-    NON override _get_allowed_namespaces: lette da config YAML (key 'namespaces').
-    NON override _resolve_allowed_class: usa _pre_resolve_hook.
+    Extends BaseLogic with:
+    - Phase 1 BNode classification for OWL restrictions and truth functions
+    - OWL defaults for domain, range (owl:Thing) and Individual type
+    - Handlers for property characteristics, cardinality, truth functions,
+      quantifiers, and group axioms (AllDisjointClasses, AllDifferent, etc.)
+    - Property type inference for properties not explicitly typed in the artefact
     """
 
     # _get_allowed_namespaces: ereditato da BaseLogic, legge config YAML
@@ -27,8 +25,9 @@ class OwlLogic(BaseLogic):
 
     def _pre_resolve_hook(self, python_class: type, id: Node) -> type | None:
         """
-        OWL: se l'URI è già in cache con un tipo non-Individual,
-        usa quello invece di salire l'MRO (evita downcasting silenzioso).
+        OWL override: if the URI is already cached with a non-Individual type,
+        return that type to prevent silent downcasting during MRO resolution.
+        Returns None to fall through to the default MRO walk.
         """
         if id and id in self._instance_cache:
             for existing in self._instance_cache[id]:
@@ -37,13 +36,13 @@ class OwlLogic(BaseLogic):
         return None
 
     # ========== READER PHASES ==========
+
     def phase1_classify_from_predicates(self):
-        """Classifies entities from the predicates mapping"""
-        # print("\n--- FASE 1: Classificazione OWL ---")
+        """Scans the RDF graph for blank nodes that carry predicates marked predicates and with inferred_class in the config (e.g. owl:someValuesFrom, owl:intersectionOf). For each matching BNode, resolves the target Python class via the strategy and registers it in the cache without populating instances yet. Recursively classifies nested BNodes found inside RDF collections hanging off already-classified nodes."""
         
         classifier_preds = self._strategy.get_classifier_predicates()
         if not classifier_preds:
-            print("Nessun classificatore")
+            print("No classifier predicates found for phase 1")
             return
         
         classified = {}
@@ -56,18 +55,18 @@ class OwlLogic(BaseLogic):
                     if python_class:
                         classified[uri] = python_class
 
-        # Ricorsione per liste
+        # Recursion on lists (to classify their contens as well)
         self._classify_nested(classified, classifier_preds)
         
-        # Crea istanze
+        # Create the instances without populating them
         for uri, py_class in classified.items():
             self.get_or_create(uri, py_class, populate=False)
 
-
-        #print(f"  Classificate: {len(classified)}")
-
     def phase2_create_from_types(self):
-        """Crea istanze da rdf:type e li mappa al config + applica setters immediati"""
+        """Creates instances from rdf:type triples mapped in the config (is: class).
+        For each mapped rdf:type, uses the target_class field to resolve the
+        Python class to instantiate, then applies any immediate static setters defined in the config entry. Subjects whose rdf:type is not covered by the config are instantiated as Individual, provided they are URIRefs not yet in the cache."""
+        
         type_mapping = self._strategy.get_type_mapping()
 
         for rdf_type, config in type_mapping.items():
@@ -77,108 +76,102 @@ class OwlLogic(BaseLogic):
 
             for uri in self.graph.subjects(RDF.type, rdf_type):
                 self.get_or_create(uri, py_class, populate=False)
-
+                
+                # apply setters immediately
                 if 'setters' in config:
                     for instance in self._instance_cache.get(uri, set()):
                         self._apply_setters_immediate(instance, config['setters'])
 
-        # Soggetti con rdf:type non mappato -> Individual
+        # Subjects with an rdf:type not mapped in config -> Individual
         for s, o in self.graph.subject_objects(RDF.type):
             if o not in type_mapping and not isinstance(s, BNode) and s not in self._instance_cache:
                 self.get_or_create(s, Individual, populate=True)
 
     def phase3_populate_properties(self):
-        # Pass 1: reclassify
-        reclassifying = {
-            pred: cfg for pred, cfg in self._property_mapping.items()
-            if cfg.get('reclassifies')
-        }
-        for pred, cfg in reclassifying.items():
-            for uri in list(self._instance_cache.keys()):
-                obj = self.graph.value(uri, pred)
-                if obj:
-                    for instance in list(self._instance_cache[uri]):
-                        handler = getattr(self, cfg['handler'])
-                        handler(instance, uri, pred, obj)
+        """Iterates over all cached instances and populates their properties
+        by dispatching each predicate-object pair through the configured
+        setters and handlers defined in the property mapping.
+        """
 
-        # Pass 2: populate
         for uri in list(self._instance_cache.keys()):
             for instance in list(self._instance_cache[uri]):
                 self.populate_instance(instance, uri)             
 
     def phase4_process_group_axioms(self):
-        """Processa assiomi di gruppo dall'enricher config"""
+        """Processes group axioms defined in the enricher section of the config.
+        For each axiom type, retrieves all matching subjects from the graph
+        and dispatches them to the handler specified in the config entry.
+        """
+                
         axioms = self._strategy.get_group_axioms()
         for axiom_type, handler_name in axioms.items():
             for uri in self.graph.subjects(RDF.type, axiom_type):
-                # handler existence guaranteed by _validate_handlers
+                # handler existence guaranteed by _validate_handlers (defined in base_logic)
                 getattr(self, handler_name)(uri)
 
     def phase5_fallback(self):
         """
-        ADD OTHER FALLBACKS IF NEEDED 
+        Classifies or reclassifies any entity whose concrete type could not be
+        determined in earlier phases, in particular generic Property instances
+        whose subtype (Relation, Attribute, Annotation) is not explicitly
+        asserted in the semantic artefact via rdf:type (handled by phase 2). It uses _infer_property_type to resolve the concrete subtype.
 
-        ## PROPERTIES FALLBACK
-        Infers the concrete property type (Relation, Attribute, Annotation)
-        for a generic Property by traversing the subPropertyOf hierarchy.
-
-        Strategy (in order):
-        1. Traverse UP the superproperties chain via get_is_sub_property_of.
-        If any ancestor has a concrete type, inherit it.
-        Rationale: if A subPropertyOf B and B is a Relation, then A is also
-        a Relation by rdfs:subPropertyOf semantics.
-
-        2. Traverse DOWN by scanning the full cache for any Property that
-        declares this instance as its superproperty.
-        If any subproperty has a concrete type, inherit it.
-        Rationale: if B is a Relation and B subPropertyOf A, then A must
-        also be a Relation.
-
-        3. Fallback to Annotation if no type can be inferred from the hierarchy.
-        Annotation is the safest default: it makes no domain/range assumptions
-        and is valid for any subject/object combination.
+        After reclassification, applies OWL defaults (e.g., domain, range, thing) to all instances via _enrich_or_apply_owl_defaults.
         """
+        
         for uri, instances in list(self._instance_cache.items()):
             for instance in list(instances):
+
                 if type(instance) is Property:
-                    inferred = self._infer_property_type(instance)
-                    if inferred is not type(instance):
+                    # Check if a more specific Property subclass already exists for this URI
+
+                    has_concrete = any(
+                        type(i) in (Relation, Attribute, Annotation) 
+                        for i in instances if i is not instance
+                    )
+                    
+                    if has_concrete:
+                        # Remove generic Property, keep the concrete one
+                        self._instance_cache[uri].discard(instance)
+                    else:
+                        # No concrete type found — infer and reclassify
+                        inferred = self._infer_property_type(instance)
                         new = inferred()
-                        new.set_has_identifier(instance.has_identifier)
-                        self._instance_cache[uri] = {new}
+                        new.__dict__.update(instance.__dict__)
+                        self._instance_cache[uri].discard(instance)
+                        self._instance_cache[uri].add(new)
+                        if instance in self._triples_map:
+                            self._triples_map[new] = self._triples_map.pop(instance)
                         self.populate_instance(new, uri)
-                        self._apply_owl_defaults(new)
 
-                if type(instance) is Resource:
-                    print(instance.get_has_identifier())
+                self._enrich_or_apply_owl_defaults(instance, uri)        
 
-        
+            if instance.__class__ == DatatypeRestriction:
+                print('DEBUG::', vars(instance))
+                for constraint, value in zip(instance.get_has_constraint(), instance.get_has_restriction_value()):
+                    print(f"  constraint: {constraint.get_has_identifier()}, value: {value.get_has_value()}")
 
     def _infer_property_type(self, instance) -> type:
         """
-        Infers the concrete property type (Relation, Attribute, Annotation)
-        for a generic Property by traversing the subPropertyOf hierarchy.
+        Infers the concrete subtype (Relation, Attribute, Annotation) for a
+        generic Property instance (not better classified)
 
         Strategy (in order):
-        1. Traverse UP the superproperties chain via get_is_sub_property_of.
-        If any ancestor has a concrete type, inherit it.
-        Rationale: if A subPropertyOf B and B is a Relation, then A is also
-        a Relation by rdfs:subPropertyOf semantics.
-
-        2. Traverse DOWN by scanning the full cache for any Property that
-        declares this instance as its superproperty.
-        If any subproperty has a concrete type, inherit it.
-        Rationale: if B is a Relation and B subPropertyOf A, then A must
-        also be a Relation.
-
-        3. Fallback to Annotation if no type can be inferred from the hierarchy.
-        Annotation is the safest default: it makes no domain/range assumptions
-        and is valid for any subject/object combination.
+        1. Traverse UP the subPropertyOf chain: if any ancestor has a concrete
+           type, inherit it (if A subPropertyOf B and B is Relation, A is Relation).
+        2. Traverse DOWN by scanning the cache for properties that declare this
+           instance as their superproperty: if any subproperty has a concrete
+           type, inherit it (if B is Relation and B subPropertyOf A, A is Relation).
+        3. Fall back to Annotation if no type can be inferred from the hierarchy.
+           Annotation makes no domain/range assumptions and is valid for any
+           subject/object combination.
         """
+        
         visited = set()
         queue = [instance]
 
-        # Risali superproprietà
+        # (1) Goes up and down subproperty hierarchy
+        # (1.1) Traverse UP superproperties
         while queue:
             current = queue.pop(0)
             if id(current) in visited:
@@ -191,7 +184,7 @@ class OwlLogic(BaseLogic):
             for sup in (current.get_is_sub_property_of() or []):
                 queue.append(sup)
 
-        # Scendi sottoproprietà
+        # (1.2) Traverse DOWN subproperties
         for instances_set in self._instance_cache.values():
             for inst in instances_set:
                 if isinstance(inst, Property):
@@ -200,12 +193,11 @@ class OwlLogic(BaseLogic):
                             t = self._infer_property_type(inst)
                             if t in (Relation, Attribute, Annotation):
                                 return t
-                            
+
+        # (2) fallback                 
         return Annotation
 
-    # ========== OWL DEFAULTS ==========
-
-    def _apply_owl_defaults(self, instance):
+    def _enrich_or_apply_owl_defaults(self, instance, uri):
         """
         Applies OWL-mandated defaults to instances lacking explicit declarations.
 
@@ -228,10 +220,9 @@ class OwlLogic(BaseLogic):
         """
 
         owl_thing = self.get_or_create(OWL.Thing, Concept)
-        xsd_anytype = self.get_or_create(RDFS.Literal, Datatype)
+        rdfs_string = self.get_or_create(RDFS.Literal, Datatype)
 
         if isinstance(instance, Relation):
-
             inherited_domain = self._get_inherited_property_values(instance, "get_has_domain")
             if len(inherited_domain) == 0:
                 instance.set_has_domain(owl_thing)
@@ -257,7 +248,7 @@ class OwlLogic(BaseLogic):
 
             inherited_range = self._get_inherited_property_values(instance, "get_has_range")
             if len(inherited_range) == 0:
-                instance.set_has_range(xsd_anytype)
+                instance.set_has_range(rdfs_string)
             else:
                 for range in inherited_range:
                     instance.set_has_range(range)
@@ -268,64 +259,108 @@ class OwlLogic(BaseLogic):
                 owl_thing = self.get_or_create(OWL.Thing, Concept)
                 instance.set_has_type(owl_thing)
 
-    def _get_inherited_property_values(self, property_instance, getter_name):
-        """Traversal upward along rdfs:subPropertyOf chain looking for values
-            exposed by getter_name (e.g. get_has_domain, get_has_range).
+         
+        if isinstance(instance, Resource):
+            # adds to Resources involved in punning the also defined as
+            if len(self._instance_cache[uri]) > 1:
+                for other in self._instance_cache[uri]:
+                    if other is not instance:
+                        instance.set_also_defined_as(other)
 
-            If a super-property was misclassified as generic Resource (because it
-            belongs to an external namespace and was only seen as an object of
-            rdfs:subPropertyOf, never as a subject of rdf:type), it is upgraded
-            in-place to the same type as the child that references it.
-            This is valid by rdfs:subPropertyOf semantics: if A is a Relation and
-            A rdfs:subPropertyOf B, then B must also be a Relation (same for
-            Attribute and Annotation).
 
-            Returns a list of values, or empty list if none found in the chain."""
-        
-        visited = set()
-        queue = [property_instance]
-
-        while queue:
-            current = queue.pop(0)
-            if id(current) in visited:
-                continue
-            visited.add(id(current))
-
-            getter = getattr(current, getter_name, None)
+    def _get_inherited_property_values(self, property_instance, getter_name: str) -> list:
+        """
+        Traversal upward along rdfs:subPropertyOf looking for values
+        exposed by getter_name (e.g. get_has_domain, get_has_range).
+        Returns list of values, or [] if none found in the chain.
+        """
+        def collect(node):
+            getter = getattr(node, getter_name, None)
             if getter:
                 values = getter()
                 if values:
                     return values if isinstance(values, list) else [values]
+            return None
+        
+        # (1) If this is a Relation with an inverse, check swapped domain/range on the inverse
+        if isinstance(property_instance, Relation):
+            inverse = property_instance.get_is_inverse_of()
+            if inverse:
+                swapped_getter = {
+                    "get_has_domain": "get_has_range",
+                    "get_has_range": "get_has_domain",
+                }.get(getter_name)
+                if swapped_getter:
+                    swapped = getattr(inverse, swapped_getter, lambda: None)()
+                    if swapped:
+                        return swapped if isinstance(swapped, list) else [swapped]
 
-            get_supers = getattr(current, 'get_is_sub_property_of', None)
-            if not get_supers:
-                continue
-                
-            supers = get_supers()
-            if supers:
-                if not isinstance(supers, list):
-                    supers = [supers]
-                for s in supers:
-                    # Se il super è Resource generico, upgradalo al tipo del figlio
-                    if type(s) is Resource:
-                        target_class = type(current)  # eredita il tipo dal figlio
-                        uri = s.has_identifier
-                        # trova la chiave in cache
-                        for k, v in self._instance_cache.items():
-                            if s in v and str(k) == uri:
-                                new_instance = self.get_or_create(k, target_class, populate=True)
-                                print(f"[INFER] {uri} Resource -> {target_class.__name__} (da subPropertyOf)")
-                                queue.append(new_instance)
-                                break
-                    else:
-                        queue.append(s)
+        # Traverses the hierarchy up to inherit domain and ranges 
+        result = self._traverse_hierarchy(
+            property_instance,
+            next_getter="get_is_sub_property_of",
+            direction="up",
+            collect=collect,
+        )
+        return result if result is not None else []
 
-        return []
 
-    # ========== HELPERS FASE 1 ==========
+    def _infer_property_type(self, instance) -> type:
+        """
+        Infers the concrete subtype (Relation, Attribute, Annotation) for a
+        generic Property instance.
+
+        Strategy:
+        1. owl:inverseOf — if inverse is a Relation, this is a Relation.
+        2. Traverse UP subPropertyOf — inherit type from ancestor.
+        3. Traverse DOWN subPropertyOf — inherit type from descendant.
+        4. Fallback to Annotation.
+        """
+        # (1) inverseOf
+        inverse = getattr(instance, 'get_is_inverse_of', lambda: None)()
+        if inverse and type(inverse) is Relation:
+            return Relation
+
+        CONCRETE = (Relation, Attribute, Annotation)
+
+        # (2) UP THE HIERARCHY
+        def collect_type(node):
+            if type(node) in CONCRETE:
+                return type(node)
+            return None
+
+        result = self._traverse_hierarchy(
+            instance,
+            next_getter="get_is_sub_property_of",
+            direction="up",
+            collect=collect_type,
+        )
+        if result:
+            return result
+
+        # (3) DOWN THE HIERARCHY
+        result = self._traverse_hierarchy(
+            instance,
+            next_getter="get_is_sub_property_of",
+            direction="down",
+            collect=collect_type,
+        )
+        if result:
+            return result
+
+        # (4) fallback
+        return Annotation
+
+    # ========== HELPERS & RELATED FUNCTIONS PHASE 1 ==========
 
     def _classify_nested(self, classified, predicates):
-        """Classifica ricorsivamente elementi dentro liste OWL"""
+        """
+        Recursively classifies BNodes found inside OWL list collections
+        (owl:intersectionOf, owl:unionOf, owl:oneOf) hanging off already-classified
+        BNodes. Extends the classified dict in place with any newly discovered
+        BNode-to-class mappings.
+        """
+
         list_preds = [OWL.intersectionOf, OWL.unionOf, OWL.oneOf]
 
         for bnode in list(classified.keys()):
@@ -341,8 +376,13 @@ class OwlLogic(BaseLogic):
                     except:
                         pass
 
+    # ========== HELPERS & RELATED FUNCTIONS PHASE 2 ==========
+
     def _apply_setters_immediate(self, instance, setters_config):
-        """Applica setters configurati senza oggetto RDF (valori statici da config)"""
+        """Applies static setter values from the config directly to an instance,
+        without resolving any RDF object. Used in phase2 to apply constant values
+        (e.g. set_is_symmetric: True) defined alongside is: class entries.
+        """
         for setter_item in setters_config:
             if isinstance(setter_item, dict):
                 for setter_name, value in setter_item.items():
@@ -352,9 +392,14 @@ class OwlLogic(BaseLogic):
                 if hasattr(instance, setter_item):
                     getattr(instance, setter_item)()
 
-    # ========== HANDLER GROUP AXIOMS ==========
+    # ========== HANDLERS PHASE 4 (GROUP AXIOMS) ==========
 
     def process_all_disjoint_classes(self, uri: Node):
+        """
+        Handles owl:AllDisjointClasses axioms by resolving the owl:members
+        collection and marking every pair of member Concepts as mutually
+        disjoint via set_is_disjoint_with.
+        """
         members_list = self.graph.value(uri, OWL.members)
         if not members_list:
             return
@@ -370,6 +415,11 @@ class OwlLogic(BaseLogic):
             print(f"Errore AllDisjointClasses: {e}")
 
     def process_all_different(self, uri: Node):
+        """
+        Handles owl:AllDifferent axioms by resolving the owl:distinctMembers
+        collection and marking every pair of member Individuals as mutually
+        different via set_is_different_from.
+        """
         members_list = self.graph.value(uri, OWL.distinctMembers)
         if not members_list:
             return
@@ -385,6 +435,11 @@ class OwlLogic(BaseLogic):
             print(f"Errore AllDifferent: {e}")
 
     def process_all_disjoint_properties(self, uri: Node):
+        """
+        Handles owl:AllDisjointProperties axioms by resolving the owl:members
+        collection and marking every pair of member Properties as mutually
+        disjoint via set_is_disjoint_with.
+        """
         members_list = self.graph.value(uri, OWL.members)
         if not members_list:
             return
@@ -399,25 +454,7 @@ class OwlLogic(BaseLogic):
         except Exception as e:
             print(f"Errore AllDisjointProperties: {e}")
 
-    # ========== HANDLER RESTRICTIONS ==========
-
-    def handle_range(self, instance, uri, predicate, obj, setter=None):
-        
-        if type(instance) is not (Property, Attribute, Relation, Annotation):
-            return
-        if str(obj).startswith(str(XSD)) or obj == RDFS.Literal:
-            inferred = Attribute
-        else:
-            inferred = Relation
-        new = inferred()
-        new.set_has_identifier(instance.has_identifier)
-        self._instance_cache[uri].discard(instance)
-        self._instance_cache[uri].add(new)
-
-        # applica set_has_range sull'istanza corretta (nuova o esistente)
-        range_obj = self.get_or_create(obj, Resource)
-        if range_obj:
-            instance.set_has_range(range_obj)
+    # ========== HANDLER CALLED BY PHASE 3 FOR POPULATING INSTANCES ==========
 
     def handle_property_chain(self, instance, uri, predicate, obj, setter=None):
         try:
@@ -426,6 +463,21 @@ class OwlLogic(BaseLogic):
             instance.set_has_property_chain(chain)
         except Exception as e:
             print(f"Errore propertyChain: {e}")
+
+    # ========== RESTRICTIONS ================================================
+
+    def handle_datatype_restriction(self, instance, uri, predicate, obj, setter=None):
+        try:
+            collection = RDFLibCollection(self.graph, obj)
+            for facet_node in collection:
+                for facet_pred, facet_val in self.graph.predicate_objects(facet_node):
+                    if isinstance(facet_val, RDFlibLiteral):
+                        annotation = self.get_or_create(facet_pred, Annotation)
+                        literal = self._create_literal(facet_val)
+                        instance.set_has_constraint(annotation)
+                        instance.set_has_restriction_value(literal)
+        except Exception as e:
+            print(f"Errore handle_datatype_restriction: {e}")
 
     def handle_cardinality_exactly(self, instance, uri, predicate, obj, setter=None):
         instance.set_has_cardinality_type("exactly")
@@ -471,40 +523,14 @@ class OwlLogic(BaseLogic):
                 except Exception as e:
                     print(f"Errore build_truth_function: {e}")
             return tf
-    
-    
-    # ========== CUSTOM OWL CONFIG HANDLERS ==========
 
-    def handle_with_restrictions(self, instance, uri, predicate, obj, setter=None):
-        """Handles owl:withRestrictions — a collection of facet BNodes."""
-        try:
-            collection = RDFLibCollection(self.graph, obj)
-            for node in collection:
-                if not isinstance(node, BNode):
-                    continue
-                for pred, obj in self.graph.predicate_objects(node):
-                    print(node, pred, obj)
-                    print(self._instance_cache[str(node)])
-        except Exception as e:
-            print(f"handle_with_restrictions error: {e}")
-
-    # def handle_range(self, instance, uri, predicate, obj, setter=None):
+    # HANDLER FOR RELATION INVERSE OF, INFERS THE INVERSE - domains and ranges are inferred in phase 5
+    def handle_inverse_of(self, instance, uri, predicate, obj, setter=None):
         
-    #     obj_instance = None
-    #     if obj in self._instance_cache:
-    #         obj_instance = next(iter(self._instance_cache[obj]))
-    #     else: 
-    #         if isinstance(obj, URIRef) and str(obj).startswith(str(XSD)):
-    #             self.get_or_create(obj, Datatype)
-    #         else: 
-    #             self.get_or_create(obj, Resource)
-
-    #     if isinstance(obj_instance, Datatype): 
-    #         self.get_or_create(uri, Attribute)
-    #     elif isinstance(obj_instance, Concept):
-    #         self.get_or_create(uri, Relation)
-    #     else: 
-    #         self.get_or_create(uri, Property)
+        instance = self.get_or_create(uri, Relation)
+        inverse = self.get_or_create(obj, Relation)
+        instance.set_is_inverse_of(inverse)
+        inverse.set_is_inverse_of(instance)
 
     def handle_intersection(self, instance, uri, predicate, obj, setter=None):
         if type(instance) not in (TruthFunction, Concept):
@@ -587,14 +613,30 @@ class OwlLogic(BaseLogic):
                 pred_inst = self.get_or_create(pred, Relation)
             elif isinstance(obj, RDFlibLiteral):
                 obj_inst = self._create_literal(obj)
-                pred_inst = self.get_or_create(pred, Annotation)
+                # if the predicate is not in cache creates an annotation
+                if pred not in self._instance_cache:
+                    pred_inst = self.get_or_create(pred, Annotation)
+                # otherwise reuses the existing predicate
+                else:
+                    pred_inst = self.get_or_create(pred, Property)
             elif isinstance(obj, BNode):
                 # BNode object = reified annotation, use existing instance or create new Statement
                 obj_inst = self.get_or_create(obj, Statement)
-                pred_inst = self.get_or_create(pred, Annotation)
+                # if the predicate is not in cache creates an annotation
+                if pred not in self._instance_cache:
+                    pred_inst = self.get_or_create(pred, Annotation)
+                # otherwise reuses the existing predicate
+                else:
+                    pred_inst = self.get_or_create(pred, Property)
+
             else:
                 obj_inst = self.get_or_create(obj, Resource)
-                pred_inst = self.get_or_create(pred, Annotation)
+                # if the predicate is not in cache creates an annotation
+                if pred not in self._instance_cache:
+                    pred_inst = self.get_or_create(pred, Annotation)
+                # otherwise reuses the existing predicate
+                else:
+                    pred_inst = self.get_or_create(pred, Property)
 
             # pred or obj may be None if their URI is in a protected namespace (e.g. rdf:, rdfs:)
             if pred_inst is None:
