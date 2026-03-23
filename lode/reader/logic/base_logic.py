@@ -119,9 +119,12 @@ class BaseLogic(ABC):
 
     def _resolve_allowed_class(self, python_class: type, id: Node = None) -> type:
         """
-        Risolve classe non ammessa risalendo l'MRO.
-        Chiama _pre_resolve_hook prima dell'MRO — override nelle subclass
-        per logica custom senza duplicare l'intera funzione.
+        Resolves a Python class to one allowed by the current format, by walking
+        the MRO until a class present in _allowed_classes is found.
+        Before the MRO walk, calls _pre_resolve_hook to allow subclasses to
+        short-circuit resolution with custom logic (e.g. reusing an existing
+        cached type instead of silently downcasting).
+        Falls back to Resource if nothing is found.
         """
         if python_class in self._allowed_classes:
             return python_class
@@ -147,6 +150,80 @@ class BaseLogic(ABC):
         return None
 
     # ========== UTILITIES ==========
+
+    def _traverse_hierarchy(
+        self,
+        start: object,
+        next_getter: str,
+        direction: str = "up",          # "up" | "down" | "both"
+        collect: callable = None,       # (node) -> value | None  — ferma e ritorna quando non None
+        visit_all: callable = None,     # (node) -> None          — visita ogni nodo senza fermarsi
+    ) -> object | None:
+        """
+        Generic BFS traversal along a property hierarchy.
+
+        Parameters
+        ----------
+        start        : starting node (Python model instance)
+        next_getter  : name of the getter that returns the next nodes in the
+                    'up' direction (e.g. 'get_is_sub_property_of').
+                    For 'down' the cache is scanned for instances that list
+                    `start` as one of their `next_getter` targets.
+        direction    : 'up'   - follow next_getter only
+                    'down' - scan cache for reverse links only
+                    'both' - up first, then down
+        collect      : callable(node) -> value | None
+                    Called on every visited node (including start).
+                    When it returns a non-None value the traversal stops
+                    immediately and that value is returned.
+        visit_all    : callable(node) -> None
+                    Called on every visited node; traversal never stops early.
+                    Mutually exclusive with collect (collect takes priority).
+
+        Returns the first non-None value from collect, or None if visit_all is used.
+        """
+        visited = set()
+        queue = [start]
+        result = None
+
+        while queue:
+            current = queue.pop(0)
+            if id(current) in visited:
+                continue
+            visited.add(id(current))
+
+            # --- collect / visit ---
+            if collect:
+                value = collect(current)
+                if value is not None:
+                    return value
+            elif visit_all:
+                visit_all(current)
+
+            # --- enqueue next nodes ---
+            if direction in ("up", "both"):
+                getter = getattr(current, next_getter, None)
+                if getter:
+                    nexts = getter()
+                    if nexts:
+                        if not isinstance(nexts, list):
+                            nexts = [nexts]
+                        queue.extend(nexts)
+
+            if direction in ("down", "both"):
+                for instances_set in self._instance_cache.values():
+                    for inst in instances_set:
+                        if inst is current or id(inst) in visited:
+                            continue
+                        getter = getattr(inst, next_getter, None)
+                        if getter:
+                            parents = getter() or []
+                            if not isinstance(parents, list):
+                                parents = [parents]
+                            if any(p is current for p in parents):
+                                queue.append(inst)
+
+        return None
 
     def _create_literal(self, rdflib_literal):
         literal_key = f"LITERAL::{rdflib_literal}"
