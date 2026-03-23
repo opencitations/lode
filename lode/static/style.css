@@ -231,20 +231,39 @@ a:visited {
    but here is a generic catch-all based on text color logic */
 
 /* If the text is "Concept", make it Orange */
-.badge:contains("Concept"),
+.c ,
 .text-info-emphasis {
     color: orange !important;
-    font-weight: bold;
+    font-size: 0.8em;
+    margin-left: -0.2em !important;
 }
 
 /* If the text is "Relation", make it Navy */
-.badge:contains("Relation") {
+.op {
     color: navy !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
 }
 
 /* If the text is "Annotaion", make it Green */
-.badge:contains("Annotation") {
+.an {
     color: maroon !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
+}
+
+/* If the text is "Individual", make it Green */
+.ni {
+    color: brown !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
+}
+
+/* If the text is "Attributes", make it Green */
+.dp {
+    color: green !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
 }
 
 /* 5. Definition Lists (The core of LODE data display)
