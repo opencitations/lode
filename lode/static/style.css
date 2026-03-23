@@ -352,3 +352,8 @@ code.bg-light {
 .statement {
     background-color: rgb(235, 242, 250) !important;
 }
+
+.logic {
+    color: purple;
+    font-weight: bold;
+}
