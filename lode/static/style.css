@@ -18,7 +18,7 @@ body {
     background-repeat: no-repeat;
     /* Adjust padding to not overlap with logo */
     padding-top: 2rem;
-    padding-left: 5rem; /* Space for the logo */
+    padding-left: 1rem; /* Space for the logo */
 }
 
 /* Headings - W3C Style Blue */
@@ -195,8 +195,14 @@ a:visited {
 /* The Header (Entity Name) */
 .card-header {
     background-color: transparent !important; /* Remove Bootstrap gray/white bg */
-    border-bottom: 1px dotted gray !important;
-    padding: 10px 15px;
+    border-bottom: 1px solid navy !important;
+    padding-top: 5px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-bottom: 5px !important;
+    margin-top: 0px !important;
+    margin-left: 2px !important;
+    margin-right: 2px !important
 }
 
 /* The Entity Title */
@@ -224,21 +230,40 @@ a:visited {
 /* You might need to adjust Jinja logic to apply specific classes,
    but here is a generic catch-all based on text color logic */
 
-/* If the text is "Class", make it Orange */
-.badge:contains("Class"),
+/* If the text is "Concept", make it Orange */
+.c ,
 .text-info-emphasis {
     color: orange !important;
-    font-weight: bold;
+    font-size: 0.8em;
+    margin-left: -0.2em !important;
 }
 
-/* If the text is "Object Property", make it Navy */
-.badge:contains("Object Property") {
+/* If the text is "Relation", make it Navy */
+.op {
     color: navy !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
 }
 
-/* If the text is "Data Property", make it Green */
-.badge:contains("Data Property") {
+/* If the text is "Annotaion", make it Green */
+.an {
+    color: maroon !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
+}
+
+/* If the text is "Individual", make it Green */
+.ni {
+    color: brown !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
+}
+
+/* If the text is "Attributes", make it Green */
+.dp {
     color: green !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
 }
 
 /* 5. Definition Lists (The core of LODE data display)
@@ -260,7 +285,8 @@ dt, .text-uppercase.fw-bold {
 /* The content blocks (Relations lists) */
 .bg-light-subtle {
     background-color: rgb(242, 243, 244) !important; /* LODE .description bg */
-    border: 1px dashed gray !important; /* LODE dashed border */
+    border-top: 1px dashed gray !important; /* LODE dashed border */
+    border-bottom: 1px dashed gray !important; /* LODE dashed border */
     border-radius: 0 !important;
 }
 
@@ -271,6 +297,7 @@ code.bg-light {
     font-family: monospace;
     border: none !important;
     padding: 0 !important;
+    font-weight: normal !important;
 }
 
 /* 6. Buttons (Make them technical/minimal)
@@ -329,3 +356,23 @@ code.bg-light {
     text-decoration: underline;
 }
 
+/* back to table of content button */
+.backlink {
+    font-size: 10pt !important;
+    text-align: right !important;
+    float: right !important;
+    color: black !important;
+    padding: 2px !important;
+    border: 1px dotted navy !important;
+    background-color: #F4FFFF !important;
+}
+
+/* statements */
+.statement {
+    background-color: rgb(235, 242, 250) !important;
+}
+
+.logic {
+    color: purple;
+    font-weight: bold;
+}
