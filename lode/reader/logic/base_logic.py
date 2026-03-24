@@ -225,6 +225,13 @@ class BaseLogic(ABC):
 
         return None
 
+    # def is_in_range_or_domain_of_property(self, property_getter, property_getter_inverse, property_instance):
+
+    #     if isinstance(object, (Concept, Individual, Datatype)):
+    #         obj_inst = property_instance.property_getter()
+    #         obj_inst.property_getter_inverse()
+
+
     def _create_literal(self, rdflib_literal):
         literal_key = f"LITERAL::{rdflib_literal}"
         if literal_key in self._instance_cache:
