@@ -17,7 +17,7 @@ class Relation(Property):
         
         # Relations with Relations
         self.is_inverse_of = None  # 0..1 Relation
-        self._has_property_chain = []  # 1..*
+        self.has_property_chain = []  # 1..*
 
         # Relation with Concept
         self.has_range = [] # 1..*
@@ -88,11 +88,11 @@ class Relation(Property):
     # Metodi per has_property_chain
     def set_has_property_chain(self, relation):
         """Aggiunge una relation a has_property_chain"""
-        self._has_property_chain.append(relation)
+        self.has_property_chain = relation # if its a list of lists should be modified
     
     def get_has_property_chain(self):
         """Restituisce una copia della lista has_property_chain"""
-        return list(set(self._has_property_chain))
+        return self.has_property_chain
     
     # def set_has_range(self, concept):
     #     """Imposta has_range"""

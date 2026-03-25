@@ -47,7 +47,6 @@ mapper:
   rdfs:range:
     is: predicate
     target_classes: [Property]
-    handler: handle_range
     setters: [set_has_range: Resource]
     
   rdfs:subPropertyOf:

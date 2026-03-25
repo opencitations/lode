@@ -18,10 +18,12 @@ from .individual import Individual
 from .statement import Statement
 from .container import Container
 from .collection import Collection
+from .datatypeRestriction import DatatypeRestriction
 
 __all__ = [
     'Resource', 'Property', 'Relation', 'Annotation', 'Attribute',
     'Literal', 'Concept', 'Datatype', 'Restriction', 'TruthFunction',
     'OneOf', 'PropertyConceptRestriction', 'Value', 'Quantifier',
-    'Cardinality', 'Model', 'Individual', 'Statement', 'Container', 'Collection'
+    'Cardinality', 'Model', 'Individual', 'Statement', 'Container', 'Collection',
+    'DatatypeRestriction'
 ]

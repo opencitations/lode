@@ -27,6 +27,7 @@ class Resource():
         self.see_also = []
         self.is_defined_by = []
         self.has_version_info = []
+        self.also_defined_as = []
 
         # Relation with Concepts (0..*)
         self.has_type = []
@@ -205,3 +206,11 @@ class Resource():
 
     def get_has_creator(self):
         return list(set(self.has_creator))
+    
+    def get_also_defined_as(self):
+        """Returns the list of also defined as"""
+        return list(self.also_defined_as)
+    
+    def set_also_defined_as(self, resource):
+        """Aggiunge un Model a has_prior_version"""
+        self.also_defined_as.append(resource)

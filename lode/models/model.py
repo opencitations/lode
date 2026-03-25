@@ -58,4 +58,3 @@ class Model(Resource):
     def set_has_prior_version(self, model):
         """Aggiunge un Model a has_prior_version"""
         self.has_prior_version = model
-
