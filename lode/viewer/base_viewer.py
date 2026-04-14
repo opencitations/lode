@@ -193,12 +193,13 @@ class BaseViewer:
 
             # Extract Statement Entities
             statements =  self._format_statement(all_instances, uri, language)
+            type_inst = type(instance).__name__
 
             entities.append({
-                'type': type(instance).__name__,
+                'type': type_inst,
                 'uri': uri,
                 'label': self._get_best_label(instance, language),
-                'anchor_id': f"id_{safe_id}",
+                'anchor_id': f"id_{safe_id}_{type_inst}",
                 'relations': relations,
                 'statements': statements
             })
@@ -447,10 +448,11 @@ class BaseViewer:
             elif obj_type == "Cardinality":
                 prop = _get(obj, 'applies_on_property')
                 card = _get(obj, 'has_cardinality_type', "exactly")
+                card_num = _get(obj, 'has_cardinality')
                 concept = _get(obj, 'applies_on_concept')
 
                 parts.extend(self._parse_restriction(prop, language))
-                parts.append({'text': f' {card} ', 'link': None})
+                parts.append({'text': f' {card} {card_num}',  'link': None})
                 parts.extend(self._parse_restriction(concept, language))
 
             elif obj_type == "TruthFunction":

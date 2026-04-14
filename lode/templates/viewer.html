@@ -13,7 +13,9 @@
     {% if grouped_view and sections %}
         {% for section in sections %}
             {% for ent in section.entities %}
-                {% set _ = anchor_map.update({ent.uri: ent.anchor_id}) %}
+                {% if ent.uri not in anchor_map %}
+                    {% set _ = anchor_map.update({ent.uri: ent.anchor_id}) %}
+                {% endif %}
             {% endfor %}
         {% endfor %}
     {% elif single_resource and entities %}
