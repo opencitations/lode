@@ -193,7 +193,7 @@ class BaseViewer:
 
             # Extract Statement Entities
             statements =  self._format_statement(all_instances, uri, language)
-            type_inst = type(instance).__name__
+            type_inst = type(instance).__name__.replace(" ", "_")
 
             entities.append({
                 'type': type_inst,

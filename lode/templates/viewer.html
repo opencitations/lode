@@ -8,11 +8,13 @@
     <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
-    <!-- Mapping for anchor ids -->
     {% set anchor_map = {} %}
+
     {% if grouped_view and sections %}
         {% for section in sections %}
             {% for ent in section.entities %}
+                {% set precise_key = ent.uri ~ '|' ~ ent.type.lower() %}
+                {% set _ = anchor_map.update({precise_key: ent.anchor_id}) %}
                 {% if ent.uri not in anchor_map %}
                     {% set _ = anchor_map.update({ent.uri: ent.anchor_id}) %}
                 {% endif %}
@@ -20,79 +22,37 @@
         {% endfor %}
     {% elif single_resource and entities %}
         {% for ent in entities %}
-            {% set _ = anchor_map.update({ent.uri: ent.anchor_id}) %}
+            {% set precise_key = ent.uri ~ '|' ~ ent.type.lower() %}
+            {% set _ = anchor_map.update({precise_key: ent.anchor_id}) %}
+            {% if ent.uri not in anchor_map %}
+                {% set _ = anchor_map.update({ent.uri: ent.anchor_id}) %}
+            {% endif %}
         {% endfor %}
     {% endif %}
-    <!-- sections for grouped view -->
+
     {% if grouped_view %}
         {% set display_sections = sections %}
     {% else %}
         {% set display_sections = [{'is_single_view': true, 'entities': entities}] %}
     {% endif %}
 
-    <!-- Mapping for types -->
-
     {% set type_map = {
-        'concepts': {
-            'singular': 'Class',
-            'plural': 'Classes',
-            'abb': 'c'
-        },
-        'relations': {
-            'singular': 'Object Property',
-            'plural': 'Object Properties',
-            'abb': 'op'
-        },
-        'attributes': {
-            'singular': 'Data Property',
-            'plural': 'Data Properties',
-            'abb': 'dp'
-        },
-        'annotations': {
-            'singular': 'Annotation Property',
-            'plural': 'Annotation Properties',
-            'abb': 'ap'
-        },
-        'individuals': {
-            'singular': 'Named Individual',
-            'plural': 'Named Individuals',
-            'abb': 'ni'
-        },
-        'concept': {
-            'singular': 'Class',
-            'plural': 'Classes',
-            'abb': 'c'
-        },
-        'relation': {
-            'singular': 'Object Property',
-            'plural': 'Object Properties',
-            'abb': 'op'
-        },
-        'attribute': {
-            'singular': 'Data Property',
-            'plural': 'Data Properties',
-            'abb': 'dp'
-        },
-        'annotation': {
-            'singular': 'Annotation Property',
-            'plural': 'Annotation Properties',
-            'abb': 'ap'
-        },
-        'individual': {
-            'singular': 'Named Individual',
-            'plural': 'Named Individuals',
-            'abb': 'ni'
-        }
+        'concepts': { 'singular': 'Class', 'plural': 'Classes', 'abb': 'c' },
+        'relations': { 'singular': 'Object Property', 'plural': 'Object Properties', 'abb': 'op' },
+        'property': { 'singular': 'Object Property', 'plural': 'Object Properties', 'abb': 'op' },
+        'attributes': { 'singular': 'Data Property', 'plural': 'Data Properties', 'abb': 'dp' },
+        'annotations': { 'singular': 'Annotation Property', 'plural': 'Annotation Properties', 'abb': 'ap' },
+        'individuals': { 'singular': 'Named Individual', 'plural': 'Named Individuals', 'abb': 'ni' },
+        'concept': { 'singular': 'Class', 'plural': 'Classes', 'abb': 'c' },
+        'relation': { 'singular': 'Object Property', 'plural': 'Object Properties', 'abb': 'op' },
+        'attribute': { 'singular': 'Data Property', 'plural': 'Data Properties', 'abb': 'dp' },
+        'annotation': { 'singular': 'Annotation Property', 'plural': 'Annotation Properties', 'abb': 'ap' },
+        'individual': { 'singular': 'Named Individual', 'plural': 'Named Individuals', 'abb': 'ni' },
+        'str': { 'singular': 'string', 'plural': '', 'abb': 'str' },
+        'literal': { 'singular': 'literal', 'plural': '', 'abb': 'lit' }
      } %}
 
     <div class="container-fluid px-4 py-4">
-        <!--
-        <div class="mb-5">
-            <h1 class="display-5 fw-bold text-primary">LODE 2.0</h1>
-            <p class="text-muted">Semantic Artefact Documentation</p>
-        </div>
-        -->
-
         {% if error %}
             <div class="alert alert-danger " role="alert">
                 <h4 class="alert-heading">Error</h4>
@@ -100,7 +60,6 @@
             </div>
 
         {% else %}
-        <!-- The model section -->
         {% if metadata %}
             <div class="mb-4 border-bottom pb-4">
                 <div class="p-3">
@@ -160,8 +119,6 @@
             </div>
         {% endif %}
 
-        <!-- Grouped view section for all the entities -->
-        <!-- Table of contents -->
         {% if grouped_view and sections %}
             <div class="section-header">
                 <div class="mb-5 border-0">
@@ -170,13 +127,13 @@
                         <div class="d-flex flex-wrap gap-3">
                             <ol>
                                 {% for section in sections %}
-                                <li>
-                                    <a href="#{{ section.id }}" class="text-decoration-underline px-3">
-                                        {{ type_map[section.title.lower()].plural }}
-                                        <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ section.entities|length }}</span>
-                                    </a>
-                                    {% endfor %}
-                                </li>
+                                    <li>
+                                        <a href="#{{ section.id }}" class="text-decoration-underline px-3">
+                                            {{ type_map[section.title.lower()].plural }}
+                                            <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ section.entities|length }}</span>
+                                        </a>
+                                    </li>
+                                {% endfor %}
                             </ol>
                         </div>
                     </div>
@@ -184,7 +141,6 @@
             </div>
         {% endif %}
 
-        <!-- Title of the section -->
         {% for section in display_sections %}
             {% if not section.is_single_view %}
                 <div id="{{ section.id.lower() }}" class="anchor-offset mb-5">
@@ -207,143 +163,16 @@
                     </div>
                 </div>
             {% endif %}
-            <!-- Entities for groupped view or single view -->
+
             <div class="anchor-offset mb-5">
-                <!-- Title of the card -->
                 {% for item in section.entities %}
-                    <div class="card mb-4 anchor-offset" id="{{ item.anchor_id }}">
-                        <div class="card-header bg-white pt-2 px-1 d-flex justify-content-between align-items-center">
-                            <h4 class="fw-bold mb-0">
-                                {{ item.label }}
-                                {% if item.type.lower() in type_map %}
-                                    <sup class="badge bg-light text-secondary {{type_map[item.type.lower()].abb}}" title="{{ type_map[item.type.lower()].singular }}">{{ type_map[item.type.lower()].abb }}</sup>
-                                {% endif %}
-                            </h4>
-                            <span class="backlink">
-                                back to
-                                <a href="#toc">ToC</a>
-                                or
-                                <a href="#{{item.type.lower()}}s">{{item.type}} ToC</a>
-                            </span>
-                        </div>
-                        <!-- URI of the entity -->
-                        <div class="card-body px-1 pb-4">
-                            <div class="mb-2">
-                                <small class="text-muted text-uppercase d-block mb-1">URI: <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
-                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri }}"
-                                       class="ms-2" title="Detailed View">↗</a></small>
-                            </div>
-                            <!-- relations (annotations) -->
-                            {% if item.relations %}
-                                <div class="p-3 border-top border-bottom bg-light-subtle mb-1">
 
-                                    {% for rel_name, rel_value in item.relations.items() %}
-                                        <div class="mb-3">
-                                            <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem; text-transform: uppercase;">
-                                                {{ rel_name }}
-                                            </h6>
+                    {% include '_entity_card.html' %}
 
-                                            <div class="text-secondary ms-2">
-                                                {% if rel_value is iterable and rel_value is not string %}
-                                                   <div style="line-height: 1.6;">
-                                                        {% for item in rel_value %}
-                                                            {% if item.parts %}
-                                                                <div class="restriction-block mb-1">
-                                                                    {% for part in item.parts %}
-                                                                        {% if part.link %}
-                                                                            <span>
-                                                                                {% if part.link in anchor_map %}
-                                                                                    <a href="#{{ anchor_map[part.link] }}">{{ part.text }}</a>
-
-                                                                                {% else %}
-                                                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}">{{ part.text }}</a>
-                                                                                {% endif %}
-                                                                                {% if part.type.lower() in type_map %}
-                                                                                    <sup class="badge text-secondary {{type_map[part.type.lower()].abb}}" title="{{ type_map[part.type.lower()].singular }}">{{ type_map[part.type.lower()].abb }}</sup>
-                                                                                {% endif %}
-                                                                            </span>
-                                                                        {% else %}
-                                                                            <span class="logic">{{ part.text }}</span>
-                                                                        {% endif %}
-                                                                    {% endfor %}
-                                                                </div>
-
-                                                            {% elif item.link %}
-                                                                <span>
-                                                                    {% if item.link in anchor_map %}
-                                                                        <a href="#{{ anchor_map[item.link] }}">{{ item.text }}</a>
-
-                                                                    {% else %}
-                                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ item.link | urlencode }}">{{ item.text }}</a>
-                                                                    {% endif %}
-                                                                    {% if item.type.lower() in type_map %}
-                                                                        <sup class="badge text-secondary {{type_map[item.type.lower()].abb}}" title="{{ type_map[item.type.lower()].singular }}">{{ type_map[item.type.lower()].abb }}</sup>
-                                                                    {% endif %}
-                                                                </span>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
-                                                            {% else %}
-                                                                <span class="text-dark">{{ item.text }}</span>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                   </div>
-                                                {% else %}
-                                                    <div class="mb-0">
-                                                        {{ rel_value.text }}
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-
-                                </div>
-                            {% endif %}
-
-                            {% if item.statements %}
-                                <div class="p-3 border-top border-bottom bg-light-subtle mb-1 statement">
-                                    {% for stat_name, stat_value in item.statements.items() %}
-                                        <div class="mb-3">
-                                            <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem; text-transform: uppercase;">
-                                                {{ stat_name }}
-                                            </h6>
-                                            <div class="text-secondary ms-2">
-                                                {% if stat_value is iterable and stat_value is not string %}
-                                                    <div class="d-flex flex-column gap-1">
-                                                        {% for val in stat_value %}
-                                                            {% if val.link %}
-                                                                <span>
-                                                                    {% if val.link in anchor_map %}
-                                                                        <a href="#{{ anchor_map[val.link.lower()] }}">{{ val.text }}</a>
-
-                                                                    {% else %}
-                                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}">{{ val.text }}</a>
-                                                                    {% endif %}
-                                                                    {% if val.type.lower() in type_map %}
-                                                                        <sup class="badge text-secondary {{type_map[val.type.lower()].abb}}" title="{{ type_map[val.type.lower()].singular }}">{{ type_map[val.type.lower()].abb }}</sup>
-                                                                    {% endif %}
-                                                                </span>
-                                                            {% else %}
-                                                                <span class="text-truncate" title="{{ val }}">{{ val.text }}</span>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    </div>
-                                                {% else %}
-                                                    <div>
-                                                        <span>
-                                                            {{ stat_value.text }}
-                                                        </span>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
                 {% endfor %}
             </div>
         {% endfor %}
 
-        <!-- Back to index in case the view is single-resource -->
         {% if single_resource %}
             <div class="mt-3">
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back to Index</a>
