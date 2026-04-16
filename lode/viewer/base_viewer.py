@@ -191,6 +191,22 @@ class BaseViewer:
                                 if v not in relations[clean_name]:  # Valentina FIX: this do not add duplicates in metadata values  
                                     relations[clean_name].append(v)
 
+            characteristics = {}
+            char_attributes = [
+                'is_functional', 'is_inverse_functional', 'is_transitive',
+                'is_symmetric', 'is_asymmetric', 'is_reflexive', 'is_irreflexive'
+            ]
+
+            for attr in char_attributes:
+                getter = f"get_{attr}"
+                # Safely get the boolean value
+                is_true = getattr(instance, getter)() if hasattr(instance, getter) else getattr(instance, attr, False)
+
+                # Convert 'is_asymmetric' to 'is asymmetric' for the HTML label
+                if is_true:
+                    display_name = attr.replace('_', ' ')
+                    characteristics[display_name] = True
+
             # Extract Statement Entities
             statements =  self._format_statement(all_instances, uri, language)
             type_inst = type(instance).__name__.replace(" ", "_")
@@ -201,7 +217,8 @@ class BaseViewer:
                 'label': self._get_best_label(instance, language),
                 'anchor_id': f"id_{safe_id}_{type_inst}",
                 'relations': relations,
-                'statements': statements
+                'statements': statements,
+                'characteristics': characteristics
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())

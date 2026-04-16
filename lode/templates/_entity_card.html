@@ -128,9 +128,27 @@
                             </div>
                         </div>
                     {% endfor %}
+                    {% if item.characteristics %}
+                        <div class=" mb-3">
+                            <h6 class="fw-bold text-dark pb-1 mb-1" style="font-size: 0.85rem; text-transform: uppercase;">
+                                Property Characteristics
+                            </h6>
+                            <div class="d-flex flex-wrap gap-4 text-secondary small">
+                                {% for char_name, is_checked in item.characteristics.items() %}
+                                <div class="form-check">
+                                    <label class="form-check-label text-capitalize text-dark" style="opacity: 1;">
+                                        {{ char_name }}
+                                    </label>
+                                    <input class="form-check-input" type="checkbox" value="" {% if is_checked %}checked{% endif %} disabled>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             {% endif %}
         {% endif %}
+
         {% if item.statements %}
             <div class="p-3 border-top border-bottom bg-light-subtle mb-1 statement">
                 {% for stat_name, stat_value in item.statements.items() %}
