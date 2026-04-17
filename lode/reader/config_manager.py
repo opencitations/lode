@@ -66,7 +66,9 @@ class ConfigManager(ABC):
         'owl': 'http://www.w3.org/2002/07/owl#',
         'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
         'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-        'skos': 'http://www.w3.org/2004/02/skos/core#'
+        'skos': 'http://www.w3.org/2004/02/skos/core#', 
+        'xsd': "http://www.w3.org/2001/XMLSchema#",
+        'swrl': 'http://www.w3.org/2003/11/swrl#'
     }
     
     # ========== CLASS MAP ==========
@@ -91,8 +93,12 @@ class ConfigManager(ABC):
         'Datatype': Datatype,
         'Literal': Literal,
         'Resource': Resource,
-        'Individual': Individual
+        'Individual': Individual,
+        'Variable': Variable,
+        'Atom': Atom,
+        'Rule': Rule
     }
+
     
     def _parse_uri(self, uri_str: str) -> URIRef:
         """owl:Class -> URIRef"""
