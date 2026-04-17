@@ -41,78 +41,90 @@ allowed_classes:
 # ======================
 mapper:
 
-  # XSD Datatypes Restrictions
-  xsd:minExclusive:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:pattern:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   classify: false
+  #   setters:
+  #     - set_has_constraint: "pattern"
+  #     - set_has_restriction_value: Literal
 
-  xsd:maxExclusive:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:minInclusive:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: ">="
+  #     - set_has_restriction_value: Literal
 
-  xsd:minInclusive:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:maxInclusive:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "<="
+  #     - set_has_restriction_value: Literal
 
-  xsd:maxInclusive:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:minExclusive:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: ">"
+  #     - set_has_restriction_value: Literal
 
-  xsd:pattern:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:maxExclusive:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "<"
+  #     - set_has_restriction_value: Literal
 
-  xsd:length:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:length:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "length"
+  #     - set_has_restriction_value: Literal
 
-  xsd:minLength:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:minLength:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "minLength"
+  #     - set_has_restriction_value: Literal
 
-  xsd:maxLength:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:maxLength:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "maxLength"
+  #     - set_has_restriction_value: Literal
 
-  xsd:totalDigits:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:totalDigits:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "totalDigits"
+  #     - set_has_restriction_value: Literal
 
-  xsd:fractionDigits:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:fractionDigits:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "fractionDigits"
+  #     - set_has_restriction_value: Literal
 
-  xsd:enumeration:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:enumeration:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "enumeration"
+  #     - set_has_restriction_value: Literal
 
-  xsd:whiteSpace:
-    is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
-    handler: handle_facet
+  # xsd:whiteSpace:
+  #   is: predicate
+  #   target_classes: [DatatypeRestriction]
+  #   setters:
+  #     - set_has_constraint: "whiteSpace"
+  #     - set_has_restriction_value: Literal
 
   # ========== Classification, no behavior ==========
 
@@ -387,8 +399,8 @@ mapper:
 
   owl:withRestrictions:
     is: predicate
-    inferred_class: Datatype
-    target_classes: [Datatype]
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
     handler: handle_datatype_restriction
   
   # ========== Relation - Solo in OWL ==========
@@ -521,8 +533,8 @@ mapper:
 
   owl:onDatatype:
     is: predicate
-    inferred_class: Datatype
-    target_classes: [Restriction, Datatype]
+    inferred_class: Restriction
+    target_classes: [Restriction]
     setters: [set_applies_on_concept: Datatype]
 
   # to be checked
