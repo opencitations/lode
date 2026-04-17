@@ -4,8 +4,8 @@ class DatatypeRestriction(Restriction):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.has_constraint = None         # Datatype (xsd:pattern, xsd:minInclusive, ...)
-        self.has_restriction_value = None  # string (the corresponding value e.g. 0.0)
+        self.has_constraint = None         # string (xsd:pattern, xsd:minInclusive, ...)
+        self.has_restriction_value = None  # Literal (the corresponding value e.g. 0.0)
 
     def set_has_constraint(self, datatype):
         self.has_constraint = datatype
