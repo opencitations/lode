@@ -4,6 +4,8 @@ namespaces:
   - "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   - "http://www.w3.org/2000/01/rdf-schema#"
   - "http://www.w3.org/2002/07/owl#"
+  - "http://www.w3.org/2001/XMLSchema#"
+  - "http://www.w3.org/2003/11/swrl#"
 
 allowed_classes:
   - Statement
@@ -27,6 +29,9 @@ allowed_classes:
   - Collection
   - Restriction
   - Resource
+  - Variable 
+  - Atom
+  - Rule
 
 
 # IF TARGET CLASSES > 1 IT HAS TO HAVE AN HANDLER TO CHOOSE WHICH IS THE TARGET DEPENDING ON THRE CONTEXT
@@ -35,6 +40,80 @@ allowed_classes:
 # MAPPER
 # ======================
 mapper:
+
+  # XSD Datatypes Restrictions
+  xsd:minExclusive:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:maxExclusive:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:minInclusive:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:maxInclusive:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:pattern:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:length:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:minLength:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:maxLength:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:totalDigits:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:fractionDigits:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:enumeration:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
+  xsd:whiteSpace:
+    is: predicate
+    inferred_class: DatatypeRestriction
+    target_classes: [DatatypeRestriction]
+    handler: handle_facet
+
   # ========== Classification, no behavior ==========
 
   rdfs:Literal:
@@ -154,16 +233,26 @@ mapper:
     setters: [set_has_object: Literal]
   
   # ========== Property ==========
-    
-  owl:propertyDisjointWith:
+  rdfs:domain:
     is: predicate
     target_classes: [Property]
-    setters: [set_is_disjoint_with: Property]
-    
+    handler: handle_domain
+
+  rdfs:range:
+    is: predicate
+    target_classes: [Property]
+    handler: handle_range
+      
+  owl:propertyDisjointWith:
+    is: predicate
+    inferred_class: Property
+    target_classes: [Property]
+    handler: handle_property_disjoint_with
+
   owl:equivalentProperty:
     is: predicate
     target_classes: [Property]
-    setters: [set_is_equivalent_to: Property]
+    handler: handle_equivalent_property
 
   # overwrites BASE CONFIG
   # it is needed here because attributes and properties have different ranges!
@@ -177,43 +266,49 @@ mapper:
   owl:disjointWith:
     is: predicate
     target_classes: [Concept]
-    setters: [set_is_disjoint_with: Concept]
-    
+    handler: handle_disjoint_with
+
+  owl:disjointUnionOf:
+    is: predicate
+    inferred_class: Concept
+    target_classes: [Concept]
+    handler: handle_disjoint_union
+      
   owl:equivalentClass:
     is: predicate
     target_classes: [Concept]
-    setters: [set_is_equivalent_to: Concept]
+    handler: handle_equivalent_class
   
   # ========== Model ==========
   owl:imports:
     is: predicate
+    inferred_class: Model
     target_classes: [Model]
     setters: [set_imports: Model]
     
   owl:versionIRI:
     is: predicate
+    inferred_class: Model
     target_classes: [Model]
     setters: [set_has_version: Model]
     
   owl:priorVersion:
     is: predicate
+    inferred_class: Model
     target_classes: [Model]
     setters: [set_has_prior_version: Model]
     
   owl:backwardCompatibleWith:
     is: predicate
+    inferred_class: Model
     target_classes: [Model]
     setters: [set_is_backward_compatible_with: Model]
     
   owl:incompatibleWith:
     is: predicate
+    inferred_class: Model
     target_classes: [Model]
     setters: [set_is_incompatible_with: Model]
-    
-  skos:hasTopConcept:
-    is: predicate
-    target_classes: [Model]
-    setters: [set_has_top_concept: Concept]
   
   # ========== Statement/Annotation ==========
 
@@ -292,18 +387,19 @@ mapper:
 
   owl:withRestrictions:
     is: predicate
-    inferred_class: DatatypeRestriction
-    target_classes: [DatatypeRestriction]
+    inferred_class: Datatype
+    target_classes: [Datatype]
     handler: handle_datatype_restriction
   
   # ========== Relation - Solo in OWL ==========
   owl:inverseOf:
-    is: predicate
-    target_classes: [Relation]
-    handler: handle_inverse_of
+      is: predicate
+      target_classes: [Relation, Restriction]
+      handler: handle_inverse_of
     
   owl:propertyChainAxiom:
     is: predicate
+    inferred_class: Relation
     target_classes: [Relation]
     handler: handle_property_chain
 
@@ -414,9 +510,9 @@ mapper:
 
   # ========== Restrictions - Target diverso ==========
   owl:onProperty:
-    is: predicate
-    target_classes: [Restriction]
-    setters: [set_applies_on_property: Property]
+      is: predicate
+      target_classes: [Restriction]
+      handler: handle_on_property
     
   owl:onClass:
     is: predicate
@@ -426,7 +522,7 @@ mapper:
   owl:onDatatype:
     is: predicate
     inferred_class: Datatype
-    target_classes: [Restriction]
+    target_classes: [Restriction, Datatype]
     setters: [set_applies_on_concept: Datatype]
 
   # to be checked
@@ -439,12 +535,12 @@ mapper:
   owl:sameAs:
     is: predicate
     target_classes: [Individual]
-    setters: [set_is_same_as: Individual]
+    handler: handle_same_as
     
   owl:differentFrom:
     is: predicate
     target_classes: [Individual]
-    setters: [set_is_different_from: Individual]
+    handler: handle_different_from
 
   # ========== REWRITE BASE ==========
 
