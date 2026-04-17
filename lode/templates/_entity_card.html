@@ -1,7 +1,7 @@
 <div class="card mb-4 anchor-offset" id="{{ item.anchor_id }}">
     <div class="card-header bg-white pt-2 px-1 d-flex justify-content-between align-items-center">
         <h4 class="fw-bold mb-0">
-            {{ item.label }}
+            <span class="render-markdown">{{ item.label }}</span>
             {% if item.type.lower() in type_map %}
                 <sup class="badge bg-light text-secondary {{type_map[item.type.lower()].abb}}" title="{{ type_map[item.type.lower()].singular}}">{{ type_map[item.type.lower()].abb }}</sup>
             {% endif %}
@@ -21,36 +21,41 @@
                    class="ms-2" title="Detailed View">↗</a></small>
         </div>
 
-        {% set priority_relations = ['Is Defined By', 'Comment'] %}
+        {% set priority_relations = ['Is Defined By', 'Comment', 'comment'] %}
+        {% set md_types = ['Literal', 'Str', 'literal', 'str', 'string'] %}
+
         {% for key in priority_relations %}
             {% if key in item.relations %}
                 <div class="mb-3 mt-2">
                     <span class="text-dark fw-bold text-capitalize" style="font-size: 0.85rem;">{{ key }}:</span>
                     {% set rel_vals = item.relations[key] %}
-                    <div class="ms-2">
+                    <div class="ms-2 mt-1">
                         {% if rel_vals is iterable and rel_vals is not string %}
                             {% for val in rel_vals %}
-                                <p class="text-dark mb-1" style="font-size: 0.95rem; line-height: 1.5;">
-                                    {% if val.link %}
-                                        <a href="{{ val.link }}" target="_blank">{{ val.text }}</a>
-                                    {% else %}
-                                        {{ val.text }}
-                                    {% endif %}
-                                </p>
+                                {% set v_type = val.type.lower() if val.type else '' %}
+                                {% set is_md = v_type in md_types %}
+
+                                {% if val.link %}
+                                    <p class="text-dark mb-1" style="font-size: 0.95rem; line-height: 1.5;">
+                                    <a href="{{ val.link }}" target="_blank" class="{% if is_md %}render-markdown{% endif %}">{{ val.text }}</a>
+                                    </p>
+
+                                {% else %}
+                                    <div class="text-dark mb-2 {% if is_md %}render-markdown{% endif %}" style="font-size: 0.95rem; line-height: 1.5;">{{ val.text }}</div>
+                                {% endif %}
                             {% endfor %}
                         {% else %}
-                            <p class="text-dark mb-1" style="font-size: 0.95rem; line-height: 1.5;">
-                                {{ rel_vals.text }}
-                            </p>
+                            {% set v_type = rel_vals.type.lower() if rel_vals.type else '' %}
+                            {% set is_md = v_type in md_types %}
+                            <div class="text-dark mb-2 {% if is_md %}render-markdown{% endif %}" style="font-size: 0.95rem; line-height: 1.5;">{{ rel_vals.text }}</div>
                         {% endif %}
                     </div>
                 </div>
             {% endif %}
         {% endfor %}
+
         {% if item.relations %}
-
             {% set hidden_relations = ['Identifier', 'identifier'] %}
-
             {% set visible_relations = [] %}
             {% for key in item.relations %}
                 {% if key not in priority_relations and key not in hidden_relations %}
@@ -59,79 +64,10 @@
             {% endfor %}
             {% if visible_relations %}
                 <div class="p-3 border-top border-bottom bg-light-subtle mb-1">
-                    {% for rel_name in visible_relations %}
-                        {% set rel_value = item.relations[rel_name] %}
-                        <div class="mb-3">
-                            <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem; text-transform: uppercase;">
-                                {{ rel_name }}
-                            </h6>
-                            <div class="text-secondary ms-2">
-                                {% if rel_value is iterable and rel_value is not string %}
-                                   <div style="line-height: 1.6;">
-                                        {% for rel_item in rel_value %}
-                                            {% if rel_item.parts %}
-                                                <div class="restriction-block mb-1">
-                                                    {% for part in rel_item.parts %}
-                                                        {% if part.link %}
-                                                            <span>
-                                                                {% set v_type = part.type.lower() if part.type else '' %}
-                                                                {% set precise_key = part.link ~ '|' ~ v_type %}
-                                                                {% if precise_key in anchor_map %}
-                                                                    <a href="#{{ anchor_map[precise_key] }}">{{ part.text }}</a>
-                                                                {% elif part.link in anchor_map %}
-                                                                    <a href="#{{ anchor_map[part.link] }}">{{ part.text }}</a>
-                                                                {% else %}
-                                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}">{{ part.text }}</a>
-                                                                {% endif %}
-
-                                                                {% if v_type in type_map %}
-                                                                    <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
-                                                                {% endif %}
-                                                            </span>
-                                                        {% else %}
-                                                            {% set v_type = part.type.lower() if part.type else '' %}
-                                                            <span class="logic">{{ part.text }}</span>
-                                                            {% if v_type in type_map %}
-                                                                <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
-                                                            {% endif %}
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </div>
-
-                                            {% elif rel_item.link %}
-                                                <span>
-                                                    {% set v_type = rel_item.type.lower() if rel_item.type else '' %}
-                                                    {% set precise_key = rel_item.link ~ '|' ~ v_type %}
-                                                    {% if precise_key in anchor_map %}
-                                                        <a href="#{{ anchor_map[precise_key] }}">{{ rel_item.text }}</a>
-                                                    {% else %}
-                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ rel_item.link | urlencode }}">{{ rel_item.text }}</a>
-                                                    {% endif %}
-                                                    {% if v_type in type_map %}
-                                                        <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
-                                                    {% endif %}
-                                                </span>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
-                                            {% else %}
-                                                {% set v_type = rel_item.type.lower() if rel_item.type else '' %}
-                                                <span class="text-dark">{{ rel_item.text }}</span>
-                                                {% if v_type in type_map %}
-                                                    <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
-                                                {% endif %}
-                                            {% endif %}
-                                        {% endfor %}
-                                   </div>
-                                {% else %}
-                                    <div class="mb-0">
-                                        {{ rel_value.text }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
                     {% if item.characteristics %}
                         <div class=" mb-3">
                             <h6 class="fw-bold text-dark pb-1 mb-1" style="font-size: 0.85rem; text-transform: uppercase;">
-                                Property Characteristics
+                                Has Characteristics
                             </h6>
                             <div class="d-flex flex-wrap gap-4 text-secondary small">
                                 {% for char_name, is_checked in item.characteristics.items() %}
@@ -145,6 +81,83 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% for rel_name in visible_relations %}
+                        {% set rel_value = item.relations[rel_name] %}
+                        <div class="mb-3">
+                            <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem; text-transform: uppercase;">
+                                {{ rel_name }}
+                            </h6>
+                            <div class="text-secondary ms-2">
+                                {% if rel_value is iterable and rel_value is not string %}
+                                   <div style="line-height: 1.6;">
+                                        {% for rel_item in rel_value %}
+                                            {% if rel_item.parts %}
+                                                <div class="restriction-block mb-1">
+                                                    {% for part in rel_item.parts %}
+                                                        {% set v_type = part.type.lower() if part.type else '' %}
+                                                        {% set is_md = v_type in md_types %}
+
+                                                        {% if part.link %}
+                                                            <span>
+                                                                {% set precise_key = part.link ~ '|' ~ v_type %}
+                                                                {% if precise_key in anchor_map %}
+                                                                    <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %}">{{ part.text }}</a>
+                                                                {% elif part.link in anchor_map %}
+                                                                    <a href="#{{ anchor_map[part.link] }}" class="{% if is_md %}render-markdown{% endif %}">{{ part.text }}</a>
+                                                                {% else %}
+                                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %}">{{ part.text }}</a>
+                                                                {% endif %}
+
+                                                                {% if v_type in type_map %}
+                                                                    <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
+                                                                {% endif %}
+                                                            </span>
+                                                        {% else %}
+                                                            {% set v_type = part.type.lower() if part.type else '' %}
+                                                            <span class="logic {% if is_md %}render-markdown{% endif %}">{{ part.text }}</span>
+                                                            {% if v_type in type_map %}
+                                                                <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+
+                                            {% elif rel_item.link %}
+                                                <span>
+                                                    {% set v_type = rel_item.type.lower() if rel_item.type else '' %}
+                                                    {% set precise_key = rel_item.link ~ '|' ~ v_type %}
+                                                    {% set is_md = v_type in md_types %}
+
+                                                    {% if precise_key in anchor_map %}
+                                                        <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %}">{{ rel_item.text }}</a>
+                                                    {% else %}
+                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ rel_item.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %}">{{ rel_item.text }}</a>
+                                                    {% endif %}
+                                                    {% if v_type in type_map %}
+                                                        <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
+                                                    {% endif %}
+                                                </span>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
+                                            {% else %}
+                                                {% set v_type = rel_item.type.lower() if rel_item.type else '' %}
+                                                {% set is_md = v_type in md_types %}
+                                                <span class="text-dark {% if is_md %}render-markdown{% endif %}">{{ rel_item.text }}</span>
+                                                {% if v_type in type_map %}
+                                                    <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                   </div>
+                                {% else %}
+                                    {% set v_type = rel_value.type.lower() if rel_value.type else '' %}
+                                    {% set is_md = v_type in md_types %}
+                                    <div class="mb-0 {% if is_md %}render-markdown{% endif %}">
+                                        {{ rel_value.text }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
                 </div>
             {% endif %}
         {% endif %}
@@ -160,17 +173,19 @@
                             {% if stat_value is iterable and stat_value is not string %}
                                 <div class="d-flex flex-column gap-1">
                                     {% for val in stat_value %}
+                                        {% set v_type = val.type.lower() if val.type else '' %}
+                                        {% set is_md = v_type in md_types %}
+
                                         {% if val.link %}
                                             <span>
-                                                {% set v_type = val.type.lower() if val.type else '' %}
                                                 {% set precise_key = val.link ~ '|' ~ v_type %}
 
                                                 {% if precise_key in anchor_map %}
-                                                    <a href="#{{ anchor_map[precise_key] }}">{{ val.text }}</a>
+                                                    <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %}">{{ val.text }}</a>
                                                 {% elif val.link in anchor_map %}
-                                                    <a href="#{{ anchor_map[val.link] }}">{{ val.text }}</a>
+                                                    <a href="#{{ anchor_map[val.link] }}" class="{% if is_md %}render-markdown{% endif %}">{{ val.text }}</a>
                                                 {% else %}
-                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}">{{ val.text }}</a>
+                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %}">{{ val.text }}</a>
                                                 {% endif %}
 
                                                 {% if v_type in type_map %}
@@ -178,13 +193,15 @@
                                                 {% endif %}
                                             </span>
                                         {% else %}
-                                            <span class="text-truncate" title="{{ val.text }}">{{ val.text }}</span>
+                                            <span class="{% if is_md %}render-markdown{% endif %}" title="{{ val.text }}">{{ val.text }}</span>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
                             {% else %}
+                                {% set v_type = stat_value.type.lower() if stat_value.type else '' %}
+                                {% set is_md = v_type in md_types %}
                                 <div>
-                                    <span>
+                                    <span class="{% if is_md %}render-markdown{% endif %}">
                                         {{ stat_value.text }}
                                     </span>
                                 </div>

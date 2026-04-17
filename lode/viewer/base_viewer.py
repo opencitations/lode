@@ -344,11 +344,13 @@ class BaseViewer:
 
                 handler_dic['text'] = obj.get_has_value()
                 handler_dic['lan'] = lit_lang
+                handler_dic['type'] = obj_type
                 return handler_dic
 
             raw_str = str(obj)
             if "object at" not in raw_str:
                 handler_dic['text'] = raw_str
+                handler_dic['type'] = obj_type
                 return handler_dic
 
         # --- 4. Normal Resource Handling (Concepts, Properties, Individuals) ---
