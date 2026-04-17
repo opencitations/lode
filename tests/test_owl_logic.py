@@ -32,7 +32,7 @@ from lode.models import (
     Concept, Property, Relation, Attribute, Annotation,
     Individual, Model, Statement, Literal, Datatype,
     TruthFunction, Quantifier, Cardinality, OneOf, Value,
-    Restriction, Resource,
+    Restriction, Resource, DatatypeRestriction
 )
 from lode.reader.config_manager import OwlConfigManager
 from lode.reader.logic.owl_logic import OwlLogic
@@ -696,6 +696,27 @@ class TestPhase3:
         inst = _instance_for_uri(logic, EX.myClass, Concept)
         triples = logic._triples_map.get(inst, set())
         assert not any(p == EX.customPred for _, p, _ in triples)
+
+    def test_datatype_restriction_value_has_datatype(self):
+        """§7.5 — The restriction value Literal must preserve its datatype
+        when the facet value has one (e.g. xsd:double)."""
+        bnode = BNode()
+        facet_node = BNode()
+        g = Graph()
+        head = _make_rdf_list(g, [facet_node])
+        g.add((bnode, RDF.type, RDFS.Datatype))
+        g.add((bnode, OWL.onDatatype, XSD.double))
+        g.add((bnode, OWL.withRestrictions, head))
+        g.add((facet_node, XSD.minInclusive, RDFLiteral("0.0", datatype=XSD.double)))
+        cache = {}
+        logic = OwlLogic(g, cache, OwlConfigManager())
+        _run_all(logic)
+        inst = _instance_for_uri(logic, bnode, DatatypeRestriction)
+        val = inst.get_has_restriction_value()
+        assert isinstance(val, Literal)
+        dt = val.get_has_type()
+        assert dt is not None
+        assert dt.get_has_identifier() == str(XSD.double)
 
 
 # ===========================================================================

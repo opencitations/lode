@@ -690,64 +690,117 @@ def test_on_property_inverse_bnode_resolved(owl_logic):
 # §7.5 Datatype Restrictions
 # "DatatypeRestriction(DT F1 lt1 ... Fn ltn) — restricts the value space of DT
 #  by n constraining facet-value pairs."
-# In LODE (owl.yaml):
-#   - owl:withRestrictions → Datatype in cache (the restricted datatype)
-#   - BNode with XSD facet predicate → DatatypeRestriction in cache
-# Extraction rule: every BNode that is subject of an XSD facet predicate must produce
-# a DatatypeRestriction in cache with has_constraint (Annotation) and
-# has_restriction_value (str) populated.
-# Covered by test_datatype_restriction_has_constraint_and_value (integrity)
-# and test_datatype_restriction_graph_correspondence (graph correspondence) and test_datatype_restriction_xsd_facet_in_cache (xsd:facets).
+# Design: only the parent BNode (with owl:onDatatype + owl:withRestrictions) is a
+# DatatypeRestriction. Facet BNodes inside the owl:withRestrictions list are NOT
+# in cache -- the handler reads them directly from the graph.
 #############################################################################################
- 
+
 def test_datatype_restriction_graph_correspondence(owl_logic):
-    """§7.5 OWL 2 Structural Specification — Datatype Restrictions.
-    Spec: 'DatatypeRestriction(DT F1 lt1...Fn ltn) restricts the value space of DT
-    by n constraining facet-value pairs.'
-    Extraction rule: every BNode with owl:onDatatype in the graph must produce a
+    """§7.5 — Every BNode with owl:withRestrictions in graph must produce a
     DatatypeRestriction in cache."""
     from rdflib.namespace import OWL
     from rdflib import BNode
     from lode.models import DatatypeRestriction
- 
-    for subj in owl_logic.graph.subjects(OWL.onDatatype, None):
+
+    for subj in owl_logic.graph.subjects(OWL.withRestrictions, None):
         if not isinstance(subj, BNode):
             continue
         instances = owl_logic._instance_cache.get(subj, set())
         assert any(isinstance(i, DatatypeRestriction) for i in instances), (
-            f"§7.5: BNode {subj} has owl:onDatatype in graph "
+            f"§7.5: BNode {subj} has owl:withRestrictions in graph "
             f"but no DatatypeRestriction in cache: "
             f"{[type(i).__name__ for i in instances]}"
         )
 
-def test_datatype_restriction_xsd_facet_in_cache(owl_logic):
-    """§7.5 OWL 2 Structural Specification — Datatype Restrictions.
-    Spec: 'DatatypeRestriction consists of a unary datatype DT and n constraining
-    facet-value pairs.'
-    Extraction rule: every BNode that is subject of an XSD facet predicate must produce
-    a DatatypeRestriction in cache."""
-    from rdflib.namespace import XSD
+def test_datatype_restriction_has_applies_on_concept(owl_logic):
+    """§7.5 — Every DatatypeRestriction must have applies_on_concept set
+    (the base datatype from owl:onDatatype)."""
+    from lode.models import DatatypeRestriction
+
+    for instances in owl_logic._instance_cache.values():
+        for inst in instances:
+            if not isinstance(inst, DatatypeRestriction):
+                continue
+            aoc = inst.get_applies_on_concept()
+            assert aoc, (
+                f"§7.5: DatatypeRestriction {inst.get_has_identifier()} "
+                f"has no applies_on_concept"
+            )
+
+def test_datatype_restriction_has_constraint_and_value(owl_logic):
+    """§7.5 — Every DatatypeRestriction must have has_constraint and
+    has_restriction_value populated from the XSD facet."""
+    from lode.models import DatatypeRestriction
+
+    for instances in owl_logic._instance_cache.values():
+        for inst in instances:
+            if not isinstance(inst, DatatypeRestriction):
+                continue
+            assert inst.get_has_constraint() is not None, (
+                f"§7.5: DatatypeRestriction {inst.get_has_identifier()} "
+                f"has no has_constraint"
+            )
+            assert inst.get_has_restriction_value() is not None, (
+                f"§7.5: DatatypeRestriction {inst.get_has_identifier()} "
+                f"has no has_restriction_value"
+            )
+
+def test_datatype_restriction_value_is_literal(owl_logic):
+    """§7.5 — has_restriction_value must be a Literal instance."""
+    from lode.models import DatatypeRestriction, Literal
+
+    for instances in owl_logic._instance_cache.values():
+        for inst in instances:
+            if not isinstance(inst, DatatypeRestriction):
+                continue
+            val = inst.get_has_restriction_value()
+            if val is None:
+                continue
+            assert isinstance(val, Literal), (
+                f"§7.5: DatatypeRestriction {inst.get_has_identifier()} "
+                f"has_restriction_value is not Literal: {type(val).__name__}"
+            )
+
+def test_datatype_restriction_facet_nodes_not_in_cache(owl_logic):
+    """§7.5 — XSD facet BNodes inside owl:withRestrictions lists must NOT
+    appear in cache as DatatypeRestriction."""
+    from rdflib.namespace import OWL
+    from rdflib import BNode
+    from rdflib.collection import Collection as RDFLibCollection
+    from lode.models import DatatypeRestriction
+
+    for parent in owl_logic.graph.subjects(OWL.withRestrictions, None):
+        wr = owl_logic.graph.value(parent, OWL.withRestrictions)
+        if not wr:
+            continue
+        try:
+            for item in RDFLibCollection(owl_logic.graph, wr):
+                if not isinstance(item, BNode):
+                    continue
+                instances = owl_logic._instance_cache.get(item, set())
+                assert not any(isinstance(i, DatatypeRestriction) for i in instances), (
+                    f"§7.5: Facet BNode {item} should NOT be in cache "
+                    f"as DatatypeRestriction"
+                )
+        except:
+            pass
+
+def test_datatype_restriction_only_one_per_parent(owl_logic):
+    """§7.5 — Each owl:withRestrictions BNode must produce exactly one
+    DatatypeRestriction, not duplicates."""
+    from rdflib.namespace import OWL
     from rdflib import BNode
     from lode.models import DatatypeRestriction
- 
-    XSD_FACETS = {
-        XSD.minExclusive, XSD.maxExclusive, XSD.minInclusive, XSD.maxInclusive,
-        XSD.pattern, XSD.length, XSD.minLength, XSD.maxLength,
-        XSD.totalDigits, XSD.fractionDigits, XSD.enumeration, XSD.whiteSpace,
-    }
- 
-    seen = set()
-    for facet in XSD_FACETS:
-        for subj in owl_logic.graph.subjects(facet, None):
-            if not isinstance(subj, BNode) or subj in seen:
-                continue
-            seen.add(subj)
-            instances = owl_logic._instance_cache.get(subj, set())
-            assert any(isinstance(i, DatatypeRestriction) for i in instances), (
-                f"§7.5: BNode {subj} has XSD facet predicate in graph "
-                f"but no DatatypeRestriction in cache: "
-                f"{[type(i).__name__ for i in instances]}"
-            )
+
+    for subj in owl_logic.graph.subjects(OWL.withRestrictions, None):
+        if not isinstance(subj, BNode):
+            continue
+        instances = owl_logic._instance_cache.get(subj, set())
+        dr_count = sum(1 for i in instances if isinstance(i, DatatypeRestriction))
+        assert dr_count == 1, (
+            f"§7.5: BNode {subj} has {dr_count} DatatypeRestriction instances "
+            f"in cache (expected 1)"
+        )
 
 #############################################################################################
 # §8 Class Expressions
@@ -1730,114 +1783,6 @@ def test_no_iri_is_both_attribute_and_annotation(owl_logic):
         assert not (has_attribute and has_annotation), (
             f"§5.8.1: {uri} is both Attribute and Annotation in cache"
         )
-
-
-#############################################################################################
-# §7 Data Ranges
-# §7.1 Intersection / §7.2 Union / §7.3 Complement / §7.4 Enumeration / §7.5 Restriction
-#
-# §7:   "Data ranges can be used in restrictions on data properties."
-#        DataRange := Datatype | DataIntersectionOf | DataUnionOf | DataComplementOf |
-#        DataOneOf | DatatypeRestriction.
-#        Out of scope: DataIntersectionOf, DataUnionOf, DataComplementOf, DataOneOf are
-#        data range constructs with no direct RDF triple representation as named entities —
-#        they appear as BNode structures within data property restrictions.
-#        LODE does not currently model these as distinct instances.
-#
-# §7.1: "DataIntersectionOf(DR1...DRn) — all DRi MUST be of the same arity (>= 2)."
-#        owl:intersectionOf in RDF is shared between object and data contexts.
-#        Extraction rule: BNode with owl:intersectionOf produces TruthFunction(operator=and)
-#        with applies_on_concept populated. Datatype is subclass of Concept — passes.
-#        Covered by test_truth_function_and_or_has_multiple_concepts.
-#
-# §7.2: "DataUnionOf(DR1...DRn) — all DRi MUST be of the same arity (>= 2)."
-#        owl:unionOf in RDF is shared between object and data contexts.
-#        Extraction rule: BNode with owl:unionOf produces TruthFunction(operator=or).
-#        Covered by test_truth_function_and_or_has_multiple_concepts.
-#
-# §7.3: "DataComplementOf(DR) — complement of a data range."
-#        owl:complementOf in RDF is shared between object and data contexts.
-#        Extraction rule: BNode with owl:complementOf produces TruthFunction(operator=not).
-#        Covered by test_truth_function_not_has_exactly_one_concept.
-#
-# §7.4: "DataOneOf(lt1...ltn) — exactly the specified literals."
-#        owl:oneOf in RDF is shared between object and data contexts.
-#        Extraction rule: BNode with owl:oneOf produces OneOf with applies_on_resource.
-#        Covered by test_one_of_has_resources and test_one_of_graph_correspondence.
-#
-# §7.5: "DatatypeRestriction(DT F1 lt1 ... Fn ltn) — restricts the value space of DT
-#        by n constraining facet-value pairs. Each pair (Fi, vi) MUST be contained in
-#        the facet space of DT."
-#        Extraction rule 1: every BNode with owl:onDatatype in the graph must produce a
-#        DatatypeRestriction in cache. Covered by test_datatype_restriction_graph_correspondence.
-#        Extraction rule 2: every DatatypeRestriction must have has_constraint (Annotation)
-#        and has_restriction_value (str) populated.
-#        Covered by test_datatype_restriction_has_constraint_and_value.
-#############################################################################################
-
-def test_datatype_restriction_graph_correspondence(owl_logic):
-    """§7.5 OWL 2 Structural Specification — Datatype Restrictions.
-    Spec: 'DatatypeRestriction(DT F1 lt1...Fn ltn) restricts the value space of DT
-    by n constraining facet-value pairs.'
-    Extraction rule: every BNode with owl:onDatatype in the graph must produce a
-    DatatypeRestriction in cache."""
-    from rdflib.namespace import OWL
-    from rdflib import BNode
-    from lode.models import DatatypeRestriction
-
-    for subj in owl_logic.graph.subjects(OWL.onDatatype, None):
-        if not isinstance(subj, BNode):
-            continue
-        instances = owl_logic._instance_cache.get(subj, set())
-        assert any(isinstance(i, DatatypeRestriction) for i in instances), (
-            f"§7.5: BNode {subj} has owl:onDatatype in graph "
-            f"but no DatatypeRestriction in cache: "
-            f"{[type(i).__name__ for i in instances]}"
-        )
-
-
-#############################################################################################
-# §7.5 Datatype Restrictions — CORRECTED
-# "DatatypeRestriction(DT F1 lt1 ... Fn ltn) — restricts the value space of DT
-#  by n constraining facet-value pairs."
-# In LODE (owl.yaml):
-#   - owl:withRestrictions → Datatype in cache (the restricted datatype)
-#   - BNode with XSD facet predicate → DatatypeRestriction in cache
-# Extraction rule: every BNode that is subject of an XSD facet predicate must produce
-# a DatatypeRestriction in cache with has_constraint (Annotation) and
-# has_restriction_value (str) populated.
-# Covered by test_datatype_restriction_has_constraint_and_value (integrity)
-# and test_datatype_restriction_graph_correspondence (graph correspondence).
-#############################################################################################
-
-def test_datatype_restriction_graph_correspondence(owl_logic):
-    """§7.5 OWL 2 Structural Specification — Datatype Restrictions.
-    Spec: 'DatatypeRestriction consists of a unary datatype DT and n constraining
-    facet-value pairs.'
-    Extraction rule: every BNode that is subject of an XSD facet predicate must produce
-    a DatatypeRestriction in cache."""
-    from rdflib.namespace import XSD
-    from rdflib import BNode
-    from lode.models import DatatypeRestriction
-
-    XSD_FACETS = {
-        XSD.minExclusive, XSD.maxExclusive, XSD.minInclusive, XSD.maxInclusive,
-        XSD.pattern, XSD.length, XSD.minLength, XSD.maxLength,
-        XSD.totalDigits, XSD.fractionDigits, XSD.enumeration, XSD.whiteSpace,
-    }
-
-    seen = set()
-    for facet in XSD_FACETS:
-        for subj in owl_logic.graph.subjects(facet, None):
-            if not isinstance(subj, BNode) or subj in seen:
-                continue
-            seen.add(subj)
-            instances = owl_logic._instance_cache.get(subj, set())
-            assert any(isinstance(i, DatatypeRestriction) for i in instances), (
-                f"§7.5: BNode {subj} has XSD facet predicate in graph "
-                f"but no DatatypeRestriction in cache: "
-                f"{[type(i).__name__ for i in instances]}"
-            )
 
 
 #############################################################################################
