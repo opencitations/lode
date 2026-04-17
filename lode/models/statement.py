@@ -5,10 +5,10 @@ class Statement(Resource):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.is_positive_statement = None #[1]
-        self.has_subject = None #[1]
-        self.has_object = None #[1]
-        self.has_predicate = None #[1]
+        self.is_positive_statement = True # bool [1]
+        self.has_subject = None # Resource [1]
+        self.has_object = None # Resource [1]
+        self.has_predicate = None # Property [1]
         
     # Attributes
     def get_is_positive_statement(self):

@@ -180,12 +180,11 @@ class Resource():
         return list(set(self.has_version_info))
 
     def set_has_type(self, concept):
-        """Aggiunge un concept a has_type"""
-        self.has_type.append(concept)
-    
+        if concept not in self.has_type:
+            self.has_type.append(concept)
+
     def get_has_type(self):
-        """Restituisce una copia della lista has_type"""
-        return list(set(self.has_type))
+        return list(self.has_type)
 
     def set_is_included_in(self, model):
         """Aggiunge un model a is_included_in"""
