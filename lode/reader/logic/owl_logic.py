@@ -495,7 +495,7 @@ class OwlLogic(BaseLogic):
         BNode-to-class mappings.
         """
 
-        list_preds = [OWL.intersectionOf, OWL.unionOf, OWL.oneOf, OWL.withRestrictions, OWL.onDataRange]
+        list_preds = [OWL.intersectionOf, OWL.unionOf, OWL.oneOf, OWL.onDataRange]
 
         for bnode in list(classified.keys()):
             for pred, obj in self.graph.predicate_objects(bnode):
@@ -638,17 +638,46 @@ class OwlLogic(BaseLogic):
             print(f"Errore disjointUnion: {e}")
 
     def handle_datatype_restriction(self, instance, uri, predicate, obj, setter=None):
-        # Ensure the base datatype (owl:onDatatype object) is in cache
         on_datatype = self.graph.value(uri, OWL.onDatatype)
         if on_datatype:
-            self.get_or_create(on_datatype, Datatype)
+            dt = self.get_or_create(on_datatype, Datatype)
+            if dt:
+                instance.set_applies_on_concept(dt)
+        try:
+            collection = RDFLibCollection(self.graph, obj)
+            for facet_node in collection:
+                for facet_pred, facet_val in self.graph.predicate_objects(facet_node):
+                    if facet_pred == RDF.type:
+                        continue
+                    if isinstance(facet_val, RDFlibLiteral):
+                        FACET_MAP = {
+                            str(XSD.minInclusive): ">=",
+                            str(XSD.maxInclusive): "<=",
+                            str(XSD.minExclusive): ">",
+                            str(XSD.maxExclusive): "<",
+                            str(XSD.pattern): "pattern",
+                            str(XSD.length): "length",
+                            str(XSD.minLength): "minLength",
+                            str(XSD.maxLength): "maxLength",
+                        }
+                        manchester_facet = FACET_MAP.get(str(facet_pred), str(facet_pred))
+                        instance.set_has_constraint(manchester_facet)
+                        literal = self._create_literal(facet_val)
+                        instance.set_has_restriction_value(literal)
 
-    def handle_facet(self, instance, uri, predicate, obj, setter=None):
-        annotation = Annotation()
-        annotation.set_has_identifier(str(predicate))
-        instance.set_has_constraint(annotation)
-        if isinstance(obj, RDFlibLiteral):
-            instance.set_has_restriction_value(str(obj))
+                # Register facet node in cache keyed to the parent DatatypeRestriction
+                # and mark all its triples as mapped, so phase6 does not create
+                # spurious Statements or Individuals for the facet BNode.
+                if facet_node not in self._instance_cache:
+                    self._instance_cache[facet_node] = set()
+                self._instance_cache[facet_node].add(instance)
+                if instance not in self._triples_map:
+                    self._triples_map[instance] = set()
+                for fp, fv in self.graph.predicate_objects(facet_node):
+                    self._triples_map[instance].add((facet_node, fp, fv))
+
+        except Exception as e:
+            print(f"Errore handle_datatype_restriction: {e}")
 
     def handle_cardinality_exactly(self, instance, uri, predicate, obj, setter=None):
         instance.set_has_cardinality_type("exactly")

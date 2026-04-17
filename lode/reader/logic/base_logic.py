@@ -1,8 +1,10 @@
 # base_logic.py
 from abc import ABC, abstractmethod
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
-from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
 from rdflib.collection import Collection as RDFLibCollection
+from rdflib import Namespace
+SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
 
 from lode.models import *
 
@@ -524,73 +526,88 @@ class BaseLogic(ABC):
     # ========== SWRL ==========
 
     def handle_swrl_imp(self, uri):
-        from rdflib import Namespace
-        SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
         rule = self.get_or_create(uri, Rule)
         if not rule:
             return
- 
-        def parse_atom_list(list_node):
-            atoms = []
-            try:
-                collection = RDFLibCollection(self.graph, list_node)
-                for atom_node in collection:
-                    atom = self._parse_swrl_atom(atom_node)
-                    if atom:
-                        atoms.append(atom)
-            except Exception as e:
-                print(f"Errore AtomList: {e}")
-            return atoms
- 
+
         body_node = self.graph.value(uri, SWRL_NS.body)
         if body_node:
-            for atom in parse_atom_list(body_node):
-                rule.set_has_body(atom)
- 
+            try:
+                for atom_node in RDFLibCollection(self.graph, body_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_antecedent(atom)
+            except Exception as e:
+                print(f"Errore body AtomList: {e}")
+
         head_node = self.graph.value(uri, SWRL_NS.head)
         if head_node:
-            for atom in parse_atom_list(head_node):
-                rule.set_has_head(atom)
- 
+            try:
+                for atom_node in RDFLibCollection(self.graph, head_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_consequent(atom)
+            except Exception as e:
+                print(f"Errore head AtomList: {e}")
+
     def _parse_swrl_atom(self, atom_node):
-        from rdflib import Namespace
-        SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
-        atom_type_uri = self.graph.value(atom_node, RDF.type)
-        if not atom_type_uri:
+        atom = self.get_or_create(atom_node, Atom)
+        if not atom:
             return None
 
-        atom_type_str = str(atom_type_uri).split('#')[-1]
-
-        atom = Atom()
-        atom.set_has_identifier(str(atom_node))
-
-        arg1 = self.graph.value(atom_node, SWRL_NS.argument1)
-        if arg1:
-            atom.set_has_argument1(self.get_or_create(arg1, Variable))
-
-        arg2 = self.graph.value(atom_node, SWRL_NS.argument2)
-        if arg2:
-            if isinstance(arg2, RDFlibLiteral):
-                atom.set_has_argument2(self._create_literal(arg2))
-            else:
-                atom.set_has_argument2(self.get_or_create(arg2, Variable))
-
+        # classPredicate (ClassAtom)
         class_pred = self.graph.value(atom_node, SWRL_NS.classPredicate)
         if class_pred:
             atom.set_has_predicate(self.get_or_create(class_pred, Concept))
 
+        # propertyPredicate (IndividualPropertyAtom, DatavaluedPropertyAtom)
         prop_pred = self.graph.value(atom_node, SWRL_NS.propertyPredicate)
         if prop_pred:
-            atom.set_has_predicate(self.get_or_create(prop_pred, Property))
+            atom_type_uri = self.graph.value(atom_node, RDF.type)
+            local = str(atom_type_uri).split('#')[-1] if atom_type_uri else ''
+            if local == 'DatavaluedPropertyAtom':
+                atom.set_has_predicate(self.get_or_create(prop_pred, Attribute))
+            else:
+                atom.set_has_predicate(self.get_or_create(prop_pred, Relation))
 
+        # builtin (BuiltinAtom)
         builtin = self.graph.value(atom_node, SWRL_NS.builtin)
         if builtin:
             atom.set_has_predicate(self.get_or_create(builtin, Resource))
 
-        if atom_type_str == 'SameIndividualAtom':
-            atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
-        elif atom_type_str == 'DifferentIndividualsAtom':
-            atom.set_has_predicate(self.get_or_create(OWL.differentFrom, Relation))
+        # SameIndividualsAtom / DifferentIndividualsAtom — no predicate in RDF
+        atom_type_uri = self.graph.value(atom_node, RDF.type)
+        if atom_type_uri:
+            local = str(atom_type_uri).split('#')[-1]
+            if local == 'SameIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
+            elif local == 'DifferentIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.differentFrom, Relation))
+
+        # argument1 / argument2 (most atom types)
+        arg1 = self.graph.value(atom_node, SWRL_NS.argument1)
+        if arg1:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg1))
+
+        arg2 = self.graph.value(atom_node, SWRL_NS.argument2)
+        if arg2:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg2))
+
+        # arguments (BuiltinAtom — lista RDF)
+        args_node = self.graph.value(atom_node, SWRL_NS.arguments)
+        if args_node:
+            try:
+                for arg in RDFLibCollection(self.graph, args_node):
+                    atom.set_has_arguments(self._resolve_swrl_arg(arg))
+            except Exception as e:
+                print(f"Errore builtin arguments: {e}")
 
         return atom
+
+    def _resolve_swrl_arg(self, node):
+        if isinstance(node, RDFlibLiteral):
+            return self._create_literal(node)
+        if (node, RDF.type, SWRL_NS.Variable) in self.graph:
+            return self.get_or_create(node, Variable)
+        return self.get_or_create(node, Individual)
     

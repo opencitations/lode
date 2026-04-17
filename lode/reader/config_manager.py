@@ -192,20 +192,23 @@ class ConfigManager(ABC):
         }
     
     def classify_by_predicate(self, uri: Node, graph: Graph) -> type | None:
-        """Classifica guardando predicati.
-        - inferred_class: tipo del soggetto (BNode restrictions, quantifiers, etc.) -> priorità massima
-        - target_classes con 1 elemento e nessun inferred_class: tipo implicito del soggetto URIRef
-        - target_classes con 2+ elementi: ambiguo, gestito dall'handler -> None
-        """
-        fallback = None
-        for predicate, cfg in self.get_property_mapping().items():
-            if (uri, predicate, None) in graph:
-                if 'inferred_class' in cfg:
-                    return cfg['inferred_class']
-                # Note that if len(cfg.get('target_classes', [])) > 1 it is handled in phase3 by its handler
-                elif fallback is None and len(cfg.get('target_classes', [])) == 1:
-                    fallback = cfg['target_classes'][0]
-        return fallback
+            """Classifica guardando predicati.
+            - inferred_class: tipo del soggetto (BNode restrictions, quantifiers, etc.) -> priorita' massima
+            - target_classes con 1 elemento, nessun inferred_class, classify != false: 
+            tipo implicito del soggetto (fallback)
+            - target_classes con 2+ elementi: ambiguo, gestito dall'handler -> None
+            - classify: false nel config: il predicato non classifica il soggetto,
+            serve solo per i setters in phase3 (es. facet XSD)
+            """
+            fallback = None
+            for predicate, cfg in self.get_property_mapping().items():
+                if (uri, predicate, None) in graph:
+                    if 'inferred_class' in cfg:
+                        return cfg['inferred_class']
+                    elif fallback is None and len(cfg.get('target_classes', [])) == 1:
+                        if cfg.get('classify', True):
+                            fallback = cfg['target_classes'][0]
+            return fallback
 
 
 # config_manager.py - aggiungi nei concrete managers
