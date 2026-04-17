@@ -13,6 +13,9 @@ allowed_classes:
   - Literal
   - Resource
   - Concept
+  - Variable
+  - Atom
+  - Rule
 
 mapper: 
 
