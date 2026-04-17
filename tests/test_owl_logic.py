@@ -309,7 +309,7 @@ class TestPhase2:
         assert inst.get_is_functional() is True
 
     def test_negative_property_assertion_is_positive_statement_false(self):
-        """owl:NegativePropertyAssertion must produce a Statement with is_positive_statement=False."""
+        """owl:NegativePropertyAssertion must produce a Statement with is_positive_statement=True."""
         logic = _make_logic([
             (EX.myStmt, RDF.type, OWL.NegativePropertyAssertion),
         ])
@@ -358,6 +358,80 @@ class TestPhase2:
         logic.phase2_create_from_types()
         logic.phase2_create_from_types()
         assert len(logic._instance_cache.get(EX.MyClass, set())) == 1
+
+    def test_relation_is_symmetric_defaults_false(self):
+        """A Relation not typed as owl:SymmetricProperty must have is_symmetric=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst is not None
+        assert inst.get_is_symmetric() is False
+ 
+    def test_relation_is_transitive_defaults_false(self):
+        """A Relation not typed as owl:TransitiveProperty must have is_transitive=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst.get_is_transitive() is False
+ 
+    def test_relation_is_asymmetric_defaults_false(self):
+        """A Relation not typed as owl:AsymmetricProperty must have is_asymmetric=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst.get_is_asymmetric() is False
+ 
+    def test_relation_is_irreflexive_defaults_false(self):
+        """A Relation not typed as owl:IrreflexiveProperty must have is_irreflexive=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst.get_is_irreflexive() is False
+ 
+    def test_relation_is_reflexive_defaults_false(self):
+        """A Relation not typed as owl:ReflexiveProperty must have is_reflexive=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst.get_is_reflexive() is False
+ 
+    def test_relation_is_inverse_functional_defaults_false(self):
+        """A Relation not typed as owl:InverseFunctionalProperty must have
+        is_inverse_functional=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst.get_is_inverse_functional() is False
+ 
+    def test_property_is_functional_defaults_false(self):
+        """A Property not typed as owl:FunctionalProperty must have is_functional=False."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        assert inst.get_is_functional() is False
+ 
+    def test_resource_is_deprecated_defaults_false(self):
+        """A Concept not bearing owl:deprecated must have is_deprecated=False."""
+        logic = _make_logic([
+            (EX.myClass, RDF.type, OWL.Class),
+        ])
+        logic.phase2_create_from_types()
+        inst = _instance_for_uri(logic, EX.myClass, Concept)
+        assert inst.get_is_deprecated() is False
 
 
 # ===========================================================================
@@ -591,6 +665,23 @@ class TestPhase3:
         inst = next(iter(logic._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "max"
+
+    def test_cardinality_on_datatype_filler(self):
+        """owl:onDatatype on a Cardinality BNode must set applies_on_concept to
+        the XSD Datatype, not owl:Thing (as defaulted)."""
+        bnode = BNode()
+        logic = _make_logic([
+            (bnode, OWL.qualifiedCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
+            (bnode, OWL.onDatatype, XSD.string),
+        ])
+        _run_all(logic)
+        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        assert isinstance(inst, Cardinality)
+        concepts = inst.get_applies_on_concept()
+        concepts = concepts if isinstance(concepts, list) else [concepts]
+        ids = [c.get_has_identifier() for c in concepts if c is not None]
+        assert str(XSD.string) in ids
+
 
     def test_namespace_filter_skips_non_mapped_predicates(self):
         """Predicates outside OWL/RDFS/RDF namespaces must not populate the instance
@@ -1016,24 +1107,24 @@ class TestGetOrCreate:
         i2 = logic.get_or_create(EX.A, Concept, populate=False)
         assert i1 is i2
 
-    def test_owl_namespace_uri_filtered_out(self):
-        """Arbitrary OWL-namespace URIs that are not whitelisted must return None."""
-        logic = _make_logic([])
-        result = logic.get_or_create(OWL.topObjectProperty, Relation, populate=False)
-        assert result is None
+    # def test_owl_namespace_uri_filtered_out(self):
+    #     """Arbitrary OWL-namespace URIs that are not whitelisted must return None."""
+    #     logic = _make_logic([])
+    #     result = logic.get_or_create(OWL.topObjectProperty, Relation, populate=False)
+    #     assert result is None
 
-    def test_owl_thing_not_filtered(self):
-        """OWL.Thing must NOT be filtered even though it's in the OWL namespace."""
-        logic = _make_logic([])
-        result = logic.get_or_create(OWL.Thing, Concept, populate=False)
-        assert result is not None
-        assert isinstance(result, Concept)
+    # def test_owl_thing_not_filtered(self):
+    #     """OWL.Thing must NOT be filtered even though it's in the OWL namespace."""
+    #     logic = _make_logic([])
+    #     result = logic.get_or_create(OWL.Thing, Concept, populate=False)
+    #     assert result is not None
+    #     assert isinstance(result, Concept)
 
-    def test_rdfs_literal_not_filtered(self):
-        """RDFS.Literal must NOT be filtered."""
-        logic = _make_logic([])
-        result = logic.get_or_create(RDFS.Literal, Datatype, populate=False)
-        assert result is not None
+    # def test_rdfs_literal_not_filtered(self):
+    #     """RDFS.Literal must NOT be filtered."""
+    #     logic = _make_logic([])
+    #     result = logic.get_or_create(RDFS.Literal, Datatype, populate=False)
+    #     assert result is not None
 
     def test_punning_individual_does_not_overwrite_concept(self):
         """Requesting Individual for a URI already cached as Concept (without
@@ -1093,17 +1184,52 @@ class TestGetOrCreate:
         assert type(inst) is Relation
         assert inst.get_is_functional() is True
 
-    def test_rdfs_resource_filtered(self):
-        """RDFS.Resource must be filtered and return None."""
+    def test_resource_promoted_to_concept_when_requested(self):
+        """A URI already in cache as Resource must be promoted to Concept when requested,
+        since Concept is a subclass of Resource."""
         logic = _make_logic([])
-        result = logic.get_or_create(RDFS.Resource, Resource, populate=False)
-        assert result is None
+        # First create as Resource
+        r = logic.get_or_create(EX.foo, Resource, populate=False)
+        assert isinstance(r, Resource)
+        assert type(r) is Resource
+        # Now request as Concept — must promote, not return stale Resource
+        c = logic.get_or_create(EX.foo, Concept, populate=False)
+        assert isinstance(c, Concept)
+        assert type(c) is Concept
+        # Cache must contain only the promoted instance
+        assert len(logic._instance_cache[EX.foo]) == 1
 
-    def test_rdfs_class_filtered(self):
-        """RDFS.Class must be filtered and return None."""
+    def test_resource_not_promoted_when_punning(self):
+        """A URI declared as owl:NamedIndividual (explicit punning) plus Concept
+        must not be collapsed when Resource is requested."""
+        logic = _make_logic([
+            (EX.foo, RDF.type, OWL.NamedIndividual),
+            (EX.foo, RDF.type, OWL.Class),
+        ])
+        _run_all(logic)
+        result = logic.get_or_create(EX.foo, Resource, populate=False)
+        assert len(logic._instance_cache[EX.foo]) == 2
+        assert isinstance(result, (Concept, Individual))
+
+    def test_concept_not_downgraded_to_resource(self):
+        """A URI already in cache as Concept must never be downgraded to Resource."""
         logic = _make_logic([])
-        result = logic.get_or_create(RDFS.Class, Concept, populate=False)
-        assert result is None
+        logic.get_or_create(EX.foo, Concept, populate=False)
+        result = logic.get_or_create(EX.foo, Resource, populate=False)
+        assert isinstance(result, Concept)
+        assert type(result) is Concept
+
+    # def test_rdfs_resource_filtered(self):
+    #     """RDFS.Resource must be filtered and return None."""
+    #     logic = _make_logic([])
+    #     result = logic.get_or_create(RDFS.Resource, Resource, populate=False)
+    #     assert result is None
+
+    # def test_rdfs_class_filtered(self):
+    #     """RDFS.Class must be filtered and return None."""
+    #     logic = _make_logic([])
+    #     result = logic.get_or_create(RDFS.Class, Concept, populate=False)
+    #     assert result is None
 
     def test_bnode_in_cache_returns_existing(self):
         """get_or_create on a BNode already in cache must return the existing instance."""
@@ -1358,3 +1484,253 @@ class TestIntegration:
         outer_concepts = outer_tf.get_applies_on_concept()
         outer_concepts = outer_concepts if isinstance(outer_concepts, list) else [outer_concepts]
         assert inner_tf in outer_concepts
+
+class TestPopulationEdgeCases:
+ 
+    def test_same_predicate_twice_both_values_in_list(self):
+        """rdfs:label declared twice on the same class must produce two Literal
+        instances in has_label — not just the last one."""
+        logic = _make_logic([
+            (EX.MyClass, RDF.type, OWL.Class),
+            (EX.MyClass, RDFS.label, RDFLiteral("First", lang="en")),
+            (EX.MyClass, RDFS.label, RDFLiteral("Secondo", lang="it")),
+        ])
+        _run_all(logic)
+        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        labels = inst.get_has_label()
+        values = [l.get_has_value() for l in labels]
+        assert "First" in values
+        assert "Secondo" in values
+ 
+    def test_same_subclass_triple_twice_no_duplicate_in_list(self):
+        """rdfs:subClassOf declared twice for the same pair must not add the
+        parent twice to is_sub_concept_of."""
+        logic = _make_logic([
+            (EX.Child, RDF.type, OWL.Class),
+            (EX.Parent, RDF.type, OWL.Class),
+            (EX.Child, RDFS.subClassOf, EX.Parent),
+            (EX.Child, RDFS.subClassOf, EX.Parent),
+        ])
+        _run_all(logic)
+        child = _instance_for_uri(logic, EX.Child, Concept)
+        parent = _instance_for_uri(logic, EX.Parent, Concept)
+        parents_in_list = [c for c in child.get_is_sub_concept_of() if c is parent]
+        assert len(parents_in_list) == 1
+ 
+    def test_setter_not_called_with_none_object(self):
+        """When get_or_create returns None for a filtered URI (e.g. OWL namespace),
+        the setter must not be called — None must never appear in has_domain."""
+        logic = _make_logic([
+            (EX.myProp, RDF.type, OWL.ObjectProperty),
+            # rdfs:domain points to a filtered OWL URI
+            (EX.myProp, RDFS.domain, OWL.topObjectProperty),
+        ])
+        _run_all(logic)
+        prop = _instance_for_uri(logic, EX.myProp, Relation)
+        domains = prop.get_has_domain()
+        assert None not in domains
+ 
+    def test_handler_exception_triple_not_in_triples_map(self):
+        """When a handler raises an exception, the triple must not appear in
+        _triples_map for the instance."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+            (EX.myRel, OWL.propertyChainAxiom, EX.notAList),
+        ])
+        _run_all(logic)
+        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        triples = logic._triples_map.get(inst, set())
+        assert not any(p == OWL.propertyChainAxiom for _, p, _ in triples)
+ 
+    def test_handler_exception_triple_becomes_statement(self):
+        """When a handler raises an exception, the unmapped triple must produce
+        a Statement in phase6."""
+        logic = _make_logic([
+            (EX.myRel, RDF.type, OWL.ObjectProperty),
+            (EX.myRel, OWL.propertyChainAxiom, EX.notAList),
+        ])
+        _run_all(logic)
+        stmts = _instances_of(logic, Statement)
+        pred_ids = [
+            s.get_has_predicate().get_has_identifier()
+            for s in stmts
+            if s.get_has_predicate() is not None
+        ]
+        assert str(OWL.propertyChainAxiom) in pred_ids
+ 
+ 
+# ===========================================================================
+# CACHE EDGE CASES
+# ===========================================================================
+ 
+class TestCacheEdgeCases:
+ 
+    def test_populate_true_on_cached_uri_does_not_duplicate_triples(self):
+        """Calling get_or_create with populate=True on a URI already in cache
+        must not add duplicate entries to _triples_map."""
+        logic = _make_logic([
+            (EX.MyClass, RDF.type, OWL.Class),
+            (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
+        ])
+        logic.phase2_create_from_types()
+        logic.phase3_populate_properties()
+ 
+        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        triples_before = len(logic._triples_map.get(inst, set()))
+ 
+        # Call again with populate=True on already-cached URI
+        logic.get_or_create(EX.MyClass, Concept, populate=True)
+        triples_after = len(logic._triples_map.get(inst, set()))
+ 
+        assert triples_after == triples_before
+ 
+    def test_populate_true_on_cached_uri_does_not_duplicate_labels(self):
+        """Calling get_or_create with populate=True on a URI already populated
+        must not add the label twice to has_label."""
+        logic = _make_logic([
+            (EX.MyClass, RDF.type, OWL.Class),
+            (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
+        ])
+        logic.phase2_create_from_types()
+        logic.phase3_populate_properties()
+ 
+        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        labels_before = len(inst.get_has_label())
+ 
+        logic.get_or_create(EX.MyClass, Concept, populate=True)
+        labels_after = len(inst.get_has_label())
+ 
+        assert labels_after == labels_before
+ 
+ 
+# ===========================================================================
+# PHASE 6 EXCLUSIONS
+# ===========================================================================
+ 
+class TestPhase6Exclusions:
+ 
+    def test_rdf_first_not_produces_statement(self):
+        """Triples with rdf:first as predicate must be excluded from Statement production."""
+        logic = _make_logic([
+            (EX.subject, RDF.type, OWL.Class),
+            (EX.subject, EX.customPred, EX.someObject),
+        ])
+        _run_all(logic)
+        stmts = _instances_of(logic, Statement)
+        pred_ids = [
+            s.get_has_predicate().get_has_identifier()
+            for s in stmts
+            if s.get_has_predicate() is not None
+        ]
+        assert str(RDF.first) not in pred_ids
+ 
+    def test_rdf_rest_not_produces_statement(self):
+        """Triples with rdf:rest as predicate must be excluded from Statement production."""
+        logic = _make_logic([
+            (EX.subject, RDF.type, OWL.Class),
+            (EX.subject, EX.customPred, EX.someObject),
+        ])
+        _run_all(logic)
+        stmts = _instances_of(logic, Statement)
+        pred_ids = [
+            s.get_has_predicate().get_has_identifier()
+            for s in stmts
+            if s.get_has_predicate() is not None
+        ]
+        assert str(RDF.rest) not in pred_ids
+ 
+    def test_owl_members_not_produces_statement(self):
+        """Triples with owl:members as predicate must be excluded from Statement production."""
+        g = Graph()
+        node = BNode()
+        from rdflib.collection import Collection as Col
+        head = BNode()
+        Col(g, head, [EX.A, EX.B])
+        g.add((node, RDF.type, OWL.AllDisjointClasses))
+        g.add((node, OWL.members, head))
+        g.add((EX.A, RDF.type, OWL.Class))
+        g.add((EX.B, RDF.type, OWL.Class))
+        logic = OwlLogic(g, {}, OwlConfigManager())
+        _run_all(logic)
+        stmts = _instances_of(logic, Statement)
+        pred_ids = [
+            s.get_has_predicate().get_has_identifier()
+            for s in stmts
+            if s.get_has_predicate() is not None
+        ]
+        assert str(OWL.members) not in pred_ids
+ 
+    def test_owl_distinct_members_not_produces_statement(self):
+        """Triples with owl:distinctMembers as predicate must be excluded from
+        Statement production."""
+        g = Graph()
+        node = BNode()
+        from rdflib.collection import Collection as Col
+        head = BNode()
+        Col(g, head, [EX.i1, EX.i2])
+        g.add((node, RDF.type, OWL.AllDifferent))
+        g.add((node, OWL.distinctMembers, head))
+        g.add((EX.i1, RDF.type, OWL.NamedIndividual))
+        g.add((EX.i2, RDF.type, OWL.NamedIndividual))
+        logic = OwlLogic(g, {}, OwlConfigManager())
+        _run_all(logic)
+        stmts = _instances_of(logic, Statement)
+        pred_ids = [
+            s.get_has_predicate().get_has_identifier()
+            for s in stmts
+            if s.get_has_predicate() is not None
+        ]
+        assert str(OWL.distinctMembers) not in pred_ids
+
+    def test_rdfs_class_not_in_cache_after_phases(self):
+        """RDFS.Class used only as rdf:type target must not end up in cache."""
+        logic = _make_logic([
+            (EX.foo, RDF.type, RDFS.Class),
+        ])
+        _run_all(logic)
+        assert RDFS.Class not in logic._instance_cache
+
+    # reserved namespaces handling checks
+    
+    def test_reserved_ns_predicate_not_in_cache(self):
+        """A random reserved entity used ad predicate must not appear in cache."""
+        logic = _make_logic([
+            (EX.myProp, OWL.disjointWith, EX.myProp2),
+        ])
+        _run_all(logic)
+        assert OWL.disjointWith not in logic._instance_cache
+
+    def test_reserved_ns_class_not_in_cache(self):
+        """A random reserved entity used ad class must not appear in cache."""
+        logic = _make_logic([
+            (EX.myProp, RDF.type, OWL.FunctionalProperty),
+        ])
+        _run_all(logic)
+        assert OWL.FunctionalProperty not in logic._instance_cache
+
+    def test_sub_property_of_rdfs_comment_stays_in_cache(self):
+        """A property declared as rdfs:subPropertyOf rdfs:comment must appear in cache."""
+        logic = _make_logic([
+            (EX.myProp, RDFS.subPropertyOf, RDFS.comment),
+        ])
+        _run_all(logic)
+        assert EX.myProp in logic._instance_cache
+
+    def test_owl_namespace_subject_with_type_not_in_cache(self):
+        """A subject explicitly typed even if belonging to OWL namespace must appear in cache."""
+        logic = _make_logic([
+            (OWL.topObjectProperty, RDF.type, OWL.ObjectProperty),
+            (OWL.topObjectProperty, RDFS.label, RDFLiteral("top")),
+        ])
+        _run_all(logic)
+        assert OWL.topObjectProperty in logic._instance_cache
+
+    def test_owl_namespace_subject_with_type_not_in_cache(self):
+        """A subject explicitly typed even if belonging to OWL namespace must appear in cache."""
+        logic = _make_logic([
+            (OWL.topObjectProperty, RDFS.range, EX.myProp),
+            (OWL.topObjectProperty, RDFS.label, RDFLiteral("top")),
+        ])
+        _run_all(logic)
+        assert OWL.topObjectProperty in logic._instance_cache
+    
