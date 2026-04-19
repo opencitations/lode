@@ -11,5 +11,5 @@ __all__ = [
     'BaseLogic',
     'OwlLogic',
     'RdfLogic',
-    'SkosLogic'
+    'SkosLogic',
 ]

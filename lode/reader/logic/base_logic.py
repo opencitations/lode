@@ -1,8 +1,10 @@
 # base_logic.py
 from abc import ABC, abstractmethod
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
-from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
 from rdflib.collection import Collection as RDFLibCollection
+from rdflib import Namespace
+SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
 
 from lode.models import *
 
@@ -77,12 +79,20 @@ class BaseLogic(ABC):
         pass
 
     def phase6_create_statements(self):
-        """Crea Statement per triple non mappate"""
         for subj, pred, obj in self.graph:
-            if pred not in [RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members]:
-                if self._is_triple_mapped(subj, pred, obj):
-                    continue
-                self._create_statement_for_triple(subj, pred, obj)
+            if pred in self._property_mapping:
+                continue
+            if pred in [RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members]:
+                continue
+            if isinstance(subj, URIRef):
+                subj_str = str(subj)
+                # structural entities from taken namespaces are not used for statements 
+                if any(subj_str.startswith(ns) for ns in self._allowed_namespaces):
+                    if not any(True for _ in self.graph.objects(subj, RDF.type)):
+                        continue
+            if self._is_triple_mapped(subj, pred, obj):
+                continue
+            self._create_statement_for_triple(subj, pred, obj)
 
     # ========== VALIDAZIONE CONFIG -> LOGIC ==========
 
@@ -280,6 +290,11 @@ class BaseLogic(ABC):
                     elif isinstance(value_type, str):
                         setter(value_type)
                     elif isinstance(value_type, type):
+                        # Don't add structural OWL/RDFS/RDF URIs to has_type
+                        if setter_name == 'set_has_type' and isinstance(obj, URIRef):
+                            obj_str = str(obj)
+                            if any(obj_str.startswith(ns) for ns in self._allowed_namespaces) and obj not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
+                                continue
                         obj_instance = self.get_or_create(obj, value_type)
                         if obj_instance:
                             setter(obj_instance)
@@ -322,17 +337,22 @@ class BaseLogic(ABC):
             if isinstance(id, RDFlibLiteral):
                 return self._create_literal(id)
 
-            if isinstance(id, URIRef) and str(id).startswith(str(XSD)):
+            if isinstance(id, URIRef) and (
+                str(id).startswith(str(XSD)) or
+                id in (RDFS.Literal, RDF.XMLLiteral, RDF.HTML,
+                    RDF.PlainLiteral, RDF.langString, RDF.JSON,
+                    OWL.real, OWL.rational)
+            ):
                 python_class = Datatype
 
             if python_class:
                 python_class = self._resolve_allowed_class(python_class, id)
 
-            if isinstance(id, URIRef):
-                uri_str = str(id)
-                for ns in self._allowed_namespaces:
-                    if uri_str.startswith(ns) and id not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
-                        return None
+            # if isinstance(id, URIRef):
+            #     uri_str = str(id)
+            #     for ns in self._allowed_namespaces:
+            #         if uri_str.startswith(ns) and id not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
+            #             return None
 
             # Individual punning: non sovrascrivere tipi esistenti non-Individual
             if python_class == Individual and id in self._instance_cache:
@@ -349,6 +369,19 @@ class BaseLogic(ABC):
                     for obj in self._instance_cache[id]:
                         if isinstance(obj, python_class):
                             return obj
+                    # Promote only if there is exactly one cached instance and
+                    # the requested class is strictly more specific than it
+                    # so punning is mantained
+                    cached = list(self._instance_cache[id])
+                    if len(cached) == 1 and issubclass(python_class, type(cached[0])):
+                        old = cached[0]
+                        new = python_class()
+                        new.__dict__.update(old.__dict__)
+                        self._instance_cache[id].discard(old)
+                        self._instance_cache[id].add(new)
+                        if old in self._triples_map:
+                            self._triples_map[new] = self._triples_map.pop(old)
+                        return new
 
             instance = python_class()
             if id not in self._instance_cache:
@@ -366,6 +399,7 @@ class BaseLogic(ABC):
             return None
 
     def populate_instance(self, instance, uri: Node):
+        
         if isinstance(uri, URIRef):
             instance.set_has_identifier(str(uri))
         elif isinstance(uri, BNode):
@@ -487,3 +521,93 @@ class BaseLogic(ABC):
         if stmt_bnode not in self._instance_cache:
             self._instance_cache[stmt_bnode] = set()
         self._instance_cache[stmt_bnode].add(statement)
+
+
+    # ========== SWRL ==========
+
+    def handle_swrl_imp(self, uri):
+        rule = self.get_or_create(uri, Rule)
+        if not rule:
+            return
+
+        body_node = self.graph.value(uri, SWRL_NS.body)
+        if body_node:
+            try:
+                for atom_node in RDFLibCollection(self.graph, body_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_antecedent(atom)
+            except Exception as e:
+                print(f"Errore body AtomList: {e}")
+
+        head_node = self.graph.value(uri, SWRL_NS.head)
+        if head_node:
+            try:
+                for atom_node in RDFLibCollection(self.graph, head_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_consequent(atom)
+            except Exception as e:
+                print(f"Errore head AtomList: {e}")
+
+    def _parse_swrl_atom(self, atom_node):
+        atom = self.get_or_create(atom_node, Atom)
+        if not atom:
+            return None
+
+        # classPredicate (ClassAtom)
+        class_pred = self.graph.value(atom_node, SWRL_NS.classPredicate)
+        if class_pred:
+            atom.set_has_predicate(self.get_or_create(class_pred, Concept))
+
+        # propertyPredicate (IndividualPropertyAtom, DatavaluedPropertyAtom)
+        prop_pred = self.graph.value(atom_node, SWRL_NS.propertyPredicate)
+        if prop_pred:
+            atom_type_uri = self.graph.value(atom_node, RDF.type)
+            local = str(atom_type_uri).split('#')[-1] if atom_type_uri else ''
+            if local == 'DatavaluedPropertyAtom':
+                atom.set_has_predicate(self.get_or_create(prop_pred, Attribute))
+            else:
+                atom.set_has_predicate(self.get_or_create(prop_pred, Relation))
+
+        # builtin (BuiltinAtom)
+        builtin = self.graph.value(atom_node, SWRL_NS.builtin)
+        if builtin:
+            atom.set_has_predicate(self.get_or_create(builtin, Resource))
+
+        # SameIndividualsAtom / DifferentIndividualsAtom — no predicate in RDF
+        atom_type_uri = self.graph.value(atom_node, RDF.type)
+        if atom_type_uri:
+            local = str(atom_type_uri).split('#')[-1]
+            if local == 'SameIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
+            elif local == 'DifferentIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.differentFrom, Relation))
+
+        # argument1 / argument2 (most atom types)
+        arg1 = self.graph.value(atom_node, SWRL_NS.argument1)
+        if arg1:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg1))
+
+        arg2 = self.graph.value(atom_node, SWRL_NS.argument2)
+        if arg2:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg2))
+
+        # arguments (BuiltinAtom — lista RDF)
+        args_node = self.graph.value(atom_node, SWRL_NS.arguments)
+        if args_node:
+            try:
+                for arg in RDFLibCollection(self.graph, args_node):
+                    atom.set_has_arguments(self._resolve_swrl_arg(arg))
+            except Exception as e:
+                print(f"Errore builtin arguments: {e}")
+
+        return atom
+
+    def _resolve_swrl_arg(self, node):
+        if isinstance(node, RDFlibLiteral):
+            return self._create_literal(node)
+        if (node, RDF.type, SWRL_NS.Variable) in self.graph:
+            return self.get_or_create(node, Variable)
+        return self.get_or_create(node, Individual)
+    

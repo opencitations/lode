@@ -61,19 +61,18 @@ class Property(Resource):
 
     # Metodi per has_range
     def set_has_range(self, resource):
-        """Aggiunge una risorsa a has_range"""
-        self.has_range.append(resource)
+        if resource not in self.has_range:
+            self.has_range.append(resource)
     
     def get_has_range(self):
         """Restituisce una copia della lista has_range"""
-        return list(set(self.has_range))
+        return list(self.has_range)
 
-    # Metodi per has_domain
     def set_has_domain(self, concept):
-        """Aggiunge un concept a has_domain"""
-        self.has_domain.append(concept)
+        if concept not in self.has_domain:
+            self.has_domain.append(concept)
     
     def get_has_domain(self):
         """Restituisce una copia della lista has_domain"""
-        return list(set(self.has_domain))
+        return list(self.has_domain)
 

@@ -1,0 +1,85 @@
+{
+  "total_unique": 474,
+  "in_common": 0,
+  "sources": {
+    "report": {
+      "count": 467,
+      "exclusive": 467
+    },
+    "fairsharing": {
+      "count": 7,
+      "exclusive": 7
+    }
+  },
+  "uris": 
+  [
+    {
+      "uri": "https://w3id.org/spar/biro",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/c4o",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/cito",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/datacite",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/deo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/doco",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/fabio",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/pro",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/pso",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/pwo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/scoro/",
+      "provenance": "LOV"
+    }, 
+    {
+      "uri": "https://w3id.org/spar/frapo",
+      "provenance": "SPAR"
+    },
+    {
+      "uri": "https://w3id.org/spar/bido",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/fivestars",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/fr",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/mito",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/spar/frbr",
+      "provenance": "LOV"
+    }
+  ]
+}

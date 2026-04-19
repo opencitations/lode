@@ -29,3 +29,12 @@ Outcomes (per variant – `imported` / `closure`):
 ```bash
 python modules.py [--input ontologies.json] [--read-as owl] [--out modules_report.json] [--indent 2]
 ```
+
+# restrictions.py
+
+Coming soon
+
+## Usage
+```bash
+uv run python restrictions_test.py https://sparontologies.github.io/fabio/current/fabio.ttl --out icon_inspection.json
+```

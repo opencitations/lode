@@ -19,11 +19,14 @@ from .statement import Statement
 from .container import Container
 from .collection import Collection
 from .datatypeRestriction import DatatypeRestriction
+from .variable import Variable
+from .atom import Atom
+from .rule import Rule
 
 __all__ = [
     'Resource', 'Property', 'Relation', 'Annotation', 'Attribute',
     'Literal', 'Concept', 'Datatype', 'Restriction', 'TruthFunction',
     'OneOf', 'PropertyConceptRestriction', 'Value', 'Quantifier',
     'Cardinality', 'Model', 'Individual', 'Statement', 'Container', 'Collection',
-    'DatatypeRestriction'
+    'DatatypeRestriction', 'Variable', 'Atom', 'Rule'
 ]

@@ -6,6 +6,7 @@ class PropertyConceptRestriction(Restriction):
 
         self.applies_on_property = None # 1
         self.applies_on_concept = None # 1
+        self.is_inverse = False #bool 1
 
     def get_applies_on_property(self):
         """Restituisce il valore applies on property"""
@@ -22,3 +23,11 @@ class PropertyConceptRestriction(Restriction):
     def set_applies_on_concept(self, concept):
         """Aggiunge un Concept a applies_on_concept """
         self.applies_on_concept = concept
+
+    def get_is_inverse(self):
+        """Restituisce la lista applies on concept"""
+        return self.is_inverse
+        
+    def set_is_inverse(self, boolean):
+        """Sets if the restriction is inverse"""
+        self.is_inverse = boolean

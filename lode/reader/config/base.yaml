@@ -3,6 +3,8 @@ name: BASE
 namespaces:
   - "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   - "http://www.w3.org/2000/01/rdf-schema#"
+  - "http://www.w3.org/2001/XMLSchema#"
+  - "http://www.w3.org/2003/11/swrl#"
 
 allowed_classes:
   - Statement
@@ -17,6 +19,7 @@ allowed_classes:
 # MAPPER
 # ======================
 mapper:
+
   # ========== Classification, no behavior ==========
 
   rdfs:Literal:
@@ -51,6 +54,7 @@ mapper:
     
   rdfs:subPropertyOf:
     is: predicate
+    inferred_class: Property
     target_classes: [Property]
     setters: [set_is_sub_property_of: Property]
   
@@ -94,6 +98,7 @@ mapper:
     setters: [set_has_comment: Literal]
   
   # ========== Resource Object Properties ==========
+
   rdfs:seeAlso:
     is: predicate
     target_classes: [Resource]
@@ -109,6 +114,85 @@ mapper:
     target_classes: [Individual, Resource]
     setters: [set_has_type: Concept]
 
+  # ========== SWRL ==========
+
+  swrl:Variable:
+    is: class
+    target_class: Variable
+
+  swrl:Imp:
+    is: class
+    target_class: Rule
+
+  swrl:ClassAtom:
+    is: class
+    target_class: Atom
+
+  swrl:IndividualPropertyAtom:
+    is: class
+    target_class: Atom
+
+  swrl:DatavaluedPropertyAtom:
+    is: class
+    target_class: Atom
+
+  swrl:SameIndividualAtom:
+    is: class
+    target_class: Atom
+
+  swrl:DifferentIndividualsAtom:
+    is: class
+    target_class: Atom
+
+  swrl:BuiltinAtom:
+    is: class
+    target_class: Atom
+
+  swrl:DataRangeAtom:
+    is: class
+    target_class: Atom
+
+  swrl:argument1:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_argument1: Resource]
+
+  swrl:argument2:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_argument2: Resource]
+
+  swrl:classPredicate:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Concept]
+
+  swrl:propertyPredicate:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Property]
+
+  swrl:builtin:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Annotation]
+
+  swrl:dataRange:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Datatype]
+
+  swrl:body:
+    is: predicate
+    target_classes: [Rule]
+
+  swrl:head:
+    is: predicate
+    target_classes: [Rule]
+
 # ======================
 # ENRICHER
 # ======================
+enricher:
+  swrl:Imp: handle_swrl_imp
+ 

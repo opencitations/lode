@@ -1,0 +1,156 @@
+{
+  "total_unique": 474,
+  "in_common": 0,
+  "sources": {
+    "report": {
+      "count": 467,
+      "exclusive": 467
+    },
+    "fairsharing": {
+      "count": 7,
+      "exclusive": 7
+    }
+  },
+  "uris": [
+    {
+      "uri": "https://w3id.org/todo",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododfa",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododial",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododom",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododt",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/todo/tododw",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/tree",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/usability",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vair",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/lingvoj",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/olca",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/sdm",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vocab/xbrll",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/vpa",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/wfont",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://w3id.org/yang/server#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/Base/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/EntityLegalForm/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/Geocoding/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/L1/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/L2/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/RegistrationAuthority/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.gleif.org/ontology/ReportingException/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.goudatijdmachine.nl/def",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.ica.org/standards/RiC/ontology",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.purl.org/mso-em",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/2019/wot/hypermedia#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/2019/wot/json-schema#",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/2019/wot/td",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/ns/pim/space",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3.org/ns/ssn",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3id.org/simulation/ontology/",
+      "provenance": "LOV"
+    },
+    {
+      "uri": "https://www.w3id.org/survey-ontology",
+      "provenance": "LOV"
+    }
+  ]
+}
