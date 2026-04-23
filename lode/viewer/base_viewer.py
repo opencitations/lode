@@ -441,7 +441,7 @@ class BaseViewer:
 
         obj_type = type(obj).__name__
         restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
-                             "OneOf", "Value"]
+                             "OneOf", "Value", "DatatypeRestriction"]
 
         # 2. If it is a Restriction, recursively unpack its specific components
         if obj_type in restriction_types:
@@ -504,6 +504,19 @@ class BaseViewer:
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': ' value ', 'link': None})
                 parts.extend(self._parse_restriction(resource, language))
+
+            elif obj_type == "DatatypeRestriction":
+                concept = _get(obj, 'applies_on_concept')  # Datatype(xsd:string)
+                constraint = _get(obj, 'has_constraint')  # "pattern"
+                value = _get(obj, 'has_restriction_value')  #  Literal("[0-9]+")
+
+                parts.extend(self._parse_restriction(concept, language))
+                if constraint:
+                    parts.append({'text': f' with {constraint} ', 'link': None, 'type': 'Text'})
+                else:
+                    parts.append({'text': ' restricted by ', 'link': None, 'type': 'Text'})
+
+                parts.extend(self._parse_restriction(value, language))
 
             return parts
 
