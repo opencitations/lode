@@ -460,6 +460,11 @@ class BaseViewer:
                 quant = _get(obj, 'has_quantifier_type', "some")
                 concept = _get(obj, 'applies_on_concept')
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': f' {quant} ', 'link': None})
                 parts.extend(self._parse_restriction(concept, language))
@@ -470,6 +475,11 @@ class BaseViewer:
                 card_num = _get(obj, 'has_cardinality')
                 concept = _get(obj, 'applies_on_concept')
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': f' {card} {card_num}',  'link': None})
                 parts.extend(self._parse_restriction(concept, language))
@@ -478,6 +488,11 @@ class BaseViewer:
                 operator = _get(obj, 'has_logical_operator', "and")
                 concepts = _get(obj, 'applies_on_concept', [])
                 if not isinstance(concepts, list): concepts = [concepts]
+
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
                 parts.append({'text': '(', 'link': None})
                 for i, c in enumerate(concepts):
@@ -490,6 +505,11 @@ class BaseViewer:
                 resources = _get(obj, 'applies_on_resource', [])
                 if not isinstance(resources, list): resources = [resources]
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.append({'text': 'one of { ', 'link': None})
                 for i, r in enumerate(resources):
                     if i > 0:
@@ -501,6 +521,11 @@ class BaseViewer:
                 prop = _get(obj, 'applies_on_property')
                 resource = _get(obj, 'applies_on_resource')
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': ' value ', 'link': None})
                 parts.extend(self._parse_restriction(resource, language))
@@ -509,6 +534,11 @@ class BaseViewer:
                 concept = _get(obj, 'applies_on_concept')  # Datatype(xsd:string)
                 constraint = _get(obj, 'has_constraint')  # "pattern"
                 value = _get(obj, 'has_restriction_value')  #  Literal("[0-9]+")
+
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
                 parts.extend(self._parse_restriction(concept, language))
                 if constraint:
