@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
+/* 1. General style
+   ========================================================================== */
+
 body {
     margin-left: 5rem;
     border-left: 2px solid #193564;
@@ -158,13 +161,12 @@ a:visited {
     color: #600099; /* Standard Visited Purple */
 }
 
-
 /* Custom styles for the Table of Contents and Sections */
-
 .section-header {
     margin-top: 3rem;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;}
+
 /* Ensures the title isn't hidden behind browser chrome when jumping */
 .anchor-offset {
     scroll-margin-top: 20px;
@@ -215,10 +217,6 @@ a:visited {
 /* 4. Color Coding Types (Classes, Object Properties, etc.)
    ========================================================================== */
 
-/* Bootstrap uses badges. We transform them to look like
-   LODE's colored text markers or superscript styles.
-*/
-
 .badge {
     background-color: transparent !important; /* Remove bg color */
     font-weight: normal;
@@ -227,10 +225,8 @@ a:visited {
     padding: 0;
 }
 
-/* You might need to adjust Jinja logic to apply specific classes,
-   but here is a generic catch-all based on text color logic */
 
-/* If the text is "Concept", make it Orange */
+/* Concept */
 .c ,
 .text-info-emphasis {
     color: orange !important;
@@ -238,30 +234,37 @@ a:visited {
     margin-left: -0.2em !important;
 }
 
-/* If the text is "Relation", make it Navy */
+/* Relation */
 .op {
     color: navy !important;
     font-size: 0.8em !important;
     margin-left: -0.2em !important;
 }
 
-/* If the text is "Annotaion", make it Green */
+/* Annotaion */
 .an {
     color: maroon !important;
     font-size: 0.8em !important;
     margin-left: -0.2em !important;
 }
 
-/* If the text is "Individual", make it Green */
+/* Individual */
 .ni {
     color: brown !important;
     font-size: 0.8em !important;
     margin-left: -0.2em !important;
 }
 
-/* If the text is "Attributes", make it Green */
+/* Attributes */
 .dp {
     color: green !important;
+    font-size: 0.8em !important;
+    margin-left: -0.2em !important;
+}
+
+/* language */
+.lan {
+    color: slateblue !important;
     font-size: 0.8em !important;
     margin-left: -0.2em !important;
 }
@@ -376,3 +379,8 @@ code.bg-light {
     color: purple;
     font-weight: bold;
 }
+
+.inline-markdown > *:last-child {
+        display: inline !important;
+        margin-bottom: 0 !important;
+    }

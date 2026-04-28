@@ -47,10 +47,15 @@
         'relation': { 'singular': 'Object Property', 'plural': 'Object Properties', 'abb': 'op' },
         'attribute': { 'singular': 'Data Property', 'plural': 'Data Properties', 'abb': 'dp' },
         'annotation': { 'singular': 'Annotation Property', 'plural': 'Annotation Properties', 'abb': 'ap' },
-        'individual': { 'singular': 'Named Individual', 'plural': 'Named Individuals', 'abb': 'ni' },
-        'str': { 'singular': 'string', 'plural': '', 'abb': 'str' },
-        'literal': { 'singular': 'literal', 'plural': '', 'abb': 'lit' }
+        'individual': { 'singular': 'Named Individual', 'plural': 'Named Individuals', 'abb': 'ni' }
      } %}
+
+    {% set lang_map = {
+    'en': 'English', 'es': 'Spanish', 'pt': 'Portuguese',
+    'fr': 'French', 'de': 'German', 'it': 'Italian',
+    'zh': 'Chinese', 'ja': 'Japanese', 'ru': 'Russian',
+    'ar': 'Arabic', 'nl': 'Dutch', 'ko': 'Korean', 'fa': 'Persian'
+    } %}
 
     {% set md_types = ['Literal', 'Str', 'literal', 'str', 'string'] %}
 
@@ -71,7 +76,7 @@
                                 <span>{{title.text}}</span>
                             {% endfor %}
                         {% elif metadata.label %}
-                            <span>{{ metadata.label.text }}</span>
+                            <span>{{ metadata.label.text }}</span>lightblue !important
                         {% endif %}
                     </h1>
                     <div class="d-flex align-items-center mb-5">

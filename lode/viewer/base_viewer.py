@@ -211,6 +211,9 @@ class BaseViewer:
             statements =  self._format_statement(all_instances, uri, language)
             type_inst = type(instance).__name__.replace(" ", "_")
 
+            is_dep = getattr(instance, 'get_is_deprecated')() if hasattr(instance, 'get_is_deprecated') else getattr(
+                instance, 'is_deprecated', False)
+
             entities.append({
                 'type': type_inst,
                 'uri': uri,
@@ -218,7 +221,8 @@ class BaseViewer:
                 'anchor_id': f"id_{safe_id}_{type_inst}",
                 'relations': relations,
                 'statements': statements,
-                'characteristics': characteristics
+                'characteristics': characteristics,
+                'is_deprecated': bool(is_dep)
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
@@ -301,7 +305,8 @@ class BaseViewer:
             'link': None,
             'lan': None,
             'parts': None,  # This key is for restrictions
-            'type': None
+            'type': None,
+            'is_deprecated': False
         }
 
         if not obj: return handler_dic
@@ -312,6 +317,11 @@ class BaseViewer:
         obj_type = type(obj).__name__
 
         if obj_type in restriction_types:
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj,
+                                                                                                           'is_deprecated',
+                                                                                                           False)
+            handler_dic['is_deprecated'] = bool(is_dep)
+
             # Recursively parse the restriction into clickable parts
             parts = self._parse_restriction(obj, language)
 
@@ -329,6 +339,12 @@ class BaseViewer:
         # --- 3. Literal Handling ---
         if type(obj).__name__ == 'Literal':
             if hasattr(obj, 'get_has_value') and obj.get_has_value():
+
+                is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj,
+                                                                                                               'is_deprecated',
+                                                                                                               False)
+                handler_dic['is_deprecated'] = bool(is_dep)
+
                 lit_lang = obj.get_has_language()
 
                 # If a language is requested (e.g., 'pt')
@@ -356,6 +372,12 @@ class BaseViewer:
         # --- 4. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
+
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj,
+                                                                    'get_is_deprecated') else getattr(obj, 'is_deprecated',
+                                                                                                           False)
+            handler_dic['is_deprecated'] = bool(is_dep)
+
             try:
                 handler_dic['text'] = self._get_best_label(obj, language)
                 handler_dic['type'] = obj_type
