@@ -14,7 +14,9 @@
             back to
             <a href="#toc">ToC</a>
             or
-            <a href="#{{item.type.lower()}}s">{{item.type}} ToC</a>
+            {% if item.type.lower() in type_map %}
+                <a href="#{{item.type.lower()}}s">{{type_map[item.type.lower()].singular}} ToC</a>
+            {% endif %}
         </span>
     </div>
 
@@ -41,7 +43,7 @@
 
                                 {% if val.link %}
                                     <p class="text-dark mb-1 {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}" style="font-size: 0.95rem; line-height: 1.5;">
-                                    <a href="{{ val.link }}" target="_blank" class="{% if is_md %}render-markdown{% endif %}">{{ val.text }}</a>
+                                    <a href="{{ val.link }}" target="_blank" class="{% if is_md %}render-markdown{% endif %}" title="{{val.link}}">{{ val.text }}</a>
                                     </p>
 
                                 {% else %}
@@ -118,11 +120,11 @@
                                                             <span>
                                                                 {% set precise_key = part.link ~ '|' ~ v_type %}
                                                                 {% if precise_key in anchor_map %}
-                                                                    <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {% if part.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ part.text }}</a>
+                                                                    <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {% if part.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{precise_key}}">{{ part.text }}</a>
                                                                 {% elif part.link in anchor_map %}
-                                                                    <a href="#{{ anchor_map[part.link] }}" class="{% if is_md %}render-markdown{% endif %} {% if part.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ part.text }}</a>
+                                                                    <a href="#{{ anchor_map[part.link] }}" class="{% if is_md %}render-markdown{% endif %} {% if part.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{part.link}}">{{ part.text }}</a>
                                                                 {% else %}
-                                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {% if part.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ part.text }}</a>
+                                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ part.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {% if part.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{part.link}}">{{ part.text }}</a>
                                                                 {% endif %}
 
                                                                 {% if v_type in type_map %}
@@ -150,9 +152,9 @@
                                                     {% set is_md = v_type in md_types %}
 
                                                     {% if precise_key in anchor_map %}
-                                                        <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {% if rel_item.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ rel_item.text }}</a>
+                                                        <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {% if rel_item.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{rel_item.link}}">{{ rel_item.text }}</a>
                                                     {% else %}
-                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ rel_item.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {% if rel_item.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ rel_item.text }}</a>
+                                                        <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ rel_item.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {% if rel_item.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{rel_item.link}}">{{ rel_item.text }}</a>
                                                     {% endif %}
                                                     {% if v_type in type_map %}
                                                         <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
@@ -211,11 +213,11 @@
                                                 {% set precise_key = val.link ~ '|' ~ v_type %}
 
                                                 {% if precise_key in anchor_map %}
-                                                    <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ val.text }}</a>
+                                                    <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{precise_key}}">{{ val.text }}</a>
                                                 {% elif val.link in anchor_map %}
-                                                    <a href="#{{ anchor_map[val.link] }}" class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ val.text }}</a>
+                                                    <a href="#{{ anchor_map[val.link] }}" class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{val.link}}">{{ val.text }}</a>
                                                 {% else %}
-                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ val.text }}</a>
+                                                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url | urlencode }}&lang={{ request.query_params.lang }}&resource={{ val.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{val.link}}">{{ val.text }}</a>
                                                 {% endif %}
 
                                                 {% if v_type in type_map %}
@@ -223,7 +225,7 @@
                                                 {% endif %}
                                             </span>
                                         {% else %}
-                                            <span class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{ val.text }}">{{ val.text }}</span>
+                                            <span class="{% if is_md %}render-markdown{% endif %} {% if val.is_deprecated %}text-decoration-line-through text-muted{% endif %}" title="{{ val.link }}">{{ val.text }}</span>
                                             {% if is_md and val.lan%}
                                                 <sup class="badge text-secondary lan" title="{{ lang_map.get(val.lan[:2] | lower, val.lan | upper) }}">{{ val.lan }}</sup>
                                             {% endif %}
