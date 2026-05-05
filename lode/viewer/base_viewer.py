@@ -33,7 +33,7 @@ class BaseViewer:
         
         return None
 
-    def _get_best_label(self, resource: Resource, language: Optional[str] = None) -> Optional[str]:
+    def _get_best_label(self, resource, language: Optional[str] = None) -> Optional[str]:
         """Gets the best label to display: language > preferred_label > label > identifier."""
 
         # 1. Force 'en' as the absolute default if no language makes it this far
@@ -44,35 +44,39 @@ class BaseViewer:
         for label in labels:
             if hasattr(label, 'get_has_language') and label.get_has_language():
                 if label.get_has_language().lower().startswith(target_lang):
-                    return self._clean_name(label.get_has_value())
+                    # RETURN RAW LABEL
+                    return label.get_has_value()
 
         # Check Normal Labels for the target language
         labels = resource.get_has_label()
         for label in labels:
             if hasattr(label, 'get_has_language') and label.get_has_language():
                 if label.get_has_language().lower().startswith(target_lang):
-                    return self._clean_name(label.get_has_value())
+                    # RETURN RAW LABEL
+                    return label.get_has_value()
 
         # --- DETERMINISTIC FALLBACKS ---
         # If we reach here, no English label exists.
-        # We sort them by language tag so it doesn't randomly shuffle!
+        # We sort them by language tag.
 
         labels = resource.get_has_preferred_label()
         if labels:
-            # Sort alphabetically by language tag (e.g., 'es' then 'pt')
             sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
-            return self._clean_name(sorted_labels[0].get_has_value())
+            # RETURN RAW LABEL
+            return sorted_labels[0].get_has_value()
 
         labels = resource.get_has_label()
         if labels:
             sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
-            return self._clean_name(sorted_labels[0].get_has_value())
+            # RETURN RAW LABEL
+            return sorted_labels[0].get_has_value()
 
         # Final Fallback: The URI Identifier
         resource_id = resource.get_has_identifier()
         if resource_id:
             clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
-            return self._clean_name(clean_resource_id)
+            # ONLY clean the identifier!
+            return self._clean_name(self, clean_resource_id)
 
         return None
 
@@ -171,7 +175,7 @@ class BaseViewer:
                     if not attr.startswith('_') and value:
                         # Skip attributes that are handled elsewhere or are empty
                         # Clean up name:
-                        clean_name = self._clean_name(attr)
+                        clean_name = self._clean_name(self,attr)
 
                         # Process value (could be a list of objects)clean
                         # We use the helper to get clean text for each item
@@ -276,7 +280,7 @@ class BaseViewer:
 
                     if values:
                         # 4. Auto-format the key name
-                        clean_key = self._clean_name(attr_name)
+                        clean_key = self._clean_name(self, attr_name)
 
                         # 5. Ensure values are in a list
                         if not isinstance(values, list):
@@ -436,14 +440,16 @@ class BaseViewer:
         return statements
 
     @staticmethod
-    def _clean_name(name: str) -> str:
+    def _clean_name(self, name: str) -> str:
         if not name: return ""
 
         name = re.sub(r'^(get_has_|get_|has_)', '', name)
+        # Put space between camelCase letters
         name = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', name)
         name = name.replace('_', ' ')
 
-        return ' '.join(name.split()).title()
+        # Strip extra spaces
+        return ' '.join(name.split())
 
     def _parse_restriction(self, obj, language=None) -> list:
         """

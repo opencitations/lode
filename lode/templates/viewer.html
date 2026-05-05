@@ -71,12 +71,12 @@
             <div class="mb-4 border-bottom pb-4">
                 <div class="p-3">
                     <h1 class="fw-bold mb-2">
-                        {% if metadata.Title %}
-                            {% for title in metadata.Title %}
+                        {% if metadata.title %}
+                            {% for title in metadata.title %}
                                 <span>{{title.text}}</span>
                             {% endfor %}
                         {% elif metadata.label %}
-                            <span>{{ metadata.label.text }}</span>lightblue !important
+                            <span>{{ metadata.label.text }}</span>
                         {% endif %}
                     </h1>
                     <div class="d-flex align-items-center mb-5">
