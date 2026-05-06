@@ -193,41 +193,50 @@
         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 
-        <script>
+       <script>
             document.addEventListener("DOMContentLoaded", function() {
 
-                DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+                // Security hooks
+                DOMPurify.addHook('afterSanitizeAttributes', function(node) {
                     if (node.tagName === 'A') {
                         node.setAttribute('target', '_blank');
                         node.setAttribute('rel', 'noopener noreferrer');
+                    }
+                    if (node.tagName === 'IMG') {
+                        node.setAttribute('class', 'img-fluid border rounded mt-2 mb-2');
                     }
                 });
 
                 marked.use({
                     gfm: true,
-                    breaks: false
+                    breaks: false // So line breaks not be added
                 });
 
                 const mdElements = document.querySelectorAll('.render-markdown');
 
-                mdElements.forEach(function (el) {
+                mdElements.forEach(function(el) {
                     try {
-                        const rawText = el.textContent;
+                        let rawText = el.textContent;
 
-                        // PRE-PROCESSING: Strip the 'html:' namespace prefix from XML Literals!
-                        // This turns <html:p> into <p>, <html:h4> into <h4>, etc.
-                        const cleanText = rawText.replace(/<(\/?)html:([a-zA-Z0-9]+)/gi, '<$1$2');
+                        // 1. Strip ALL leading spaces to prevent accidental <pre><code> blocks
+                        rawText = rawText.replace(/^[ \t]+/gm, '').trim();
+
+                        // 2. Strip ANY XML namespace prefix (Turns <html:div> into <div>, </xhtml:p> into </p>)
+                        let cleanText = rawText.replace(/<(\/?)[a-zA-Z0-9_-]+:([a-zA-Z0-9]+)/gi, '<$1$2');
+
+                        // 3. Strip xmlns attributes
+                        cleanText = cleanText.replace(/ xmlns(:[a-zA-Z0-9_-]+)?="[^"]*"/gi, '');
 
                         let rawHTML = "";
 
-                        // Use inline parsing for spans/links, standard parsing for divs
+                        // 4. Smart Routing
                         if (el.tagName === 'SPAN' || el.tagName === 'A') {
                             rawHTML = marked.parseInline(cleanText);
                         } else {
                             rawHTML = marked.parse(cleanText);
                         }
 
-                        // Explicitly tell DOMPurify to allow standard elements that might be in the XML
+                        // 5. Sanitize
                         const cleanHTML = DOMPurify.sanitize(rawHTML, {
                             ADD_TAGS: ['img'],
                             ADD_ATTR: ['target', 'src', 'alt', 'title', 'class']
@@ -235,7 +244,7 @@
 
                         el.innerHTML = cleanHTML;
                     } catch (e) {
-                        console.error("Error rendering markdown:", e);
+                        console.error("Error rendering markdown/html:", e);
                     }
                 });
             });
