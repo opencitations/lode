@@ -91,19 +91,19 @@
                         {% for key, val_list in metadata.items() %}
                             {% if key not in ['uri', 'label'] %}
                             {% if val_list %}
-                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
-                            <dd class="col-sm-9 mb-3">
-                                <div class="d-flex flex-column gap-1">
+                            <dt class="text-capitalize fs-7 fw-bold mb-1">{{ key }}</dt>
+                            <dd class=" mb-1">
+                                <div class="d-flex flex-column">
                                     {% for item in val_list %}
                                         {% set v_type = item.type.lower() if item.type else '' %}
                                         {% set is_md = v_type in md_types %}
-                                        <div>
+                                        <div class="ms-5">
                                             {% if item.link %}
-                                                <span class="{% if is_md %}render-markdown{% endif %}">{{ item.text }}</span>
+                                                <div class=" d-inline-block {% if is_md %}render-markdown{% endif %}">{{ item.text }}</div>
                                                 <a href="{{ item.link }}" target="_blank"
                                                     class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
                                             {% else %}
-                                                <span class="text-dark {% if is_md %}render-markdown{% endif %}">{{ item.text }}</span>
+                                                <div class="d-inline-block text-dark {% if is_md %}render-markdown{% endif %}">{{ item.text }}</div>
                                             {% endif %}
 
                                             {% if item.language %}
@@ -205,7 +205,7 @@
 
                 marked.use({
                     gfm: true,
-                    breaks: true
+                    breaks: false
                 });
 
                 const mdElements = document.querySelectorAll('.render-markdown');
