@@ -373,7 +373,39 @@ class BaseViewer:
                 handler_dic['type'] = obj_type
                 return handler_dic
 
-        # --- 4. Normal Resource Handling (Concepts, Properties, Individuals) ---
+        # --- 4. Statement (nested annotation) ---
+        if obj_type == 'Statement':
+            handler_dic['type'] = 'Statement'
+            handler_dic['link'] = None  # don't link to the BNode id
+            inner_pred = obj.get_has_predicate()
+            inner_obj = obj.get_has_object()
+            # Resolve the inner (predicate, value) pair recursively
+            inner = {
+                'predicate': self._get_best_label(inner_pred, language) if inner_pred else None,
+                'value': self._resolve_resource_value(inner_obj, language) if inner_obj else None,
+            }
+            # Walk Statement's own annotations (anything else in __dict__ besides
+            # the reification slots), so dc:date, rdf:value siblings show up too.
+            skip = {'has_subject', 'has_predicate', 'has_object',
+                    'has_identifier', 'is_positive_statement'}
+            siblings = []
+            for attr, value in obj.__dict__.items():
+                if attr.startswith('_') or attr in skip or not value:
+                    continue
+                values = value if isinstance(value, list) else [value]
+                for v in values:
+                    resolved = self._resolve_resource_value(v, language)
+                    if resolved.get('text') or resolved.get('nested'):
+                        siblings.append({
+                            'predicate': self._clean_name(attr),
+                            'value': resolved,
+                        })
+            handler_dic['nested'] = {'main': inner, 'siblings': siblings}
+            # Pick a primary text for collapsed display: the inner value's text
+            handler_dic['text'] = (inner.get('value') or {}).get('text') or '[Statement]'
+            return handler_dic
+
+        # --- 5. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
 
