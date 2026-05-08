@@ -194,6 +194,28 @@ class BaseViewer:
                             for v in formatted_values:
                                 if v not in relations[clean_name]:  # Valentina FIX: this do not add duplicates in metadata values  
                                     relations[clean_name].append(v)
+            # Sort relations
+            ordered_relations = {}
+
+            # Define the exact order you
+            priority_order = [
+                "is sub property of",
+                "domain",
+                "range",
+                "is inverse Of",
+                "property chain",
+                "is disjoint with"
+            ]
+
+            # Extract and insert the priority keys first
+            for key in priority_order:
+                if key in relations:
+                    ordered_relations[key] = relations[key]
+
+            # Insert all remaining keys alphabetically
+            for key in sorted(relations.keys()):
+                if key not in ordered_relations:
+                    ordered_relations[key] = relations[key]
 
             characteristics = {}
             char_attributes = [
@@ -223,7 +245,7 @@ class BaseViewer:
                 'uri': uri,
                 'label': self._get_best_label(instance, language),
                 'anchor_id': f"id_{safe_id}_{type_inst}",
-                'relations': relations,
+                'relations': ordered_relations,
                 'statements': statements,
                 'characteristics': characteristics,
                 'is_deprecated': bool(is_dep)

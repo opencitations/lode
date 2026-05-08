@@ -45,7 +45,7 @@
 <div class="card mb-2 anchor-offset" id="{{ item.anchor_id }}">
     <div class="card-header bg-white pt-2 px-1 d-flex justify-content-between align-items-center">
         <h4 class="fw-bold mb-0">
-            <div class="d-inline-block render-markdown {% if item.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ item.label }}</div>
+            <div class="d-inline-block {% if item.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ item.label }}</div>
             {% if item.type.lower() in type_map %}
                 <sup class="badge bg-light text-secondary {{type_map[item.type.lower()].abb}}" title="{{ type_map[item.type.lower()].singular}}">{{ type_map[item.type.lower()].abb }}</sup>
             {% endif %}
@@ -96,7 +96,7 @@
                                     <span class="text-dark {% if is_md and val.lan%}render-markdown inline-markdown{% endif %} me-1">{{ val.text | trim }}</span>
                                     {% if is_md and val.lan %}
                                     <sup class="badge text-secondary lan" title="{{ lang_map.get(val.lan[:2] | lower, val.lan | upper) }}">{{ val.lan }}</sup>
-                                    {% endif %}
+                                    {% endif %}{% if not loop.last %}<span class="text-dark me-1">,</span>{% endif %}
 
                                 </div>
                                 {% endif %}
@@ -150,7 +150,7 @@
                             <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem;">
                                 {{ rel_name }}
                             </h6>
-                            <div class="text-secondary ms-2">
+                            <div class="ms-2">
                                 {% if rel_value is iterable and rel_value is not string %}
                                    <div style="line-height: 1.6;">
                                         {% for rel_item in rel_value %}
@@ -208,7 +208,7 @@
                                                     {% if is_md and rel_item.lan %}
                                                         <sup class="badge text-secondary lan" title="{{ lang_map.get(rel_item.lan[:2] | lower, rel_item.lan | upper) }}">{{ rel_item.lan }}</sup>
                                                     {% endif %}
-                                                {% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
+                                                {% if not loop.last and not rel_value[loop.index].parts %}<span class="text-dark me-1">,</span>{% endif %}
                                                 </div>
                                             {% else %}
                                                 {% set v_type = rel_item.type.lower() if rel_item.type else '' %}
@@ -218,7 +218,7 @@
                                                     <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
                                                 {% endif %}
                                                 {% if is_md and rel_item.lan %}
-                                                    <sup class="badge text-secondary lan" title="{{ lang_map.get(rel_item.lan[:2] | lower, rel_item.lan | upper) }}">{{ rel_item.lan }}</sup>
+                                                    <sup class="badge text-secondary lan" title="{{ lang_map.get(rel_item.lan[:2] | lower, rel_item.lan | upper) }}">{{ rel_item.lan }}</sup>{% if not loop.last and not rel_value[loop.index].parts %}<span class="text-dark me-1">,</span>{% endif %}
                                                 {% endif %}
                                             {% endif %}
                                         {% endfor %}
@@ -249,7 +249,7 @@
                         <h6 class="fw-bold pb-1 mb-1 text-dark" style="font-size: 0.85rem;">
                             {{ stat_name }}
                         </h6>
-                        <div class="text-secondary ms-2">
+                        <div class=" ms-2">
                             {% if stat_value is iterable and stat_value is not string %}
                                 <div class="d-flex flex-column gap-1">
                                     {% for val in stat_value %}
