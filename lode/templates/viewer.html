@@ -76,7 +76,7 @@
                                 <span>{{title.text}}</span>
                             {% endfor %}
                         {% elif metadata.label %}
-                            <span>{{ metadata.label.text }}</span>
+                            <span>{{ metadata.label[0].text }}</span>
                         {% endif %}
                     </h1>
                     <div class="d-flex align-items-center mb-5">
@@ -92,25 +92,25 @@
                             {% if key not in ['uri', 'label'] %}
                             {% if val_list %}
                             <dt class="text-capitalize fs-7 fw-bold mb-1">{{ key }}</dt>
-                            <dd class=" mb-1">
+                            <dd class="mb-1">
                                 <div class="d-flex flex-column">
                                     {% for item in val_list %}
                                         {% set v_type = item.type.lower() if item.type else '' %}
                                         {% set is_md = v_type in md_types %}
                                         <div class="ms-5">
                                             {% if item.link %}
-                                                <div class=" d-inline-block {% if is_md %}render-markdown{% endif %}">{{ item.text }}</div>
-                                                <a href="{{ item.link }}" target="_blank"
-                                                    class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
+                                                <div class="{% if is_md %}render-markdown{% endif %}">
+                                                    <a href="{{ item.link }}" target="_blank" title="Go to Resource">{{ item.link }}</a>
+                                                    {% if item.is_visualizable %}
+                                                        <a href="?read_as={{ request.query_params.get('read_as', '') }}&url={{ item.link | urlencode }}&lang={{ request.query_params.get('lang', 'en') }}" target="_blank" class="ms-1">
+                                                         (visualise it with LODE)
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
                                             {% else %}
-                                                <div class="d-inline-block text-dark {% if is_md %}render-markdown{% endif %}">{{ item.text }}</div>
+                                                <div class="markdown-with-badge metadata_p text-dark {% if is_md %}render-markdown inline-markdown{% endif %}">{{ item.text }}</div>
                                             {% endif %}
 
-                                            {% if item.language %}
-                                                <span class="badge bg-light text-secondary border border-secondary-subtle ms-2 rounded-pill" style="font-size: 0.7em; vertical-align: middle;">
-                                                    {{ item.language }}
-                                                </span>
-                                            {% endif %}
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -118,10 +118,10 @@
                             {% endif %}
                             {% endif %}
                         {% endfor %}
-                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Actions</dt>
-                        <dd class="col-sm-9 mt-2">
-                            <a href="#" class="btn btn-sm btn-outline-dark me-2"><i class="bi bi-share"></i> WebVOWL</a>
-                            <a href="{{ url }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
+                        <dt class="text-capitalize fs-7 fw-bold mb-1">Other visualisation</dt>
+                        <dd class="mb-1 ms-5">
+                            <a href="https://service.tib.eu/webvowl/#iri={{metadata.uri[0].link}}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
+                            <a href="{{ metadata.uri[0].link }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
                         </dd>
                     </dl>
                 </div>

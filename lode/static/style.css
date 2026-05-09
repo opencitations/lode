@@ -394,5 +394,47 @@ code.bg-light {
       allowing the badge to sit next to the last word! */
 .markdown-with-badge p:last-child {
     display: inline !important;
+    margin-bottom: 0 !important;
+}
+
+/* Fix list indentation so bullets don't hit the left border */
+.render-markdown ul,
+.render-markdown ol {
+    padding-left: 1.5rem !important;
+    margin-bottom: 0.5rem;
+}
+
+/* If the last element is a list, make the list inline */
+.markdown-with-badge ul:last-child,
+.markdown-with-badge ol:last-child {
+    display: inline !important;
+    margin-bottom: 0 !important;
+    padding-left: 0 !important; /* Remove padding for the inline list */
+}
+
+/* Make the LAST item in that list inline so the badge sits next to it */
+.markdown-with-badge ul:last-child > li:last-child,
+.markdown-with-badge ol:last-child > li:last-child {
+    display: inline !important;
+}
+
+.markdown-with-badge ul:last-child > li,
+.markdown-with-badge ol:last-child > li {
+    list-style-type: none !important;
+}
+
+/* Re-draw the bullet point for that specific inline item */
+.markdown-with-badge ul:last-child > li::before {
+    content: "\2022"; /* The official hex code for a bullet point */
+    padding-right: 10px; /* Space between the bullet and the text */
+    margin-left: 0.65rem; /* Matches the indentation of the other bullets */
+
+    /* THE FIX: Make it larger and align it! */
+    font-size: 1.2em;
+    line-height: 0;
+    vertical-align: middle;
+}
+
+.markdown-with-badge p {
     margin-bottom: 0;
 }

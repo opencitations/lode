@@ -99,11 +99,10 @@
                                 {% else %}
                                 <div class="mb-2 {{dep_class}}" style="font-size: 0.95rem; line-height: 1.5;">
 
-                                    <div class="markdown-with-badge text-dark {% if is_md and val.lan%}render-markdown inline-markdown{% endif %} me-1">{{ val.text | trim }}</div>
+                                    <div class="markdown-with-badge text-dark {% if is_md%}render-markdown inline-markdown{% endif %} me-1">{{ val.text | trim }}</div>
                                     {% if is_md and val.lan %}
-                                    <sup class="badge text-secondary lan" title="{{ lang_map.get(val.lan[:2] | lower, val.lan | upper) }}">{{ val.lan }}</sup>
-                                    {% endif %}{% if not loop.last %}<span class="text-dark me-1">,</span>{% endif %}
-
+                                        <sup class="badge text-secondary lan" title="{{ lang_map.get(val.lan[:2] | lower, val.lan | upper) }}">{{ val.lan }}</sup>
+                                    {% endif %}
                                 </div>
                                 {% endif %}
                             {% endfor %}

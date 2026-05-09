@@ -3,6 +3,7 @@ import hashlib
 import re
 from typing import Dict, List, Optional, Tuple
 from lode.models import Literal, Model, Resource, Statement
+import urllib.parse
 
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
@@ -313,13 +314,19 @@ class BaseViewer:
                         for val in values:
                             entry = self._resolve_resource_value(val, language)
                             if entry['text']:
+                                # 7. Check if the link if an visualizable ontology or not
+                                if entry.get('link'):
+                                    entry['is_visualizable'] = self._is_likely_ontology(entry['link'])
+                                else:
+                                    entry['is_visualizable'] = False
+
                                 extracted_values.append(entry)
 
-                        # 7. Add to structural data ONLY if we found valid text
+                        # 8. Add to structural data ONLY if we found valid text
                         if extracted_values:
                             data[clean_key] = extracted_values
 
-        # 4. Statements
+        # 9. Statements
         data.update(self._format_statement(all_instances, ontology_model.has_identifier, language))
 
         return data
@@ -640,3 +647,45 @@ class BaseViewer:
             return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type')}]
 
         return []
+
+    def _is_likely_ontology(self, url: str) -> bool:
+        """Determines if a URL likely points to an ontology based on naming patterns."""
+        if not url or not isinstance(url, str) or not url.startswith('http'):
+            return False
+
+        # 1. Clean the string
+        clean_url = url.strip().lower()
+
+        # 2. Safely parse the URL to ignore fragments (#) and queries (?) for extension checking
+        parsed = urllib.parse.urlparse(clean_url)
+        path = parsed.path.rstrip('/')
+
+        # 3. Standard Ontology File Extensions
+        ontology_exts = ['.owl', '.rdf', '.ttl', '.nt', '.n3', '.jsonld']
+        if any(path.endswith(ext) for ext in ontology_exts):
+            return True
+
+        # 4. Common Ontology Registries & Permanent URLs
+        ontology_domains = [
+            'w3id.org',
+            'purl.org',
+            'xmlns.com'  # Often used for FOAF
+        ]
+        if any(domain in clean_url for domain in ontology_domains):
+            return True
+
+        # 5. Core W3C Namespaces
+        w3c_core = ['/1999/02/22-rdf-syntax-ns', '/2000/01/rdf-schema', '/2002/07/owl']
+        if 'w3.org' in clean_url and any(ns in clean_url for ns in w3c_core):
+            return True
+
+        # 6. Broad Keywords & Famous Standard Acronyms
+        # Looking for these anywhere in the URL string
+        path_keywords = [
+            'ontology', 'vocab', 'schema', # General terms
+            'skos', 'foaf', 'crm', 'cidoc' # Famous standards
+        ]
+        if any(keyword in clean_url for keyword in path_keywords):
+            return True
+
+        return False
