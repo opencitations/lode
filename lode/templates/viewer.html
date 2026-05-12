@@ -67,6 +67,17 @@
             </div>
 
         {% else %}
+        {% if warnings %}
+            <div class="mb-4">
+                {% for w in warnings %}
+                <div class="alert alert-warning py-2 mb-1" role="alert">
+                    <strong>{{ w.type }}</strong> — {{ w.message }}
+                    {% if w.uri %}<span class="text-muted font-monospace ms-2" style="font-size:0.8em">{{ w.uri }}</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         {% if metadata %}
             <div class="mb-4 border-bottom pb-4">
                 <div class="p-3">
