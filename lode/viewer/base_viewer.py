@@ -3,6 +3,7 @@ import hashlib
 import re
 from typing import Dict, List, Optional, Tuple
 from lode.models import Literal, Model, Resource, Statement
+import urllib.parse
 
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
@@ -33,7 +34,7 @@ class BaseViewer:
         
         return None
 
-    def _get_best_label(self, resource: Resource, language: Optional[str] = None) -> Optional[str]:
+    def _get_best_label(self, resource, language: Optional[str] = None) -> Optional[str]:
         """Gets the best label to display: language > preferred_label > label > identifier."""
 
         # 1. Force 'en' as the absolute default if no language makes it this far
@@ -44,35 +45,39 @@ class BaseViewer:
         for label in labels:
             if hasattr(label, 'get_has_language') and label.get_has_language():
                 if label.get_has_language().lower().startswith(target_lang):
-                    return self._clean_name(label.get_has_value())
+                    # RETURN RAW LABEL
+                    return label.get_has_value()
 
         # Check Normal Labels for the target language
         labels = resource.get_has_label()
         for label in labels:
             if hasattr(label, 'get_has_language') and label.get_has_language():
                 if label.get_has_language().lower().startswith(target_lang):
-                    return self._clean_name(label.get_has_value())
+                    # RETURN RAW LABEL
+                    return label.get_has_value()
 
         # --- DETERMINISTIC FALLBACKS ---
         # If we reach here, no English label exists.
-        # We sort them by language tag so it doesn't randomly shuffle!
+        # We sort them by language tag.
 
         labels = resource.get_has_preferred_label()
         if labels:
-            # Sort alphabetically by language tag (e.g., 'es' then 'pt')
             sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
-            return self._clean_name(sorted_labels[0].get_has_value())
+            # RETURN RAW LABEL
+            return sorted_labels[0].get_has_value()
 
         labels = resource.get_has_label()
         if labels:
             sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
-            return self._clean_name(sorted_labels[0].get_has_value())
+            # RETURN RAW LABEL
+            return sorted_labels[0].get_has_value()
 
         # Final Fallback: The URI Identifier
         resource_id = resource.get_has_identifier()
         if resource_id:
             clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
-            return self._clean_name(clean_resource_id)
+            # ONLY clean the identifier!
+            return self._clean_name(self, clean_resource_id)
 
         return None
 
@@ -171,7 +176,7 @@ class BaseViewer:
                     if not attr.startswith('_') and value:
                         # Skip attributes that are handled elsewhere or are empty
                         # Clean up name:
-                        clean_name = self._clean_name(attr)
+                        clean_name = self._clean_name(self,attr)
 
                         # Process value (could be a list of objects)clean
                         # We use the helper to get clean text for each item
@@ -190,6 +195,28 @@ class BaseViewer:
                             for v in formatted_values:
                                 if v not in relations[clean_name]:  # Valentina FIX: this do not add duplicates in metadata values  
                                     relations[clean_name].append(v)
+            # Sort relations
+            ordered_relations = {}
+
+            # Define the exact order you
+            priority_order = [
+                "is sub property of",
+                "domain",
+                "range",
+                "is inverse Of",
+                "property chain",
+                "is disjoint with"
+            ]
+
+            # Extract and insert the priority keys first
+            for key in priority_order:
+                if key in relations:
+                    ordered_relations[key] = relations[key]
+
+            # Insert all remaining keys alphabetically
+            for key in sorted(relations.keys()):
+                if key not in ordered_relations:
+                    ordered_relations[key] = relations[key]
 
             characteristics = {}
             char_attributes = [
@@ -211,14 +238,18 @@ class BaseViewer:
             statements =  self._format_statement(all_instances, uri, language)
             type_inst = type(instance).__name__.replace(" ", "_")
 
+            is_dep = getattr(instance, 'get_is_deprecated')() if hasattr(instance, 'get_is_deprecated') else getattr(
+                instance, 'is_deprecated', False)
+
             entities.append({
                 'type': type_inst,
                 'uri': uri,
                 'label': self._get_best_label(instance, language),
                 'anchor_id': f"id_{safe_id}_{type_inst}",
-                'relations': relations,
+                'relations': ordered_relations,
                 'statements': statements,
-                'characteristics': characteristics
+                'characteristics': characteristics,
+                'is_deprecated': bool(is_dep)
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
@@ -272,7 +303,7 @@ class BaseViewer:
 
                     if values:
                         # 4. Auto-format the key name
-                        clean_key = self._clean_name(attr_name)
+                        clean_key = self._clean_name(self, attr_name)
 
                         # 5. Ensure values are in a list
                         if not isinstance(values, list):
@@ -283,13 +314,19 @@ class BaseViewer:
                         for val in values:
                             entry = self._resolve_resource_value(val, language)
                             if entry['text']:
+                                # 7. Check if the link if an visualizable ontology or not
+                                if entry.get('link'):
+                                    entry['is_visualizable'] = self._is_likely_ontology(entry['link'])
+                                else:
+                                    entry['is_visualizable'] = False
+
                                 extracted_values.append(entry)
 
-                        # 7. Add to structural data ONLY if we found valid text
+                        # 8. Add to structural data ONLY if we found valid text
                         if extracted_values:
                             data[clean_key] = extracted_values
 
-        # 4. Statements
+        # 9. Statements
         data.update(self._format_statement(all_instances, ontology_model.has_identifier, language))
 
         return data
@@ -301,7 +338,8 @@ class BaseViewer:
             'link': None,
             'lan': None,
             'parts': None,  # This key is for restrictions
-            'type': None
+            'type': None,
+            'is_deprecated': False
         }
 
         if not obj: return handler_dic
@@ -312,6 +350,11 @@ class BaseViewer:
         obj_type = type(obj).__name__
 
         if obj_type in restriction_types:
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj,
+                                                                                                           'is_deprecated',
+                                                                                                           False)
+            handler_dic['is_deprecated'] = bool(is_dep)
+
             # Recursively parse the restriction into clickable parts
             parts = self._parse_restriction(obj, language)
 
@@ -329,6 +372,12 @@ class BaseViewer:
         # --- 3. Literal Handling ---
         if type(obj).__name__ == 'Literal':
             if hasattr(obj, 'get_has_value') and obj.get_has_value():
+
+                is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj,
+                                                                                                               'is_deprecated',
+                                                                                                               False)
+                handler_dic['is_deprecated'] = bool(is_dep)
+
                 lit_lang = obj.get_has_language()
 
                 # If a language is requested (e.g., 'pt')
@@ -353,9 +402,47 @@ class BaseViewer:
                 handler_dic['type'] = obj_type
                 return handler_dic
 
-        # --- 4. Normal Resource Handling (Concepts, Properties, Individuals) ---
+        # --- 4. Statement (nested annotation) ---
+        if obj_type == 'Statement':
+            handler_dic['type'] = 'Statement'
+            handler_dic['link'] = None  # don't link to the BNode id
+            inner_pred = obj.get_has_predicate()
+            inner_obj = obj.get_has_object()
+            # Resolve the inner (predicate, value) pair recursively
+            inner = {
+                'predicate': self._get_best_label(inner_pred, language) if inner_pred else None,
+                'value': self._resolve_resource_value(inner_obj, language) if inner_obj else None,
+            }
+            # Walk Statement's own annotations (anything else in __dict__ besides
+            # the reification slots), so dc:date, rdf:value siblings show up too.
+            skip = {'has_subject', 'has_predicate', 'has_object',
+                    'has_identifier', 'is_positive_statement'}
+            siblings = []
+            for attr, value in obj.__dict__.items():
+                if attr.startswith('_') or attr in skip or not value:
+                    continue
+                values = value if isinstance(value, list) else [value]
+                for v in values:
+                    resolved = self._resolve_resource_value(v, language)
+                    if resolved.get('text') or resolved.get('nested'):
+                        siblings.append({
+                            'predicate': self._clean_name(attr),
+                            'value': resolved,
+                        })
+            handler_dic['nested'] = {'main': inner, 'siblings': siblings}
+            # Pick a primary text for collapsed display: the inner value's text
+            handler_dic['text'] = (inner.get('value') or {}).get('text') or '[Statement]'
+            return handler_dic
+
+        # --- 5. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
+
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj,
+                                                                    'get_is_deprecated') else getattr(obj, 'is_deprecated',
+                                                                                                           False)
+            handler_dic['is_deprecated'] = bool(is_dep)
+
             try:
                 handler_dic['text'] = self._get_best_label(obj, language)
                 handler_dic['type'] = obj_type
@@ -414,14 +501,16 @@ class BaseViewer:
         return statements
 
     @staticmethod
-    def _clean_name(name: str) -> str:
+    def _clean_name(self, name: str) -> str:
         if not name: return ""
 
         name = re.sub(r'^(get_has_|get_|has_)', '', name)
+        # Put space between camelCase letters
         name = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', name)
         name = name.replace('_', ' ')
 
-        return ' '.join(name.split()).title()
+        # Strip extra spaces
+        return ' '.join(name.split())
 
     def _parse_restriction(self, obj, language=None) -> list:
         """
@@ -441,7 +530,7 @@ class BaseViewer:
 
         obj_type = type(obj).__name__
         restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
-                             "OneOf", "Value"]
+                             "OneOf", "Value", "DatatypeRestriction"]
 
         # 2. If it is a Restriction, recursively unpack its specific components
         if obj_type in restriction_types:
@@ -460,6 +549,11 @@ class BaseViewer:
                 quant = _get(obj, 'has_quantifier_type', "some")
                 concept = _get(obj, 'applies_on_concept')
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': f' {quant} ', 'link': None})
                 parts.extend(self._parse_restriction(concept, language))
@@ -470,6 +564,11 @@ class BaseViewer:
                 card_num = _get(obj, 'has_cardinality')
                 concept = _get(obj, 'applies_on_concept')
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': f' {card} {card_num}',  'link': None})
                 parts.extend(self._parse_restriction(concept, language))
@@ -478,6 +577,11 @@ class BaseViewer:
                 operator = _get(obj, 'has_logical_operator', "and")
                 concepts = _get(obj, 'applies_on_concept', [])
                 if not isinstance(concepts, list): concepts = [concepts]
+
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
                 parts.append({'text': '(', 'link': None})
                 for i, c in enumerate(concepts):
@@ -490,6 +594,11 @@ class BaseViewer:
                 resources = _get(obj, 'applies_on_resource', [])
                 if not isinstance(resources, list): resources = [resources]
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.append({'text': 'one of { ', 'link': None})
                 for i, r in enumerate(resources):
                     if i > 0:
@@ -501,9 +610,32 @@ class BaseViewer:
                 prop = _get(obj, 'applies_on_property')
                 resource = _get(obj, 'applies_on_resource')
 
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
                 parts.extend(self._parse_restriction(prop, language))
                 parts.append({'text': ' value ', 'link': None})
                 parts.extend(self._parse_restriction(resource, language))
+
+            elif obj_type == "DatatypeRestriction":
+                concept = _get(obj, 'applies_on_concept')  # Datatype(xsd:string)
+                constraint = _get(obj, 'has_constraint')  # "pattern"
+                value = _get(obj, 'has_restriction_value')  #  Literal("[0-9]+")
+
+                # Safely check if the is_inverse flag is True
+                is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
+                if is_inv:
+                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+
+                parts.extend(self._parse_restriction(concept, language))
+                if constraint:
+                    parts.append({'text': f' with {constraint} ', 'link': None, 'type': 'Text'})
+                else:
+                    parts.append({'text': ' restricted by ', 'link': None, 'type': 'Text'})
+
+                parts.extend(self._parse_restriction(value, language))
 
             return parts
 
@@ -515,3 +647,45 @@ class BaseViewer:
             return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type')}]
 
         return []
+
+    def _is_likely_ontology(self, url: str) -> bool:
+        """Determines if a URL likely points to an ontology based on naming patterns."""
+        if not url or not isinstance(url, str) or not url.startswith('http'):
+            return False
+
+        # 1. Clean the string
+        clean_url = url.strip().lower()
+
+        # 2. Safely parse the URL to ignore fragments (#) and queries (?) for extension checking
+        parsed = urllib.parse.urlparse(clean_url)
+        path = parsed.path.rstrip('/')
+
+        # 3. Standard Ontology File Extensions
+        ontology_exts = ['.owl', '.rdf', '.ttl', '.nt', '.n3', '.jsonld']
+        if any(path.endswith(ext) for ext in ontology_exts):
+            return True
+
+        # 4. Common Ontology Registries & Permanent URLs
+        ontology_domains = [
+            'w3id.org',
+            'purl.org',
+            'xmlns.com'  # Often used for FOAF
+        ]
+        if any(domain in clean_url for domain in ontology_domains):
+            return True
+
+        # 5. Core W3C Namespaces
+        w3c_core = ['/1999/02/22-rdf-syntax-ns', '/2000/01/rdf-schema', '/2002/07/owl']
+        if 'w3.org' in clean_url and any(ns in clean_url for ns in w3c_core):
+            return True
+
+        # 6. Broad Keywords & Famous Standard Acronyms
+        # Looking for these anywhere in the URL string
+        path_keywords = [
+            'ontology', 'vocab', 'schema', # General terms
+            'skos', 'foaf', 'crm', 'cidoc' # Famous standards
+        ]
+        if any(keyword in clean_url for keyword in path_keywords):
+            return True
+
+        return False

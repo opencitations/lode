@@ -47,10 +47,15 @@
         'relation': { 'singular': 'Object Property', 'plural': 'Object Properties', 'abb': 'op' },
         'attribute': { 'singular': 'Data Property', 'plural': 'Data Properties', 'abb': 'dp' },
         'annotation': { 'singular': 'Annotation Property', 'plural': 'Annotation Properties', 'abb': 'ap' },
-        'individual': { 'singular': 'Named Individual', 'plural': 'Named Individuals', 'abb': 'ni' },
-        'str': { 'singular': 'string', 'plural': '', 'abb': 'str' },
-        'literal': { 'singular': 'literal', 'plural': '', 'abb': 'lit' }
+        'individual': { 'singular': 'Named Individual', 'plural': 'Named Individuals', 'abb': 'ni' }
      } %}
+
+    {% set lang_map = {
+    'en': 'English', 'es': 'Spanish', 'pt': 'Portuguese',
+    'fr': 'French', 'de': 'German', 'it': 'Italian',
+    'zh': 'Chinese', 'ja': 'Japanese', 'ru': 'Russian',
+    'ar': 'Arabic', 'nl': 'Dutch', 'ko': 'Korean', 'fa': 'Persian'
+    } %}
 
     {% set md_types = ['Literal', 'Str', 'literal', 'str', 'string'] %}
 
@@ -62,16 +67,27 @@
             </div>
 
         {% else %}
+        {% if warnings %}
+            <div class="mb-4">
+                {% for w in warnings %}
+                <div class="alert alert-warning py-2 mb-1" role="alert">
+                    <strong>{{ w.type }}</strong> — {{ w.message }}
+                    {% if w.uri %}<span class="text-muted font-monospace ms-2" style="font-size:0.8em">{{ w.uri }}</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         {% if metadata %}
             <div class="mb-4 border-bottom pb-4">
                 <div class="p-3">
                     <h1 class="fw-bold mb-2">
-                        {% if metadata.Title %}
-                            {% for title in metadata.Title %}
+                        {% if metadata.title %}
+                            {% for title in metadata.title %}
                                 <span>{{title.text}}</span>
                             {% endfor %}
                         {% elif metadata.label %}
-                            <span>{{ metadata.label.text }}</span>
+                            <span>{{ metadata.label[0].text }}</span>
                         {% endif %}
                     </h1>
                     <div class="d-flex align-items-center mb-5">
@@ -86,26 +102,26 @@
                         {% for key, val_list in metadata.items() %}
                             {% if key not in ['uri', 'label'] %}
                             {% if val_list %}
-                            <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mb-3">{{ key }}</dt>
-                            <dd class="col-sm-9 mb-3">
-                                <div class="d-flex flex-column gap-1">
+                            <dt class="text-capitalize fs-7 fw-bold mb-1">{{ key }}</dt>
+                            <dd class="mb-1">
+                                <div class="d-flex flex-column">
                                     {% for item in val_list %}
                                         {% set v_type = item.type.lower() if item.type else '' %}
                                         {% set is_md = v_type in md_types %}
-                                        <div>
+                                        <div class="ms-5">
                                             {% if item.link %}
-                                                <span class="{% if is_md %}render-markdown{% endif %}">{{ item.text }}</span>
-                                                <a href="{{ item.link }}" target="_blank"
-                                                    class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
+                                                <div class="{% if is_md %}render-markdown{% endif %}">
+                                                    <a href="{{ item.link }}" target="_blank" title="Go to Resource">{{ item.link }}</a>
+                                                    {% if item.is_visualizable %}
+                                                        <a href="?read_as={{ request.query_params.get('read_as', '') }}&url={{ item.link | urlencode }}&lang={{ request.query_params.get('lang', 'en') }}" target="_blank" class="ms-1">
+                                                         (visualise it with LODE)
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
                                             {% else %}
-                                                <span class="text-dark {% if is_md %}render-markdown{% endif %}">{{ item.text }}</span>
+                                                <div class="markdown-with-badge metadata_p text-dark {% if is_md %}render-markdown inline-markdown{% endif %}">{{ item.text }}</div>
                                             {% endif %}
 
-                                            {% if item.language %}
-                                                <span class="badge bg-light text-secondary border border-secondary-subtle ms-2 rounded-pill" style="font-size: 0.7em; vertical-align: middle;">
-                                                    {{ item.language }}
-                                                </span>
-                                            {% endif %}
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -113,10 +129,10 @@
                             {% endif %}
                             {% endif %}
                         {% endfor %}
-                        <dt class="col-sm-3 text-secondary text-uppercase fs-7 fw-bold mt-2">Actions</dt>
-                        <dd class="col-sm-9 mt-2">
-                            <a href="#" class="btn btn-sm btn-outline-dark me-2"><i class="bi bi-share"></i> WebVOWL</a>
-                            <a href="{{ url }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
+                        <dt class="text-capitalize fs-7 fw-bold mb-1">Other visualisation</dt>
+                        <dd class="mb-1 ms-5">
+                            <a href="https://service.tib.eu/webvowl/#iri={{metadata.uri[0].link}}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
+                            <a href="{{ metadata.uri[0].link }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
                         </dd>
                     </dl>
                 </div>
@@ -188,41 +204,50 @@
         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 
-        <script>
+       <script>
             document.addEventListener("DOMContentLoaded", function() {
 
-                DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+                // Security hooks
+                DOMPurify.addHook('afterSanitizeAttributes', function(node) {
                     if (node.tagName === 'A') {
                         node.setAttribute('target', '_blank');
                         node.setAttribute('rel', 'noopener noreferrer');
+                    }
+                    if (node.tagName === 'IMG') {
+                        node.setAttribute('class', 'img-fluid border rounded mt-2 mb-2');
                     }
                 });
 
                 marked.use({
                     gfm: true,
-                    breaks: true
+                    breaks: false // So line breaks not be added
                 });
 
                 const mdElements = document.querySelectorAll('.render-markdown');
 
-                mdElements.forEach(function (el) {
+                mdElements.forEach(function(el) {
                     try {
-                        const rawText = el.textContent;
+                        let rawText = el.textContent;
 
-                        // PRE-PROCESSING: Strip the 'html:' namespace prefix from XML Literals!
-                        // This turns <html:p> into <p>, <html:h4> into <h4>, etc.
-                        const cleanText = rawText.replace(/<(\/?)html:([a-zA-Z0-9]+)/gi, '<$1$2');
+                        // 1. Strip ALL leading spaces to prevent accidental <pre><code> blocks
+                        rawText = rawText.replace(/^[ \t]+/gm, '').trim();
+
+                        // 2. Strip ANY XML namespace prefix (Turns <html:div> into <div>, </xhtml:p> into </p>)
+                        let cleanText = rawText.replace(/<(\/?)[a-zA-Z0-9_-]+:([a-zA-Z0-9]+)/gi, '<$1$2');
+
+                        // 3. Strip xmlns attributes
+                        cleanText = cleanText.replace(/ xmlns(:[a-zA-Z0-9_-]+)?="[^"]*"/gi, '');
 
                         let rawHTML = "";
 
-                        // Use inline parsing for spans/links, standard parsing for divs
+                        // 4. Smart Routing
                         if (el.tagName === 'SPAN' || el.tagName === 'A') {
                             rawHTML = marked.parseInline(cleanText);
                         } else {
                             rawHTML = marked.parse(cleanText);
                         }
 
-                        // Explicitly tell DOMPurify to allow standard elements that might be in the XML
+                        // 5. Sanitize
                         const cleanHTML = DOMPurify.sanitize(rawHTML, {
                             ADD_TAGS: ['img'],
                             ADD_ATTR: ['target', 'src', 'alt', 'title', 'class']
@@ -230,7 +255,7 @@
 
                         el.innerHTML = cleanHTML;
                     } catch (e) {
-                        console.error("Error rendering markdown:", e);
+                        console.error("Error rendering markdown/html:", e);
                     }
                 });
             });
