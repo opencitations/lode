@@ -37,7 +37,8 @@ async def extract_get(
     resource: Optional[str] = None,
     lang: Optional[str] = None,
     imported: Optional[bool] = None,
-    closure: Optional[bool] = None
+    closure: Optional[bool] = None, 
+    warnings: bool = False
 ):
     """Visualizza semantic artefact da URL."""
     
@@ -48,10 +49,11 @@ async def extract_get(
         logger.info(f"Resource: {resource}")
         
         reader = Reader()
-        reader.load_instances(url, read_as.value, imported=imported, closure=closure)
+        reader.load_instances(url, read_as.value, imported=imported, closure=closure, warnings=warnings)
         
         viewer = reader.get_viewer()
         data = viewer.get_view_data(resource_uri=resource, language=lang) 
+        data['warnings'] = reader.get_warnings()
         
         logger.info(f"=== REQUEST SUCCESS ===")
         return templates.TemplateResponse("viewer.html", {
@@ -78,7 +80,9 @@ async def extract_post(
     resource: Optional[str] = Form(None),
     lang: Optional[str] = None,
     imported: Optional[str] = Form(None),
-    closure: Optional[str] = Form(None)
+    closure: Optional[str] = Form(None),
+    warnings: bool = False,
+
 ):
     """Visualizza semantic artefact da file."""
     temp_file_path = None
@@ -94,10 +98,11 @@ async def extract_post(
             temp_file_path = tmp.name
         
         reader = Reader()
-        reader.load_instances(temp_file_path, read_as.value, imported=imported, closure=closure)
+        reader.load_instances(temp_file_path, read_as.value, imported=imported, closure=closure, warnings=warnings)
         
         viewer = reader.get_viewer()
         data = viewer.get_view_data(resource_uri=resource, language=lang) 
+        data['warnings'] = reader.get_warnings() 
         
         logger.info(f"=== UPLOAD SUCCESS ===")
         return templates.TemplateResponse("viewer.html", {

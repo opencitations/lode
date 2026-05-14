@@ -44,12 +44,33 @@ class BaseLogic(ABC):
         self._allowed_namespaces = self._get_allowed_namespaces()
         # Validate all handlers declared in config exist on this instance
         self._validate_handlers()
+        self._warnings = []
 
-    # ========== METODI ASTRATTI ==========
+    def add_warning(self, code, subject, message):
+        self._warnings.append({'code': code, 'subject': str(subject), 'message': message})
+
+    def get_warnings(self):
+        if not getattr(self, '_warnings_enabled', False):  # self qui è la LOGIC
+            return []
+
+    def save_warnings(self, filepath: str = None):
+        """Save warnings to JSON file."""
+        import json
+        from pathlib import Path
+        
+        if not self._warnings:
+            return
+        
+        if filepath is None:
+            filepath = Path(__file__).parent.parent.parent / 'warnings.json'
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(self._warnings, f, indent=2, ensure_ascii=False)
 
     def _get_allowed_classes(self) -> set:
         class_names = self._strategy.config.get('allowed_classes', [])
-        return {self._strategy.CLASSES[name] for name in class_names if name in self._strategy.CLASSES}
+        import lode.models as _models
+        return {getattr(_models, name) for name in class_names if getattr(_models, name, None) is not None}
 
     def _get_allowed_namespaces(self) -> set:
         """
@@ -337,16 +358,18 @@ class BaseLogic(ABC):
             if isinstance(id, RDFlibLiteral):
                 return self._create_literal(id)
 
-            if isinstance(id, URIRef) and (
-                str(id).startswith(str(XSD)) or
-                id in (RDFS.Literal, RDF.XMLLiteral, RDF.HTML,
-                    RDF.PlainLiteral, RDF.langString, RDF.JSON,
-                    OWL.real, OWL.rational)
-            ):
-                python_class = Datatype
+            DATATYPE_BUILTINS = frozenset({
+            RDFS.Literal, RDF.XMLLiteral, RDF.HTML,
+            RDF.PlainLiteral, RDF.langString, RDF.JSON,
+            OWL.real, OWL.rational
+            })
 
-            if python_class:
-                python_class = self._resolve_allowed_class(python_class, id)
+            if isinstance(id, URIRef):
+                if id in DATATYPE_BUILTINS:
+                    python_class = Datatype  # built-ins: always Datatype, no exceptions
+                elif str(id).startswith(str(XSD)) and str(id) != str(XSD):
+                    if (id, RDF.type, None) not in self.graph:
+                        python_class = Datatype  # XSD: only if explicitly declared as something else
 
             # if isinstance(id, URIRef):
             #     uri_str = str(id)
@@ -522,14 +545,111 @@ class BaseLogic(ABC):
             self._instance_cache[stmt_bnode] = set()
         self._instance_cache[stmt_bnode].add(statement)
 
+    def _is_unmapped_structured_bnode(self, node) -> bool:
+        """A BNode is a structured Statement value if:
+        - it's a BNode (not URIRef, not Literal)
+        - it's not already in the instance cache (not classified by any phase)
+        - it has at least one outgoing triple
+        - none of its outgoing predicates carry a useful rdf:type for our model
+        (i.e. it's not declaring itself as a typed entity)
+        """
+        if not isinstance(node, BNode):
+            return False
+        if node in self._instance_cache:
+            return False
+        has_out = False
+        for _ in self.graph.predicate_objects(node):
+            has_out = True
+            break
+        if not has_out:
+            return False
+        # if it declares an rdf:type that we know how to map, leave it alone
+        for t in self.graph.objects(node, RDF.type):
+            if t in self._strategy.get_type_mapping():
+                return False
+        return True
+
+    def _create_nested_statement(self, node):
+        """Materialises an unmapped structured BNode as a Statement whose own
+        triples become its annotations. Recurses for nested structured BNodes.
+        """
+        statement = Statement()
+        statement.set_has_identifier(str(node))
+
+        if node not in self._instance_cache:
+            self._instance_cache[node] = set()
+        self._instance_cache[node].add(statement)
+        if statement not in self._triples_map:
+            self._triples_map[statement] = set()
+
+        for p, o in self.graph.predicate_objects(node):
+            self._triples_map[statement].add((node, p, o))
+
+            # The predicate becomes an Annotation if not otherwise known
+            if p in self._instance_cache:
+                pred_inst = next(
+                    (i for i in self._instance_cache[p] if isinstance(i, Property)),
+                    None
+                )
+            else:
+                pred_inst = None
+            if pred_inst is None:
+                pred_inst = Annotation()
+                pred_inst.set_has_identifier(str(p))
+                self._instance_cache.setdefault(p, set()).add(pred_inst)
+
+            # Resolve the object recursively
+            if self._is_rdf_collection(o):
+                o_inst = self._convert_collection_to_container(o)
+            elif isinstance(o, RDFlibLiteral):
+                o_inst = self._create_literal(o)
+            elif self._is_unmapped_structured_bnode(o):
+                o_inst = self._create_nested_statement(o)
+            else:
+                o_inst = self.get_or_create(o, Individual)
+
+            # The first (predicate, object) pair fills the Statement slots;
+            # additional pairs are stored as side annotations on the Statement
+            # itself via setattr (a Statement keeps its own __dict__).
+            if statement.get_has_predicate() is None:
+                statement.set_has_predicate(pred_inst)
+                if o_inst:
+                    statement.set_has_object(o_inst)
+            else:
+                # extra triples live as ad-hoc attributes keyed by the predicate label
+                attr_name = str(p).rsplit('#', 1)[-1].rsplit('/', 1)[-1]
+                existing = getattr(statement, attr_name, None)
+                if existing is None:
+                    setattr(statement, attr_name, o_inst)
+                elif isinstance(existing, list):
+                    existing.append(o_inst)
+                else:
+                    setattr(statement, attr_name, [existing, o_inst])
+
+        return statement
+
 
     # ========== SWRL ==========
 
     def handle_swrl_imp(self, uri):
-        rule = self.get_or_create(uri, Rule)
+        # Force promotion to Rule if cached as something else
+        if uri in self._instance_cache:
+            existing = next(iter(self._instance_cache[uri]))
+            if not isinstance(existing, Rule):
+                rule = Rule()
+                rule.__dict__.update(existing.__dict__)
+                self._instance_cache[uri].discard(existing)
+                self._instance_cache[uri].add(rule)
+                if existing in self._triples_map:
+                    self._triples_map[rule] = self._triples_map.pop(existing)
+            else:
+                rule = existing
+        else:
+            rule = self.get_or_create(uri, Rule)
+        
         if not rule:
             return
-
+        
         body_node = self.graph.value(uri, SWRL_NS.body)
         if body_node:
             try:
@@ -583,6 +703,11 @@ class BaseLogic(ABC):
                 atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
             elif local == 'DifferentIndividualsAtom':
                 atom.set_has_predicate(self.get_or_create(OWL.differentFrom, Relation))
+
+        # dataRange (DataRangeAtom)
+        data_range = self.graph.value(atom_node, SWRL_NS.dataRange)
+        if data_range and atom.get_has_predicate() is None:
+            atom.set_has_predicate(self.get_or_create(data_range, Datatype))
 
         # argument1 / argument2 (most atom types)
         arg1 = self.graph.value(atom_node, SWRL_NS.argument1)

@@ -18,9 +18,17 @@ class Reader:
         self._logic = None  # Logic specializzata (OWL, SKOS, RDF, RDFS)
         self._graph = None
         self._configuration = None
+
+    def get_warnings(self) -> list:
+        if not getattr(self, '_warnings_enabled', False):
+            return []
+        if self._logic and hasattr(self._logic, '_warnings'):
+            return self._logic._warnings
+        return []
     
-    def load_instances(self, graph_path : str, read_as : str, imported=None, closure=None):
+    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, warnings=False):
         """Carica e processa grafo RDF"""
+        self._warnings_enabled = warnings
 
         # 1. Parse generico
         loader = Loader(graph_path, imported=imported, closure=closure)
@@ -163,8 +171,20 @@ class Reader:
         # FASE 5: Fallback (comune)
         self._logic.phase5_fallback()
         
-        # FASE 6: Statements (solo RDF)
+        # FASE 6: Statements
         self._logic.phase6_create_statements()
+
+        # Post-pipeline warning checks
+        if self._warnings_enabled:
+            from lode.reader.warnings import owl_warnings
+            owl_warnings.run_post_checks(self._logic)
+
+            if self._logic._warnings:
+                print(f"WARNINGS ({len(self._logic._warnings)}):")
+                for w in self._logic._warnings:
+                    print(f"  [{w['code']}] {w['message']}")
+
+            self._logic.save_warnings()
     
     # def _phase0_create_datatypes(self):
     #     """Pre-crea tutti i Datatype (comune a tutti i formati)"""

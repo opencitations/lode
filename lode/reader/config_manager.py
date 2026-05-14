@@ -71,35 +71,6 @@ class ConfigManager(ABC):
         'swrl': 'http://www.w3.org/2003/11/swrl#'
     }
     
-    # ========== CLASS MAP ==========
-    CLASSES = {
-        'Concept': Concept,
-        'Property': Property,
-        'Relation': Relation,
-        'Attribute': Attribute,
-        'Annotation': Annotation,
-        'Restriction': Restriction,
-        'Quantifier': Quantifier,
-        'Cardinality': Cardinality,
-        'TruthFunction': TruthFunction,
-        'PropertyConceptRestriction': PropertyConceptRestriction,
-        'DatatypeRestriction': DatatypeRestriction, 
-        'Container': Container,
-        'OneOf': OneOf,
-        'Value': Value,
-        'Model': Model,
-        'Collection': Collection,
-        'Statement': Statement,
-        'Datatype': Datatype,
-        'Literal': Literal,
-        'Resource': Resource,
-        'Individual': Individual,
-        'Variable': Variable,
-        'Atom': Atom,
-        'Rule': Rule
-    }
-
-    
     def _parse_uri(self, uri_str: str) -> URIRef:
         """owl:Class -> URIRef"""
         if ':' not in uri_str:
@@ -109,17 +80,22 @@ class ConfigManager(ABC):
         return URIRef(self.NAMESPACES[prefix] + local)
     
     def _parse_class(self, class_name: str):
-        """'Concept' -> Concept class"""
-        return self.CLASSES[class_name]
-    
+        import lode.models as _models
+        cls = getattr(_models, class_name, None)
+        if cls is None:
+            raise KeyError(class_name)
+        return cls
+
     def _parse_value(self, value):
-        """Parse valore config"""
         if value == 'Literal':
             return 'Literal'
         elif value is True or value is False:
             return value
-        elif isinstance(value, str) and value in self.CLASSES:
-            return self._parse_class(value)
+        elif isinstance(value, str):
+            import lode.models as _models
+            cls = getattr(_models, value, None)
+            if cls is not None:
+                return cls
         return value
     
     # ========== CONFIG ACCESSORS ==========
@@ -176,12 +152,12 @@ class ConfigManager(ABC):
         }
     
     def get_fallback_class(self) -> type | None:
-        """Classe fallback per risorse non categorizzate"""
         fallback = self.config.get('mapper', {}).get('fallback_class')
         if fallback:
-            return self.CLASSES.get(fallback, Statement)
+            import lode.models as _models
+            return getattr(_models, fallback, Statement)
         return None
-    
+        
     # ========== HELPER METHODS ==========
     
     def get_classifier_predicates(self) -> set[URIRef]:
@@ -194,22 +170,25 @@ class ConfigManager(ABC):
     def classify_by_predicate(self, uri: Node, graph: Graph) -> type | None:
             """Classifica guardando predicati.
             - inferred_class: tipo del soggetto (BNode restrictions, quantifiers, etc.) -> priorita' massima
+              Se piu' predicati hanno inferred_class, vince la classe piu' specifica (issubclass).
             - target_classes con 1 elemento, nessun inferred_class, classify != false: 
-            tipo implicito del soggetto (fallback)
+              tipo implicito del soggetto (fallback)
             - target_classes con 2+ elementi: ambiguo, gestito dall'handler -> None
             - classify: false nel config: il predicato non classifica il soggetto,
-            serve solo per i setters in phase3 (es. facet XSD)
+              serve solo per i setters in phase3 (es. facet XSD)
             """
             fallback = None
+            inferred = None
             for predicate, cfg in self.get_property_mapping().items():
                 if (uri, predicate, None) in graph:
                     if 'inferred_class' in cfg:
-                        return cfg['inferred_class']
+                        candidate = cfg['inferred_class']
+                        if inferred is None or issubclass(candidate, inferred):
+                            inferred = candidate
                     elif fallback is None and len(cfg.get('target_classes', [])) == 1:
                         if cfg.get('classify', True):
                             fallback = cfg['target_classes'][0]
-            return fallback
-
+            return inferred if inferred else fallback
 
 # config_manager.py - aggiungi nei concrete managers
 
@@ -227,24 +206,31 @@ class OwlConfigManager(ConfigManager):
         from lode.viewer import OwlViewer
         return OwlViewer(reader)
 
-
 class RdfConfigManager(ConfigManager):
+    @property
+    def config_name(self) -> str:
+        return 'rdf'
+
     def create_logic(self, graph: Graph, cache: dict):
         from lode.reader.logic import RdfLogic
         return RdfLogic(graph, cache, self)
-    
+
     def create_viewer(self, reader):
-        from lode.viewer import BaseViewer # COMING SOOND
+        from lode.viewer import BaseViewer
         return BaseViewer(reader)
 
 
 class SkosConfigManager(ConfigManager):
+    @property
+    def config_name(self) -> str:
+        return 'skos'
+
     def create_logic(self, graph: Graph, cache: dict):
         from lode.reader.logic import SkosLogic
         return SkosLogic(graph, cache, self)
-    
+
     def create_viewer(self, reader):
-        from lode.viewer import BaseViewer # COMING SOON
+        from lode.viewer import BaseViewer
         return BaseViewer(reader)
 
 # ========== CONFIGURATIONS REGISTRY ==========

@@ -61,6 +61,7 @@ mapper:
   # ========== Concept ==========
   rdfs:subClassOf:
     is: predicate
+    inferred_class: Concept
     target_classes: [Concept]
     setters: [set_is_sub_concept_of: Concept]
   
@@ -151,6 +152,10 @@ mapper:
   swrl:DataRangeAtom:
     is: class
     target_class: Atom
+  
+  swrl:arguments:
+    is: predicate
+    target_classes: [Atom]
 
   swrl:argument1:
     is: predicate

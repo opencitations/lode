@@ -16,7 +16,7 @@ class Relation(Property):
         self.is_transitive = False  # [1]
         
         # Relations with Relations
-        self.is_inverse_of = None  # 0..1 Relation
+        self.is_inverse_of = []  # [0..*] Relation
         self.has_property_chain = []  # 1..*
 
         # Relation with Concept
@@ -76,23 +76,20 @@ class Relation(Property):
         """Restituisce is_transitive"""
         return self.is_transitive
 
-    # Metodi per is_inverse_of (0..1 - singolo valore)
-    def set_is_inverse_of(self, relation):
-        """Imposta is_inverse_of"""
-        self.is_inverse_of = relation
-    
     def get_is_inverse_of(self):
-        """Restituisce is_inverse_of"""
-        return self.is_inverse_of
-
-    # Metodi per has_property_chain
-    def set_has_property_chain(self, relation):
-        """Aggiunge una relation a has_property_chain"""
-        self.has_property_chain = relation # if its a list of lists should be modified
+        """Returns the list of inverse of"""
+        return list(set(self.is_inverse_of))
     
+    def set_is_inverse_of(self, relation):
+        """Adds a inverse relation"""
+        self.is_inverse_of.append(relation)
+
+    def set_has_property_chain(self, relation):
+        if relation not in self.has_property_chain:
+            self.has_property_chain.append(relation)
+
     def get_has_property_chain(self):
-        """Restituisce una copia della lista has_property_chain"""
-        return self.has_property_chain
+        return list(self.has_property_chain)
     
     # def set_has_range(self, concept):
     #     """Imposta has_range"""

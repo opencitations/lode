@@ -1,0 +1,139 @@
+{
+  "uri": "https://w3id.org/spar/frapo",
+  "counts": {
+    "Class": {
+      "lode": 95,
+      "owlapi": 94,
+      "delta": 1
+    },
+    "Object property": {
+      "lode": 43,
+      "owlapi": 42,
+      "delta": 1
+    },
+    "Data property": {
+      "lode": 84,
+      "owlapi": 83,
+      "delta": 1
+    },
+    "Annotation property": {
+      "lode": 24,
+      "owlapi": 25,
+      "delta": -1
+    },
+    "Named individual": {
+      "lode": 25,
+      "owlapi": 25,
+      "delta": 0
+    },
+    "Datatype": {
+      "lode": 4,
+      "owlapi": 0,
+      "delta": 4
+    }
+  },
+  "iri_sets": {
+    "Class": {
+      "intersection_size": 94,
+      "only_in_lode_size": 1,
+      "only_in_owlapi_size": 0,
+      "only_in_lode_sample": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "only_in_owlapi_sample": []
+    },
+    "Object property": {
+      "intersection_size": 42,
+      "only_in_lode_size": 1,
+      "only_in_owlapi_size": 0,
+      "only_in_lode_sample": [
+        "http://www.w3.org/2002/07/owl#topObjectProperty"
+      ],
+      "only_in_owlapi_sample": []
+    },
+    "Data property": {
+      "intersection_size": 83,
+      "only_in_lode_size": 1,
+      "only_in_owlapi_size": 0,
+      "only_in_lode_sample": [
+        "http://www.w3.org/2002/07/owl#topDataProperty"
+      ],
+      "only_in_owlapi_sample": []
+    },
+    "Annotation property": {
+      "intersection_size": 24,
+      "only_in_lode_size": 0,
+      "only_in_owlapi_size": 1,
+      "only_in_lode_sample": [],
+      "only_in_owlapi_sample": [
+        "http://www.w3.org/2002/07/owl#priorVersion"
+      ]
+    },
+    "Named individual": {
+      "intersection_size": 25,
+      "only_in_lode_size": 0,
+      "only_in_owlapi_size": 0,
+      "only_in_lode_sample": [],
+      "only_in_owlapi_sample": []
+    },
+    "Datatype": {
+      "intersection_size": 0,
+      "only_in_lode_size": 4,
+      "only_in_owlapi_size": 0,
+      "only_in_lode_sample": [
+        "http://www.w3.org/2000/01/rdf-schema#Literal",
+        "http://www.w3.org/2001/XMLSchema#date",
+        "http://www.w3.org/2001/XMLSchema#dateTime",
+        "http://www.w3.org/2001/XMLSchema#string"
+      ],
+      "only_in_owlapi_sample": []
+    }
+  },
+  "axiom_coverage": {
+    "owlapi_metrics": {
+      "abox_axiom_count": 25,
+      "abox_axiom_count_incl": 25,
+      "annotation_property_count": 25,
+      "annotation_property_count_incl": 34,
+      "axiom_count": 1068,
+      "axiom_count_incl": 1251,
+      "class_count": 95,
+      "class_count_incl": 98,
+      "dataproperty_count": 84,
+      "dataproperty_count_incl": 91,
+      "datatypes_count": 4,
+      "datatypes_count_incl": 4,
+      "dt_builtin_count": 3,
+      "dt_builtin_count_incl": 3,
+      "dt_notbuiltin_count": 1,
+      "dt_notbuiltin_count_incl": 1,
+      "individual_count": 25,
+      "individual_count_incl": 25,
+      "logical_axiom_count": 297,
+      "logical_axiom_count_incl": 399,
+      "obj_property_count": 43,
+      "obj_property_count_incl": 70,
+      "ontology_anno_count": 9,
+      "rbox_axiom_count": 92,
+      "rbox_axiom_count_incl": 103,
+      "rule_count": 0,
+      "rule_count_incl": 0,
+      "signature_entity_count": 322,
+      "signature_entity_count_incl": 322,
+      "tbox_axiom_count": 180,
+      "tbox_axiom_count_incl": 271,
+      "tboxrbox_axiom_count": 272,
+      "tboxrbox_axiom_count_incl": 374
+    },
+    "lode_total_triples": 1098,
+    "lode_typed_instances": 776,
+    "lode_statement_instances": 44
+  },
+  "lode_unmapped_classes": {
+    "Model": 4,
+    "TruthFunction": 3,
+    "Literal": 493,
+    "Resource": 1,
+    "Statement": 44
+  }
+}

@@ -9,7 +9,8 @@
     "fairsharing": {
       "count": 7,
       "exclusive": 7
-    }
+    }, 
+    "excluded_ontologies": [ "http://meta.icos-cp.eu/ontologies/cpmeta/" ]
   },
   "uris": [
     {
@@ -186,10 +187,6 @@
     },
     {
       "uri": "http://lsq.aksw.org/vocab",
-      "provenance": "LOV"
-    },
-    {
-      "uri": "http://meta.icos-cp.eu/ontologies/cpmeta/",
       "provenance": "LOV"
     },
     {

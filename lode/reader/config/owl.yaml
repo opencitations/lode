@@ -26,6 +26,7 @@ allowed_classes:
   - Cardinality
   - PropertyConceptRestriction
   - DatatypeRestriction
+  - PropertySelfRestriction
   - Collection
   - Restriction
   - Resource
@@ -128,6 +129,12 @@ mapper:
 
   # ========== Classification, no behavior ==========
 
+  # overwrites the rdf:type base.yaml to handle the Concept.has_member(Individual) inverse of Individual.has_type(Concept) 
+  rdf:type:
+    is: predicate
+    target_classes: [Individual, Resource]
+    handler: handle_rdf_type
+
   rdfs:Literal:
     is: class
     target_class: Literal
@@ -156,7 +163,7 @@ mapper:
   
   owl:DeprecatedProperty:
     is: class
-    target_class: Relation
+    target_class: Property
 
   owl:Thing:
     is: class
@@ -263,6 +270,7 @@ mapper:
 
   owl:equivalentProperty:
     is: predicate
+    inferred_class: Property
     target_classes: [Property]
     handler: handle_equivalent_property
 
@@ -277,6 +285,7 @@ mapper:
   # ========== Concept ==========
   owl:disjointWith:
     is: predicate
+    inferred_class: Concept
     target_classes: [Concept]
     handler: handle_disjoint_with
 
@@ -288,6 +297,7 @@ mapper:
       
   owl:equivalentClass:
     is: predicate
+    inferred_class: Concept
     target_classes: [Concept]
     handler: handle_equivalent_class
   
@@ -321,6 +331,11 @@ mapper:
     inferred_class: Model
     target_classes: [Model]
     setters: [set_is_incompatible_with: Model]
+
+  owl:hasKey:
+    is: predicate
+    target_classes: [Concept]
+    handler: handle_has_key
   
   # ========== Statement/Annotation ==========
 
@@ -402,10 +417,16 @@ mapper:
     inferred_class: DatatypeRestriction
     target_classes: [DatatypeRestriction]
     handler: handle_datatype_restriction
+
+  owl:hasSelf:
+      is: predicate
+      inferred_class: PropertySelfRestriction
+      target_classes: [PropertySelfRestriction]
   
   # ========== Relation - Solo in OWL ==========
   owl:inverseOf:
       is: predicate
+      inferred_class: Relation
       target_classes: [Relation, Restriction]
       handler: handle_inverse_of
     
@@ -434,13 +455,11 @@ mapper:
     target_classes: [TruthFunction, Concept]
     handler: handle_complement
 
-  # ========== VALUE - with setter ==========
   owl:hasValue:
     is: predicate
     inferred_class: Value
     target_classes: [Value]
-    setters: 
-      [set_applies_on_resource: Resource]
+    handler: handle_has_value
 
   # ========== ONE OF - with setter ==========
   owl:oneOf:
@@ -532,12 +551,12 @@ mapper:
     setters: [set_applies_on_concept: Concept]
 
   owl:onDatatype:
-    is: predicate
-    inferred_class: Restriction
-    target_classes: [Restriction]
-    setters: [set_applies_on_concept: Datatype]
-
-  # to be checked
+      is: predicate
+      inferred_class: DatatypeRestriction
+      target_classes: [DatatypeRestriction, Datatype]
+      setters: [set_is_sub_concept_of: Datatype]
+  
+  # to be checked, probabilmente da uniformare a precedente
   owl:onDataRange:
     is: predicate
     target_classes: [Restriction]
@@ -546,12 +565,14 @@ mapper:
   # ========== Individual - Target diverso ==========
   owl:sameAs:
     is: predicate
-    target_classes: [Individual]
+    inferred_class: Individual
+    target_classes: [Resource] # IN THE MODEL IT IS INDIVIDUAL, BUT THIS IS NEEDED FOR PUNNING
     handler: handle_same_as
     
   owl:differentFrom:
     is: predicate
-    target_classes: [Individual]
+    inferred: Individual
+    target_classes: [Resource]
     handler: handle_different_from
 
   # ========== REWRITE BASE ==========

@@ -16,6 +16,15 @@ class Concept(Resource):
         self.has_related_match = []   # 0..*
         self.has_exact_match = []     # 0..* 
         self.has_close_match = []     # 0..*
+        self.has_key = []             # 0..*
+        self.has_member = []          # 0..*  (inverso di Individual.has_type)
+
+
+    def set_has_key(self, prop):
+        self.has_key.append(prop)
+
+    def get_has_key(self):
+        return self.has_key
 
     # Setter e Getter per is_sub_concept_of
     def set_is_sub_concept_of(self, concept):
@@ -97,4 +106,13 @@ class Concept(Resource):
     def get_has_close_match(self):
         """Restituisce la lista has_close_match"""
         return self.has_close_match
+
+    def set_has_member(self, individual):
+        """Aggiunge un Individual a has_member (inverso di rdf:type)."""
+        if individual not in self.has_member:
+            self.has_member.append(individual)
+
+    def get_has_member(self):
+        """Restituisce la lista has_member."""
+        return list(self.has_member)
     

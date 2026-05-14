@@ -1,5 +1,6 @@
-# logic/rdf_logic.py
-from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
+# rdf_logic.py
+
+from rdflib import URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
@@ -9,281 +10,235 @@ from lode.reader.logic.base_logic import BaseLogic
 
 class RdfLogic(BaseLogic):
     """
-    Logica RDF pura.
-    
-    Comportamento:
-    - TUTTE le triple non mappate → Statement (phase6)
-    - Predicati → Property
-    - Soggetti/Oggetti non classificati → Resource
-    - Type mapping per rdf:Property, rdf:Statement, etc.
+    RDF/RDFS parsing logic.
+
+    Behavior:
+    - Phase1: classify URIRef subjects of mapped predicates whose config
+      declares inferred_class or a single target_classes (mirrors OwlLogic).
+      BNodes with inferred_class are classified too (e.g. reified Statements
+      via rdf:subject/predicate/object).
+    - Phase2: create instances from rdf:type using type_mapping; static
+      setters declared in 'is: class' entries are applied immediately.
+    - Phase3: populate via setters/handlers from the property mapping.
+    - Phase4: no group axioms in pure RDF/RDFS.
+    - Phase5: fallback - all unmapped predicates -> Property, all unmapped
+      URI subjects/objects -> Resource, then RDFS defaults applied to every
+      Property (rdfs:Resource for domain, rdfs:Class for range) climbing the
+      rdfs:subPropertyOf hierarchy first.
+    - Phase6: inherited from BaseLogic, reifies unmapped triples as Statements.
     """
-    
-    def __init__(self, graph, instance_cache, strategy):
-        super().__init__(graph, instance_cache, strategy)
-        self._statements_created = set()
-        self._statement_counter = 0
-    
-    def _get_allowed_namespaces(self) -> set:
-        return {str(RDF), str(RDFS)}
-    
+
+    # ========== READER PHASES ==========
+
     def phase1_classify_from_predicates(self):
-        print("\n--- FASE 1: Classificazione RDF ---")
-        print("  Skip (RDF puro non classifica da predicati)")
-    
+        """Classifies subjects of mapped predicates.
+        - BNodes with inferred_class predicates -> classified
+        - URIRefs with inferred_class or unambiguous target_classes -> classified
+        """
+        classified = {}
+
+        for pred in self._property_mapping:
+            for uri in self.graph.subjects(pred, None):
+                if uri in self._instance_cache:
+                    continue
+                python_class = self._strategy.classify_by_predicate(uri, self.graph)
+                if not python_class:
+                    continue
+                if isinstance(uri, BNode):
+                    if uri not in classified:
+                        classified[uri] = python_class
+                elif isinstance(uri, URIRef):
+                    self.get_or_create(uri, python_class, populate=False)
+
+        for uri, py_class in classified.items():
+            self.get_or_create(uri, py_class, populate=False)
+
     def phase2_create_from_types(self):
-        """Crea istanze da rdf:type usando type_mapping"""
-        print("\n--- FASE 2: Types RDF ---")
-        
         type_mapping = self._strategy.get_type_mapping()
-        created = 0
-        
-        for subj, pred, obj in self.graph.triples((None, RDF.type, None)):
-            if subj in self._instance_cache:
+
+        for rdf_type, config in type_mapping.items():
+            py_class = config.get('target_class')
+            if not py_class:
                 continue
-            
-            # Check se c'è mapping specifico per questo type
-            if obj in type_mapping:
-                config = type_mapping[obj]
-                py_class = config.get('target_class')
-                
-                if py_class:
-                    self.get_or_create(subj, py_class, populate=False)
-                    created += 1
-        
-        print(f"  Creati {created} da rdf:type")
-    
+            for uri in self.graph.subjects(RDF.type, rdf_type):
+                self.get_or_create(uri, py_class, populate=False)
+                for instance in self._instance_cache.get(uri, set()):
+                    if 'setters' in config:
+                        self._apply_setters_immediate(instance, config['setters'])
+                    if 'handler' in config:
+                        getattr(self, config['handler'])(instance, uri)
+
     def phase3_populate_properties(self):
-        """Popola proprietà delle istanze create"""
-        print("\n--- FASE 3: Popolamento RDF ---")
-        
-        populated = 0
-        
+        """Populates each cached instance via configured setters and handlers."""
         for uri in list(self._instance_cache.keys()):
-            if isinstance(uri, str) and uri.startswith("LITERAL::"):
-                continue
-            
-            instances = self._instance_cache[uri]
-            instances_list = instances if isinstance(instances, set) else [instances]
-            
-            for instance in instances_list:
+            for instance in list(self._instance_cache[uri]):
+                self.populate_instance(instance, uri)
 
-                # LOGICA RANGE/DOMAIN DEFAULT: default domain/range solo per Property
-                if isinstance(instance, Property):
-                    self._apply_rdf_defaults(instance)
-
-                # Popola solo se NON è uno Statement
-                if not isinstance(instance, Statement):
-                    self.populate_instance(instance, uri)
-                    populated += 1
-        
-        print(f"  Popolate {populated} istanze")
-
-    def _apply_rdf_defaults(self, property_instance):
-        """Applica owl:Thing se domain/range mancano risalendo la gerarchia"""
-        
-        rdfs_resource = None  # Lazy creation
-        
-        # Check domain (con risalita gerarchia)
-        inherited_domain = self._get_inherited_domain(property_instance)
-        if not inherited_domain:
-            rdfs_resource = self.get_or_create(RDFS.Resource, Concept)
-            property_instance.set_has_domain(rdfs_resource)
-            print(property_instance, property_instance.get_has_domain())
-        
-        # Check range (con risalita gerarchia)
-        inherited_range = self._get_inherited_range(property_instance)
-        if not inherited_range:
-            rdfs_class = self.get_or_create(RDFS.Class, Concept)
-            property_instance.set_has_range(rdfs_class)
-            print(property_instance, property_instance.get_has_range())
-
-    def _get_inherited_domain(self, property_instance):
-        """Risale rdfs:subPropertyOf per trovare domain"""
-        visited = set()
-        queue = [property_instance]
-        
-        while queue:
-            current = queue.pop(0)
-            if id(current) in visited:
-                continue
-            visited.add(id(current))
-            
-            # Check domain diretto
-            try:
-                domain = current.get_has_domain()
-                if domain and (isinstance(domain, list) and len(domain) > 0 or domain):
-                    return domain
-            except:
-                pass
-            
-            # Risali ai super-properties
-            try:
-                supers = current.get_subproperty_of()
-                if supers:
-                    if not isinstance(supers, list):
-                        supers = [supers]
-                    queue.extend(supers)
-            except:
-                pass
-        
-        return None
-
-    def _get_inherited_range(self, property_instance):
-        """Risale rdfs:subPropertyOf per trovare range"""
-        visited = set()
-        queue = [property_instance]
-        
-        while queue:
-            current = queue.pop(0)
-            if id(current) in visited:
-                continue
-            visited.add(id(current))
-            
-            # Check range diretto
-            try:
-                range_val = current.get_has_range()
-                if range_val and (isinstance(range_val, list) and len(range_val) > 0 or range_val):
-                    return range_val
-            except:
-                pass
-            
-            # Risali ai super-properties
-            try:
-                supers = current.get_subproperty_of()
-                if supers:
-                    if not isinstance(supers, list):
-                        supers = [supers]
-                    queue.extend(supers)
-            except:
-                pass
-        
-        return None
-    
     def phase4_process_group_axioms(self):
-        print("\n--- FASE 4: Axioms RDF ---")
-        print("  Nessun axiom in RDF puro")
-    
+        """No group axioms in pure RDF/RDFS."""
+        pass
+
     def phase5_fallback(self):
         """
-        Fallback RDF:
-        - Tutti i predicati → Property
-        - Tutti i soggetti/oggetti non classificati → Resource
+        Generic fallback for RDF/RDFS:
+        1. Every predicate not yet cached and outside structural namespaces
+           is created as Property.
+        2. Every URI subject/object not yet cached is created as Resource.
+        3. RDFS defaults (rdfs:Resource for domain, rdfs:Class for range)
+           are applied to every Property after climbing the rdfs:subPropertyOf
+           chain to inherit declared values when present.
         """
-        print("\n--- FASE 5: Fallback RDF ---")
-        
-        # 1. Tutti i predicati → Property
-        all_predicates = set(self.graph.predicates())
-        property_count = 0
-        
-        # Predicati strutturali RDF da escludere
         exclude_predicates = {RDF.first, RDF.rest, RDF.nil}
-        exclude_namespaces = [RDF, RDFS, OWL, SKOS, XSD]
-        
-        for pred in all_predicates:
-            if pred not in self._instance_cache and pred not in exclude_predicates:
-                if not any(str(pred).startswith(str(ns)) for ns in exclude_namespaces):
-                    self.get_or_create(pred, Property, populate=False)
-                    property_count += 1
-        
-        print(f"  Property: {property_count} predicati")
-        
-        # 2. Tutti i soggetti non Collection → Resource
-        all_subjects = set(self.graph.subjects())
-        subject_count = 0
-        
-        for subj in all_subjects:
+
+        # 1. predicati -> Property
+        for pred in set(self.graph.predicates()):
+            if pred in self._instance_cache or pred in exclude_predicates:
+                continue
+            if self._is_structural(pred):
+                continue
+            self.get_or_create(pred, Property, populate=False)
+
+        # 2. soggetti/oggetti URI -> Resource
+        for subj in set(self.graph.subjects()):
             if isinstance(subj, URIRef) and subj not in self._instance_cache:
-                # Escludi Collection nodes
-                if not self._is_rdf_collection(subj):
-                    exclude_namespaces = [RDF, RDFS, OWL, SKOS, XSD]
-                    if not any(str(subj).startswith(str(ns)) for ns in exclude_namespaces):
-                        self.get_or_create(subj, Resource, populate=False)
-                        subject_count += 1
-        
-        print(f"  Resource (soggetti): {subject_count}")
-        
-        # 3. Tutti gli oggetti URI non Collection → Resource
-        object_count = 0
-        
-        for s, p, o in self.graph:
-            if isinstance(o, URIRef) and o not in self._instance_cache:
-                # Escludi Collection nodes
-                if not self._is_rdf_collection(o):
-                    exclude_namespaces = [RDF, RDFS, OWL, SKOS, XSD]
-                    if not any(str(o).startswith(str(ns)) for ns in exclude_namespaces):
-                        self.get_or_create(o, Resource, populate=False)
-                        object_count += 1
-        
-        print(f"  Resource (oggetti): {object_count}")
-    
-    # ========== HELPER METHODS ==========
-    
-    
-    def _handle_collection_as_container(self, collection_node):
+                if self._is_structural(subj) or self._is_rdf_collection(subj):
+                    continue
+                self.get_or_create(subj, Resource, populate=False)
+
+        for obj in set(self.graph.objects()):
+            if isinstance(obj, URIRef) and obj not in self._instance_cache:
+                if self._is_structural(obj) or self._is_rdf_collection(obj):
+                    continue
+                self.get_or_create(obj, Resource, populate=False)
+
+        # 3. defaults RDFS su Property
+        for uri, instances in list(self._instance_cache.items()):
+            for instance in list(instances):
+                if isinstance(instance, Property):
+                    self._apply_rdfs_defaults(instance)
+
+    # ========== HELPERS ==========
+
+    def _is_structural(self, uri: Node) -> bool:
+        """True if URI belongs to RDF/RDFS/OWL/SKOS/XSD vocabulary namespaces."""
+        if not isinstance(uri, URIRef):
+            return False
+        s = str(uri)
+        return any(s.startswith(ns) for ns in (str(RDF), str(RDFS), str(OWL), str(SKOS), str(XSD)))
+
+    def _apply_setters_immediate(self, instance, setters_config):
+        """Applies static setter values from config directly (mirror of
+        OwlLogic._apply_setters_immediate). Used in phase2 for 'is: class'
+        entries that declare setters with constant values.
         """
-        Gestisce RDF Collection (rdf:List) convertendola in Container.
-        NON traccia le triple rdf:first/rest nei triples_map.
+        for setter_item in setters_config:
+            if isinstance(setter_item, dict):
+                for setter_name, value in setter_item.items():
+                    if hasattr(instance, setter_name):
+                        getattr(instance, setter_name)(value)
+            else:
+                if hasattr(instance, setter_item):
+                    getattr(instance, setter_item)()
+
+    def _apply_rdfs_defaults(self, instance):
+        """Applies rdfs:Resource (domain) and rdfs:Class (range) defaults
+        when the property does not declare them, after walking up
+        rdfs:subPropertyOf to inherit values from ancestors.
         """
-        try:
-            collection = RDFLibCollection(self.graph, collection_node)
-            
-            # Crea un Container per rappresentare la lista
-            container = Container()
-            container.set_has_identifier(str(collection_node))
-            
-            items = []
-            for item in collection:
-                if isinstance(item, RDFlibLiteral):
-                    items.append(self._create_literal(item))
-                else:
-                    item_instance = self.get_or_create(item, Resource)
-                    if item_instance:
-                        items.append(item_instance)
-            
-            # Aggiungi items al container
-            for item in items:
-                container.set_has_member(item)
-            
-            # CRITICO: Salva Container nella cache
-            if collection_node not in self._instance_cache:
-                self._instance_cache[collection_node] = {container}
-            
-            # NON tracciare rdf:first/rest - traccia solo triple significative
-            if container not in self._triples_map:
-                self._triples_map[container] = set()
-            
-            # Traccia solo triple NON strutturali della Collection
-            for s, p, o in self.graph.triples((collection_node, None, None)):
-                if p not in {RDF.first, RDF.rest, RDF.nil}:
-                    self._triples_map[container].add((s, p, o))
-            
-            return container
-        
-        except Exception as e:
-            print(f"  Errore gestione Collection: {e}")
-            # Fallback: crea Resource
-            return self.get_or_create(collection_node, Resource)
+        if not instance.get_has_domain():
+            inherited = self._get_inherited_property_values(instance, "get_has_domain")
+            if inherited:
+                for d in inherited:
+                    instance.set_has_domain(d)
+            else:
+                instance.set_has_domain(self.get_or_create(RDFS.Resource, Concept))
+
+        if not instance.get_has_range():
+            inherited = self._get_inherited_property_values(instance, "get_has_range")
+            if inherited:
+                for r in inherited:
+                    instance.set_has_range(r)
+            else:
+                instance.set_has_range(self.get_or_create(RDFS.Class, Concept))
+
+    def _get_inherited_property_values(self, property_instance, getter_name: str) -> list:
+        """Walks up rdfs:subPropertyOf collecting the first non-empty value
+        of getter_name found on an ancestor.
+        """
+        def collect(node):
+            if node is property_instance:
+                return None
+            getter = getattr(node, getter_name, None)
+            if getter:
+                values = getter()
+                if values:
+                    return values if isinstance(values, list) else [values]
+            return None
+
+        result = self._traverse_hierarchy(
+            property_instance,
+            next_getter="get_is_sub_property_of",
+            direction="up",
+            collect=collect,
+        )
+        return result if result is not None else []
     
-    # def _is_triple_mapped(self, subj, pred, obj) -> bool:
-    #     """
-    #     Check se tripla già gestita.
-    #     Una tripla è mappata se:
-    #     - Il predicato è in property_mapping
-    #     - Il soggetto esiste in cache E non è uno Statement fallback
-    #     """
-    #     # Se predicato è nel property_mapping, è mappato
-    #     if pred in self._property_mapping:
-    #         return True
-        
-    #     # Se soggetto non esiste in cache, non è mappato
-    #     if subj not in self._instance_cache:
-    #         return False
-        
-    #     # Se soggetto esiste ma è uno Statement, NON è mappato
-    #     # (evita loop infinito)
-    #     instances = self._instance_cache[subj]
-    #     for inst in instances:
-    #         if isinstance(inst, Statement):
-    #             return False
-        
-    #     return False
+
+    def create_python_container(self, instance, uri):
+        """Populates a Container instance from RDF container/list syntax.
+
+        Handles all four RDF container types:
+        - rdf:Bag, rdf:Alt, rdf:Seq -> rdf:_N indexed members
+        - rdf:List -> rdf:first/rdf:rest linked list
+
+        URI members are resolved as Resource, RDFlibLiterals as Literal.
+        All consumed triples are registered in _triples_map so phase6 does not
+        reify them as Statements.
+        """
+        if instance not in self._triples_map:
+            self._triples_map[instance] = set()
+
+        # rdf:List: rdf:first/rdf:rest chain
+        if (uri, RDF.first, None) in self.graph:
+            try:
+                for item in RDFLibCollection(self.graph, uri):
+                    member = self._resolve_container_member(item)
+                    if member:
+                        instance.set_has_member(member)
+                # mark structural triples as consumed
+                node = uri
+                while node and node != RDF.nil:
+                    first = self.graph.value(node, RDF.first)
+                    rest = self.graph.value(node, RDF.rest)
+                    if first is not None:
+                        self._triples_map[instance].add((node, RDF.first, first))
+                    if rest is not None:
+                        self._triples_map[instance].add((node, RDF.rest, rest))
+                    node = rest
+            except Exception as e:
+                print(f"Errore create_python_container (List): {e}")
+            return
+
+        # rdf:Bag/Alt/Seq: rdf:_N indexed members
+        indexed = []
+        for pred, obj in self.graph.predicate_objects(uri):
+            pred_str = str(pred)
+            prefix = str(RDF) + "_"
+            if pred_str.startswith(prefix):
+                try:
+                    idx = int(pred_str[len(prefix):])
+                    indexed.append((idx, pred, obj))
+                except ValueError:
+                    continue
+
+        indexed.sort(key=lambda t: t[0])
+        for _, pred, obj in indexed:
+            member = self._resolve_container_member(obj)
+            if member:
+                instance.set_has_member(member)
+            self._triples_map[instance].add((uri, pred, obj))
+
+    def _resolve_container_member(self, node):
+        if isinstance(node, RDFlibLiteral):
+            return self._create_literal(node)
+        return self.get_or_create(node, Resource)

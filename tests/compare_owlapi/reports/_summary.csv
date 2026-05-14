@@ -1,0 +1,22 @@
+uri,status,error,annotation property_delta,annotation property_lode,annotation property_owlapi,class_delta,class_lode,class_owlapi,data property_delta,data property_lode,data property_owlapi,datatype_delta,datatype_lode,datatype_owlapi,lode_statements,named individual_delta,named individual_lode,named individual_owlapi,object property_delta,object property_lode,object property_owlapi,total_triples
+https://w3id.org/spar/deo,ok,,-2,7,9,1,47,46,0,0,0,2,2,0,7,0,0,0,1,4,3,197
+https://w3id.org/spar/cito,ok,,0,10,10,1,11,10,0,3,3,4,4,0,58,0,0,0,1,99,98,576
+https://w3id.org/spar/biro,robot_error,"exit 1 | cmd_tail=export --input C:\Users\valep\AppData\Local\Temp\lode_owlapi_wpn29ov7\ontology.owl | Input ontology 'C:\Users\valep\AppData\Local\Temp\lode_owlapi_wpn29ov7\ontology.owl' does not exist
+Use the -vvv option to show the stack trace.
+Use the --help option to see usage information.",,,,,,,,,,,,,,,,,,,,
+https://w3id.org/spar/c4o,robot_error,"exit 1 | cmd_tail=export --input C:\Users\valep\AppData\Local\Temp\lode_owlapi_g2eli17i\ontology.owl | Input ontology 'C:\Users\valep\AppData\Local\Temp\lode_owlapi_g2eli17i\ontology.owl' does not exist
+Use the -vvv option to show the stack trace.
+Use the --help option to see usage information.",,,,,,,,,,,,,,,,,,,,
+https://w3id.org/spar/frapo,ok,,-1,24,25,1,95,94,1,84,83,4,4,0,44,0,25,25,1,43,42,1098
+https://w3id.org/spar/datacite,ok,,-1,10,11,1,20,19,0,1,1,2,2,0,71,1,76,75,1,9,8,589
+https://w3id.org/spar/fabio,ok,,-2,12,14,1,262,261,1,67,66,9,9,0,22,1,16,15,1,31,30,2151
+https://w3id.org/spar/fivestars,ok,,0,10,10,1,1,0,0,12,12,3,3,0,5,0,0,0,1,1,0,50
+https://w3id.org/spar/mito,ok,,-1,6,7,1,3,2,0,0,0,1,1,0,6,0,0,0,0,5,5,34
+https://w3id.org/spar/pwo,ok,,0,11,11,1,16,15,0,2,2,2,2,0,8,1,1,0,-1,30,31,263
+https://w3id.org/spar/frbr,ok,,-2,10,12,1,14,13,0,0,0,2,2,0,9,0,0,0,2,51,49,914
+https://w3id.org/spar/doco,ok,,-2,7,9,1,70,69,0,0,0,2,2,0,7,1,1,0,1,7,6,923
+https://w3id.org/spar/pro,ok,,-1,9,10,1,11,10,0,3,3,3,3,0,9,1,34,33,0,19,19,295
+https://w3id.org/spar/pso,ok,,-1,9,10,1,13,12,0,3,3,3,3,0,8,1,42,41,0,15,15,312
+https://w3id.org/spar/fr,ok,,-5,17,22,3,27,24,0,5,5,4,4,0,11,3,6,3,0,11,11,150
+https://w3id.org/spar/scoro/,ok,,-1,10,11,1,21,20,0,4,4,2,2,0,12,1,131,130,0,14,14,725
+https://w3id.org/spar/bido,ok,,-4,5,9,1,1,0,0,0,0,2,2,0,8,1,1,0,0,0,0,23
