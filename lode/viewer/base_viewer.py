@@ -426,7 +426,7 @@ class BaseViewer:
                     resolved = self._resolve_resource_value(v, language)
                     if resolved.get('text') or resolved.get('nested'):
                         siblings.append({
-                            'predicate': self._clean_name(attr),
+                            'predicate': self._clean_name(self, attr),
                             'value': resolved,
                         })
             handler_dic['nested'] = {'main': inner, 'siblings': siblings}
