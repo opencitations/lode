@@ -141,6 +141,18 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Warnings -->
+                <div class="mb-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <span class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="warnings">
+                                <label class="form-check-label" for="warnings">Show warnings</label>
+                            </span>
+                        </div>
+                    </div>
+                </div>
                 
                 <button type="submit" id="submitBtn">
                     Generate Documentation
@@ -261,6 +273,22 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
 
             </tr>
             <tr>
+                <td><code>warnings</code></td>
+                <td>
+                    <span class="badge bg-primary">GET</span>
+                    <span class="badge bg-warning text-dark">POST</span>
+                </td>
+                <td>boolean</td>
+                <td>No</td>
+                <td>
+                    When set to <code>true</code>, the documentation page also lists
+                    structural warnings raised during parsing
+                    (e.g. malformed restrictions, OWL 2 DL violations).
+                    Defaults to <code>false</code>.
+                </td>
+                <td><code>warnings=true</code></td>
+            </tr>
+            <tr>
                 <td><code>imported</code></td>
                 <td>
                     <span class="badge bg-primary">GET</span>
@@ -300,10 +328,11 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
     <pre>
 /extract?url=http://purl.org/spar/fabio.ttl&amp;read_as=owl
 /extract?url=http://purl.org/spar/fabio&amp;read_as=owl
+/extract?url=http://www.w3.org/2004/09/fresnel&read_as=owl&warnings=true
 /extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;imported=true&amp;lang=en
 /extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;closure=true
-/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;resource=http://purl.org/spar/fabio/Abstract&amp;lang=it</pre>
-
+/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;resource=http://purl.org/spar/fabio/Abstract&amp;lang=it
+</pre>
 </div>
 
         
@@ -392,6 +421,8 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
                 const language = document.getElementById('language').value.trim();
                 if (language) params.append('lang', language);
 
+                if (document.getElementById('warnings').checked) params.append('warnings', 'true');
+
                 if (readAs === 'owl') {
                     if (document.getElementById('imported').checked) params.append('imported', 'true');
                     if (document.getElementById('closure').checked)  params.append('closure',  'true');
@@ -417,6 +448,8 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
 
             const language = document.getElementById('language').value.trim();
             if (language) formData.append('lang', language);
+
+            if (document.getElementById('warnings').checked) params.append('warnings', 'true');
 
             if (readAsSelect.value === 'owl') {
                 if (document.getElementById('imported').checked) formData.append('imported', 'true');
