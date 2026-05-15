@@ -64,9 +64,7 @@ mapper:
     inferred_class: Concept
     target_classes: [Concept]
     setters: [set_is_sub_concept_of: Concept]
-  
-  # ========== Statement/Annotation ==========
-  
+    
   rdfs:Class:
     is: class
     target_class: Concept

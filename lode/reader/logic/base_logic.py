@@ -8,26 +8,6 @@ SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
 
 from lode.models import *
 
-# ========== ALLOWED CLASSES PER FORMATO ==========
-
-# ALLOWED_CLASSES = {
-#     'RDF': {
-#         Statement, Property, Container, Datatype, Literal, Resource, Concept
-#     },
-#     'OWL': {
-#         Statement, Literal, Relation, Container,
-#         Concept, Attribute, Datatype,
-#         Individual, Model, Annotation,
-#         TruthFunction, Value, OneOf, Quantifier, Cardinality, PropertyConceptRestriction,
-#         Collection, Restriction, Resource
-#     },
-#     'SKOS': {
-#         Collection, Literal, Resource,
-#         Concept, Model, Datatype
-#     }
-# }
-
-
 class BaseLogic(ABC):
     """
     Logica base comune per parsing RDF.

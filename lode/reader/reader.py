@@ -39,9 +39,10 @@ class Reader:
         
         # 3. Crea Logic specializzata
         self._logic = self._configuration.create_logic(self._graph, self._instance_cache)
-        
+
         # 4. Esecuzione fasi
         self._extract_instances()
+
     
     def get_instance(self, uri: str, instance_type=None):
         """Ottiene istanze per URI"""
