@@ -34,6 +34,16 @@ allowed_classes:
   - Atom
   - Rule
 
+punning_priority:
+  - Model
+  - Individual
+  - Concept
+  - Relation
+  - Attribute
+  - Annotation
+  - Property
+  - Datatype
+
 
 # IF TARGET CLASSES > 1 IT HAS TO HAVE AN HANDLER TO CHOOSE WHICH IS THE TARGET DEPENDING ON THRE CONTEXT
 

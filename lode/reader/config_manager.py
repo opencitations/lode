@@ -189,7 +189,12 @@ class ConfigManager(ABC):
                         if cfg.get('classify', True):
                             fallback = cfg['target_classes'][0]
             return inferred if inferred else fallback
-
+    
+    def get_punning_priority(self):
+        names = self.config.get('punning_priority', [])
+        return [self._parse_class(n) for n in names]
+    
+    
 # config_manager.py - aggiungi nei concrete managers
 
 class OwlConfigManager(ConfigManager):

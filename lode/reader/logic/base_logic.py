@@ -441,11 +441,19 @@ class BaseLogic(ABC):
 
             if predicate_namespace not in self._allowed_namespaces:
                 continue
+        
+            # handles punning priorities wrt config
+            is_subordinate = self._is_punning_subordinate(instance, uri)
+            instance_cls_name = type(instance).__name__
 
             if predicate in self._property_mapping:
                 config = self._property_mapping[predicate]
-
                 target_classes = config.get('target_classes', [])
+
+                # Punning subordinate: apply only if config explicitly targets this class
+                if is_subordinate and type(instance) not in target_classes:
+                    continue
+
                 if target_classes and not self._instance_matches_target(instance, target_classes):
                     continue
 
@@ -628,6 +636,24 @@ class BaseLogic(ABC):
 
         return statement
 
+    def _get_punning_dominant(self, uri):
+        if uri not in self._instance_cache:
+            return None
+        cached = self._instance_cache[uri]
+        if not cached:
+            return None
+        if len(cached) == 1:
+            return next(iter(cached))
+        priority = self._strategy.get_punning_priority()
+        for cls in priority:
+            for inst in cached:
+                if type(inst) is cls:
+                    return inst
+        return next(iter(cached))
+
+    def _is_punning_subordinate(self, instance, uri):
+        dom = self._get_punning_dominant(uri)
+        return dom is not None and dom is not instance
 
     # ========== SWRL ==========
 

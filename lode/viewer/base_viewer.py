@@ -235,7 +235,7 @@ class BaseViewer:
                     characteristics[display_name] = True
 
             # Extract Statement Entities
-            statements =  self._format_statement(all_instances, uri, language)
+            statements = self._format_statement(all_instances, instance, language)
             type_inst = type(instance).__name__.replace(" ", "_")
 
             is_dep = getattr(instance, 'get_is_deprecated')() if hasattr(instance, 'get_is_deprecated') else getattr(
@@ -327,7 +327,7 @@ class BaseViewer:
                             data[clean_key] = extracted_values
 
         # 9. Statements
-        data.update(self._format_statement(all_instances, ontology_model.has_identifier, language))
+        data.update(self._format_statement(all_instances, ontology_model, language))
 
         return data
 
@@ -457,46 +457,40 @@ class BaseViewer:
 
         return handler_dic
 
-    def _format_statement(self, instances, identifier: str, language=None) -> Dict:
+    def _format_statement(self, instances, target_instance, language=None) -> Dict:
         """
-        Extracts all statements where the subject matches the given identifier.
+        Extracts all statements where the subject matches the given target_instance.
         """
         statements = {}
 
-        # 1. Normalize the target identifier to a clean string
-        target_id = str(identifier).strip() if identifier else ""
-        if not target_id:
+        # 1. Validate the target instance
+        if target_instance is None:
             return statements
 
         for instance in instances:
             if isinstance(instance, Statement):
                 subj = instance.get_has_subject()
 
-                # 2. Extract and normalize the subject's identifier
-                subj_id = ""
-                if hasattr(subj, 'has_identifier') and subj.has_identifier:
-                    subj_id = str(subj.has_identifier).strip()
-                elif isinstance(subj, str):
-                    subj_id = subj.strip()
+                # 2. Identity comparison (handles punning: same URI, different Python instances)
+                if subj is not target_instance:
+                    continue
 
-                # 3. String Comparison
-                if subj_id == target_id:
-                    predicate = instance.get_has_predicate()
-                    obj = instance.get_has_object()
+                predicate = instance.get_has_predicate()
+                obj = instance.get_has_object()
 
-                    # 4. Predicate Resolution
-                    pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
+                # 3. Predicate Resolution
+                pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
 
-                    if pred_label not in statements:
-                        statements[pred_label] = []
+                if pred_label not in statements:
+                    statements[pred_label] = []
 
-                    # 5. Resolve Object and Prevent Duplicates
-                    if obj:
-                        obj_data = self._resolve_resource_value(obj, language)
+                # 4. Resolve Object and Prevent Duplicates
+                if obj:
+                    obj_data = self._resolve_resource_value(obj, language)
 
 
-                        if obj_data not in statements[pred_label]:
-                            statements[pred_label].append(obj_data)
+                    if obj_data not in statements[pred_label]:
+                        statements[pred_label].append(obj_data)
 
         return statements
 

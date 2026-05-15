@@ -360,30 +360,11 @@ class OwlLogic(BaseLogic):
     def _enrich_or_apply_owl_defaults(self, instance, uri):
         """
         Applies OWL-mandated defaults to instances lacking explicit declarations.
-
-        OWL open-world assumption requires every property to have a domain and
-        range. These are resolved first by traversing the rdfs:subPropertyOf
-        chain upward — if an ancestor declares domain/range, those are inherited.
-        Only if no value is found anywhere in the chain does the default apply.
-
-        Relation (owl:ObjectProperty):
-            domain -> owl:Thing  (applies to any individual)
-            range  -> owl:Thing  (returns any individual)
-
-        Attribute (owl:DatatypeProperty):
-            domain -> owl:Thing  (applies to any individual)
-            range  -> rdfs:Literal (returns any literal value)
-
-        Individual:
-            If no rdf:type is declared, defaults to owl:Thing — the individual
-            exists but its class is unknown.
-
-        Inherited values are type-filtered via _safe_inherited to prevent
-        cross-property-type pollution: Attribute range accepts only Datatype/
-        DatatypeRestriction, Relation range accepts only Concept. Values
-        inherited from a parent of a different property type (e.g. an Attribute
-        subPropertyOf a Relation) are discarded and the default is applied.
+        [...docstring invariata...]
         """
+        
+        if uri not in self._instance_cache:
+            return
 
         owl_thing = self.get_or_create(OWL.Thing, Concept)
         rdfs_string = self.get_or_create(RDFS.Literal, Datatype)
@@ -400,6 +381,9 @@ class OwlLogic(BaseLogic):
 
         def _is_only_default(values, default_id):
             return values and all(d.get_has_identifier() == default_id for d in values)
+
+        # Type-specific defaults: always apply, even for punning subordinates
+        # (these are constitutive of the class, not generic Resource enrichments)
 
         if isinstance(instance, Relation):
             current_domains = instance.get_has_domain()
@@ -443,17 +427,19 @@ class OwlLogic(BaseLogic):
                 elif not current_ranges:
                     instance.set_has_range(rdfs_string)
 
-        # Default type per Individual
         if isinstance(instance, Individual):
             if not instance.get_has_type():
-                owl_thing = self.get_or_create(OWL.Thing, Concept)
                 instance.set_has_type(owl_thing)
 
+        # Generic Resource-level enrichments: skip for punning subordinates
+        if self._is_punning_subordinate(instance, uri):
+            return
+
         if isinstance(instance, Resource):
-            # adds to Resources involved in punning the also defined as
             if len(self._instance_cache[uri]) > 1:
+                existing = instance.get_also_defined_as() or []
                 for other in self._instance_cache[uri]:
-                    if other is not instance:
+                    if other is not instance and other not in existing:
                         instance.set_also_defined_as(other)
 
 
@@ -999,13 +985,15 @@ class OwlLogic(BaseLogic):
             self._create_nested_statement(subj)
             return
 
-        subj_inst = self.get_or_create(subj, Individual)
+        subj_inst = self._resolve_statement_endpoint(subj, Individual)
         if subj_inst is None:
-            return
-
-        subj_inst = self.get_or_create(subj, Individual)
-        if subj_inst is None:
-            return
+            # Fallback for structural-namespace subjects: create a bare Resource
+            # so the predicate is still reifiable.
+            subj_inst = Resource()
+            subj_inst.set_has_identifier(str(subj))
+            if subj not in self._instance_cache:
+                self._instance_cache[subj] = set()
+            self._instance_cache[subj].add(subj_inst)
 
         if pred in self._instance_cache:
             pred_inst = next(
@@ -1040,7 +1028,9 @@ class OwlLogic(BaseLogic):
         elif self._is_unmapped_structured_bnode(obj):
             obj_inst = self._create_nested_statement(obj)
         else:
-            obj_inst = self.get_or_create(obj, Individual)
+            # oggetto mai visto: Individual (fallback class — _resolve_statement_endpoint
+            # ritorna il dominante in cache se presente, altrimenti crea Individual)
+            obj_inst = self._resolve_statement_endpoint(obj, Individual)
 
         if obj_inst:
             statement.set_has_object(obj_inst)
@@ -1050,5 +1040,11 @@ class OwlLogic(BaseLogic):
         self._instance_cache[stmt_bnode].add(statement)
 
         self._enrich_or_apply_owl_defaults(subj_inst, subj)
-        if obj_inst and isinstance(obj_inst, Individual):
+        if obj_inst and not isinstance(obj, RDFlibLiteral):
             self._enrich_or_apply_owl_defaults(obj_inst, obj)
+
+    def _resolve_statement_endpoint(self, node, fallback_class):
+        dom = self._get_punning_dominant(node)
+        if dom is not None:
+            return dom
+        return self.get_or_create(node, fallback_class)

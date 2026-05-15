@@ -14,5 +14,9 @@ allowed_classes:
   Model
   Datatype
 
+punning_priority:
+  - Model
+  - Concept
+
 mapper: {}
 enricher: {}
