@@ -1,0 +1,134 @@
+{# _toc_sidebar.html — TOC sidebar shared by owl/skos/rdf viewers.
+   Requires `sections` in context:
+     section.id, section.title, section.entities[].{label,anchor_id,uri}
+   Optional:
+     section.tree -> nested [{label, anchor_id, uri, children:[...]}, ...]
+     type_map (viewer.html)                                            #}
+
+{# Recursive macro: renders one tree node + its children #}
+{% macro render_node(node) %}
+    <li class="toc-node">
+        {% if node.children %}
+            <details class="toc-tree-branch" open>
+                <summary class="toc-tree-summary">
+                    <a href="#{{ node.anchor_id }}" title="{{ node.uri }}">{{ node.label }}</a>
+                </summary>
+                <ul class="toc-tree-children">
+                    {% for child in node.children %}
+                        {{ render_node(child) }}
+                    {% endfor %}
+                </ul>
+            </details>
+        {% else %}
+            <a class="toc-tree-leaf" href="#{{ node.anchor_id }}" title="{{ node.uri }}">{{ node.label }}</a>
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{% if grouped_view and sections %}
+<aside id="toc-sidebar" class="toc-sidebar open" aria-label="Table of Contents">
+    <button type="button" class="toc-sidebar-toggle" aria-controls="toc-sidebar" aria-expanded="true"
+            title="Toggle Table of Contents">
+        <span class="toc-sidebar-toggle-icon">&laquo;</span>
+    </button>
+
+    <div class="toc-sidebar-inner">
+        <div class="toc-sidebar-header">
+            <h6 class="toc-sidebar-title mb-0">Table of Contents</h6>
+        </div>
+
+        <nav class="toc-sidebar-nav">
+            {% for section in sections %}
+                {% set sec_key = section.title.lower() %}
+                {% set sec_label = (type_map[sec_key].plural
+                                    if type_map is defined and sec_key in type_map
+                                    else section.title) %}
+                <details class="toc-sidebar-section" open>
+                    <summary class="toc-sidebar-section-head">
+                        <span class="toc-sidebar-section-title">
+                            <a href="#{{ section.id }}">{{ sec_label }}</a>
+                        </span>
+                        <span class="toc-sidebar-section-count">{{ section.entities|length }}</span>
+                    </summary>
+
+                    {% if section.tree %}
+                        <ul class="toc-tree-root">
+                            {% for node in section.tree %}
+                                {{ render_node(node) }}
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <ul class="toc-sidebar-list">
+                            {% for item in section.entities %}
+                                <li>
+                                    <a href="#{{ item.anchor_id }}" title="{{ item.uri }}">{{ item.label }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </details>
+            {% endfor %}
+        </nav>
+    </div>
+</aside>
+
+<script>
+(function () {
+    const sidebar = document.getElementById('toc-sidebar');
+    if (!sidebar) return;
+    const toggle = sidebar.querySelector('.toc-sidebar-toggle');
+    const icon = sidebar.querySelector('.toc-sidebar-toggle-icon');
+
+    function apply(open) {
+        sidebar.classList.toggle('open', open);
+        sidebar.classList.toggle('closed', !open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        icon.innerHTML = open ? '&laquo;' : '&raquo;';
+        document.body.classList.toggle('toc-sidebar-open', open);
+        document.body.classList.toggle('toc-sidebar-closed', !open);
+    }
+
+    const stored = localStorage.getItem('lode.tocSidebar');
+    apply(stored === null ? true : stored === 'open');
+
+    toggle.addEventListener('click', function () {
+        const willOpen = !sidebar.classList.contains('open');
+        apply(willOpen);
+        localStorage.setItem('lode.tocSidebar', willOpen ? 'open' : 'closed');
+    });
+
+    const links = sidebar.querySelectorAll('a[href^="#"]');
+    const byId = new Map();
+    links.forEach(a => byId.set(a.getAttribute('href').slice(1), a));
+
+    const targets = [];
+    byId.forEach((_, id) => {
+        const el = document.getElementById(id);
+        if (el) targets.push(el);
+    });
+
+    if ('IntersectionObserver' in window && targets.length) {
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                const a = byId.get(e.target.id);
+                if (!a) return;
+                if (e.isIntersecting) a.classList.add('active');
+                else a.classList.remove('active');
+            });
+        }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+        targets.forEach(t => io.observe(t));
+    }
+
+    // Auto-open ancestor <details> when a child link is clicked
+    sidebar.addEventListener('click', function (ev) {
+        const a = ev.target.closest('a[href^="#"]');
+        if (!a) return;
+        let n = a.parentElement;
+        while (n && n !== sidebar) {
+            if (n.tagName === 'DETAILS') n.open = true;
+            n = n.parentElement;
+        }
+    });
+})();
+</script>
+{% endif %}

@@ -125,27 +125,29 @@ class BaseViewer:
     def _build_grouped_view(self, group_definitions: List[Tuple[str, str, str]], language: Optional[str] = None) -> Dict:
         """
         Constructs the 'Table of Contents' view.
-
-        Args:
-            group_definitions: List of tuples (ClassKey, HTML_ID, Title)
-                            e.g. [('Concept', 'classes', 'Classes')]
-            language: Optional language code for label filtering
+        Adds optional 'tree' to sections whose class_key supports hierarchy.
         """
         all_instances = self.get_all_instances()
         sections = []
 
         for class_key, section_id, section_title in group_definitions:
             instances = [
-                inst for inst in all_instances 
+                inst for inst in all_instances
                 if type(inst).__name__ == class_key
             ]
 
             if instances:
-                sections.append({
+                section = {
                     'id': section_id,
                     'title': section_title,
-                    'entities': self._format_entities(instances, language)
-                })
+                    'entities': self._format_entities(instances, language),
+                }
+
+                parent_getter = self._HIERARCHY_PARENT_GETTERS.get(class_key)
+                if parent_getter:
+                    section['tree'] = self._build_hierarchy(instances, parent_getter, language)
+
+                sections.append(section)
 
         return {
             'grouped_view': True,
@@ -683,3 +685,67 @@ class BaseViewer:
             return True
 
         return False
+    
+    # Mappa class_key -> nome del getter del parent (None = no hierarchy)
+    _HIERARCHY_PARENT_GETTERS = {
+        'Concept':    'get_is_sub_concept_of',
+        'Relation':   'get_is_sub_property_of',
+        'Attribute':  'get_is_sub_property_of',
+        'Property':   'get_is_sub_property_of',
+        # Annotation, Individual: nessuna gerarchia -> non in mappa
+    }
+    
+    def _build_hierarchy(self, instances, parent_getter_name, language=None):
+        """
+        Costruisce un albero (forest) di dict.
+        anchor_id usa lo stesso formato di _format_entities: id_{md5}_{ClassName}
+        """
+        import hashlib
+
+        by_uri = {}
+        for inst in instances:
+            uri = getattr(inst, 'has_identifier', None)
+            if uri:
+                by_uri[str(uri)] = inst
+
+        children_map = {uri: [] for uri in by_uri}
+        has_internal_parent = set()
+
+        for uri, inst in by_uri.items():
+            getter = getattr(inst, parent_getter_name, None)
+            if not callable(getter):
+                continue
+            parents = getter() or []
+            for p in parents:
+                p_uri = getattr(p, 'has_identifier', None)
+                if p_uri and str(p_uri) in by_uri and str(p_uri) != uri:
+                    children_map[str(p_uri)].append(uri)
+                    has_internal_parent.add(uri)
+
+        roots = [uri for uri in by_uri if uri not in has_internal_parent]
+
+        def node_dict(uri, visited):
+            if uri in visited:
+                return None
+            visited = visited | {uri}
+            inst = by_uri[uri]
+            label = self._get_best_label(inst, language) or uri
+            type_inst = type(inst).__name__.replace(" ", "_")
+            safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
+            anchor_id = f"id_{safe_id}_{type_inst}"
+            kids = []
+            for child_uri in sorted(
+                children_map.get(uri, []),
+                key=lambda u: (self._get_best_label(by_uri[u], language) or u).lower()
+            ):
+                child_node = node_dict(child_uri, visited)
+                if child_node:
+                    kids.append(child_node)
+            return {'label': label, 'anchor_id': anchor_id, 'uri': uri, 'children': kids}
+
+        tree = []
+        for uri in sorted(roots, key=lambda u: (self._get_best_label(by_uri[u], language) or u).lower()):
+            node = node_dict(uri, set())
+            if node:
+                tree.append(node)
+        return tree

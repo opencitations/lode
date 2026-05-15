@@ -59,6 +59,8 @@
 
     {% set md_types = ['Literal', 'Str', 'literal', 'str', 'string'] %}
 
+    {% include '_toc_sidebar.html' %}
+
     <div class="container-fluid px-4 py-4">
         {% if error %}
             <div class="alert alert-danger " role="alert">
