@@ -742,3 +742,65 @@ class BaseLogic(ABC):
             return self.get_or_create(node, Variable)
         return self.get_or_create(node, Individual)
     
+    # ========== PROVENANCE SUBGRAPH ==========
+
+    def build_provenance_subgraph(self, instance):
+        """
+        Build the RDF subgraph that provenanced `instance`:
+        - direct triples from _triples_map[instance]
+        - BNode-transitive closure on object positions
+        - reified Statements with `instance` as has_subject
+        - strategy-specific axioms (hook: _add_axiom_provenance)
+        """
+        from rdflib import Graph, BNode
+        from lode.models import Statement
+
+        sub = Graph()
+        for prefix, ns in self.graph.namespaces():
+            sub.bind(prefix, ns, override=True, replace=True)
+
+        # 1. direct triples
+        source_triples = self._triples_map.get(instance, set())
+        for t in source_triples:
+            sub.add(t)
+
+        # 2. BNode-transitive closure on objects
+        seen = set()
+        for (_s, _p, o) in source_triples:
+            if isinstance(o, BNode):
+                self._expand_bnode_into(o, sub, seen)
+
+        # 3. reified Statements pointing at instance
+        for other_inst, other_triples in self._triples_map.items():
+            if not isinstance(other_inst, Statement):
+                continue
+            if other_inst.get_has_subject() is instance:
+                for t in other_triples:
+                    sub.add(t)
+                    _, _, o = t
+                    if isinstance(o, BNode) and o not in seen:
+                        self._expand_bnode_into(o, sub, seen)
+
+        # 4. strategy-specific axioms (hook)
+        self._add_axiom_provenance(instance, sub)
+
+        return sub
+
+    def _expand_bnode_into(self, bn, sub, seen):
+        """Add `bn` and its BNode-transitive closure to `sub`."""
+        from rdflib import BNode
+        stack = [bn]
+        while stack:
+            n = stack.pop()
+            if n in seen:
+                continue
+            seen.add(n)
+            for p, o in self.graph.predicate_objects(n):
+                sub.add((n, p, o))
+                if isinstance(o, BNode) and o not in seen:
+                    stack.append(o)
+
+    def _add_axiom_provenance(self, instance, sub):
+        """Hook for subclasses. Default: no strategy-specific axioms."""
+        pass
+    

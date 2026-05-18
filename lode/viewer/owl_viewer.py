@@ -5,27 +5,34 @@ from lode.viewer.base_viewer import BaseViewer
 class OwlViewer(BaseViewer):
     """Viewer OWL"""
 
-    def get_view_data(self, resource_uri: Optional[str] = None,  language: Optional[str] = None) -> Dict:
+    TYPE_MAP = {
+        'concept':    {'singular': 'Class',                'plural': 'Classes',               'abb': 'c'},
+        'relation':   {'singular': 'Object Property',      'plural': 'Object Properties',     'abb': 'op'},
+        'attribute':  {'singular': 'Data Property',        'plural': 'Data Properties',       'abb': 'dp'},
+        'annotation': {'singular': 'Annotation Property',  'plural': 'Annotation Properties', 'abb': 'ap'},
+        'individual': {'singular': 'Named Individual',     'plural': 'Named Individuals',     'abb': 'ni'},
+        'model':      {'singular': 'Ontology',             'plural': 'Ontologies',            'abb': 'o'},
+    }
+
+    def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
         all_instances = self.get_all_instances()
         metadata_dict = self._find_and_format_metadata(all_instances)
 
-        # 1. Handle single resource (Standard Base logic)
         if resource_uri:
             data = super().get_view_data(resource_uri, language)
             data['metadata'] = metadata_dict
+            data['type_map'] = self.TYPE_MAP
             return data
 
-        # 2. Define the Table of Contents structure
-        # Tuple Format: (Reader_Key, HTML_ID, Display_Title)
         toc_config = [
-            ('Annotation', 'annotations', 'Annotations'),
-            ('Concept', 'concepts', 'Concepts'),
-            ('Relation', 'relations', 'Relations'), 
-            ('Attribute', 'attributes', 'Attributes'),
-            ('Individual', 'individual', 'Individuals')
+            ('Annotation', 'annotations', 'Annotation'),
+            ('Concept',    'concepts',    'Concept'),
+            ('Relation',   'relations',   'Relation'),
+            ('Attribute',  'attributes',  'Attribute'),
+            ('Individual', 'individuals', 'Individual'),
         ]
 
-        # 3. Build the grouped view
         data = self._build_grouped_view(toc_config, language)
         data['metadata'] = metadata_dict
+        data['type_map'] = self.TYPE_MAP
         return data

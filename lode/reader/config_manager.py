@@ -221,8 +221,8 @@ class RdfConfigManager(ConfigManager):
         return RdfLogic(graph, cache, self)
 
     def create_viewer(self, reader):
-        from lode.viewer import BaseViewer
-        return BaseViewer(reader)
+        from lode.viewer import RdfViewer
+        return RdfViewer(reader)
 
 
 class SkosConfigManager(ConfigManager):
@@ -235,8 +235,8 @@ class SkosConfigManager(ConfigManager):
         return SkosLogic(graph, cache, self)
 
     def create_viewer(self, reader):
-        from lode.viewer import BaseViewer
-        return BaseViewer(reader)
+        from lode.viewer import SkosViewer
+        return SkosViewer(reader)
 
 # ========== CONFIGURATIONS REGISTRY ==========
 

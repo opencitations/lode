@@ -177,7 +177,7 @@
                                                                 {% elif part.link in anchor_map %}
                                                                     <a href="#{{ anchor_map[part.link] }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
                                                                 {% else %}
-                                                                    <div  class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</div>
+                                                                    <span class="external-ref {% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</span>
                                                                 {% endif %}
 
                                                                 {% if v_type in type_map %}
@@ -213,7 +213,7 @@
                                                     {% elif rel_item.link in anchor_map %}
                                                         <a href="#{{ anchor_map[rel_item.link] }}" class="{{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
                                                     {% else %}
-                                                        <div class="{% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</div>
+                                                        <span class="external-ref {% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</span>
                                                     {% endif %}
                                                     {% if v_type in type_map %}
                                                         <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
@@ -279,5 +279,57 @@
                 {% endfor %}
             </div>
         {% endif %}
+
+        <div class="card-footer bg-white">
+            {% if item.provenance and (item.provenance.turtle or item.provenance.rdfxml or item.provenance.n3) %}
+                {% set prov_id = item.anchor_id ~ '_prov' %}
+                <div class="accordion accordion-flush prov-accordion" id="{{ prov_id }}_acc">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header d-flex justify-content-end" id="{{ prov_id }}_head">
+                            <button class="accordion-button collapsed py-1 px-2 small fw-bold text-uppercase text-primary w-auto" title="RDF provenance"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#{{ prov_id }}"
+                                    aria-expanded="false"
+                                    aria-controls="{{ prov_id }}">
+                                <i class="bi bi-code"></i>
+                            </button>
+                        </h2>
+                        <div id="{{ prov_id }}"
+                            class="accordion-collapse collapse"
+                            aria-labelledby="{{ prov_id }}_head"
+                            data-bs-parent="#{{ prov_id }}_acc">
+                            <div class="accordion-body p-2">
+                                <ul class="nav nav-tabs nav-tabs-sm justify-content-end small mb-0" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active py-1 px-2" data-bs-toggle="tab"
+                                                data-bs-target="#{{ prov_id }}_ttl" type="button" role="tab">Turtle</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link py-1 px-2" data-bs-toggle="tab"
+                                                data-bs-target="#{{ prov_id }}_xml" type="button" role="tab">RDF/XML</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link py-1 px-2" data-bs-toggle="tab"
+                                                data-bs-target="#{{ prov_id }}_n3" type="button" role="tab">N3</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content border border-top-0 p-2 bg-light">
+                                    <div class="tab-pane fade show active" id="{{ prov_id }}_ttl" role="tabpanel">
+                                        <pre class="mb-0 small"><code>{{ item.provenance.turtle }}</code></pre>
+                                    </div>
+                                    <div class="tab-pane fade" id="{{ prov_id }}_xml" role="tabpanel">
+                                        <pre class="mb-0 small"><code>{{ item.provenance.rdfxml }}</code></pre>
+                                    </div>
+                                    <div class="tab-pane fade" id="{{ prov_id }}_n3" role="tabpanel">
+                                        <pre class="mb-0 small"><code>{{ item.provenance.n3 }}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            </div>
     </div>
 </div>

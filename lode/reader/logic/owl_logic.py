@@ -1030,7 +1030,7 @@ class OwlLogic(BaseLogic):
         else:
             # oggetto mai visto: Individual (fallback class — _resolve_statement_endpoint
             # ritorna il dominante in cache se presente, altrimenti crea Individual)
-            obj_inst = self._resolve_statement_endpoint(obj, Individual)
+            obj_inst = self._resolve_statement_endpoint(obj, Resource)
 
         if obj_inst:
             statement.set_has_object(obj_inst)
@@ -1048,3 +1048,36 @@ class OwlLogic(BaseLogic):
         if dom is not None:
             return dom
         return self.get_or_create(node, fallback_class)
+    
+    # ========== PROVENANCE OWL-SPECIFIC ==========
+
+    _PROVENANCE_AXIOM_TYPES = (
+        OWL.AllDisjointClasses,
+        OWL.AllDifferent,
+        OWL.AllDisjointProperties,
+    )
+
+    def _add_axiom_provenance(self, instance, sub):
+        """Include general axioms that mention `instance` URI in members/distinctMembers."""
+        uri_str = getattr(instance, 'has_identifier', None)
+        if not uri_str:
+            return
+        uri_ref = URIRef(uri_str)
+        for axiom_type in self._PROVENANCE_AXIOM_TYPES:
+            for axiom in self.graph.subjects(RDF.type, axiom_type):
+                if self._uri_in_axiom_members(axiom, uri_ref):
+                    self._expand_bnode_into(axiom, sub, set())
+
+    def _uri_in_axiom_members(self, axiom_node, uri_ref):
+        """True if uri_ref appears in owl:members or owl:distinctMembers list of axiom_node."""
+        for list_pred in (OWL.members, OWL.distinctMembers):
+            head = self.graph.value(axiom_node, list_pred)
+            if head is None:
+                continue
+            node = head
+            while node and node != RDF.nil:
+                first = self.graph.value(node, RDF.first)
+                if first == uri_ref:
+                    return True
+                node = self.graph.value(node, RDF.rest)
+        return False

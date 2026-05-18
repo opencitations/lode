@@ -5,6 +5,9 @@ from typing import Dict, List, Optional, Tuple
 from lode.models import Literal, Model, Resource, Statement
 import urllib.parse
 
+from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
+from rdflib.namespace import RDF, OWL
+
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
     
@@ -251,7 +254,8 @@ class BaseViewer:
                 'relations': ordered_relations,
                 'statements': statements,
                 'characteristics': characteristics,
-                'is_deprecated': bool(is_dep)
+                'is_deprecated': bool(is_dep),
+                'provenance': self._build_provenance_subgraph(instance),
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
@@ -749,3 +753,21 @@ class BaseViewer:
             if node:
                 tree.append(node)
         return tree
+    
+    # ========== PROVENANCE: subgraph serialisation for each card ==========
+
+    def _build_provenance_subgraph(self, instance) -> Dict[str, str]:
+        """Get the provenance subgraph from the reader and serialize it."""
+        sub = self.reader.get_provenance_subgraph(instance)
+        return {
+            'turtle': self._safe_serialize(sub, 'turtle'),
+            'rdfxml': self._safe_serialize(sub, 'xml'),
+            'n3':     self._safe_serialize(sub, 'n3'),
+        }
+
+    @staticmethod
+    def _safe_serialize(g, fmt: str) -> str:
+        try:
+            return g.serialize(format=fmt)
+        except Exception as e:
+            return f"# serialization error ({fmt}): {e}"

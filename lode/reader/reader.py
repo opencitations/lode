@@ -96,6 +96,13 @@ class Reader:
         if self._logic and hasattr(self._logic, '_triples_map'):
             return self._logic._triples_map
         return {}
+
+    def get_provenance_subgraph(self, instance):
+        """Return the rdflib.Graph subgraph that provenanced `instance`."""
+        if self._logic and hasattr(self._logic, 'build_provenance_subgraph'):
+            return self._logic.build_provenance_subgraph(instance)
+        from rdflib import Graph
+        return Graph()
     
      
     # function reused by the api to push instances
