@@ -17,7 +17,7 @@ class Concept(Resource):
         self.has_exact_match = []     # 0..* 
         self.has_close_match = []     # 0..*
         self.has_key = []             # 0..*
-        self.has_member = []          # 0..*  (inverso di Individual.has_type)
+        self.individuals_with_this_type = []          # 0..*  (inverso di Individual.has_type)
 
 
     def set_has_key(self, prop):
@@ -107,12 +107,12 @@ class Concept(Resource):
         """Restituisce la lista has_close_match"""
         return self.has_close_match
 
-    def set_has_member(self, individual):
-        """Aggiunge un Individual a has_member (inverso di rdf:type)."""
-        if individual not in self.has_member:
-            self.has_member.append(individual)
+    def set_individuals_with_this_type(self, individual):
+        """Aggiunge un Individual a individuals_with_this_type (inverso di rdf:type)."""
+        if individual not in self.individuals_with_this_type:
+            self.individuals_with_this_type.append(individual)
 
-    def get_has_member(self):
-        """Restituisce la lista has_member."""
-        return list(self.has_member)
+    def get_individuals_with_this_type(self):
+        """Restituisce la lista individuals_with_this_type."""
+        return list(self.individuals_with_this_type)
     

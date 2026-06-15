@@ -10,6 +10,7 @@ class Model(Resource):
         self.is_incompatible_with = []         # 0..*
         self.has_top_concept = []              # 0..1
         self.has_prior_version = None          # 0..1
+        self.has_namespaces = {}               # 1 (prefix -> URI)
 
     def get_has_version(self):
         """Restituisce la lista has_version"""
@@ -58,3 +59,12 @@ class Model(Resource):
     def set_has_prior_version(self, model):
         """Aggiunge un Model a has_prior_version"""
         self.has_prior_version = model
+
+    def get_has_namespaces(self):
+        """Restituisce il dizionario prefix -> URI"""
+        return dict(self.has_namespaces)
+
+    def set_has_namespaces(self, namespaces: dict):
+        """Imposta il dizionario dei namespace (prefix -> URI)"""
+        self.has_namespaces = namespaces
+    

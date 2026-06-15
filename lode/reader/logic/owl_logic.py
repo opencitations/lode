@@ -913,7 +913,7 @@ class OwlLogic(BaseLogic):
         Handler bidirezionale per rdf:type.
 
         - subject.has_type += object  (lato Individual/Resource)
-        - object.has_member += subject (lato Concept, solo se l'oggetto e'
+        - object.individuals_with_this_type += subject (lato Concept, solo se l'oggetto e'
         effettivamente classificato come Concept e non e' un URI strutturale
         del vocabolario)
 
@@ -943,7 +943,7 @@ class OwlLogic(BaseLogic):
         # (get_or_create puo' promuovere; type() esatto evita di sporcare
         #  TruthFunction/Restriction/OneOf/etc.)
         if type(concept) is Concept and isinstance(instance, Individual):
-            concept.set_has_member(instance)
+            concept.set_individuals_with_this_type(instance)
 
 
     # ========== OVERRIDE Statement per OWL (typed subject/object) ==========
