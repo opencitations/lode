@@ -25,7 +25,9 @@
             {% elif v.link in anchor_map %}
                 <a href="#{{ anchor_map[v.link] }}" class="{{ dep_class }}" title="{{ v.link }}{{dep_title}}">{{ v.text }}</a>
             {% else %}
-                <div class="d-inline-block {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" title="{{ v.link }}{{dep_title}}">{{ v.text }}</div>
+            <div class="d-inline-block {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}"
+                title="{{ v.link }}{{dep_title}}"
+                {% if is_md %}data-md="{{ v.text | e }}"{% endif %}>{{ v.text }}</div>
             {% endif %}
 
             {% if v_type in type_map %}
@@ -34,8 +36,10 @@
 
         {% else %}
             <div>
-                <div class="markdown-with-badge {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" title="{{ v.link }}{{dep_title}}">
-                    {{ v.text | trim}}
+                <div class="markdown-with-badge {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}"
+                title="{{ v.link }}{{dep_title}}"
+                {% if is_md %}data-md="{{ v.text | e }}"{% endif %}>
+                    {{ v.text }}
                 </div>
                 {% if is_md and v.lan %}
                     <sup class="badge text-secondary lan" title="{{ lang_map.get(v.lan[:2] | lower, v.lan | upper) }}">{{ v.lan }}</sup>
@@ -69,7 +73,7 @@
 
     <div class="card-body px-1 pb-1">
         <div class="mb-2">
-            <small class="text-muted d-block mb-1">URI: <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
+            <small class="text-muted d-block mb-1">IRI: <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
                 <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri }}"
                    class="ms-2" title="Detailed View">↗</a></small>
         </div>
@@ -99,7 +103,9 @@
                                 {% else %}
                                 <div class="mb-2 {{dep_class}}" style="font-size: 0.95rem; line-height: 1.5;">
 
-                                    <div class="markdown-with-badge text-dark {% if is_md%}render-markdown inline-markdown{% endif %} me-1">{{ val.text | trim }}</div>
+                                    <div class="markdown-with-badge text-dark {% if is_md%}render-markdown inline-markdown{% endif %} me-1"
+                                        {% if is_md %}data-md="{{ val.text | e }}"{% endif %}>{{ val.text }}
+                                    </div>
                                     {% if is_md and val.lan %}
                                         <sup class="badge text-secondary lan" title="{{ lang_map.get(val.lan[:2] | lower, val.lan | upper) }}">{{ val.lan }}</sup>
                                     {% endif %}
@@ -111,7 +117,9 @@
                             {% set is_md = v_type in md_types %}
                             {% set dep_class = 'text-decoration-line-through text-muted' if rel_val.is_deprecated else '' %}
                             {% set dep_title = 'Deprecated ' if rel_val.is_deprecated else '' %}
-                            <div class="markdown-with-badge ktext-dark mb-2 {% if is_md %}render-markdown{% endif %} {{dep_class}}" style="font-size: 0.95rem; line-height: 1.5;">
+                            <div class="markdown-with-badge ktext-dark mb-2 {% if is_md %}render-markdown{% endif %} {{dep_class}}"
+                            {% if is_md %}data-md="{{ rel_vals.text | e }}"{% endif %}
+                            style="font-size: 0.95rem; line-height: 1.5;">
                                 {{ rel_vals.text }}
 
                                 {% if is_md and val.lan %}
@@ -188,7 +196,10 @@
                                                             {% set v_type = part.type.lower() if part.type else '' %}
                                                             {% set dep_class = 'text-decoration-line-through text-muted' if part.is_deprecated else '' %}
                                                             {% set dep_title = ' -- Deprecated ' if part.is_deprecated else '' %}
-                                                            <span class="logic {% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</span>
+                                                            <span class="logic {% if is_md %}render-markdown{% endif %} {{dep_class}}"
+                                                                title="{{part.link}}{{dep_title}}"
+                                                                {% if is_md %}data-md="{{ part.text | e }}"{% endif %}>{{ part.text }}
+                                                            </span>
                                                             {% if v_type in type_map %}
                                                                 <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
                                                             {% endif %}
@@ -213,7 +224,9 @@
                                                     {% elif rel_item.link in anchor_map %}
                                                         <a href="#{{ anchor_map[rel_item.link] }}" class="{{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
                                                     {% else %}
-                                                        <span class="external-ref {% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</span>
+                                                    <span class="external-ref {% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}"
+                                                        title="{{rel_item.link}}{{dep_title}}"
+                                                        {% if is_md %}data-md="{{ rel_item.text | e }}"{% endif %}>{{ rel_item.text }}</span>                                                    
                                                     {% endif %}
                                                     {% if v_type in type_map %}
                                                         <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
@@ -226,7 +239,8 @@
                                             {% else %}
                                                 {% set v_type = rel_item.type.lower() if rel_item.type else '' %}
                                                 {% set is_md = v_type in md_types %}
-                                                <div class="markdown-with-badge text-dark mb-0 {% if is_md %}render-markdown inline-markdown{% endif %} {% if rel_item.is_deprecated %}text-decoration-line-through text-muted{% endif %}">{{ rel_item.text }}</div>
+                                                <div class="markdown-with-badge text-dark mb-0 {% if is_md %}render-markdown inline-markdown{% endif %} {% if rel_item.is_deprecated %}text-decoration-line-through text-muted{% endif %}"
+                                                {% if is_md %}data-md="{{ rel_item.text | e }}"{% endif %}>{{ rel_item.text }}</div>
                                                 {% if v_type in type_map %}
                                                     <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>{% if not loop.last and not rel_value[loop.index].parts %}, {% endif %}
                                                 {% endif %}
@@ -239,7 +253,8 @@
                                 {% else %}
                                     {% set v_type = rel_value.type.lower() if rel_value.type else '' %}
                                     {% set is_md = v_type in md_types %}
-                                    <div class="markdown-with-badge mb-0 {% if is_md %}render-markdown inline-markdown{% endif %}">
+                                    <div class="markdown-with-badge mb-0 {% if is_md %}render-markdown inline-markdown{% endif %}"
+                                    {% if is_md %}data-md="{{ rel_value.text | e }}"{% endif %}>
                                         {{ rel_value.text }}
 
                                     {% if is_md and rel_value.lan %}
