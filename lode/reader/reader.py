@@ -182,6 +182,9 @@ class Reader:
         # FASE 6: Statements
         self._logic.phase6_create_statements()
 
+        # FASE 7: Namespaces 
+        self._logic.populate_namespaces()
+
         # Post-pipeline warning checks
         if self._warnings_enabled:
             from lode.reader.warnings import owl_warnings

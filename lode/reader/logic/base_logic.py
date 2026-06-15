@@ -58,6 +58,10 @@ class BaseLogic(ABC):
         Subclasses do NOT need to override this anymore.
         """
         return set(self._strategy.config.get('namespaces', []))
+    
+    def get_namespaces(self) -> dict:
+        """Prefixes declared in the graph (prefix -> URI)."""
+        return {prefix: str(ns) for prefix, ns in self.graph.namespaces()}
 
     @abstractmethod
     def phase1_classify_from_predicates(self):
@@ -159,6 +163,16 @@ class BaseLogic(ABC):
         Ritorna None per delegare al comportamento base.
         """
         return None
+    
+    # ========== Namespaces resolution ==========
+    
+    def populate_namespaces(self):
+        """Attacca i prefissi del grafo a ogni Model in cache."""
+        ns = {prefix: str(uri) for prefix, uri in self.graph.namespaces()}
+        for instances in self._instance_cache.values():
+            for inst in instances:
+                if isinstance(inst, Model):
+                    inst.set_has_namespaces(ns)
 
     # ========== UTILITIES ==========
 

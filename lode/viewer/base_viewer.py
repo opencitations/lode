@@ -290,7 +290,8 @@ class BaseViewer:
             'get_has_label',
             'get_has_subject',
             'get_has_predicate',
-            'get_has_object'
+            'get_has_object',
+            'get_has_namespaces',
         ]
         entry = {'text': None, 'link': None}
         # 1. Loop through ALL attributes and methods of the Model object
@@ -332,6 +333,14 @@ class BaseViewer:
                         if extracted_values:
                             data[clean_key] = extracted_values
 
+        # Namespaces (dict prefix -> URI), handled explicitly: not a Resource
+        ns = ontology_model.get_has_namespaces()
+        if ns:
+            data['_namespaces'] = [
+                {'prefix': prefix or 'default namespace', 'uri': uri}
+                for prefix, uri in sorted(ns.items(), key=lambda kv: (kv[0] or ''))
+            ]
+            
         # 9. Statements
         data.update(self._format_statement(all_instances, ontology_model, language))
 
@@ -414,6 +423,7 @@ class BaseViewer:
             handler_dic['link'] = None  # don't link to the BNode id
             inner_pred = obj.get_has_predicate()
             inner_obj = obj.get_has_object()
+            
             # Resolve the inner (predicate, value) pair recursively
             inner = {
                 'predicate': self._get_best_label(inner_pred, language) if inner_pred else None,
@@ -483,6 +493,11 @@ class BaseViewer:
 
                 predicate = instance.get_has_predicate()
                 obj = instance.get_has_object()
+
+                if obj:
+                    obj_data = self._resolve_resource_value(obj, language)
+                    if obj_data.get('text') and '\n' in obj_data['text']:
+                        print(f"TYPE: {obj_data.get('type')} | LAN: {obj_data.get('lan')}")
 
                 # 3. Predicate Resolution
                 pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
