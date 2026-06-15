@@ -1,6 +1,6 @@
 # lode/api.py
 from fastapi import FastAPI, File, UploadFile, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from enum import Enum
@@ -29,7 +29,13 @@ class ReadAsFormat(str, Enum):
     rdf = "rdf"
     skos = "skos"
 
-@app.get("/extract", response_class=HTMLResponse)
+_ACCEPT_TO_SERIALIZATION: dict[str, tuple[str, str, str]] = {
+    "text/turtle":            ("turtle", "text/turtle",         "ttl"),
+    "application/rdf+xml":    ("xml",    "application/rdf+xml", "rdf"),
+    "text/n3":                ("n3",     "text/n3",             "n3"),
+}
+
+@app.get("/extract")
 async def extract_get(
     request: Request,
     read_as: ReadAsFormat,
@@ -40,24 +46,34 @@ async def extract_get(
     closure: Optional[bool] = None, 
     warnings: bool = False
 ):
-    """Visualizza semantic artefact da URL."""
-    
     try:
         logger.info(f"=== REQUEST START ===")
         logger.info(f"URL: {url}")
         logger.info(f"Format: {read_as.value}")
         logger.info(f"Resource: {resource}")
-        
+
         reader = Reader()
         reader.load_instances(url, read_as.value, imported=imported, closure=closure, warnings=warnings)
-        
+
+        accept = request.headers.get("accept", "text/html")
+        if accept in _ACCEPT_TO_SERIALIZATION:
+            rdflib_fmt, mime_type, ext = _ACCEPT_TO_SERIALIZATION[accept]
+            serialized = reader._graph.serialize(format=rdflib_fmt)
+            filename = url.rstrip("/").split("/")[-1] or "graph"
+            return Response(
+                content=serialized,
+                media_type=mime_type,
+                headers={"Content-Disposition": f'attachment; filename="{filename}.{ext}"'}
+            )
+
         viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource, language=lang) 
+        data = viewer.get_view_data(resource_uri=resource, language=lang)
         data['warnings'] = reader.get_warnings()
-        
+
         logger.info(f"=== REQUEST SUCCESS ===")
         return templates.TemplateResponse("viewer.html", {
             "request": request,
+            "source_url": url,
             **data
         })
     except Exception as e:
@@ -66,9 +82,10 @@ async def extract_get(
         logger.error(f"Message: {str(e)}")
         logger.error(f"Traceback:\n{traceback.format_exc()}")
         logger.error(f"=============")
-        
+
         return templates.TemplateResponse("viewer.html", {
             "request": request,
+            "source_url": None,
             "error": f"{type(e).__name__}: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
         })
 
@@ -107,6 +124,7 @@ async def extract_post(
         logger.info(f"=== UPLOAD SUCCESS ===")
         return templates.TemplateResponse("viewer.html", {
             "request": request,
+            "source_url": None,
             **data
         })
     except Exception as e:
@@ -123,16 +141,6 @@ async def extract_post(
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
             os.unlink(temp_file_path)
-
-@app.get("/info")
-async def root():
-    return {
-        "message": "LODE 2.0 API",
-        "version": "1.0.0",
-        "endpoints": {
-            "extract": "/extract [GET] - View resources as HTML"
-        }
-    }
 
 @app.get("/", response_class=HTMLResponse)
 async def input_web_interface(request: Request):
