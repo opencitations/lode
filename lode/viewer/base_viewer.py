@@ -403,8 +403,8 @@ class BaseViewer:
                     if lit_lang and not lit_lang.lower().startswith(target_lang):
                         return handler_dic
 
-                    if not lit_lang:
-                        return handler_dic
+                    # if not lit_lang:
+                    #     return handler_dic
 
                 handler_dic['text'] = obj.get_has_value()
                 handler_dic['lan'] = lit_lang

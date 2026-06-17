@@ -101,11 +101,11 @@
                                             {% if item.link %}
                                                 <div class="{% if is_md %}render-markdown{% endif %}">
                                                     <a href="{{ item.link }}" target="_blank" title="Go to Resource">{{ item.link }}</a>
-                                                    {% if item.is_visualizable %}
-                                                        <a href="?read_as={{ request.query_params.get('read_as', '') }}&url={{ item.link | urlencode }}&lang={{ request.query_params.get('lang', 'en') }}" target="_blank" class="ms-1">
-                                                         (visualise it with LODE)
-                                                        </a>
-                                                    {% endif %}
+                                                    {% if item.is_visualizable and not request.is_static %}
+                                                    <a href="?read_as={{ request.query_params.get('read_as', '') }}&url={{ item.link | urlencode }}&lang={{ request.query_params.get('lang', 'en') }}" target="_blank" class="ms-1">
+                                                    (visualise it with LODE)
+                                                    </a>
+                                                {% endif %}
                                                 </div>
                                             {% else %}
                                                 <div class="markdown-with-badge metadata_p text-dark {% if is_md %}render-markdown inline-markdown{% endif %}">{{ item.text }}</div>
@@ -131,11 +131,13 @@
                                 ("application/rdf+xml", "RDF/XML", "bi-file-code",    "rdf"),
                                 ("text/n3",             "N3",      "bi-file-text",    "n3")
                             ] %}
+                            {% if not request.is_static %}
                             <a href="#"
                                 class="btn btn-sm btn-outline-dark me-2"
                                 onclick="exportGraph('{{ mime }}', '{{ ext }}', '{{ request.query_params.get('read_as', '') }}', '{{ source_url }}'); return false;">
                                 <i class="bi {{ icon }}"></i> {{ label }}
                             </a>
+                            {% endif %}
                             {% endfor %}
                         </dd>
                         {% endif %}

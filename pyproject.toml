@@ -27,6 +27,10 @@ dependencies = [
     "owlready2>=0.50",
 ]
 
+# AGGIUNTO
+[project.scripts]
+lode = "lode.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/opencitations/lode"
 Repository = "https://github.com/opencitations/lode"
@@ -44,3 +48,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["lode"]
+
+# AGGIUNTO - include template e static nel wheel
+[tool.hatch.build.targets.wheel.shared-data]
+"lode/templates" = "lode/templates"
+"lode/static" = "lode/static"

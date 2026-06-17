@@ -14,17 +14,8 @@ class OwlViewer(BaseViewer):
         'model':      {'singular': 'Ontology',             'plural': 'Ontologies',            'abb': 'o'},
     }
 
-    def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
-        all_instances = self.get_all_instances()
-        metadata_dict = self._find_and_format_metadata(all_instances)
-
-        if resource_uri:
-            data = super().get_view_data(resource_uri, language)
-            data['metadata'] = metadata_dict
-            data['type_map'] = self.TYPE_MAP
-            return data
-
-        toc_config = [
+    def get_toc_config(self):
+        return [
             ('Annotation', 'annotations', 'Annotation'),
             ('Concept',    'concepts',    'Concept'),
             ('Relation',   'relations',   'Relation'),
@@ -32,7 +23,15 @@ class OwlViewer(BaseViewer):
             ('Individual', 'individuals', 'Individual'),
         ]
 
-        data = self._build_grouped_view(toc_config, language)
+    def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
+        all_instances = self.get_all_instances()
+        metadata_dict = self._find_and_format_metadata(all_instances)
+
+        if resource_uri:
+            data = super().get_view_data(resource_uri, language)
+        else:
+            data = self._build_grouped_view(self.get_toc_config(), language)
+
         data['metadata'] = metadata_dict
         data['type_map'] = self.TYPE_MAP
         return data
