@@ -3,11 +3,7 @@ FROM python:3.11-slim
 
 # Define environment variables with default values
 # These can be overridden during container runtime
-ENV BASE_URL="api.opencitations.net" \
-    LOG_DIR="/mnt/log_dir/oc_api"  \
-    SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
-    SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
-    SYNC_ENABLED="true" 
+ENV BASE_URL="lode.opencitations.net"
 
 # Ensure Python output is unbuffered
 ENV PYTHONUNBUFFERED=1
