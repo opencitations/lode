@@ -23,7 +23,7 @@ print(result)
 
 ## Documentation
 
-Full documentation is available at: https://username.github.io/lode/
+Full documentation is available at: https://opencitations.github.io/lode/
 
 ## Prerequisites
 
@@ -47,6 +47,30 @@ uv run python main.py
 # open at 
 localhost:8000
 ```
+
+## Docker
+
+### Build
+
+```bash
+docker build -t lode .
+```
+
+### Run
+
+```bash
+docker run -p 8080:8080 lode
+```
+
+### Run from Docker Hub
+
+```bash
+docker run -p 8080:8080 opencitations/lode:latest
+```
+
+Replace `latest` with the desired version tag.
+
+The app will be available at `localhost:8080`.
 
 
 <!-- ### Running tests

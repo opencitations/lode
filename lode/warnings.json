@@ -1,0 +1,32 @@
+[
+  {
+    "code": "malformed_restriction",
+    "subject": "http://www.w3.org/2004/09/fresnel#Format",
+    "message": "OWL 2 DL: malformed restrictions on http://www.w3.org/2004/09/fresnel#Format (owl:allValuesFrom, owl:maxCardinality, owl:minCardinality)"
+  },
+  {
+    "code": "malformed_restriction",
+    "subject": "http://www.w3.org/2004/09/fresnel#FormatDescription",
+    "message": "OWL 2 DL: malformed restrictions on http://www.w3.org/2004/09/fresnel#FormatDescription (owl:allValuesFrom, owl:maxCardinality, owl:minCardinality)"
+  },
+  {
+    "code": "malformed_restriction",
+    "subject": "http://www.w3.org/2004/09/fresnel#FormatDescriptionSubstitution",
+    "message": "OWL 2 DL: malformed restrictions on http://www.w3.org/2004/09/fresnel#FormatDescriptionSubstitution (owl:allValuesFrom, owl:maxCardinality, owl:minCardinality)"
+  },
+  {
+    "code": "malformed_restriction",
+    "subject": "http://www.w3.org/2004/09/fresnel#Group",
+    "message": "OWL 2 DL: malformed restrictions on http://www.w3.org/2004/09/fresnel#Group (owl:allValuesFrom, owl:maxCardinality, owl:minCardinality)"
+  },
+  {
+    "code": "malformed_restriction",
+    "subject": "http://www.w3.org/2004/09/fresnel#Lens",
+    "message": "OWL 2 DL: malformed restrictions on http://www.w3.org/2004/09/fresnel#Lens (owl:allValuesFrom, owl:maxCardinality, owl:minCardinality)"
+  },
+  {
+    "code": "malformed_restriction",
+    "subject": "http://www.w3.org/2004/09/fresnel#PropertyDescription",
+    "message": "OWL 2 DL: malformed restrictions on http://www.w3.org/2004/09/fresnel#PropertyDescription (owl:allValuesFrom, owl:maxCardinality, owl:minCardinality)"
+  }
+]
