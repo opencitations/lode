@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from enum import Enum
 from typing import Optional
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import tempfile
 import os
 import traceback
@@ -26,6 +27,10 @@ from lode.exceptions import LODEError, ArtefactValidationError
 from lode.reader import Reader
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
+
+# Fix Blocked loading mixed active content on style.css
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 templates = Jinja2Templates(directory="lode/templates")
 app.mount("/static", StaticFiles(directory="lode/static"), name="static")
 
