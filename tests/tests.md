@@ -36,5 +36,5 @@ Coming soon
 
 ## Usage
 ```bash
-uv run python restrictions_test.py https://sparontologies.github.io/fabio/current/fabio.ttl --out icon_inspection.json
+uv run python restrictions_test.py https://sparontologies.github.io/fabio/current/fabio.ttl --out fabio_inspection2.json
 ```
