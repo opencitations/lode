@@ -77,7 +77,7 @@
                 {% if is_static %}
                     <a href="{{ resource_url(item.uri, item.type.lower() ~ 's') }}" class="ms-2" title="Detailed View">↗</a>
                 {% else %}
-                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri }}"
+                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri | urlencode }}"
                     class="ms-2" title="Detailed View">↗</a>
                 {% endif %}
             </small>

@@ -46,7 +46,6 @@
                                     type="file" 
                                     id="semanticArtefactFile" 
                                     name="file"
-                                    accept=".rdf,.owl,.ttl,.n3,.nt,.xml"
                                     style="height: calc(3.5rem + 2px); padding: 1rem 0.75rem;"
                                 >
                             </div>
@@ -399,16 +398,9 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            urlInput.classList.remove('is-invalid');
-            fileInput.classList.remove('is-invalid');
-
             // ── GET (URL mode) ──
             if (!isFileMode) {
                 const url = urlInput.value.trim();
-                if (!url) {
-                    urlInput.classList.add('is-invalid');
-                    return;
-                }
 
                 const params = new URLSearchParams({ url });
 
@@ -434,10 +426,6 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
 
             // ── POST (File mode) ──
             const file = fileInput.files[0];
-            if (!file) {
-                fileInput.classList.add('is-invalid');
-                return;
-            }
 
             const formData = new FormData();
             formData.append('file', file);
@@ -467,16 +455,12 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
                 document.write(html);
                 document.close();
             } catch (error) {
-                fileInput.classList.add('is-invalid');
+                console.error(error);
             } finally {
                 submitBtn.disabled    = false;
                 submitBtn.textContent = 'Generate Documentation';
             }
         });
-
-        // ── Clear validation on input ──────────────────────────────────────────
-        urlInput.addEventListener('input',  () => urlInput.classList.remove('is-invalid'));
-        fileInput.addEventListener('change', () => fileInput.classList.remove('is-invalid'));
     </script>
 </body>
 </html>
