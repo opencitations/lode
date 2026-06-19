@@ -211,5 +211,5 @@ class Resource():
         return list(self.also_defined_as)
     
     def set_also_defined_as(self, resource):
-        """Aggiunge un Model a has_prior_version"""
+        """Aggiunge un Resource alla lista di also_defined_as"""
         self.also_defined_as.append(resource)

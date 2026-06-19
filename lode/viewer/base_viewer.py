@@ -188,6 +188,13 @@ class BaseViewer:
                         formatted_values = []
                         if isinstance(value, list):
                             for v in value:
+                                # Nested list (es. has_property_chain: lista di catene)
+                                if isinstance(v, list):
+                                    chain_dict = self._resolve_chain_value(v, language)
+                                    if chain_dict and chain_dict['text']:
+                                        formatted_values.append(chain_dict)
+                                    continue
+                                # Normal list
                                 val_dict = self._resolve_resource_value(v, language)
                                 if val_dict['text']: formatted_values.append(val_dict)
                         else:
@@ -345,6 +352,29 @@ class BaseViewer:
         data.update(self._format_statement(all_instances, ontology_model, language))
 
         return data
+    
+    def _resolve_chain_value(self, chain, language=None) -> dict:
+        """Renderizza una property chain ordinata (lista di Relation) come un
+        unico valore con parti cliccabili unite dall'operatore di composizione."""
+        members = []
+        for m in chain:
+            md = self._resolve_resource_value(m, language)
+            if md.get('text'):
+                members.append(md)
+        if not members:
+            return None
+        parts = []
+        for i, md in enumerate(members):
+            if i > 0:
+                parts.append({'text': ' o ', 'link': None})  # ring operator
+            parts.append(md)
+        return {
+            'text': ' o '.join(md['text'] for md in members),
+            'link': None,
+            'lan': None,
+            'parts': parts,
+            'type': 'PropertyChain',
+        }
 
     def _resolve_resource_value(self, obj, language=None) -> dict:
         """Helper: Extracts text and link from any object."""
@@ -496,8 +526,6 @@ class BaseViewer:
 
                 if obj:
                     obj_data = self._resolve_resource_value(obj, language)
-                    if obj_data.get('text') and '\n' in obj_data['text']:
-                        print(f"TYPE: {obj_data.get('type')} | LAN: {obj_data.get('lan')}")
 
                 # 3. Predicate Resolution
                 pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"

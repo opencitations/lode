@@ -85,8 +85,8 @@ class BaseLogic(ABC):
 
     def phase6_create_statements(self):
         for subj, pred, obj in self.graph:
-            if pred in self._property_mapping:
-                continue
+            # if pred in self._property_mapping:
+            #     continue
             if pred in [RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members]:
                 continue
             if isinstance(subj, URIRef):
