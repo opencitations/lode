@@ -1,5 +1,0 @@
-{
-  "uri": "https://w3id.org/spar/biro",
-  "status": "robot_error",
-  "error": "exit 1 | cmd_tail=export --input C:\\Users\\valep\\AppData\\Local\\Temp\\lode_owlapi_wpn29ov7\\ontology.owl | Input ontology 'C:\\Users\\valep\\AppData\\Local\\Temp\\lode_owlapi_wpn29ov7\\ontology.owl' does not exist\nUse the -vvv option to show the stack trace.\nUse the --help option to see usage information."
-}
