@@ -7,6 +7,7 @@ from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import lode.reader.modules as modules
+from lode import security
 from lode.exceptions import ArtefactLoadError, ArtefactNotFoundError
 
 
@@ -62,7 +63,9 @@ class Loader:
         }
 
         try:
-            response = requests.get(url, headers=headers, timeout=10)
+            # safe_get applies anti-SSRF protection (blocks internal/private hosts),
+            # re-validates every redirect and caps the download size.
+            response = security.safe_get(url, headers=headers, timeout=10)
 
             if response.status_code != 200:
                 raise ArtefactNotFoundError(
@@ -71,6 +74,8 @@ class Loader:
                 )
 
             content = response.text
+            # XML hardening: block XXE/entity-expansion on remote artefacts too.
+            security.assert_safe_xml(content)
             content_type = response.headers.get("Content-Type", "").lower()
 
             # Format guessed from HTTP Content-Type

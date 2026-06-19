@@ -20,8 +20,32 @@ logger = logging.getLogger(__name__)
 
 # Internal modules
 from lode.reader import Reader
+from lode import security
+from lode.exceptions import LODEError, UploadValidationError, UnsafeURLError
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
+
+
+def _status_for(exc: Exception) -> int:
+    """Map an exception to its suggested HTTP status."""
+    return getattr(exc, "http_status", 500) if isinstance(exc, LODEError) else 500
+
+
+def _user_facing_error(exc: Exception) -> str:
+    """Message shown to the user: no traceback in production.
+
+    The full traceback is still logged server-side. In development
+    (LODE_DEBUG=1) the detail is included to make debugging easier.
+    """
+    if security.DEBUG:
+        return f"{type(exc).__name__}: {exc}\n\n{traceback.format_exc()}"
+    # LODE exception messages are curated and safe to display.
+    if isinstance(exc, LODEError):
+        return str(exc)
+    return (
+        "Could not process the provided artefact. Check that the file/URL and "
+        "the selected format are correct, then try again."
+    )
 
 # Fix Blocked loading mixed active content on style.css
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
@@ -88,11 +112,11 @@ async def extract_get(
         logger.error(f"Traceback:\n{traceback.format_exc()}")
         logger.error(f"=============")
 
-        return templates.TemplateResponse("viewer.html", {
-            "request": request,
-            "source_url": None,
-            "error": f"{type(e).__name__}: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
-        })
+        return templates.TemplateResponse(
+            "viewer.html",
+            {"request": request, "source_url": None, "error": _user_facing_error(e)},
+            status_code=_status_for(e),
+        )
 
 @app.post("/extract", response_class=HTMLResponse)
 async def extract_post(
@@ -113,9 +137,14 @@ async def extract_post(
         logger.info(f"=== FILE UPLOAD START ===")
         logger.info(f"Filename: {file.filename}")
         logger.info(f"Format: {read_as.value}")
-        
+
+        # --- Upload security checks ---
+        # 1) read with a size limit (anti-DoS)
+        content = await security.read_upload_capped(file)
+        # 2) binary rejection + extension allowlist + XML hardening (XXE)
+        security.validate_upload_bytes(content, filename=file.filename)
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=".rdf") as tmp:
-            content = await file.read()
             tmp.write(content)
             temp_file_path = tmp.name
         
@@ -138,11 +167,12 @@ async def extract_post(
         logger.error(f"Message: {str(e)}")
         logger.error(f"Traceback:\n{traceback.format_exc()}")
         logger.error(f"=============")
-        
-        return templates.TemplateResponse("viewer.html", {
-            "request": request,
-            "error": f"{type(e).__name__}: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
-        })
+
+        return templates.TemplateResponse(
+            "viewer.html",
+            {"request": request, "error": _user_facing_error(e)},
+            status_code=_status_for(e),
+        )
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
             os.unlink(temp_file_path)

@@ -17,3 +17,24 @@ class ArtefactLoadError(LODEError):
 class ArtefactNotFoundError(LODEError):
     "Artefatto risponde 404"
     pass
+
+class UploadValidationError(LODEError):
+    """The uploaded file failed the security checks (binary, disallowed format,
+    potentially malicious XML content, etc.).
+
+    `http_status` is the suggested HTTP status for the response (default 400).
+    """
+    http_status = 400
+
+class UploadTooLargeError(UploadValidationError):
+    """The uploaded file exceeds the maximum allowed size."""
+    http_status = 413
+
+class UnsupportedMediaError(UploadValidationError):
+    """File extension / type not in the allowlist."""
+    http_status = 415
+
+class UnsafeURLError(LODEError):
+    """URL blocked by the anti-SSRF protection (internal/private host,
+    disallowed scheme, too many redirects)."""
+    http_status = 400
