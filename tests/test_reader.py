@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from lode.logic.reader import Reader
+from lode.reader import Reader
 
 
 class TestReaderInitialization:
