@@ -23,8 +23,8 @@ from lode.reader import Reader
 from lode.reader import security
 from lode.exceptions import LODEError, ArtefactValidationError
 
-# Internal modules
-from lode.reader import Reader
+# When enabled, error pages include the full traceback (development only).
+DEBUG = os.getenv("LODE_DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
 
@@ -59,7 +59,9 @@ def _error_payload(exc: Exception) -> dict:
         "message": str(exc),
         "context": exc.context if is_lode else {},
         "request_id": exc.request_id if is_lode else None,
-        "traceback": None if is_lode else traceback.format_exc(),
+        # Never leak the traceback to the user in production: it is always logged
+        # server-side; it is only surfaced in the page when LODE_DEBUG is set.
+        "traceback": traceback.format_exc() if (not is_lode and DEBUG) else None,
     }
 
 @app.exception_handler(LODEError)
@@ -82,6 +84,22 @@ def _check_format_enabled(read_as: "ReadAsFormat") -> None:
             f"Format '{read_as.value}' is not available yet",
             context={"requested": read_as.value, "supported": sorted(ENABLED_FORMATS)}
         )
+
+@app.middleware("http")
+async def limit_upload_size(request: Request, call_next):
+    """Reject oversized POST bodies early, before reading them, when the client
+    declares a Content-Length. (Chunked bodies omit it: those are still capped
+    in read_upload_capped; the hard limit belongs at the reverse proxy.)"""
+    if request.method == "POST":
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > security.MAX_BYTES:
+            exc = ArtefactValidationError(
+                "File too large", context={"bytes": int(declared), "max": security.MAX_BYTES}
+            )
+            return templates.TemplateResponse(
+                "error.html", {"request": request, "error": _error_payload(exc)}, status_code=400
+            )
+    return await call_next(request)
 
 @app.get("/extract")
 async def extract_get(
@@ -144,9 +162,9 @@ async def extract_post(
         # SECURITY CHECKS: validate before writing to disk
         _check_format_enabled(read_as)
         security.check_extension(file.filename)
-        content = await file.read()  # reads the file
-        security.check_size(len(content))
-        security.check_is_text(content)
+        content = await security.read_upload_capped(file)   # chunked read + size cap (anti-DoS)
+        security.check_is_text(content)                     # binary rejection
+        security.check_safe_xml(content.decode("utf-8-sig"))  # XXE / billion laughs
 
         # Write temp file (valid input only)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".rdf") as tmp:

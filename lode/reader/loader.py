@@ -96,10 +96,14 @@ class Loader:
                     security.check_size(len(raw))  
 
             # SECURITY: checks the file is text not binary
-            security.check_is_text(raw)  
+            security.check_is_text(raw)
 
             # Proceed with encoding
             content = raw.decode("utf-8")
+
+            # SECURITY: block XXE / entity-expansion on remote artefacts and owl:imports
+            security.check_safe_xml(content)
+
             content_type = response.headers.get("Content-Type", "").lower()
 
             # Format guessed from HTTP Content-Type (content negotiation handler)

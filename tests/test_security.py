@@ -14,6 +14,8 @@ Network and DNS are mocked, so the suite runs offline.
 
 Run:  uv run pytest tests/test_security.py -v
 """
+import asyncio
+import io
 import socket
 import pytest
 
@@ -354,3 +356,104 @@ class TestEmptyGraphGuard:
         loader = Loader()
         with pytest.raises(ArtefactLoadError):
             loader.load(str(f))
+
+
+# ----------------------------------------------------------------------
+#  check_safe_xml  (XXE / billion laughs hardening)
+# ----------------------------------------------------------------------
+class TestCheckSafeXml:
+
+    def test_external_entity_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(
+                '<!DOCTYPE r [ <!ENTITY x SYSTEM "file:///etc/passwd"> ]><r>&x;</r>'
+            )
+
+    def test_external_dtd_public_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(
+                '<!DOCTYPE r PUBLIC "-//x//EN" "http://evil/x.dtd"><r/>'
+            )
+
+    def test_parameter_entity_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml('<!DOCTYPE r [ <!ENTITY % p "foo"> ]><r/>')
+
+    def test_billion_laughs_rejected(self):
+        payload = (
+            '<!DOCTYPE lolz [\n'
+            '  <!ENTITY lol "lol">\n'
+            '  <!ENTITY lol2 "&lol;&lol;&lol;">\n'
+            ']>\n<lolz>&lol2;</lolz>'
+        )
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(payload)
+
+    def test_simple_internal_entities_allowed(self):
+        # Protege-style namespace entities must NOT be blocked.
+        security.check_safe_xml(
+            '<!DOCTYPE rdf:RDF [ <!ENTITY owl "http://www.w3.org/2002/07/owl#" > ]>'
+            '<rdf:RDF/>'
+        )
+
+    def test_no_doctype_allowed(self):
+        security.check_safe_xml('<?xml version="1.0"?><rdf:RDF/>')
+
+    def test_turtle_allowed(self):
+        security.check_safe_xml('@prefix ex: <http://e/> . ex:a a ex:B .')
+
+
+# ----------------------------------------------------------------------
+#  read_upload_capped  (chunked upload read with size cap)
+# ----------------------------------------------------------------------
+class _FakeUpload:
+    """Mimics starlette.UploadFile: exposes an async read(size)."""
+    def __init__(self, data: bytes):
+        self._buf = io.BytesIO(data)
+
+    async def read(self, size: int = -1) -> bytes:
+        return self._buf.read(size)
+
+
+class TestReadUploadCapped:
+
+    def test_within_limit_returns_all(self):
+        data = b"x" * 1000
+        out = asyncio.run(security.read_upload_capped(_FakeUpload(data), max_bytes=2000))
+        assert out == data
+
+    def test_over_limit_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            asyncio.run(security.read_upload_capped(_FakeUpload(b"x" * 5000), max_bytes=1000))
+
+
+# ----------------------------------------------------------------------
+#  check_extension - missing filename guard
+# ----------------------------------------------------------------------
+class TestCheckExtensionMissing:
+
+    @pytest.mark.parametrize("name", [None, ""])
+    def test_missing_filename_rejected(self, name):
+        with pytest.raises(ArtefactValidationError):
+            security.check_extension(name)
+
+
+# ----------------------------------------------------------------------
+#  check_url_safe - extra SSRF hardening (multicast / unspecified / IPv4-mapped)
+# ----------------------------------------------------------------------
+class TestSsrfHardening:
+
+    @pytest.mark.parametrize("ip", [
+        "224.0.0.1",            # multicast
+        "0.0.0.0",              # unspecified
+        "::ffff:127.0.0.1",     # IPv4-mapped IPv6 loopback
+    ])
+    def test_extra_internal_addresses_rejected(self, monkeypatch, ip):
+        monkeypatch.setattr(
+            "lode.reader.security.socket.getaddrinfo",
+            lambda host, port, *a, **k: [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0))
+            ],
+        )
+        with pytest.raises(ArtefactValidationError):
+            security.check_url_safe("http://whatever.example.org/x")
