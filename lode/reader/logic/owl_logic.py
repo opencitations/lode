@@ -679,7 +679,6 @@ class OwlLogic(BaseLogic):
 
     def handle_property_chain(self, instance, uri, predicate, obj, setter=None):
         """Handler per owl:propertyChainAxiom"""
-        print(f"DEBUG: uri={uri}, instance={type(instance).__name__}, obj={obj}, is_collection={self._is_rdf_collection(obj)}")
 
         if not self._is_rdf_collection(obj):
             raise ValueError(f"owl:propertyChainAxiom object is not an RDF list: {obj}")

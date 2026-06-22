@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 # Internal modules
 from lode.reader import Reader
+from lode.reader import security
+from lode.exceptions import LODEError, ArtefactValidationError
+
+# Internal modules
+from lode.reader import Reader
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
 
@@ -28,6 +33,9 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 templates = Jinja2Templates(directory="lode/templates")
 app.mount("/static", StaticFiles(directory="lode/static"), name="static")
+
+# Available semantic artefacts types for API in versin 0.1.X
+ENABLED_FORMATS = {"owl"}
 
 class ReadAsFormat(str, Enum):
     owl = "owl"
@@ -40,6 +48,41 @@ _ACCEPT_TO_SERIALIZATION: dict[str, tuple[str, str, str]] = {
     "text/n3":                ("n3",     "text/n3",             "n3"),
 }
 
+# ----------------------------------------------------------
+#  ERROR RENDERING
+# ----------------------------------------------------------
+
+def _error_payload(exc: Exception) -> dict:
+    is_lode = isinstance(exc, LODEError)
+    return {
+        "type": type(exc).__name__,
+        "message": str(exc),
+        "context": exc.context if is_lode else {},
+        "request_id": exc.request_id if is_lode else None,
+        "traceback": None if is_lode else traceback.format_exc(),
+    }
+
+@app.exception_handler(LODEError)
+async def lode_error_handler(request: Request, exc: LODEError):
+    logger.error(f"{type(exc).__name__}: {exc}")
+    return templates.TemplateResponse(
+        "error.html", {"request": request, "error": _error_payload(exc)}, status_code=400
+    )
+
+@app.exception_handler(Exception)
+async def unexpected_error_handler(request: Request, exc: Exception):
+    logger.exception("Unexpected error")
+    return templates.TemplateResponse(
+        "error.html", {"request": request, "error": _error_payload(exc)}, status_code=500
+    )
+
+def _check_format_enabled(read_as: "ReadAsFormat") -> None:
+    if read_as.value not in ENABLED_FORMATS:
+        raise ArtefactValidationError(
+            f"Format '{read_as.value}' is not available yet",
+            context={"requested": read_as.value, "supported": sorted(ENABLED_FORMATS)}
+        )
+
 @app.get("/extract")
 async def extract_get(
     request: Request,
@@ -51,11 +94,7 @@ async def extract_get(
     closure: Optional[bool] = None, 
     warnings: bool = False
 ):
-    try:
-        logger.info(f"=== REQUEST START ===")
-        logger.info(f"URL: {url}")
-        logger.info(f"Format: {read_as.value}")
-        logger.info(f"Resource: {resource}")
+        _check_format_enabled(read_as)
 
         reader = Reader()
         reader.load_instances(url, read_as.value, imported=imported, closure=closure, warnings=warnings)
@@ -81,18 +120,6 @@ async def extract_get(
             "source_url": url,
             **data
         })
-    except Exception as e:
-        logger.error(f"=== ERROR ===")
-        logger.error(f"Type: {type(e).__name__}")
-        logger.error(f"Message: {str(e)}")
-        logger.error(f"Traceback:\n{traceback.format_exc()}")
-        logger.error(f"=============")
-
-        return templates.TemplateResponse("viewer.html", {
-            "request": request,
-            "source_url": None,
-            "error": f"{type(e).__name__}: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
-        })
 
 @app.post("/extract", response_class=HTMLResponse)
 async def extract_post(
@@ -113,15 +140,22 @@ async def extract_post(
         logger.info(f"=== FILE UPLOAD START ===")
         logger.info(f"Filename: {file.filename}")
         logger.info(f"Format: {read_as.value}")
-        
+
+        # SECURITY CHECKS: validate before writing to disk
+        _check_format_enabled(read_as)
+        security.check_extension(file.filename)
+        content = await file.read()  # reads the file
+        security.check_size(len(content))
+        security.check_is_text(content)
+
+        # Write temp file (valid input only)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".rdf") as tmp:
-            content = await file.read()
             tmp.write(content)
             temp_file_path = tmp.name
-        
+
+        # Initialise Reader and calls the Loader -> Reader -> Viewer and populates it
         reader = Reader()
         reader.load_instances(temp_file_path, read_as.value, imported=imported, closure=closure, warnings=warnings)
-        
         viewer = reader.get_viewer()
         data = viewer.get_view_data(resource_uri=resource, language=lang) 
         data['warnings'] = reader.get_warnings() 
@@ -132,18 +166,9 @@ async def extract_post(
             "source_url": None,
             **data
         })
-    except Exception as e:
-        logger.error(f"=== ERROR ===")
-        logger.error(f"Type: {type(e).__name__}")
-        logger.error(f"Message: {str(e)}")
-        logger.error(f"Traceback:\n{traceback.format_exc()}")
-        logger.error(f"=============")
-        
-        return templates.TemplateResponse("viewer.html", {
-            "request": request,
-            "error": f"{type(e).__name__}: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
-        })
+    
     finally:
+        # Security: Flushes the temp file once its is loaded
         if temp_file_path and os.path.exists(temp_file_path):
             os.unlink(temp_file_path)
 

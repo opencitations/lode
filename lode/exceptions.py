@@ -15,5 +15,9 @@ class ArtefactLoadError(LODEError):
     pass
 
 class ArtefactNotFoundError(LODEError):
-    "Artefatto risponde 404"
+    """Artefatto risponde 404 o errore di rete."""
+    pass
+
+class ArtefactValidationError(LODEError):
+    """Artefatto rifiutato dai security check (size, estensione, scheme/SSRF, non testo)."""
     pass
