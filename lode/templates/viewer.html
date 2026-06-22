@@ -116,8 +116,9 @@
                             <a href="https://service.tib.eu/webvowl/#iri={{metadata.uri[0].link}}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
                             <a href="{{ metadata.uri[0].link }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
                         </dd>
-                        {% if source_url %}
-                        <dt class="text-capitalize fs-7 fw-bold mb-1">Export graph</dt>
+                        {% if source_url or upload_id %}
+                        {% set _res = request.query_params.get('resource', '') %}
+                        <dt class="text-capitalize fs-7 fw-bold mb-1">Export {% if _res %}subgraph{% else %}graph{% endif %}</dt>
                         <dd class="mb-1 ms-5">
                             {% for mime, label, icon, ext in [
                                 ("text/turtle",         "Turtle",  "bi-filetype-raw", "ttl"),
@@ -127,7 +128,7 @@
                             {% if not request.is_static %}
                             <a href="#"
                                 class="btn btn-sm btn-outline-dark me-2"
-                                onclick="exportGraph('{{ mime }}', '{{ ext }}', '{{ request.query_params.get('read_as', '') }}', '{{ source_url }}'); return false;">
+                                onclick="exportGraph('{{ mime }}', '{{ ext }}', '{{ nav_qs }}', '{{ _res }}'); return false;"
                                 <i class="bi {{ icon }}"></i> {{ label }}
                             </a>
                             {% endif %}
@@ -282,16 +283,23 @@
                 });
             });
 
-            function exportGraph(mime, ext, read_as, url) {
-                fetch(`/extract?read_as=${read_as}&url=${encodeURIComponent(url)}`, {
-                    headers: { "Accept": mime }
-                })
-                .then(r => r.blob())
-                .then(blob => {
-                    window.open(URL.createObjectURL(blob), "_blank");
-                });
+            function exportGraph(mime, ext, navQs, resource) {
+                let qs = navQs;
+                if (resource) qs += "&resource=" + encodeURIComponent(resource);
+                fetch(`/extract?${qs}`, { headers: { "Accept": mime } })
+                    .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+                    .then(blob => {
+                        const a = document.createElement("a");
+                        const slug = resource ? resource.split(/[#/]/).pop() : "ontology";
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `${slug}.${ext}`;
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                    })
+                    .catch(e => alert("Export failed: " + e.message));
             }
         </script>
+
     </div>
 </body>
 </html>

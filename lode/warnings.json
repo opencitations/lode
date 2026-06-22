@@ -1,0 +1,52 @@
+[
+  {
+    "code": "property_type_mismatch_hierarchy",
+    "subject": "http://purl.org/dc/terms/creator",
+    "message": "§5.8.1: Relation http://purl.org/dc/terms/creator subPropertyOf Annotation http://purl.org/dc/elements/1.1/creator"
+  },
+  {
+    "code": "property_type_conflict",
+    "subject": "http://purl.org/dc/terms/creator",
+    "message": "§5.8.1: http://purl.org/dc/terms/creator has multiple property types: ['Annotation', 'Relation']"
+  },
+  {
+    "code": "property_type_mismatch_hierarchy",
+    "subject": "http://purl.org/dc/terms/issued",
+    "message": "§5.8.1: Attribute http://purl.org/dc/terms/issued subPropertyOf Annotation http://purl.org/dc/elements/1.1/date"
+  },
+  {
+    "code": "property_type_conflict",
+    "subject": "http://purl.org/dc/terms/issued",
+    "message": "§5.8.1: http://purl.org/dc/terms/issued has multiple property types: ['Annotation', 'Attribute']"
+  },
+  {
+    "code": "property_type_mismatch_hierarchy",
+    "subject": "http://purl.org/dc/terms/modified",
+    "message": "§5.8.1: Attribute http://purl.org/dc/terms/modified subPropertyOf Annotation http://purl.org/dc/elements/1.1/date"
+  },
+  {
+    "code": "property_type_conflict",
+    "subject": "http://purl.org/dc/terms/modified",
+    "message": "§5.8.1: http://purl.org/dc/terms/modified has multiple property types: ['Annotation', 'Attribute']"
+  },
+  {
+    "code": "property_type_mismatch_hierarchy",
+    "subject": "http://purl.org/dc/terms/language",
+    "message": "§5.8.1: Relation http://purl.org/dc/terms/language subPropertyOf Annotation http://purl.org/dc/elements/1.1/language"
+  },
+  {
+    "code": "property_type_conflict",
+    "subject": "http://purl.org/dc/terms/language",
+    "message": "§5.8.1: http://purl.org/dc/terms/language has multiple property types: ['Annotation', 'Relation']"
+  },
+  {
+    "code": "property_type_mismatch_hierarchy",
+    "subject": "http://purl.org/dc/terms/license",
+    "message": "§5.8.1: Relation http://purl.org/dc/terms/license subPropertyOf Annotation http://purl.org/dc/elements/1.1/rights"
+  },
+  {
+    "code": "property_type_conflict",
+    "subject": "http://purl.org/dc/terms/license",
+    "message": "§5.8.1: http://purl.org/dc/terms/license has multiple property types: ['Annotation', 'Relation']"
+  }
+]

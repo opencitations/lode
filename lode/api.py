@@ -10,6 +10,8 @@ import tempfile
 import os
 import traceback
 import logging
+from urllib.parse import urlencode
+from functools import lru_cache
 
 # Configura logging
 logging.basicConfig(
@@ -47,6 +49,74 @@ _ACCEPT_TO_SERIALIZATION: dict[str, tuple[str, str, str]] = {
     "application/rdf+xml":    ("xml",    "application/rdf+xml", "rdf"),
     "text/n3":                ("n3",     "text/n3",             "n3"),
 }
+
+_EXT_TO_SERIALIZATION = {
+    "ttl": ("turtle", "text/turtle",         "ttl"),
+    "rdf": ("xml",    "application/rdf+xml", "rdf"),
+    "n3":  ("n3",     "text/n3",             "n3"),
+}
+
+# ----------------------------------------------------------
+#  HELPERS FOR \extract endpoints using cache from the reader
+# ----------------------------------------------------------
+
+def _nav_qs(read_as: str, url, upload_id, lang) -> str:
+    p = {"read_as": read_as, "lang": lang or ""}
+    p["upload_id" if upload_id else "url"] = upload_id or (url or "")
+    return urlencode(p)
+
+from uuid import uuid4
+from collections import OrderedDict
+import threading
+
+_UPLOAD_CACHE: "OrderedDict[str, Reader]" = OrderedDict()
+_UPLOAD_MAX = 32
+_UPLOAD_LOCK = threading.Lock()
+
+def _cache_upload(reader: Reader) -> str:
+    token = uuid4().hex
+    with _UPLOAD_LOCK:
+        _UPLOAD_CACHE[token] = reader
+        _UPLOAD_CACHE.move_to_end(token)
+        while len(_UPLOAD_CACHE) > _UPLOAD_MAX:
+            _UPLOAD_CACHE.popitem(last=False)
+    return token
+
+def _get_upload(token: str):
+    with _UPLOAD_LOCK:
+        r = _UPLOAD_CACHE.get(token)
+        if r is not None:
+            _UPLOAD_CACHE.move_to_end(token)
+        return r
+    
+def _render_view(request, reader, *, resource, lang, source_url, upload_id, read_as):
+    viewer = reader.get_viewer()
+    data = viewer.get_view_data(resource_uri=resource, language=lang)
+    data["warnings"] = reader.get_warnings()
+    return templates.TemplateResponse("viewer.html", {
+        "request": request,
+        "source_url": source_url,
+        "upload_id": upload_id,
+        "nav_qs": _nav_qs(read_as, source_url, upload_id, lang),
+        **data,
+    })
+
+@lru_cache(maxsize=32)
+def _load_url(url: str, read_as: str, imported, closure, warnings):
+    reader = Reader()
+    reader.load_instances(url, read_as, imported=imported, closure=closure, warnings=warnings)
+    return reader
+
+def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings):
+    if upload_id:
+        reader = _get_upload(upload_id)
+        if reader is None:
+            raise ArtefactValidationError("Upload expired, please re-upload",
+                                          context={"upload_id": upload_id})
+        return reader
+    if url:
+        return _load_url(url, read_as, imported, closure, warnings)
+    raise ArtefactValidationError("Missing 'url' or 'upload_id'")
 
 # ----------------------------------------------------------
 #  ERROR RENDERING
@@ -105,39 +175,40 @@ async def limit_upload_size(request: Request, call_next):
 async def extract_get(
     request: Request,
     read_as: ReadAsFormat,
-    url: str,
+    url: Optional[str] = None,   
+    upload_id: Optional[str] = None,
     resource: Optional[str] = None,
     lang: Optional[str] = None,
     imported: Optional[bool] = None,
-    closure: Optional[bool] = None, 
+    closure: Optional[bool] = None,
+    format: Optional[str] = None, 
     warnings: bool = False
 ):
         _check_format_enabled(read_as)
-
-        reader = Reader()
-        reader.load_instances(url, read_as.value, imported=imported, closure=closure, warnings=warnings)
-
+        
+        reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, warnings)
+        
+        # Content negotiation
         accept = request.headers.get("accept", "text/html")
-        if accept in _ACCEPT_TO_SERIALIZATION:
-            rdflib_fmt, mime_type, ext = _ACCEPT_TO_SERIALIZATION[accept]
-            serialized = reader._graph.serialize(format=rdflib_fmt)
-            filename = url.rstrip("/").split("/")[-1] or "graph"
-            return Response(
-                content=serialized,
-                media_type=mime_type,
-                headers={"Content-Disposition": f'attachment; filename="{filename}.{ext}"'}
-            )
-
-        viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource, language=lang)
-        data['warnings'] = reader.get_warnings()
+        serial = None
+        if format and format.lower() in _EXT_TO_SERIALIZATION:
+            serial = _EXT_TO_SERIALIZATION[format.lower()]
+        elif accept in _ACCEPT_TO_SERIALIZATION:
+            serial = _ACCEPT_TO_SERIALIZATION[accept]
+        if serial:
+            rdflib_fmt, mime_type, ext = serial
+            if resource:
+                serialized = reader.get_viewer().export_resource(resource, rdflib_fmt)
+                filename = resource.rstrip("/").split("#")[-1].split("/")[-1] or "resource"
+            else:
+                serialized = reader._graph.serialize(format=rdflib_fmt)
+                filename = (url.rstrip("/").split("/")[-1] if url else "graph") or "graph"
+            return Response(content=serialized, media_type=mime_type,
+                            headers={"Content-Disposition": f'inline; filename="{filename}.{ext}"'})
 
         logger.info(f"=== REQUEST SUCCESS ===")
-        return templates.TemplateResponse("viewer.html", {
-            "request": request,
-            "source_url": url,
-            **data
-        })
+        return _render_view(request, reader, resource=resource, lang=lang,
+                            source_url=url, upload_id=upload_id, read_as=read_as.value)
 
 @app.post("/extract", response_class=HTMLResponse)
 async def extract_post(
@@ -174,17 +245,13 @@ async def extract_post(
         # Initialise Reader and calls the Loader -> Reader -> Viewer and populates it
         reader = Reader()
         reader.load_instances(temp_file_path, read_as.value, imported=imported, closure=closure, warnings=warnings)
-        viewer = reader.get_viewer()
-        data = viewer.get_view_data(resource_uri=resource, language=lang) 
-        data['warnings'] = reader.get_warnings() 
-        
+
+        # Cache the parsed Reader so resource navigation / export work without the file
+        token = _cache_upload(reader)
+
         logger.info(f"=== UPLOAD SUCCESS ===")
-        return templates.TemplateResponse("viewer.html", {
-            "request": request,
-            "source_url": None,
-            **data
-        })
-    
+        return _render_view(request, reader, resource=resource, lang=lang,
+                            source_url=None, upload_id=token, read_as=read_as.value)
     finally:
         # Security: Flushes the temp file once its is loaded
         if temp_file_path and os.path.exists(temp_file_path):

@@ -814,3 +814,16 @@ class BaseViewer:
             return g.serialize(format=fmt)
         except Exception as e:
             return f"# serialization error ({fmt}): {e}"
+        
+    def export_resource(self, resource_uri: str, fmt: str = "turtle") -> str:
+        """Serializza il subgraph della singola risorsa (unione su punning)."""
+        g = Graph()
+        for prefix, ns in self.reader._graph.namespaces():
+            g.bind(prefix, ns)
+        instances = self.get_instances_from_single_resource(resource_uri)
+        if instances:
+            inst_iter = instances if isinstance(instances, set) else [instances]
+            for inst in inst_iter:
+                for t in self.reader.get_provenance_subgraph(inst):  # già esiste
+                    g.add(t)
+        return self._safe_serialize(g, fmt)

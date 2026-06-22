@@ -21,6 +21,8 @@ result = example_function()
 print(result)
 ```
 
+
+
 ## Documentation
 
 Full documentation is available at: https://opencitations.github.io/lode/
