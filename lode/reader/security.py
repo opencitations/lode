@@ -16,6 +16,7 @@ def _env_int(name: str, default: int) -> int:
 
 MAX_BYTES = _env_int("LODE_MAX_UPLOAD_MB", 10) * 1024 * 1024  # 10 MB default
 MAX_ENTITY_DECLARATIONS = _env_int("LODE_MAX_XML_ENTITIES", 100)
+MAX_DTD_SUBSET = 50 * 1024  # bytes; a legitimate DOCTYPE internal subset is tiny
 ALLOWED_EXTENSIONS = {".rdf", ".owl", ".ttl", ".n3", ".nt", ".jsonld", ".xml"}
 ALLOWED_SCHEMES = {"http", "https"}
 
@@ -134,20 +135,27 @@ def check_safe_xml(text: str) -> None:
         subset = text[bracket: close + 1 if close != -1 else len(text)]
     else:
         subset = text[idx: end + 1 if end != -1 else len(text)]
-    subset_lower = subset.lower()
 
+    # A real DOCTYPE internal subset is tiny. An oversized one is both suspicious
+    # and a ReDoS vector for the scans below, so reject it outright.
+    if len(subset) > MAX_DTD_SUBSET:
+        raise ArtefactValidationError("DOCTYPE internal subset too large")
+
+    subset_lower = subset.lower()
     if "system" in subset_lower or "public" in subset_lower:
         raise ArtefactValidationError("XML with external DTD/entity not allowed (XXE risk)")
-    if re.search(r"<!entity\s+%", subset_lower):
-        raise ArtefactValidationError("XML parameter entity not allowed (XXE risk)")
 
-    entity_decls = re.findall(r"<!entity\s+[^>]*>", subset, flags=re.IGNORECASE | re.DOTALL)
+    # Linear scan: '[^>]*>' matches up to each declaration's closing '>'. We avoid
+    # '\s+[^>]*' (overlapping quantifiers -> polynomial backtracking / ReDoS) and
+    # do the per-declaration analysis with plain string ops instead of regex.
+    entity_decls = re.findall(r"<!entity\s[^>]*>", subset, flags=re.IGNORECASE)
     if len(entity_decls) > MAX_ENTITY_DECLARATIONS:
         raise ArtefactValidationError("Too many XML entity declarations (entity-expansion)")
     for decl in entity_decls:
-        value_match = re.search(r"""=?\s*(['"])(.*?)\1""", decl, flags=re.DOTALL)
-        value = value_match.group(2) if value_match else decl
-        if _ENTITY_REF_RE.search(value):
+        body = decl[len("<!entity"):].lstrip()
+        if body.startswith("%"):  # parameter entity: <!ENTITY % name ...>
+            raise ArtefactValidationError("XML parameter entity not allowed (XXE risk)")
+        if _ENTITY_REF_RE.search(decl):  # value references another entity
             raise ArtefactValidationError("Nested XML entities not allowed (billion laughs)")
 
 async def read_upload_capped(upload, max_bytes: int = MAX_BYTES) -> bytes:
