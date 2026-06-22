@@ -10,6 +10,7 @@ import tempfile
 import os
 import traceback
 import logging
+from urllib.parse import urlparse
 
 # Configura logging
 logging.basicConfig(
@@ -113,6 +114,13 @@ async def extract_get(
     warnings: bool = False
 ):
         _check_format_enabled(read_as)
+
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in ("http", "https") or not parsed_url.netloc:
+            raise ArtefactValidationError(
+                "Invalid URL: only absolute HTTP/HTTPS URLs are allowed",
+                context={"url": url}
+            )
 
         reader = Reader()
         reader.load_instances(url, read_as.value, imported=imported, closure=closure, warnings=warnings)
