@@ -96,10 +96,14 @@ class Loader:
                     security.check_size(len(raw))  
 
             # SECURITY: checks the file is text not binary
-            security.check_is_text(raw)  
+            security.check_is_text(raw)
 
             # Proceed with encoding
             content = raw.decode("utf-8")
+
+            # SECURITY: block XXE / entity-expansion on remote artefacts and owl:imports
+            security.check_safe_xml(content)
+
             content_type = response.headers.get("Content-Type", "").lower()
 
             # Format guessed from HTTP Content-Type (content negotiation handler)
@@ -178,8 +182,10 @@ class Loader:
     def get_graph(self) -> Graph:
         return self.graph
     
-    def _fetch_following_redirects(self, url: str, headers: dict, max_redirects: int = 5):
-        """Follow URLs redirects manually, validating each hop via security.check_url_safe. Returns final response."""
+    def _fetch_following_redirects(self, url: str, headers: dict, max_redirects: int = security.MAX_REDIRECTS):
+        """Follow URLs redirects manually, validating each hop via security.check_url_safe. Returns final response.
+
+        The default hop limit comes from security.MAX_REDIRECTS (env LODE_MAX_REDIRECTS)."""
         current = url
         for _ in range(max_redirects):
             security.check_url_safe(current)

@@ -14,6 +14,8 @@ Network and DNS are mocked, so the suite runs offline.
 
 Run:  uv run pytest tests/test_security.py -v
 """
+import asyncio
+import io
 import socket
 import pytest
 
@@ -241,6 +243,28 @@ class TestFetchFollowingRedirects:
         assert out is r2
         assert fake.calls[1] == "http://93.184.216.34/dir/other.ttl"
 
+    def test_default_limit_comes_from_config(self):
+        import inspect
+        default = inspect.signature(
+            Loader._fetch_following_redirects
+        ).parameters["max_redirects"].default
+        assert default == security.MAX_REDIRECTS
+
+    def test_higher_limit_follows_longer_chain(self, monkeypatch):
+        # 8 redirects then a 200: rejected at the default 5, allowed at 10.
+        chain = [
+            FakeResponse(status_code=302, headers={"Location": f"http://8.8.8.8/h{n}"})
+            for n in range(8)
+        ]
+        chain.append(FakeResponse(status_code=200))
+        fake = make_fake_get(chain)
+        monkeypatch.setattr("lode.reader.loader.requests.get", fake)
+
+        out = self._loader()._fetch_following_redirects(
+            "http://93.184.216.34/onto.ttl", headers={}, max_redirects=10)
+        assert out.status_code == 200
+        assert len(fake.calls) == 9  # 8 redirects + final
+
 
 # ----------------------------------------------------------------------
 #  Loader._load_from_local_file
@@ -354,3 +378,126 @@ class TestEmptyGraphGuard:
         loader = Loader()
         with pytest.raises(ArtefactLoadError):
             loader.load(str(f))
+
+
+# ----------------------------------------------------------------------
+#  check_safe_xml  (XXE / billion laughs hardening)
+# ----------------------------------------------------------------------
+class TestCheckSafeXml:
+
+    def test_external_entity_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(
+                '<!DOCTYPE r [ <!ENTITY x SYSTEM "file:///etc/passwd"> ]><r>&x;</r>'
+            )
+
+    def test_external_dtd_public_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(
+                '<!DOCTYPE r PUBLIC "-//x//EN" "http://evil/x.dtd"><r/>'
+            )
+
+    def test_parameter_entity_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml('<!DOCTYPE r [ <!ENTITY % p "foo"> ]><r/>')
+
+    def test_billion_laughs_rejected(self):
+        payload = (
+            '<!DOCTYPE lolz [\n'
+            '  <!ENTITY lol "lol">\n'
+            '  <!ENTITY lol2 "&lol;&lol;&lol;">\n'
+            ']>\n<lolz>&lol2;</lolz>'
+        )
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(payload)
+
+    def test_simple_internal_entities_allowed(self):
+        # Protege-style namespace entities must NOT be blocked.
+        security.check_safe_xml(
+            '<!DOCTYPE rdf:RDF [ <!ENTITY owl "http://www.w3.org/2002/07/owl#" > ]>'
+            '<rdf:RDF/>'
+        )
+
+    def test_no_doctype_allowed(self):
+        security.check_safe_xml('<?xml version="1.0"?><rdf:RDF/>')
+
+    def test_turtle_allowed(self):
+        security.check_safe_xml('@prefix ex: <http://e/> . ex:a a ex:B .')
+
+    def test_oversized_subset_rejected(self):
+        payload = '<!DOCTYPE x [ ' + ' ' * (security.MAX_DTD_SUBSET + 1) + ' ]>'
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(payload)
+
+    def test_too_many_entities_rejected(self):
+        decls = "".join(f'<!ENTITY e{n} "v{n}">' for n in range(security.MAX_ENTITY_DECLARATIONS + 1))
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(f'<!DOCTYPE x [ {decls} ]>')
+
+    def test_pathological_no_redos(self):
+        # Many '<!entity ' repetitions with no closing '>' used to be O(n^2).
+        # Must complete fast (well under the cap) and not hang.
+        import time
+        payload = '<!DOCTYPE x [ ' + '<!ENTITY ' * 4000 + ' ]>'
+        t = time.perf_counter()
+        try:
+            security.check_safe_xml(payload)
+        except ArtefactValidationError:
+            pass
+        assert time.perf_counter() - t < 1.0
+
+
+# ----------------------------------------------------------------------
+#  read_upload_capped  (chunked upload read with size cap)
+# ----------------------------------------------------------------------
+class _FakeUpload:
+    """Mimics starlette.UploadFile: exposes an async read(size)."""
+    def __init__(self, data: bytes):
+        self._buf = io.BytesIO(data)
+
+    async def read(self, size: int = -1) -> bytes:
+        return self._buf.read(size)
+
+
+class TestReadUploadCapped:
+
+    def test_within_limit_returns_all(self):
+        data = b"x" * 1000
+        out = asyncio.run(security.read_upload_capped(_FakeUpload(data), max_bytes=2000))
+        assert out == data
+
+    def test_over_limit_rejected(self):
+        with pytest.raises(ArtefactValidationError):
+            asyncio.run(security.read_upload_capped(_FakeUpload(b"x" * 5000), max_bytes=1000))
+
+
+# ----------------------------------------------------------------------
+#  check_extension - missing filename guard
+# ----------------------------------------------------------------------
+class TestCheckExtensionMissing:
+
+    @pytest.mark.parametrize("name", [None, ""])
+    def test_missing_filename_rejected(self, name):
+        with pytest.raises(ArtefactValidationError):
+            security.check_extension(name)
+
+
+# ----------------------------------------------------------------------
+#  check_url_safe - extra SSRF hardening (multicast / unspecified / IPv4-mapped)
+# ----------------------------------------------------------------------
+class TestSsrfHardening:
+
+    @pytest.mark.parametrize("ip", [
+        "224.0.0.1",            # multicast
+        "0.0.0.0",              # unspecified
+        "::ffff:127.0.0.1",     # IPv4-mapped IPv6 loopback
+    ])
+    def test_extra_internal_addresses_rejected(self, monkeypatch, ip):
+        monkeypatch.setattr(
+            "lode.reader.security.socket.getaddrinfo",
+            lambda host, port, *a, **k: [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0))
+            ],
+        )
+        with pytest.raises(ArtefactValidationError):
+            security.check_url_safe("http://whatever.example.org/x")

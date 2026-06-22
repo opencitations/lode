@@ -41,13 +41,15 @@
                             
                             <!-- File Input -->
                             <div id="fileSection" class="hide">
-                                <input 
-                                    class="form-control" 
-                                    type="file" 
-                                    id="semanticArtefactFile" 
+                                <input
+                                    class="form-control"
+                                    type="file"
+                                    id="semanticArtefactFile"
                                     name="file"
+                                    accept=".rdf,.owl,.ttl,.n3,.nt,.jsonld,.xml"
                                     style="height: calc(3.5rem + 2px); padding: 1rem 0.75rem;"
                                 >
+                                <div id="fileError" class="invalid-feedback"></div>
                             </div>
                         </div>
                         
@@ -394,6 +396,32 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
         // ── Form submission ────────────────────────────────────────────────────
         const form      = document.getElementById('extractForm');
         const submitBtn = document.getElementById('submitBtn');
+        const fileError = document.getElementById('fileError');
+
+        // Client-side guard rails (kept in sync with lode/reader/security.py).
+        const MAX_UPLOAD_BYTES   = 10 * 1024 * 1024; // 10 MB
+        const ALLOWED_EXTENSIONS = ['rdf', 'owl', 'ttl', 'n3', 'nt', 'jsonld', 'xml'];
+
+        function showFileError(message) {
+            fileError.textContent = message;
+            fileInput.classList.add('is-invalid');
+        }
+        function clearFileError() {
+            fileError.textContent = '';
+            fileInput.classList.remove('is-invalid');
+        }
+        // Returns an error string if the file is obviously invalid, else null.
+        function validateFile(file) {
+            if (!file) return 'Select a file to upload.';
+            const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                return `Unsupported file type ".${ext || '—'}". Allowed: ${ALLOWED_EXTENSIONS.join(', ')}.`;
+            }
+            if (file.size > MAX_UPLOAD_BYTES) return `File too large (max ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB).`;
+            if (file.size === 0) return 'The selected file is empty.';
+            return null;
+        }
+        fileInput.addEventListener('change', clearFileError);
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -427,6 +455,13 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             // ── POST (File mode) ──
             const file = fileInput.files[0];
 
+            // Client-side pre-check (UX only; the server enforces the real limits).
+            const preCheck = validateFile(file);
+            if (preCheck) {
+                showFileError(preCheck);
+                return;
+            }
+
             const formData = new FormData();
             formData.append('file', file);
             formData.append('read_as', readAsSelect.value);
@@ -437,7 +472,7 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             const language = document.getElementById('language').value.trim();
             if (language) formData.append('lang', language);
 
-            if (document.getElementById('warnings').checked) params.append('warnings', 'true');
+            if (document.getElementById('warnings').checked) formData.append('warnings', 'true');
 
             if (readAsSelect.value === 'owl') {
                 if (document.getElementById('imported').checked) formData.append('imported', 'true');
@@ -449,13 +484,18 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
 
             try {
                 const response = await fetch('/extract', { method: 'POST', body: formData });
-                if (!response.ok) throw new Error('Request failed');
+                // The server renders an HTML page both on success (viewer.html) and on a
+                // handled error (error.html): render whatever it returns.
                 const html = await response.text();
-                document.open();
-                document.write(html);
-                document.close();
+                if (html && html.trim()) {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                } else {
+                    showFileError('The upload could not be processed. Please try again.');
+                }
             } catch (error) {
-                console.error(error);
+                showFileError('Network error during upload. Please try again.');
             } finally {
                 submitBtn.disabled    = false;
                 submitBtn.textContent = 'Generate Documentation';
