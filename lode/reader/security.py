@@ -1,6 +1,5 @@
 """Security validation for incoming semantic artefacts."""
 import os
-import re
 import socket
 import ipaddress
 from urllib.parse import urlparse
@@ -15,6 +14,7 @@ def _env_int(name: str, default: int) -> int:
 
 
 MAX_BYTES = _env_int("LODE_MAX_UPLOAD_MB", 10) * 1024 * 1024  # 10 MB default
+MAX_REDIRECTS = _env_int("LODE_MAX_REDIRECTS", 6)  # hops followed when fetching a URL
 MAX_ENTITY_DECLARATIONS = _env_int("LODE_MAX_XML_ENTITIES", 100)
 MAX_DTD_SUBSET = 50 * 1024  # bytes; a legitimate DOCTYPE internal subset is tiny
 ALLOWED_EXTENSIONS = {".rdf", ".owl", ".ttl", ".n3", ".nt", ".jsonld", ".xml"}
@@ -49,8 +49,22 @@ _BINARY_SIGNATURES: tuple[tuple[bytes, str], ...] = (
     (b"SQLite format 3\x00", "SQLite database"),
 )
 
-# A general entity reference (e.g. &lol1;), excluding numeric char-refs (&#65;).
-_ENTITY_REF_RE = re.compile(r"&(?!#)[A-Za-z_][\w.\-]*;")
+def _has_entity_reference(text: str) -> bool:
+    """True if text contains a general entity reference like '&name;' (ignoring
+    numeric character references such as '&#65;'). Pure string scan with a
+    bounded name length, so it is linear and ReDoS-free."""
+    j = text.find("&")
+    while j != -1:
+        k = j + 1
+        if k < len(text) and text[k] != "#" and (text[k].isalpha() or text[k] == "_"):
+            m = k + 1
+            end = min(len(text), m + 64)  # entity names are short; bound the scan
+            while m < end and (text[m].isalnum() or text[m] in "_.-"):
+                m += 1
+            if m < len(text) and text[m] == ";":
+                return True
+        j = text.find("&", j + 1)
+    return False
 
 
 def check_size(num_bytes: int) -> None:
@@ -145,18 +159,19 @@ def check_safe_xml(text: str) -> None:
     if "system" in subset_lower or "public" in subset_lower:
         raise ArtefactValidationError("XML with external DTD/entity not allowed (XXE risk)")
 
-    # Linear scan: '[^>]*>' matches up to each declaration's closing '>'. We avoid
-    # '\s+[^>]*' (overlapping quantifiers -> polynomial backtracking / ReDoS) and
-    # do the per-declaration analysis with plain string ops instead of regex.
-    entity_decls = re.findall(r"<!entity\s[^>]*>", subset, flags=re.IGNORECASE)
-    if len(entity_decls) > MAX_ENTITY_DECLARATIONS:
+    # Analyse the declarations with plain string ops only (no regex on the
+    # user-controlled subset -> no ReDoS): count them, flag parameter entities,
+    # and reject any nested entity reference (billion laughs).
+    if subset_lower.count("<!entity") > MAX_ENTITY_DECLARATIONS:
         raise ArtefactValidationError("Too many XML entity declarations (entity-expansion)")
-    for decl in entity_decls:
-        body = decl[len("<!entity"):].lstrip()
-        if body.startswith("%"):  # parameter entity: <!ENTITY % name ...>
+    i = subset_lower.find("<!entity")
+    while i != -1:
+        after = subset_lower[i + len("<!entity"):].lstrip()
+        if after.startswith("%"):  # parameter entity: <!ENTITY % name ...>
             raise ArtefactValidationError("XML parameter entity not allowed (XXE risk)")
-        if _ENTITY_REF_RE.search(decl):  # value references another entity
-            raise ArtefactValidationError("Nested XML entities not allowed (billion laughs)")
+        i = subset_lower.find("<!entity", i + len("<!entity"))
+    if _has_entity_reference(subset):  # an entity value references another entity
+        raise ArtefactValidationError("Nested XML entities not allowed (billion laughs)")
 
 async def read_upload_capped(upload, max_bytes: int = MAX_BYTES) -> bytes:
     """Read an UploadFile in chunks, aborting as soon as it exceeds max_bytes.

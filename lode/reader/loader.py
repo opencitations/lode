@@ -182,8 +182,10 @@ class Loader:
     def get_graph(self) -> Graph:
         return self.graph
     
-    def _fetch_following_redirects(self, url: str, headers: dict, max_redirects: int = 5):
-        """Follow URLs redirects manually, validating each hop via security.check_url_safe. Returns final response."""
+    def _fetch_following_redirects(self, url: str, headers: dict, max_redirects: int = security.MAX_REDIRECTS):
+        """Follow URLs redirects manually, validating each hop via security.check_url_safe. Returns final response.
+
+        The default hop limit comes from security.MAX_REDIRECTS (env LODE_MAX_REDIRECTS)."""
         current = url
         for _ in range(max_redirects):
             security.check_url_safe(current)

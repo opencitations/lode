@@ -243,6 +243,28 @@ class TestFetchFollowingRedirects:
         assert out is r2
         assert fake.calls[1] == "http://93.184.216.34/dir/other.ttl"
 
+    def test_default_limit_comes_from_config(self):
+        import inspect
+        default = inspect.signature(
+            Loader._fetch_following_redirects
+        ).parameters["max_redirects"].default
+        assert default == security.MAX_REDIRECTS
+
+    def test_higher_limit_follows_longer_chain(self, monkeypatch):
+        # 8 redirects then a 200: rejected at the default 5, allowed at 10.
+        chain = [
+            FakeResponse(status_code=302, headers={"Location": f"http://8.8.8.8/h{n}"})
+            for n in range(8)
+        ]
+        chain.append(FakeResponse(status_code=200))
+        fake = make_fake_get(chain)
+        monkeypatch.setattr("lode.reader.loader.requests.get", fake)
+
+        out = self._loader()._fetch_following_redirects(
+            "http://93.184.216.34/onto.ttl", headers={}, max_redirects=10)
+        assert out.status_code == 200
+        assert len(fake.calls) == 9  # 8 redirects + final
+
 
 # ----------------------------------------------------------------------
 #  Loader._load_from_local_file
@@ -401,6 +423,28 @@ class TestCheckSafeXml:
 
     def test_turtle_allowed(self):
         security.check_safe_xml('@prefix ex: <http://e/> . ex:a a ex:B .')
+
+    def test_oversized_subset_rejected(self):
+        payload = '<!DOCTYPE x [ ' + ' ' * (security.MAX_DTD_SUBSET + 1) + ' ]>'
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(payload)
+
+    def test_too_many_entities_rejected(self):
+        decls = "".join(f'<!ENTITY e{n} "v{n}">' for n in range(security.MAX_ENTITY_DECLARATIONS + 1))
+        with pytest.raises(ArtefactValidationError):
+            security.check_safe_xml(f'<!DOCTYPE x [ {decls} ]>')
+
+    def test_pathological_no_redos(self):
+        # Many '<!entity ' repetitions with no closing '>' used to be O(n^2).
+        # Must complete fast (well under the cap) and not hang.
+        import time
+        payload = '<!DOCTYPE x [ ' + '<!ENTITY ' * 4000 + ' ]>'
+        t = time.perf_counter()
+        try:
+            security.check_safe_xml(payload)
+        except ArtefactValidationError:
+            pass
+        assert time.perf_counter() - t < 1.0
 
 
 # ----------------------------------------------------------------------
