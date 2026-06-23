@@ -325,6 +325,19 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
                 </td>
                 <td><code>closure=True</code></td>
             </tr>
+            <tr>
+                <td><code>cache</code></td>
+                <td><span class="badge bg-primary">GET</span></td>
+                <td>boolean</td>
+                <td>No</td>
+                <td>
+                    <em>URL only.</em> When <code>true</code> (default), the processed URL is served
+                    from a 4-hour server-side cache when available. Set to <code>false</code> to
+                    discard the cached copy and re-fetch the URL, so updates to the ontology are
+                    picked up immediately; the fresh result then replaces the cache.
+                </td>
+                <td><code>cache=false</code></td>
+            </tr>
         </tbody>
     </table>
 
@@ -337,6 +350,7 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
 /extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;imported=true&amp;lang=en
 /extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;closure=true
 /extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;resource=http://purl.org/spar/fabio/Abstract&amp;lang=it
+/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;cache=false
 </pre>
 </div>
 

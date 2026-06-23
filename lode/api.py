@@ -61,7 +61,8 @@ _EXT_TO_SERIALIZATION = {
 import time
 SPOOL_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "spool"))
 os.makedirs(SPOOL_DIR, exist_ok=True)
-_SPOOL_TTL = 60 * 60
+_SPOOL_TTL = 4 * 60 * 60           # entries are cached for 4 hours
+_SPOOL_MAX_BYTES = 1024 ** 3       # 1 GB total budget shared by uploads + URLs
 
 def _spool_path(token: str) -> str:
     # Spool tokens are opaque IDs we mint ourselves (uuid4 hex / "url_"+sha256).
@@ -73,12 +74,36 @@ def _spool_path(token: str) -> str:
     return path
 
 def _prune_spool():
+    """Evict expired entries, then enforce the total-size budget by deleting the
+    oldest (by cache-write time) until back under the cap. Uploads and URL caches
+    share the same budget. Best-effort across workers (races caught via OSError).
+    """
     cutoff = time.time() - _SPOOL_TTL
+    survivors = []  # (mtime, size, path) of entries still within the TTL
     for name in os.listdir(SPOOL_DIR):
         p = os.path.join(SPOOL_DIR, name)
         try:
-            if os.path.getmtime(p) < cutoff:
+            st = os.stat(p)
+        except OSError:
+            continue
+        if st.st_mtime < cutoff:
+            try:
                 os.unlink(p)
+            except OSError:
+                pass
+            continue
+        survivors.append((st.st_mtime, st.st_size, p))
+
+    total = sum(size for _, size, _ in survivors)
+    if total <= _SPOOL_MAX_BYTES:
+        return
+    survivors.sort()  # oldest cache-write time first
+    for _, size, p in survivors:
+        if total <= _SPOOL_MAX_BYTES:
+            break
+        try:
+            os.unlink(p)
+            total -= size
         except OSError:
             pass
 
@@ -107,19 +132,25 @@ def _url_token(url, read_as, imported, closure) -> str:
     key = f"{url}|{read_as}|{imported}|{closure}".encode()
     return "url_" + hashlib.sha256(key).hexdigest()[:32]
 
-def _load_url(url, read_as, imported, closure, warnings):
+def _load_url(url, read_as, imported, closure, warnings, use_cache=True):
     # Enforce http(s)://host up front: a non-URL value (local path, file://, ...)
     # must never reach the loader and be opened as a local file.
     security.check_url_safe(url)
     _prune_spool()
     token = _url_token(url, read_as, imported, closure)
     path = _spool_path(token)
-    if os.path.exists(path):
+    if use_cache and os.path.exists(path):
         # cache hit: ricostruisci dal Turtle salvato
         reader = Reader()
         reader.load_instances(path, read_as, imported=imported, closure=closure, warnings=warnings)
         return reader
-    # cache miss: scarica e processa dalla URL
+    if not use_cache:
+        # cache=false: drop the stale copy so the fresh fetch replaces it
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    # cache miss (or forced refresh): scarica e processa dalla URL
     reader = Reader()
     reader.load_instances(url, read_as, imported=imported, closure=closure, warnings=warnings)
     # persisti il grafo normalizzato per i prossimi hit
@@ -130,8 +161,9 @@ def _load_url(url, read_as, imported, closure, warnings):
         pass
     return reader
 
-def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings):
+def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings, use_cache=True):
     if upload_id:
+        # Uploads are not re-fetched, so the cache flag does not apply to them.
         path = _spool_path(upload_id)
         if not os.path.exists(path):
             raise ArtefactValidationError("Upload expired, please re-upload",
@@ -140,7 +172,7 @@ def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings):
         reader.load_instances(path, read_as, imported=imported, closure=closure, warnings=warnings)
         return reader
     if url:
-        return _load_url(url, read_as, imported, closure, warnings)
+        return _load_url(url, read_as, imported, closure, warnings, use_cache=use_cache)
     raise ArtefactValidationError("Missing 'url' or 'upload_id'")
 
 # ----------------------------------------------------------
@@ -206,12 +238,13 @@ async def extract_get(
     lang: Optional[str] = None,
     imported: Optional[bool] = None,
     closure: Optional[bool] = None,
-    format: Optional[str] = None, 
-    warnings: bool = False
+    format: Optional[str] = None,
+    warnings: bool = False,
+    cache: bool = True
 ):
         _check_format_enabled(read_as)
-        
-        reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, warnings)
+
+        reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, warnings, use_cache=cache)
         
         # Content negotiation
         accept = request.headers.get("accept", "text/html")

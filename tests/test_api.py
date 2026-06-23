@@ -14,7 +14,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from lode.api import app, _load_url
+from lode.api import app
 from lode.reader import Reader
 
 # raise_server_exceptions=False -> custom exception handlers render error.html
@@ -135,11 +135,26 @@ def test_format_wins_over_accept(patched_url):
     assert resp.headers["content-type"].startswith("text/turtle")
 
 # --- URL cache ---------------------------------------------------------------
-def test_url_cache_single_load():
-    """Same url+params -> Reader parsed once, served from lru_cache after."""
-    _load_url.cache_clear()
-    with patch.object(Reader, "load_instances") as m:
-        _load_url("u", "owl", None, None, False)
-        _load_url("u", "owl", None, None, False)
-    assert m.call_count == 1
-    _load_url.cache_clear()
+def test_url_spool_cache_and_bypass(tmp_path, monkeypatch):
+    """First load fetches from the URL and writes the spool; a second load is
+    served from the spool file; cache=false drops it and fetches again."""
+    import os
+    from rdflib import Graph
+    from lode import api
+
+    monkeypatch.setattr(api.security, "check_url_safe", lambda u: None)
+    monkeypatch.setattr(api, "SPOOL_DIR", os.path.realpath(str(tmp_path)))
+
+    seen = []
+    def fake_load(self, graph_path, read_as, **kw):
+        seen.append(graph_path)
+        self._graph = Graph()
+    monkeypatch.setattr(Reader, "load_instances", fake_load)
+
+    api._load_url("http://x/o", "owl", None, None, False)                   # miss  -> URL
+    api._load_url("http://x/o", "owl", None, None, False)                   # hit   -> spool file
+    api._load_url("http://x/o", "owl", None, None, False, use_cache=False)  # bypass -> URL
+
+    assert seen[0] == "http://x/o"
+    assert seen[1].endswith(".rdf") and seen[1] != "http://x/o"   # served from spool
+    assert seen[2] == "http://x/o"                                # cache=false refetched

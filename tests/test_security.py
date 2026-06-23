@@ -585,3 +585,43 @@ class TestPeerIpRebinding:
         monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
         out = Loader()._fetch_following_redirects("http://ok.example.org/o.ttl", headers={})
         assert out is resp
+
+
+# ----------------------------------------------------------------------
+#  api._prune_spool  (4h TTL + 1GB budget, evict oldest)
+# ----------------------------------------------------------------------
+class TestSpoolQuota:
+
+    def _spool(self, tmp_path, monkeypatch):
+        from lode import api
+        monkeypatch.setattr(api, "SPOOL_DIR", os.path.realpath(str(tmp_path)))
+        return api
+
+    def test_prune_evicts_oldest_over_budget(self, tmp_path, monkeypatch):
+        import time
+        api = self._spool(tmp_path, monkeypatch)
+        monkeypatch.setattr(api, "_SPOOL_MAX_BYTES", 300)
+        monkeypatch.setattr(api, "_SPOOL_TTL", 10_000)  # don't expire by TTL here
+        now = time.time()
+        for i in range(4):  # 4 x 100 bytes = 400 > 300 budget
+            p = os.path.join(api.SPOOL_DIR, f"f{i}.rdf")
+            with open(p, "wb") as fh:
+                fh.write(b"x" * 100)
+            os.utime(p, (now - (40 - i * 10), now - (40 - i * 10)))  # f0 oldest, f3 newest
+        api._prune_spool()
+        names = {n for n in os.listdir(api.SPOOL_DIR) if n.endswith(".rdf")}
+        assert "f0.rdf" not in names   # oldest evicted first
+        assert len(names) == 3         # back under budget
+
+    def test_prune_expires_by_ttl(self, tmp_path, monkeypatch):
+        import time
+        api = self._spool(tmp_path, monkeypatch)
+        monkeypatch.setattr(api, "_SPOOL_TTL", 60)
+        for name in ("old.rdf", "new.rdf"):
+            with open(os.path.join(api.SPOOL_DIR, name), "wb") as fh:
+                fh.write(b"x")
+        os.utime(os.path.join(api.SPOOL_DIR, "old.rdf"),
+                 (time.time() - 3600, time.time() - 3600))  # 1h old > 60s TTL
+        api._prune_spool()
+        names = set(os.listdir(api.SPOOL_DIR))
+        assert "old.rdf" not in names and "new.rdf" in names
