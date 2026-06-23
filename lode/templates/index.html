@@ -18,7 +18,7 @@
     </div>
     <div class="col-md-8">
         <div class="submission-form">
-            <form id="extractForm">
+            <form id="extractForm" action="/extract" method="post" enctype="multipart/form-data">
                 
                 <!-- Semantic Artefact Source -->
                 <div class="mb-3">
@@ -103,12 +103,14 @@
                         <div class="col-md-6">
                             <div id="owlModules" class="hide">
                                 <span class="form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="imported">
+                                    <input class="form-check-input" type="checkbox" id="imported"  name="imported" value="true">
                                     <label class="form-check-label" for="imported">Imported</label>
                                 </span>
                                 <span class="form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="closure">
+                                    <input class="form-check-input" type="checkbox" id="closure" name="closure"  value="true">
                                     <label class="form-check-label" for="closure">Closure</label>
+                                    <!-- lingua: name sbagliato (language -> lang) -->
+
                                 </span>
                             </div>
                         </div>
@@ -132,7 +134,7 @@
                                 <input 
                                     type="text" 
                                     id="language" 
-                                    name="language"
+                                    name="lang"
                                     class="form-control"
                                     placeholder="en"
                                     maxlength="5"
@@ -148,7 +150,7 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <span class="form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="warnings">
+                                <input class="form-check-input" type="checkbox" id="warnings" name="warnings" value="true">
                                 <label class="form-check-label" for="warnings">Show warnings</label>
                             </span>
                         </div>
@@ -455,51 +457,16 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             // ── POST (File mode) ──
             const file = fileInput.files[0];
 
-            // Client-side pre-check (UX only; the server enforces the real limits).
             const preCheck = validateFile(file);
             if (preCheck) {
                 showFileError(preCheck);
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('read_as', readAsSelect.value);
-
-            const resource = document.getElementById('resource').value.trim();
-            if (resource) formData.append('resource', resource);
-
-            const language = document.getElementById('language').value.trim();
-            if (language) formData.append('lang', language);
-
-            if (document.getElementById('warnings').checked) formData.append('warnings', 'true');
-
-            if (readAsSelect.value === 'owl') {
-                if (document.getElementById('imported').checked) formData.append('imported', 'true');
-                if (document.getElementById('closure').checked)  formData.append('closure',  'true');
-            }
-
-            submitBtn.disabled    = true;
-            submitBtn.textContent = 'Processing...';
-
-            try {
-                const response = await fetch('/extract', { method: 'POST', body: formData });
-                // The server renders an HTML page both on success (viewer.html) and on a
-                // handled error (error.html): render whatever it returns.
-                const html = await response.text();
-                if (html && html.trim()) {
-                    document.open();
-                    document.write(html);
-                    document.close();
-                } else {
-                    showFileError('The upload could not be processed. Please try again.');
-                }
-            } catch (error) {
-                showFileError('Network error during upload. Please try again.');
-            } finally {
-                submitBtn.disabled    = false;
-                submitBtn.textContent = 'Generate Documentation';
-            }
+            // Validazione ok: submit nativo multipart.
+            // Il server fa PRG (303) e atterra su GET /extract?upload_id=...
+            // cosi' URL in barra e history sono corretti, e "back" torna all'index.
+            form.submit();
         });
     </script>
 </body>
