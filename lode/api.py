@@ -59,12 +59,18 @@ _EXT_TO_SERIALIZATION = {
 }
 
 import time
-SPOOL_DIR = os.path.join(os.path.dirname(__file__), "spool")
+SPOOL_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "spool"))
 os.makedirs(SPOOL_DIR, exist_ok=True)
 _SPOOL_TTL = 60 * 60
 
 def _spool_path(token: str) -> str:
-    return os.path.join(SPOOL_DIR, f"{token}.rdf")
+    # Spool tokens are opaque IDs we mint ourselves (uuid4 hex / "url_"+sha256).
+    # Resolve and confirm the path stays inside SPOOL_DIR, so a crafted upload_id
+    # cannot traverse out of it (path injection).
+    path = os.path.realpath(os.path.join(SPOOL_DIR, f"{token}.rdf"))
+    if os.path.commonpath((SPOOL_DIR, path)) != SPOOL_DIR:
+        raise ArtefactValidationError("Invalid upload token", context={"token": token})
+    return path
 
 def _prune_spool():
     cutoff = time.time() - _SPOOL_TTL
@@ -102,6 +108,9 @@ def _url_token(url, read_as, imported, closure) -> str:
     return "url_" + hashlib.sha256(key).hexdigest()[:32]
 
 def _load_url(url, read_as, imported, closure, warnings):
+    # Enforce http(s)://host up front: a non-URL value (local path, file://, ...)
+    # must never reach the loader and be opened as a local file.
+    security.check_url_safe(url)
     _prune_spool()
     token = _url_token(url, read_as, imported, closure)
     path = _spool_path(token)

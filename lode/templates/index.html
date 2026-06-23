@@ -18,7 +18,8 @@
     </div>
     <div class="col-md-8">
         <div class="submission-form">
-            <form id="extractForm" action="/extract" method="post" enctype="multipart/form-data">
+            <!-- novalidate: validation is handled in-page by JS (no native browser popups) -->
+            <form id="extractForm" action="/extract" method="post" enctype="multipart/form-data" novalidate>
                 
                 <!-- Semantic Artefact Source -->
                 <div class="mb-3">
@@ -28,14 +29,15 @@
                             <!-- URL Input with Floating Label -->
                             <div id="urlSection">
                                 <div class="form-floating">
-                                    <input 
-                                        type="text"
-                                        class="form-control" 
-                                        id="semanticArtefactUrl" 
-                                        name="url" 
+                                    <input
+                                        type="url"
+                                        class="form-control"
+                                        id="semanticArtefactUrl"
+                                        name="url"
                                         placeholder="Semantic artefact URL"
                                     >
                                     <label for="semanticArtefactUrl">Semantic artefact URL<span class="text-danger">*</span></label>
+                                    <div id="urlError" class="invalid-feedback"></div>
                                 </div>
                             </div>
                             
@@ -354,6 +356,7 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
         const fileSection   = document.getElementById('fileSection');
         const urlInput      = document.getElementById('semanticArtefactUrl');
         const fileInput     = document.getElementById('semanticArtefactFile');
+        const urlError      = document.getElementById('urlError');
 
         let isFileMode = false;
 
@@ -424,6 +427,10 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             return null;
         }
         fileInput.addEventListener('change', clearFileError);
+        urlInput.addEventListener('input', () => {
+            urlInput.classList.remove('is-invalid');
+            urlError.textContent = '';
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -431,6 +438,13 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             // ── GET (URL mode) ──
             if (!isFileMode) {
                 const url = urlInput.value.trim();
+                // Mirror the server-side check: only http(s)://host is accepted.
+                if (!/^https?:\/\/.+/i.test(url)) {
+                    urlInput.classList.add('is-invalid');
+                    urlError.textContent = 'Enter a full URL starting with http:// or https://';
+                    return;
+                }
+                urlInput.classList.remove('is-invalid');
 
                 const params = new URLSearchParams({ url });
 
