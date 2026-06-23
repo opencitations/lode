@@ -22,3 +22,6 @@ htmlcov/
 docs/node_modules/
 docs/.astro/
 docs/dist/
+
+# saved files
+spool/

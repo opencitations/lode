@@ -74,12 +74,11 @@
     <div class="card-body px-1 pb-1">
         <div class="mb-2">
             <small class="text-muted d-block mb-1">IRI: <code class="text-break bg-light p-2 rounded flex-grow-1 border">{{ item.uri }}</code>
-                {% if is_static %}
-                    <a href="{{ resource_url(item.uri, item.type.lower() ~ 's') }}" class="ms-2" title="Detailed View">↗</a>
-                {% else %}
-                    <a href="?read_as={{ request.query_params.read_as }}&url={{ request.query_params.url }}&lang={{ request.query_params.lang }}&resource={{ item.uri | urlencode }}"
-                    class="ms-2" title="Detailed View">↗</a>
-                {% endif %}
+            {% if is_static %}
+                <a href="{{ resource_url(item.uri, item.type.lower() ~ 's') }}" class="ms-2" title="Detailed View">↗</a>
+            {% else %}
+                <a href="/extract?{{ nav_qs }}&resource={{ item.uri | urlencode }}" class="ms-2" title="Detailed View">↗</a>
+            {% endif %}
             </small>
         </div>
 

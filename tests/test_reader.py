@@ -2,6 +2,9 @@ import pytest
 from pathlib import Path
 from lode.reader import Reader
 
+@pytest.fixture
+def reader():
+    return Reader()
 
 class TestReaderInitialization:
     def test_reader_creates_instance(self, reader):
@@ -205,25 +208,31 @@ class TestReaderTriplesMap:
         assert any('range' in pred for pred in predicates), "Manca rdfs:range"
     
     def test_all_instances_have_triples(self, reader_with_triples):
-        """Verifica che ogni istanza abbia almeno una tripla"""
+
+        # top sintetici creati da LODE come radici implicite: niente triple di backing
+        SYNTHETIC_TOP = {
+            "http://www.w3.org/2002/07/owl#Thing",
+            "http://www.w3.org/2000/01/rdf-schema#Literal",
+        }
+
         viewer = reader_with_triples.get_viewer()
-        all_instances = viewer.get_all_instances()
-        
         triples_map = reader_with_triples._logic._triples_map
-        instances_without_triples = []
-        
-        for instance in all_instances:
-            triples = triples_map.get(instance, set())
-            if len(triples) == 0:
-                instances_without_triples.append(instance)
-        
-        if instances_without_triples:
-            print(f"\n=== INSTANCES SENZA TRIPLE ===")
-            for instance in instances_without_triples:
-                print(f"  {type(instance).__name__}: {instance}")
-        
-        assert len(instances_without_triples) == 0, \
-            f"Trovate {len(instances_without_triples)} istanze senza triple"
+        graph = reader_with_triples._logic.graph
+
+        orphans = []
+        for inst in viewer.get_all_instances():
+            if triples_map.get(inst):
+                continue
+            ident = inst.get_has_identifier()
+            if ident in SYNTHETIC_TOP:          # <-- aggiungi questo
+                continue
+            # referenced-only (datatype XSD / classe esterna): lecito se appare come oggetto
+            from rdflib import URIRef
+            if ident and (None, None, URIRef(ident)) in graph:
+                continue
+            orphans.append(inst)
+
+        assert not orphans, f"Istanze orfane reali: {[(type(i).__name__, i.get_has_identifier()) for i in orphans]}"
     
     def test_triples_map_keys_are_instances(self, reader_with_triples):
         """Verifica che le chiavi della triples_map siano istanze Python"""

@@ -1,30 +1,7 @@
 {# _toc_sidebar.html — TOC sidebar shared by owl/skos/rdf viewers.
-   Requires `sections` in context:
-     section.id, section.title, section.entities[].{label,anchor_id,uri}
-   Optional:
-     section.tree -> nested [{label, anchor_id, uri, children:[...]}, ...]
-     type_map (viewer.html)                                            #}
-
-{# Recursive macro: renders one tree node + its children #}
-{% macro render_node(node) %}
-    <li class="toc-node">
-        {% if node.children %}
-            <details class="toc-tree-branch" open>
-                <summary class="toc-tree-summary">
-                    <a href="#{{ node.anchor_id }}" title="{{ node.uri }}">{{ node.label }}</a>
-                </summary>
-                <ul class="toc-tree-children">
-                    {% for child in node.children %}
-                        {{ render_node(child) }}
-                    {% endfor %}
-                </ul>
-            </details>
-        {% else %}
-            <a class="toc-tree-leaf" href="#{{ node.anchor_id }}" title="{{ node.uri }}">{{ node.label }}</a>
-        {% endif %}
-    </li>
-{% endmacro %}
-
+   Requires `sections` in context (same shape used by viewer templates):
+     section.id, section.title, section.entities[].label, section.entities[].anchor_id
+   Optional: type_map (viewer.html). Falls back to section.title raw.        #}
 {% if grouped_view and sections %}
 <aside id="toc-sidebar" class="toc-sidebar open" aria-label="Table of Contents">
     <button type="button" class="toc-sidebar-toggle" aria-controls="toc-sidebar" aria-expanded="true"
@@ -50,22 +27,13 @@
                         </span>
                         <span class="toc-sidebar-section-count">{{ section.entities|length }}</span>
                     </summary>
-
-                    {% if section.tree %}
-                        <ul class="toc-tree-root">
-                            {% for node in section.tree %}
-                                {{ render_node(node) }}
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <ul class="toc-sidebar-list">
-                            {% for item in section.entities %}
-                                <li>
-                                    <a href="#{{ item.anchor_id }}" title="{{ item.uri }}">{{ item.label }}</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
+                    <ul class="toc-sidebar-list">
+                        {% for item in section.entities %}
+                            <li>
+                                <a href="#{{ item.anchor_id }}" title="{{ item.uri }}">{{ item.label }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </details>
             {% endfor %}
         </nav>
@@ -88,6 +56,7 @@
         document.body.classList.toggle('toc-sidebar-closed', !open);
     }
 
+    // Default: open. Persist user choice across pages.
     const stored = localStorage.getItem('lode.tocSidebar');
     apply(stored === null ? true : stored === 'open');
 
@@ -97,6 +66,7 @@
         localStorage.setItem('lode.tocSidebar', willOpen ? 'open' : 'closed');
     });
 
+    // Highlight currently-visible section/entity while scrolling.
     const links = sidebar.querySelectorAll('a[href^="#"]');
     const byId = new Map();
     links.forEach(a => byId.set(a.getAttribute('href').slice(1), a));
@@ -118,17 +88,6 @@
         }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
         targets.forEach(t => io.observe(t));
     }
-
-    // Auto-open ancestor <details> when a child link is clicked
-    sidebar.addEventListener('click', function (ev) {
-        const a = ev.target.closest('a[href^="#"]');
-        if (!a) return;
-        let n = a.parentElement;
-        while (n && n !== sidebar) {
-            if (n.tagName === 'DETAILS') n.open = true;
-            n = n.parentElement;
-        }
-    });
 })();
 </script>
 {% endif %}
