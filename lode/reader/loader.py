@@ -9,7 +9,7 @@ from urllib.parse import urlparse, urljoin
 
 import lode.reader.modules as modules
 from lode.reader import security
-from lode.exceptions import ArtefactLoadError, ArtefactNotFoundError
+from lode.exceptions import ArtefactLoadError, ArtefactNotFoundError, ArtefactValidationError
 
 
 class Loader:
@@ -33,6 +33,15 @@ class Loader:
         if self._is_url(source):
             self._load_from_url_with_content_negotiation(source)
         else:
+            # A value carrying a URL scheme that is not http(s) (file:, ftp:, ...)
+            # must not be silently treated as a local path. Bare local paths
+            # (no scheme) are still allowed here for the CLI.
+            scheme = urlparse(source).scheme
+            if scheme:
+                raise ArtefactValidationError(
+                    "URL scheme not allowed; use http(s)://host",
+                    context={"scheme": scheme},
+                )
             self._load_from_local_file(source)
 
         if len(self.graph) == 0:
@@ -191,6 +200,9 @@ class Loader:
             security.check_url_safe(current)
             response = requests.get(current, headers=headers, timeout=10,
                                     stream=True, allow_redirects=False)
+            # Validate the IP we ACTUALLY connected to, before reading anything:
+            # defeats DNS rebinding between check_url_safe above and this connect.
+            self._verify_peer_ip(response)
             if response.status_code in (301, 302, 303, 307, 308):
                 location = response.headers.get("Location")
                 response.close()
@@ -200,5 +212,27 @@ class Loader:
                 continue
             return response
         raise ArtefactLoadError("Too many redirects", context={"url": url})
+
+    def _verify_peer_ip(self, response) -> None:
+        """Re-check the SSRF policy against the socket's real peer IP. If it
+        cannot be determined (e.g. mocked in tests) fall back to the per-hop
+        check_url_safe already done before connecting."""
+        ip = self._peer_ip(response)
+        if ip is None:
+            return
+        try:
+            security.check_ip_safe(ip)
+        except ArtefactValidationError:
+            response.close()
+            raise
+
+    @staticmethod
+    def _peer_ip(response):
+        """Best-effort extraction of the connected peer IP from a streamed
+        requests response (reaches into urllib3 internals, hence defensive)."""
+        try:
+            return response.raw._connection.sock.getpeername()[0]
+        except Exception:
+            return None
 
 

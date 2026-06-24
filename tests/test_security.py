@@ -16,6 +16,7 @@ Run:  uv run pytest tests/test_security.py -v
 """
 import asyncio
 import io
+import os
 import socket
 import pytest
 
@@ -27,14 +28,23 @@ from lode.exceptions import ArtefactValidationError, ArtefactLoadError
 # ----------------------------------------------------------------------
 #  Helpers / fakes
 # ----------------------------------------------------------------------
+class _PeerRaw:
+    """Mimics urllib3 response internals so Loader._peer_ip can read the IP."""
+    def __init__(self, ip):
+        sock = type("Sock", (), {"getpeername": staticmethod(lambda: (ip, 443))})()
+        self._connection = type("Conn", (), {"sock": sock})()
+
+
 class FakeResponse:
     """Minimal stand-in for requests.Response (stream=True)."""
-    def __init__(self, status_code=200, headers=None, body=b"", url="http://1.2.3.4/x"):
+    def __init__(self, status_code=200, headers=None, body=b"", url="http://1.2.3.4/x", peer_ip=None):
         self.status_code = status_code
         self.headers = headers or {}
         self.url = url
         self._body = body
         self.closed = False
+        # Only set when a test needs Loader._verify_peer_ip to see a peer IP.
+        self.raw = _PeerRaw(peer_ip) if peer_ip else None
 
     def iter_content(self, chunk_size):
         for i in range(0, len(self._body), chunk_size):
@@ -501,3 +511,117 @@ class TestSsrfHardening:
         )
         with pytest.raises(ArtefactValidationError):
             security.check_url_safe("http://whatever.example.org/x")
+
+
+# ----------------------------------------------------------------------
+#  api._spool_path  (path injection hardening on upload_id)
+# ----------------------------------------------------------------------
+class TestSpoolPathTraversal:
+
+    @pytest.mark.parametrize("token", [
+        "../../../etc/passwd",
+        "/etc/passwd",
+        "../secret",
+    ])
+    def test_traversal_token_rejected(self, token):
+        from lode import api
+        with pytest.raises(ArtefactValidationError):
+            api._spool_path(token)
+
+    def test_legit_token_stays_in_spool(self):
+        from lode import api
+        p = api._spool_path("0123abcd")
+        assert p.endswith("0123abcd.rdf")
+        assert os.path.commonpath((api.SPOOL_DIR, p)) == api.SPOOL_DIR
+
+
+# ----------------------------------------------------------------------
+#  URL input must be http(s)://host  (blocks local-path / file:// as "url")
+# ----------------------------------------------------------------------
+class TestUrlMustBeHttp:
+
+    @pytest.mark.parametrize("bad", [
+        "/etc/passwd",
+        "file:///etc/passwd",
+        "ftp://example.org/x",
+        "not-a-url",
+    ])
+    def test_resolve_reader_rejects_non_http_url(self, bad):
+        from lode import api
+        with pytest.raises(ArtefactValidationError):
+            api._resolve_reader("owl", bad, None, None, None, False)
+
+    def test_loader_rejects_non_http_scheme(self):
+        with pytest.raises(ArtefactValidationError):
+            Loader().load("file:///etc/passwd")
+
+
+# ----------------------------------------------------------------------
+#  Loader._verify_peer_ip  (DNS-rebinding: validate the real connected IP)
+# ----------------------------------------------------------------------
+class TestPeerIpRebinding:
+
+    def _public_dns(self, monkeypatch):
+        monkeypatch.setattr(
+            "lode.reader.security.socket.getaddrinfo",
+            lambda host, port, *a, **k: [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))
+            ],
+        )
+
+    def test_peer_internal_ip_blocked(self, monkeypatch):
+        # Pre-check passes (host resolves public) but the socket actually
+        # connected to an internal IP (rebinding) -> abort before reading.
+        self._public_dns(monkeypatch)
+        resp = FakeResponse(status_code=200, peer_ip="169.254.169.254")
+        monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
+        with pytest.raises(ArtefactValidationError):
+            Loader()._fetch_following_redirects("http://sneaky.example.org/o.ttl", headers={})
+        assert resp.closed is True
+
+    def test_peer_public_ip_allowed(self, monkeypatch):
+        self._public_dns(monkeypatch)
+        resp = FakeResponse(status_code=200, peer_ip="93.184.216.34")
+        monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
+        out = Loader()._fetch_following_redirects("http://ok.example.org/o.ttl", headers={})
+        assert out is resp
+
+
+# ----------------------------------------------------------------------
+#  api._prune_spool  (4h TTL + 1GB budget, evict oldest)
+# ----------------------------------------------------------------------
+class TestSpoolQuota:
+
+    def _spool(self, tmp_path, monkeypatch):
+        from lode import api
+        monkeypatch.setattr(api, "SPOOL_DIR", os.path.realpath(str(tmp_path)))
+        return api
+
+    def test_prune_evicts_oldest_over_budget(self, tmp_path, monkeypatch):
+        import time
+        api = self._spool(tmp_path, monkeypatch)
+        monkeypatch.setattr(api, "_SPOOL_MAX_BYTES", 300)
+        monkeypatch.setattr(api, "_SPOOL_TTL", 10_000)  # don't expire by TTL here
+        now = time.time()
+        for i in range(4):  # 4 x 100 bytes = 400 > 300 budget
+            p = os.path.join(api.SPOOL_DIR, f"f{i}.rdf")
+            with open(p, "wb") as fh:
+                fh.write(b"x" * 100)
+            os.utime(p, (now - (40 - i * 10), now - (40 - i * 10)))  # f0 oldest, f3 newest
+        api._prune_spool()
+        names = {n for n in os.listdir(api.SPOOL_DIR) if n.endswith(".rdf")}
+        assert "f0.rdf" not in names   # oldest evicted first
+        assert len(names) == 3         # back under budget
+
+    def test_prune_expires_by_ttl(self, tmp_path, monkeypatch):
+        import time
+        api = self._spool(tmp_path, monkeypatch)
+        monkeypatch.setattr(api, "_SPOOL_TTL", 60)
+        for name in ("old.rdf", "new.rdf"):
+            with open(os.path.join(api.SPOOL_DIR, name), "wb") as fh:
+                fh.write(b"x")
+        os.utime(os.path.join(api.SPOOL_DIR, "old.rdf"),
+                 (time.time() - 3600, time.time() - 3600))  # 1h old > 60s TTL
+        api._prune_spool()
+        names = set(os.listdir(api.SPOOL_DIR))
+        assert "old.rdf" not in names and "new.rdf" in names

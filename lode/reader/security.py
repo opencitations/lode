@@ -78,6 +78,22 @@ def check_extension(name: str) -> None:
     if ext not in ALLOWED_EXTENSIONS:
         raise ArtefactValidationError("Extension not allowed", context={"ext": ext})
 
+def check_ip_safe(ip_str: str) -> None:
+    """Reject an IP that points at an internal/non-routable range (SSRF).
+
+    Reused both before connecting (each resolved IP) and after connecting (the
+    real peer IP), so a DNS rebinding between the two cannot reach an internal
+    host.
+    """
+    ip = ipaddress.ip_address(ip_str)
+    # IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1) would bypass the v4 checks below.
+    if getattr(ip, "ipv4_mapped", None):
+        ip = ip.ipv4_mapped
+    if (ip.is_private or ip.is_loopback or ip.is_link_local
+            or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+        raise ArtefactValidationError("Blocked address", context={"ip": str(ip)})
+
+
 def check_url_safe(url: str) -> None:
     """Block non-http schemes and SSRF toward private/internal hosts."""
     parsed = urlparse(url)
@@ -91,13 +107,7 @@ def check_url_safe(url: str) -> None:
     except socket.gaierror:
         raise ArtefactValidationError("Cannot resolve host", context={"host": host})
     for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        # IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1) would bypass the v4 checks below.
-        if getattr(ip, "ipv4_mapped", None):
-            ip = ip.ipv4_mapped
-        if (ip.is_private or ip.is_loopback or ip.is_link_local
-                or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
-            raise ArtefactValidationError("Blocked address", context={"host": host, "ip": str(ip)})
+        check_ip_safe(info[4][0])
 
 def check_is_text(data: bytes) -> None:
     """RDF serializations are text. Reject binary blobs."""
