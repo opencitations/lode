@@ -14,6 +14,18 @@ class BaseViewer:
     def __init__(self, reader):
         self.reader = reader
         self._cache = reader._instance_cache  # it uses 
+        self._internal_iris = None
+
+    def _is_internal(self, uri) -> bool:
+        if not uri:
+            return False
+        if self._internal_iris is None:
+            self._internal_iris = {
+                str(i.get_has_identifier())
+                for i in self.get_toc_instances()          # <-- NON get_all_instances()
+                if hasattr(i, 'get_has_identifier') and i.get_has_identifier()
+            }
+        return str(uri) in self._internal_iris
     
     def get_all_instances(self) -> List:
         """Ottiene tutte le istanze (esclusi literal)."""
@@ -106,6 +118,16 @@ class BaseViewer:
             'entities': self._format_entities(all_instances, language)
         }
 
+    def _is_toc_entity(self, instance) -> bool:
+            """Browsable (own card + clickable link) iff its type is in get_toc_config. 
+            Resources not listed in get_o_config are shown when mentioned as plain text 
+            in cards  (external-ref), just never linked."""
+            toc_keys = {key for key, _id, _title in self.get_toc_config()}
+            return type(instance).__name__ in toc_keys
+    
+    def get_toc_instances(self) -> List:
+        return [i for i in self.get_all_instances() if self._is_toc_entity(i)]
+    
     def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:
         """
         Standard logic for displaying a single resource.
@@ -117,6 +139,9 @@ class BaseViewer:
             return {'error': f'Resource {resource_uri} not found'}
 
         instances = list(instance_set) if isinstance(instance_set, set) else [instance_set]
+        instances = [i for i in instances if self._is_toc_entity(i)]
+        if not instances:
+            return {'error': f'{resource_uri} is not a browsable entity'}
 
         return {
             'single_resource': True,
@@ -384,14 +409,15 @@ class BaseViewer:
             'lan': None,
             'parts': None,  # This key is for restrictions
             'type': None,
-            'is_deprecated': False
+            'is_deprecated': False,
+            'is_external': False,
         }
 
         if not obj: return handler_dic
 
         # --- 1. INTERCEPT RESTRICTIONS ---
         restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
-                             "OneOf", "Value"]
+                             "OneOf", "Value", "DatatypeRestriction"]
         obj_type = type(obj).__name__
 
         if obj_type in restriction_types:
@@ -406,6 +432,7 @@ class BaseViewer:
             handler_dic['parts'] = parts
             handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
             handler_dic['link'] = None  # Forces Jinja to ignore the blank node URI
+            handler_dic['is_external'] = not self._is_internal(handler_dic['link'])
             handler_dic['type'] = obj_type
             return handler_dic
 
@@ -483,7 +510,7 @@ class BaseViewer:
         # --- 5. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
-
+            handler_dic['is_external'] = not self._is_internal(handler_dic['link'])
             is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj,
                                                                     'get_is_deprecated') else getattr(obj, 'is_deprecated',
                                                                                                            False)
@@ -687,7 +714,7 @@ class BaseViewer:
         resolved = self._resolve_resource_value(obj, language)
 
         if resolved.get('text'):
-            return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type')}]
+            return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type'), 'is_external': resolved.get('is_external', False)}]
 
         return []
 

@@ -24,10 +24,14 @@
                 <a href="#{{ anchor_map[precise_key] }}" class="{{ dep_class }}" title="{{ precise_key }}{{dep_title}}">{{ v.text }}</a>
             {% elif v.link in anchor_map %}
                 <a href="#{{ anchor_map[v.link] }}" class="{{ dep_class }}" title="{{ v.link }}{{dep_title}}">{{ v.text }}</a>
-            {% else %}
-            <div class="d-inline-block {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}"
+            {% elif v.is_external %}
+            <div class="d-inline-block external-ref {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}"
                 title="{{ v.link }}{{dep_title}}"
                 {% if is_md %}data-md="{{ v.text | e }}"{% endif %}>{{ v.text }}</div>
+            {% elif is_static %}
+            <a href="{{ resource_url(v.link, v_type ~ 's') }}" class="{{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" title="{{ v.link }}{{dep_title}}">{{ v.text }}</a>
+            {% else %}
+            <a href="/extract?{{ nav_qs }}&resource={{ v.link | urlencode }}" class="{{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" title="{{ v.link }}{{dep_title}}">{{ v.text }}</a>
             {% endif %}
 
             {% if v_type in type_map %}
@@ -61,6 +65,8 @@
             {% endif %}
         </h4>
 
+
+        {% if not single_resource %}
         <span class="backlink">
             back to
             <a href="#toc">ToC</a>
@@ -69,6 +75,7 @@
                 <a href="#{{item.type.lower()}}s">{{type_map[item.type.lower()].singular}} ToC</a>
             {% endif %}
         </span>
+        {% endif %}
     </div>
 
     <div class="card-body px-1 pb-1">
@@ -188,8 +195,12 @@
                                                                     <a href="#{{ anchor_map[precise_key] }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{precise_key}}{{dep_title}}">{{ part.text }}</a>
                                                                 {% elif part.link in anchor_map %}
                                                                     <a href="#{{ anchor_map[part.link] }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
-                                                                {% else %}
+                                                                {% elif part.is_external %}
                                                                     <span class="external-ref {% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</span>
+                                                                {% elif is_static %}
+                                                                    <a href="{{ resource_url(part.link, v_type ~ 's') }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
+                                                                {% else %}
+                                                                    <a href="/extract?{{ nav_qs }}&resource={{ part.link | urlencode }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
                                                                 {% endif %}
 
                                                                 {% if v_type in type_map %}
@@ -227,11 +238,16 @@
                                                         <a href="#{{ anchor_map[precise_key] }}" class="{{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
                                                     {% elif rel_item.link in anchor_map %}
                                                         <a href="#{{ anchor_map[rel_item.link] }}" class="{{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
-                                                    {% else %}
+                                                    {% elif rel_item.is_external %}
                                                     <span class="external-ref {% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}"
                                                         title="{{rel_item.link}}{{dep_title}}"
-                                                        {% if is_md %}data-md="{{ rel_item.text | e }}"{% endif %}>{{ rel_item.text }}</span>                                                    
+                                                        {% if is_md %}data-md="{{ rel_item.text | e }}"{% endif %}>{{ rel_item.text }}</span>
+                                                    {% elif is_static %}
+                                                    <a href="{{ resource_url(rel_item.link, v_type ~ 's') }}" class="{% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
+                                                    {% else %}
+                                                    <a href="/extract?{{ nav_qs }}&resource={{ rel_item.link | urlencode }}" class="{% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
                                                     {% endif %}
+
                                                     {% if v_type in type_map %}
                                                         <sup class="badge text-secondary {{type_map[v_type].abb}}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
                                                     {% endif %}

@@ -61,6 +61,22 @@
         {% endif %}
         
         {% if metadata %}
+            {% if single_resource %}
+            <details class="mb-4 border-bottom pb-4">
+                <summary style="cursor:pointer; list-style:none">
+                    <h1 class="fw-bold mb-1 d-inline">
+                        {% if metadata.title %}
+                            {% for title in metadata.title %}{{ title.text }}{% endfor %}
+                        {% elif metadata.label %}{{ metadata.label[0].text }}{% endif %}
+                    </h1>
+                    <span class="badge bg-light text-secondary border ms-2 align-middle">ontology context — click to expand</span>
+                    <div class="d-flex align-items-center mt-2">
+                        <p class="text-muted medium mb-0 font-monospace text-truncate">{{ metadata.uri[0].link }}</p>
+                        <a href="{{ metadata.uri[0].link }}" target="_blank" class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
+                    </div>
+                </summary>
+                <div class="p-3">
+            {% else %}
             <div class="mb-4 border-bottom pb-4">
                 <div class="p-3">
                     <h1 class="fw-bold mb-2">
@@ -79,6 +95,7 @@
                         <a href="{{ metadata.uri[0].link }}" target="_blank" 
                            class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
                     </div>
+            {% endif %}
 
                     <dl class="row mb-0 lead fs-6">
                         {% for key, val_list in metadata.items() %}
@@ -137,7 +154,7 @@
                         {% endif %}
                     </dl>
                 </div>
-            </div>
+            {% if single_resource %}</details>{% else %}</div>{% endif %}
         {% endif %}
 
         {% if grouped_view and sections %}
@@ -202,7 +219,7 @@
             </div>
         {% endfor %}
 
-        {% if metadata and metadata._namespaces %}
+        {% if metadata and metadata._namespaces and not single_resource %}
             <div id="namespaces" class="anchor-offset mb-5">
                 <h3 class="section-header d-flex align-items-center justify-content-between mb-4">
                     Namespace Declarations
@@ -220,7 +237,7 @@
 
         {% if single_resource %}
             <div class="mt-3">
-                <a href="/extract?{{ nav_qs }}" class="btn btn-outline-secondary">← Back to Index</a>
+                <a href="/extract?{{ nav_qs }}" class="btn btn-outline-secondary">← Back to full documentation</a>
             </div>
         {% endif %}
 
