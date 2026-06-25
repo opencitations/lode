@@ -32,6 +32,10 @@ class Loader:
 
         if self._is_url(source):
             self._load_from_url_with_content_negotiation(source)
+
+        # ADD  BY VALE TO FIX WINDOWS LOCAL BUG - COMMENTED FOR PRODUCTION
+        # elif os.path.isfile(source):
+        #     self._load_from_local_file(source)    
         else:
             # A value carrying a URL scheme that is not http(s) (file:, ftp:, ...)
             # must not be silently treated as a local path. Bare local paths
