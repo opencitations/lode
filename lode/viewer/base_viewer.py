@@ -15,15 +15,32 @@ class BaseViewer:
         self.reader = reader
         self._cache = reader._instance_cache  # it uses 
         self._internal_iris = None
+        self._ontology_ns = None 
 
+    def _get_ontology_ns(self) -> str:
+        if self._ontology_ns is None:
+            self._ontology_ns = ''
+            for inst in self.get_all_instances():
+                if isinstance(inst, Model):
+                    nid = inst.get_has_identifier()
+                    if nid:
+                        self._ontology_ns = nid if nid.endswith(('/', '#')) else nid + '/'
+                    break
+        return self._ontology_ns
+
+    def _has_local_triples(self, uri) -> bool:
+        if not uri:
+            return False
+        return (URIRef(str(uri)), None, None) in self.reader._graph
+    
     def _is_internal(self, uri) -> bool:
         if not uri:
             return False
         if self._internal_iris is None:
             self._internal_iris = {
                 str(i.get_has_identifier())
-                for i in self.get_toc_instances()          # <-- NON get_all_instances()
-                if hasattr(i, 'get_has_identifier') and i.get_has_identifier()
+                for i in self.get_toc_instances()
+                if i.get_has_identifier()
             }
         return str(uri) in self._internal_iris
     
@@ -288,6 +305,7 @@ class BaseViewer:
                 'characteristics': characteristics,
                 'is_deprecated': bool(is_dep),
                 'provenance': self._build_provenance_subgraph(instance),
+                'is_external': not self._is_internal(uri),
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
@@ -410,6 +428,7 @@ class BaseViewer:
             'parts': None,  # This key is for restrictions
             'type': None,
             'is_deprecated': False,
+            'is_imported': False,
             'is_external': False,
         }
 
@@ -432,7 +451,8 @@ class BaseViewer:
             handler_dic['parts'] = parts
             handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
             handler_dic['link'] = None  # Forces Jinja to ignore the blank node URI
-            handler_dic['is_external'] = not self._is_internal(handler_dic['link'])
+            handler_dic['is_external'] = False
+            handler_dic['is_imported'] = False
             handler_dic['type'] = obj_type
             return handler_dic
 
@@ -510,10 +530,13 @@ class BaseViewer:
         # --- 5. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
-            handler_dic['is_external'] = not self._is_internal(handler_dic['link'])
-            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj,
-                                                                    'get_is_deprecated') else getattr(obj, 'is_deprecated',
-                                                                                                           False)
+            link = handler_dic['link']
+            ns = self._get_ontology_ns()
+            internal = self._is_internal(link)
+            native = bool(link) and bool(ns) and str(link).startswith(ns)
+            handler_dic['is_external'] = not internal
+            handler_dic['is_imported'] = internal and not native
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj, 'is_deprecated',  False)
             handler_dic['is_deprecated'] = bool(is_dep)
 
             try:
@@ -580,7 +603,12 @@ class BaseViewer:
         name = name.replace('_', ' ')
 
         # Strip extra spaces
-        return ' '.join(name.split())
+        name = ' '.join(name.split())
+
+        # lowercase everything
+        name = name.lower()
+
+        return name
 
     def _parse_restriction(self, obj, language=None) -> list:
         """
@@ -825,10 +853,11 @@ class BaseViewer:
         return tree
     
     # ========== PROVENANCE: subgraph serialisation for each card ==========
-
+    
     def _build_provenance_subgraph(self, instance) -> Dict[str, str]:
-        """Get the provenance subgraph from the reader and serialize it."""
         sub = self.reader.get_provenance_subgraph(instance)
+        if not any(True for _ in sub):
+            return {}
         return {
             'turtle': self._safe_serialize(sub, 'turtle'),
             'rdfxml': self._safe_serialize(sub, 'xml'),

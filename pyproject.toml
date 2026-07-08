@@ -26,6 +26,7 @@ dependencies = [
     "jinja2>=3.1.2",
     "requests>=2.31.0",
     "owlready2>=0.50",
+    "minify-html>=0.18.1",
 ]
 
 # AGGIUNTO

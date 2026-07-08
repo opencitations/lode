@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
-
 /* 1. General style
    ========================================================================== */
 
@@ -9,19 +7,111 @@ body {
     font-weight: 300;
     font-style: normal;
     font-size:  1rem;
-    font-family: sans-serif; /* LODE uses standard sans-serif */
+    font-family: sans-serif; /* LODE and W3C use standard sans-serif */
     color: black;
     background-color: white;
 }
 
 /* Headings - W3C Style Blue */
-h1, h2, h3, h4,
-.h1, .h2, .h3, .h4 {
-    color: #005A9C !important; /* The classic W3C Blue */
-    font-family: sans-serif;
-    font-weight: bold;
-    background: transparent;
-    border: none;
+h1, h2, h3, h4, h5, h6 {
+    text-align: left;
+    color: #005A9C;
+}
+
+h5 {font-size: 110%;}
+h4 {font-size: 120%;}
+h3 {font-size: 130%;}
+h2 {font-size: 140%;}
+h1 {font-size: 150%;}
+
+/* Semantic artefact metadata handling */ 
+dd {
+    line-height: 1.1rem;
+}
+
+/* Semantic artefact metadata handling only for SINGLE RESOURCE */ 
+
+.resource-frontmatter {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: .75rem;
+    margin-bottom: .5rem;
+}
+
+.resource-title {
+    color: #005A9C;
+    font-weight: 700;
+    font-size: 170%;
+    padding: 0;
+    margin: 0;
+}
+
+.resource-subtitle {
+    color: #444;
+    font-style: italic;
+    font-size: 105%;
+    font-weight: 300;
+    margin:0;
+    padding:0;
+}
+
+.resource-subtitle-ontology {
+    font-style: normal;
+    font-weight: 600;
+    color: #005A9C;
+}
+
+.resource-meta-line {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .85rem;
+    color: #6c757d;
+}
+
+.resource-meta-uri {
+    max-width: 60%;
+}
+
+.resource-meta-link {
+    color: #005A9C !important;
+    text-decoration: none !important;
+}
+.resource-meta-link:hover {
+    background-color: #ffa !important;
+}
+
+.metadata-accordion-toggle {
+    margin-left: auto;   /* spinge il bottone a destra, come i controlli editoriali W3C */
+}
+
+.metadata-accordion-summary {
+    cursor: pointer;
+    list-style: none;
+}
+.metadata-accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
+.metadata-accordion-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-left: .75rem;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    color: #005A9C;
+    font-size: .85rem;
+    cursor: pointer;
+}
+.metadata-accordion-toggle:hover {
+    background: #005A9C;
+    color: #fff;
+}
+.metadata-accordion-toggle i {
+    transition: transform .2s ease;
+}
+.metadata-accordion[open] .metadata-accordion-toggle i {
+    transform: rotate(180deg);
 }
 
  /* INDEX PAGE STYLE */
@@ -122,11 +212,25 @@ button[type="submit"]:hover {
 
 /* code */
 pre {
-    background-color: #f6e8dd;
-    border-radius: 20px;
-    border: 2px dotted #193564;
-    padding: 1rem;
-    color:#193564;
+    background-color: #f5f5f5;
+    border: 1px dashed #b0bfcf;
+    padding: 0.75rem 1rem;
+    color: #000;
+    font-family: monospace;
+    overflow-x: auto;
+    font-size: 0.9em;
+}
+
+code {
+    font-family: monospace;
+    color: #000;
+}
+
+/* dentro <pre>, il code non deve riavere bordo/bg proprio */
+pre code {
+    background: none;
+    border: none;
+    padding: 0;
 }
 
 h1.display-5 {
@@ -230,42 +334,36 @@ a:visited {
 .text-info-emphasis {
     color: orange !important;
     font-size: 0.8em;
-    margin-left: -0.2em !important;
 }
 
 /* Relation */
 .op {
     color: navy !important;
     font-size: 0.8em !important;
-    margin-left: -0.2em !important;
 }
 
 /* Annotaion */
 .an {
     color: maroon !important;
     font-size: 0.8em !important;
-    margin-left: -0.2em !important;
 }
 
 /* Individual */
 .ni {
     color: brown !important;
     font-size: 0.8em !important;
-    margin-left: -0.2em !important;
 }
 
 /* Attributes */
 .dp {
     color: green !important;
     font-size: 0.8em !important;
-    margin-left: -0.2em !important;
 }
 
 /* language */
 .lan {
     color: slateblue !important;
     font-size: 0.8em !important;
-    margin-left: -0.2em !important;
 }
 
 /* 5. Definition Lists (The core of LODE data display)
@@ -369,9 +467,20 @@ code.bg-light {
     background-color: #F4FFFF !important;
 }
 
-/* statements */
+/* section for attributes */
+.attribute {
+    border-left: 3px solid #005A9C; /* stesso accento blu delle heading, non colore custom */
+}
+
 .statement {
-    background-color: rgb(235, 242, 250) !important;
+    background-color: white;      /* leggermente più neutro del tuo attuale */
+    font-size: 0.92em;
+}
+
+/* gli operatori logici dentro lo statement restano leggibili sul nuovo bg */
+.statement .logic {
+    color: purple;
+    font-weight: bold;
 }
 
 .logic {
@@ -406,6 +515,10 @@ code.bg-light {
 .markdown-with-badge p:last-child {
     display: inline !important;
     margin-bottom: 0 !important;
+}
+
+p {
+    padding-bottom: 0.5rem;
 }
 
 /* Exception: pre/code blocks must stay block even when last child */
@@ -456,6 +569,11 @@ code.bg-light {
     margin-bottom: 0;
 }
 
+/* different styles to mark different type of entities - defined by the ontology itself or imported from external vocabs */
+.entity-internal { color: var(--lode-link, #005A9C); }
+.entity-external { color: var(--lode-external, #6c757d); }
+.entity-external .bi { font-size: .75em; opacity: .7; }
+
 /* ============================================================
    RDF provenance accordion
    ============================================================ */
@@ -495,11 +613,10 @@ code.bg-light {
 :root {
     --toc-sidebar-w: 18rem;
     --toc-sidebar-collapsed-w: 3.5rem;
-    --toc-sidebar-bg: #f7f9fc;
-    --toc-sidebar-border: #193564;
+    --toc-sidebar-border: navy;        /* as .card and .toc-card */
     --toc-sidebar-fg: #1a1a1a;
     --toc-sidebar-muted: #6c757d;
-    --toc-sidebar-accent: #005A9C;
+    --toc-sidebar-accent: #005A9C;     /* as titles */
 }
 
 /* The sidebar lives in the strip body already reserves (margin-left: 5rem).
@@ -509,16 +626,14 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 
 .toc-sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 0; left: 0; bottom: 0;
     width: var(--toc-sidebar-w);
     border-right: 2px solid var(--toc-sidebar-border);
     z-index: 1030;
     display: flex;
     flex-direction: column;
     transition: transform .2s ease, width .2s ease;
-    box-shadow: 0 0 8px rgba(0,0,0,0.04);
+    /* rimosso: box-shadow */
 }
 
 /* Logo Powered by LODE nella sidebar chiusa */
@@ -564,10 +679,9 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 .toc-sidebar-toggle {
     position: absolute;
     top: .5rem;
-    right: -1.1rem;
+    right: -1.6rem;
     width: 1.6rem;
     height: 1.6rem;
-    border-radius: 50%;
     border: 1px solid var(--toc-sidebar-border);
     background: #fff;
     color: var(--toc-sidebar-accent);
@@ -578,7 +692,7 @@ body.toc-sidebar-closed { margin-left: 5rem; }
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    /* rimossi: border-radius: 50%; box-shadow */
 }
 .toc-sidebar-toggle:hover { background: var(--toc-sidebar-accent); color: #fff; }
 
@@ -622,7 +736,6 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 .toc-sidebar-section-count {
     background: #e7eef7;
     color: var(--toc-sidebar-accent);
-    border-radius: 999px;
     padding: 0 .45rem;
     font-size: .72rem;
     font-weight: 700;
@@ -640,10 +753,8 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 .toc-sidebar-list li { margin: 0; }
 .toc-sidebar-list a {
     display: block;
-    padding: .15rem .4rem;
     color: var(--toc-sidebar-fg);
     text-decoration: none;
-    border-radius: .2rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

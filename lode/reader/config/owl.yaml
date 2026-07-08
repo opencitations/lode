@@ -587,10 +587,10 @@ mapper:
 
   # ========== REWRITE BASE ==========
 
-  rdfs:isDefinedBy:
-    is: predicate
-    target_classes: [Resource]
-    setters: [set_is_defined_by: Individual] # involves in punning
+  # rdfs:isDefinedBy:
+  #   is: predicate
+  #   target_classes: [Resource]
+  #   setters: [set_is_defined_by: Individual] # involves in punning
 
 
 # ======================
