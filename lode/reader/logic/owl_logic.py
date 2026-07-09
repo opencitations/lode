@@ -152,18 +152,6 @@ class OwlLogic(BaseLogic):
                         # Remove generic Property, keep the concrete one
                         self._instance_cache[uri].discard(instance)
                     else:
-                        # # No concrete type found — infer and reclassify
-                        # inferred = self._infer_property_type(instance)
-                        # new = inferred()
-                        # new.__dict__.update(instance.__dict__)
-                        # self._instance_cache[uri].discard(instance)
-                        # self._instance_cache[uri].add(new)
-                        # if instance in self._triples_map:
-                        #     self._triples_map[new] = self._triples_map.pop(instance)
-                        # self.populate_instance(new, uri)
-                        # # new, reclassified instance after reclassification
-                        # instance = new
-
                         inferred = self._infer_property_type(instance)
                         old_dict = instance.__dict__.copy()
                         instance.__class__ = inferred
@@ -173,57 +161,13 @@ class OwlLogic(BaseLogic):
 
                 self._enrich_or_apply_owl_defaults(instance, uri)        
 
-    # def _infer_property_type(self, instance) -> type:
-    #     """
-    #     Infers the concrete subtype (Relation, Attribute, Annotation) for a
-    #     generic Property instance (not better classified)
-
-    #     Strategy (in order):
-    #     1. Traverse UP the subPropertyOf chain: if any ancestor has a concrete
-    #        type, inherit it (if A subPropertyOf B and B is Relation, A is Relation).
-    #     2. Traverse DOWN by scanning the cache for properties that declare this
-    #        instance as their superproperty: if any subproperty has a concrete
-    #        type, inherit it (if B is Relation and B subPropertyOf A, A is Relation).
-    #     3. Fall back to Annotation if no type can be inferred from the hierarchy.
-    #        Annotation makes no domain/range assumptions and is valid for any
-    #        subject/object combination.
-    #     """
-        
-    #     visited = set()
-    #     queue = [instance]
-
-    #     # (1) Goes up and down subproperty hierarchy
-    #     # (1.1) Traverse UP superproperties
-    #     while queue:
-    #         current = queue.pop(0)
-    #         if id(current) in visited:
-    #             continue
-    #         visited.add(id(current))
-
-    #         if type(current) in (Relation, Attribute, Annotation):
-    #             return type(current)
-
-    #         for sup in (current.get_is_sub_property_of() or []):
-    #             queue.append(sup)
-
-    #     # (1.2) Traverse DOWN subproperties
-    #     for instances_set in self._instance_cache.values():
-    #         for inst in instances_set:
-    #             if isinstance(inst, Property):
-    #                 for sup in (inst.get_is_sub_property_of() or []):
-    #                     if sup is instance:
-    #                         t = self._infer_property_type(inst)
-    #                         if t in (Relation, Attribute, Annotation):
-    #                             return t
-
-    #     # (2) fallback                 
-    #     return Annotation
-
     def handle_domain(self, instance, uri, predicate, obj, setter=None):
         concept = self.get_or_create(obj, Concept)
         if concept is None:
             concept = self._force_as_concept(obj)
         instance.set_has_domain(concept)
+        concept.set_is_in_domain_of(instance)
+
 
     def handle_range(self, instance, uri, predicate, obj, setter=None):
         if isinstance(instance, Attribute):
@@ -233,6 +177,7 @@ class OwlLogic(BaseLogic):
         if resource is None:
             resource = self._force_as_concept(obj)
         instance.set_has_range(resource)
+        resource.set_is_in_range_of(instance)
         
     def handle_equivalent_class(self, instance, uri, predicate, obj, setter=None):
         """§9.1.2 EquivalentClasses — simmetria garantita."""

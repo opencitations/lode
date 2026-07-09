@@ -18,6 +18,8 @@ class Concept(Resource):
         self.has_close_match = []     # 0..*
         self.has_key = []             # 0..*
         self.individuals_with_this_type = []          # 0..*  (inverso di Individual.has_type)
+        self.is_in_domain_of = []     # 0..*
+
 
 
     def set_has_key(self, prop):
@@ -115,4 +117,11 @@ class Concept(Resource):
     def get_individuals_with_this_type(self):
         """Restituisce la lista individuals_with_this_type."""
         return list(self.individuals_with_this_type)
+    
+    def set_is_in_domain_of(self, prop):
+        if prop not in self.is_in_domain_of:
+            self.is_in_domain_of.append(prop)
+
+    def get_is_in_domain_of(self):
+        return list(self.is_in_domain_of)
     

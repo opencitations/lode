@@ -48,6 +48,23 @@
 
     {% include '_toc_sidebar.html' %}
 
+    <div id="toc-float-search" class="toc-float-search">
+        <button type="button" id="toc-float-search-toggle" class="toc-float-search-toggle" title="Search terms">
+            <i class="bi bi-search"></i>
+        </button>
+        <div class="toc-float-search-panel">
+            <input type="text" id="toc-float-search-input" class="toc-float-search-input"
+                placeholder="Search terms..." autocomplete="off">
+            <span id="toc-float-search-count" class="toc-float-search-count"></span>
+            <button type="button" id="toc-float-search-prev" class="toc-float-search-nav" title="Previous match">
+                <i class="bi bi-chevron-up"></i>
+            </button>
+            <button type="button" id="toc-float-search-next" class="toc-float-search-nav" title="Next match">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+
     <div class="container-fluid px-4 py-4">
         {% if warnings %}
             <div class="mb-4">
@@ -357,6 +374,96 @@
                 const details = event.currentTarget.closest('details.metadata-accordion');
                 if (details) details.open = !details.open;
             }
+            
+            /* SEARCHBAR */
+            (function () {
+                const wrap = document.getElementById('toc-float-search');
+                const toggle = document.getElementById('toc-float-search-toggle');
+                const input = document.getElementById('toc-float-search-input');
+                const countEl = document.getElementById('toc-float-search-count');
+                const prevBtn = document.getElementById('toc-float-search-prev');
+                const nextBtn = document.getElementById('toc-float-search-next');
+                if (!wrap || !toggle || !input) return;
+
+                const cards = Array.from(document.querySelectorAll('.container-fluid .card[id]'));
+                let matches = [];
+                let current = -1;
+
+                function updateCount() {
+                    countEl.textContent = matches.length ? `${current + 1}/${matches.length}` : (input.value ? '0/0' : '');
+                }
+
+                function clearHighlight() {
+                    cards.forEach(c => c.classList.remove('toc-search-current'));
+                }
+
+                function goTo(index) {
+                    if (!matches.length) return;
+                    current = (index + matches.length) % matches.length;
+                    clearHighlight();
+                    const card = matches[current];
+                    card.classList.add('toc-search-current');
+                    card.scrollIntoView({ block: 'start' });
+                    updateCount();
+                }
+
+                function runSearch() {
+                    const q = input.value.trim().toLowerCase();
+                    clearHighlight();
+
+                    // Sidebar: dim + disable non-matching
+                    const sidebar = document.getElementById('toc-sidebar');
+                    if (sidebar) {
+                        sidebar.querySelectorAll('.toc-sidebar-section').forEach(section => {
+                            let anyMatch = false;
+                            section.querySelectorAll('.toc-sidebar-list li').forEach(li => {
+                                const match = !q || li.textContent.toLowerCase().includes(q);
+                                li.classList.toggle('toc-search-dim', !match);
+                                if (match) anyMatch = true;
+                            });
+                            section.classList.toggle('toc-search-dim', q.length > 0 && !anyMatch);
+                            if (q && anyMatch) section.open = true;
+                        });
+                    }
+
+                    if (!q) {
+                        matches = [];
+                        current = -1;
+                        updateCount();
+                        return;
+                    }
+                    matches = cards.filter(card => {
+                        const label = card.querySelector('.card-header h4')?.textContent.toLowerCase() || '';
+                        return label.includes(q);
+                    });
+                    current = -1;
+                    updateCount();
+                    if (matches.length) goTo(0);
+                }
+
+                toggle.addEventListener('click', function () {
+                    const open = wrap.classList.toggle('open');
+                    if (open) {
+                        input.focus();
+                    } else {
+                        input.value = '';
+                        runSearch();
+                    }
+                });
+
+                input.addEventListener('input', runSearch);
+
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (e.shiftKey) goTo(current - 1);
+                        else goTo(current + 1);
+                    }
+                });
+
+                prevBtn.addEventListener('click', () => goTo(current - 1));
+                nextBtn.addEventListener('click', () => goTo(current + 1));
+            })();
         </script>
 
     </div>

@@ -12,6 +12,84 @@ body {
     background-color: white;
 }
 
+/* SEARCHBAR */
+.toc-float-search {
+    position: fixed;
+    top: 50%;
+    right: 1.5rem;
+    transform: translateY(-50%);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+}
+
+.toc-float-search-toggle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid navy;
+    background: #fff;
+    color: #005A9C;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.toc-float-search-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: width 0.2s ease, opacity 0.2s ease;
+}
+
+.toc-float-search.open .toc-float-search-panel {
+    width: 320px;
+    opacity: 1;
+    margin-right: 0.5rem;
+}
+
+.toc-float-search-input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.toc-search-dim {
+    opacity: 0.35;
+}
+
+.toc-float-search-count {
+    font-size: 0.8rem;
+    color: #6c757d;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.toc-float-search-nav {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #005A9C;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.toc-search-current {
+    outline: 3px solid #005A9C;
+    outline-offset: 2px;
+}
+
 /* Headings - W3C Style Blue */
 h1, h2, h3, h4, h5, h6 {
     text-align: left;
@@ -135,7 +213,6 @@ button[type="submit"] {
     cursor: pointer;
     border-radius: 50px;
 }
-/* blue = #193564 red = ##F3563C beige= #F6E8DD , white = white*/
 
 button[type="submit"]:hover {
     background-color: #193564;
