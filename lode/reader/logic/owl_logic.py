@@ -971,7 +971,7 @@ class OwlLogic(BaseLogic):
         may have been created here for the first time, after phase3 defaults
         have already run.
         """
-        if pred == RDF.type:
+        if pred == RDF.type or pred in self._property_mapping:
             return
         
         # Subject: an unmapped structured BNode is a Statement, not an Individual.
