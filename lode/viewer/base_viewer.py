@@ -14,6 +14,35 @@ class BaseViewer:
     def __init__(self, reader):
         self.reader = reader
         self._cache = reader._instance_cache  # it uses 
+        self._internal_iris = None
+        self._ontology_ns = None 
+
+    def _get_ontology_ns(self) -> str:
+        if self._ontology_ns is None:
+            self._ontology_ns = ''
+            for inst in self.get_all_instances():
+                if isinstance(inst, Model):
+                    nid = inst.get_has_identifier()
+                    if nid:
+                        self._ontology_ns = nid if nid.endswith(('/', '#')) else nid + '/'
+                    break
+        return self._ontology_ns
+
+    def _has_local_triples(self, uri) -> bool:
+        if not uri:
+            return False
+        return (URIRef(str(uri)), None, None) in self.reader._graph
+    
+    def _is_internal(self, uri) -> bool:
+        if not uri:
+            return False
+        if self._internal_iris is None:
+            self._internal_iris = {
+                str(i.get_has_identifier())
+                for i in self.get_toc_instances()
+                if i.get_has_identifier()
+            }
+        return str(uri) in self._internal_iris
     
     def get_all_instances(self) -> List:
         """Ottiene tutte le istanze (esclusi literal)."""
@@ -106,6 +135,16 @@ class BaseViewer:
             'entities': self._format_entities(all_instances, language)
         }
 
+    def _is_toc_entity(self, instance) -> bool:
+            """Browsable (own card + clickable link) iff its type is in get_toc_config. 
+            Resources not listed in get_o_config are shown when mentioned as plain text 
+            in cards  (external-ref), just never linked."""
+            toc_keys = {key for key, _id, _title in self.get_toc_config()}
+            return type(instance).__name__ in toc_keys
+    
+    def get_toc_instances(self) -> List:
+        return [i for i in self.get_all_instances() if self._is_toc_entity(i)]
+    
     def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:
         """
         Standard logic for displaying a single resource.
@@ -117,6 +156,9 @@ class BaseViewer:
             return {'error': f'Resource {resource_uri} not found'}
 
         instances = list(instance_set) if isinstance(instance_set, set) else [instance_set]
+        instances = [i for i in instances if self._is_toc_entity(i)]
+        if not instances:
+            return {'error': f'{resource_uri} is not a browsable entity'}
 
         return {
             'single_resource': True,
@@ -263,6 +305,7 @@ class BaseViewer:
                 'characteristics': characteristics,
                 'is_deprecated': bool(is_dep),
                 'provenance': self._build_provenance_subgraph(instance),
+                'is_external': not self._is_internal(uri),
             })
 
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
@@ -384,14 +427,16 @@ class BaseViewer:
             'lan': None,
             'parts': None,  # This key is for restrictions
             'type': None,
-            'is_deprecated': False
+            'is_deprecated': False,
+            'is_imported': False,
+            'is_external': False,
         }
 
         if not obj: return handler_dic
 
         # --- 1. INTERCEPT RESTRICTIONS ---
         restriction_types = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
-                             "OneOf", "Value"]
+                             "OneOf", "Value", "DatatypeRestriction"]
         obj_type = type(obj).__name__
 
         if obj_type in restriction_types:
@@ -406,6 +451,8 @@ class BaseViewer:
             handler_dic['parts'] = parts
             handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
             handler_dic['link'] = None  # Forces Jinja to ignore the blank node URI
+            handler_dic['is_external'] = False
+            handler_dic['is_imported'] = False
             handler_dic['type'] = obj_type
             return handler_dic
 
@@ -483,10 +530,13 @@ class BaseViewer:
         # --- 5. Normal Resource Handling (Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
-
-            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj,
-                                                                    'get_is_deprecated') else getattr(obj, 'is_deprecated',
-                                                                                                           False)
+            link = handler_dic['link']
+            ns = self._get_ontology_ns()
+            internal = self._is_internal(link)
+            native = bool(link) and bool(ns) and str(link).startswith(ns)
+            handler_dic['is_external'] = not internal
+            handler_dic['is_imported'] = internal and not native
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj, 'is_deprecated',  False)
             handler_dic['is_deprecated'] = bool(is_dep)
 
             try:
@@ -553,7 +603,12 @@ class BaseViewer:
         name = name.replace('_', ' ')
 
         # Strip extra spaces
-        return ' '.join(name.split())
+        name = ' '.join(name.split())
+
+        # lowercase everything
+        name = name.lower()
+
+        return name
 
     def _parse_restriction(self, obj, language=None) -> list:
         """
@@ -687,7 +742,7 @@ class BaseViewer:
         resolved = self._resolve_resource_value(obj, language)
 
         if resolved.get('text'):
-            return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type')}]
+            return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type'), 'is_external': resolved.get('is_external', False)}]
 
         return []
 
@@ -798,10 +853,11 @@ class BaseViewer:
         return tree
     
     # ========== PROVENANCE: subgraph serialisation for each card ==========
-
+    
     def _build_provenance_subgraph(self, instance) -> Dict[str, str]:
-        """Get the provenance subgraph from the reader and serialize it."""
         sub = self.reader.get_provenance_subgraph(instance)
+        if not any(True for _ in sub):
+            return {}
         return {
             'turtle': self._safe_serialize(sub, 'turtle'),
             'rdfxml': self._safe_serialize(sub, 'xml'),

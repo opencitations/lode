@@ -36,7 +36,7 @@ def cmd_build(args):
     )
     viewer = reader.get_viewer()
 
-    build_html(viewer, out_dir, lang=args.lang)
+    build_html(viewer, out_dir, lang=args.lang, reader=reader)
     print(f"Done -> {out_dir}")
 
 

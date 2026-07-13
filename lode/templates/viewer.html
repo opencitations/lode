@@ -48,6 +48,23 @@
 
     {% include '_toc_sidebar.html' %}
 
+    <div id="toc-float-search" class="toc-float-search">
+        <button type="button" id="toc-float-search-toggle" class="toc-float-search-toggle" title="Search terms">
+            <i class="bi bi-search"></i>
+        </button>
+        <div class="toc-float-search-panel">
+            <input type="text" id="toc-float-search-input" class="toc-float-search-input"
+                placeholder="Search terms..." autocomplete="off">
+            <span id="toc-float-search-count" class="toc-float-search-count"></span>
+            <button type="button" id="toc-float-search-prev" class="toc-float-search-nav" title="Previous match">
+                <i class="bi bi-chevron-up"></i>
+            </button>
+            <button type="button" id="toc-float-search-next" class="toc-float-search-nav" title="Next match">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+
     <div class="container-fluid px-4 py-4">
         {% if warnings %}
             <div class="mb-4">
@@ -61,83 +78,131 @@
         {% endif %}
         
         {% if metadata %}
-            <div class="mb-4 border-bottom pb-4">
-                <div class="p-3">
-                    <h1 class="fw-bold mb-2">
-                        {% if metadata.title %}
-                            {% for title in metadata.title %}
-                                <span>{{title.text}}</span>
-                            {% endfor %}
-                        {% elif metadata.label %}
-                            <span>{{ metadata.label[0].text }}</span>
-                        {% endif %}
-                    </h1>
-                    <div class="d-flex align-items-center mb-5">
-                        <p class="text-muted medium mb-0 font-monospace text-truncate">
-                            {{ metadata.uri[0].link }}
+            {% if single_resource %}
+            {% set current = entities[0] if entities else None %}
+            <details class="metadata-accordion">
+                <summary class="metadata-accordion-summary">
+                    <div class="resource-frontmatter">
+                        <h1 class="resource-title">
+                            {{ current.label if current and current.label else (current.uri if current else '') }}
+                        </h1>
+
+                        
+                        <div class="resource-meta-line">
+                            <span class="resource-meta-uri font-monospace text-truncate">{{ current.uri if current else '' }}</span>
+                            <a href="{{ current.uri if current else '' }}" target="_blank" class="resource-meta-link" title="Go to Resource">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                        </div>
+
+                        <p class="resource-subtitle">
+                            as defined in
+                            <span class="resource-subtitle-ontology">
+                                {% if metadata.title %}
+                                    {% for title in metadata.title %}{{ title.text }}{% endfor %}
+                                {% elif metadata.label %}{{ metadata.label[0].text }}
+                                {% endif %}
+                            </span>
+                            <button type="button" class="metadata-accordion-toggle" title="Show/hide ontology metadata" onclick="toggleMetadataAccordion(event)">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
                         </p>
-                        <a href="{{ metadata.uri[0].link }}" target="_blank" 
-                           class="btn btn-sm btn-outline-secondary ms-2" title="Go to Resource">↗</a>
                     </div>
-
-                    <dl class="row mb-0 lead fs-6">
-                        {% for key, val_list in metadata.items() %}
-                            {% if key not in ['uri', 'label', '_namespaces'] %}
-                            {% if val_list %}
-                            <dt class="text-capitalize fs-7 fw-bold mb-1">{{ key }}</dt>
-                            <dd class="mb-1">
-                                <div class="d-flex flex-column">
-                                    {% for item in val_list %}
-                                        {% set v_type = item.type.lower() if item.type else '' %}
-                                        {% set is_md = v_type in md_types %}
-                                        <div class="ms-5">
-                                            {% if item.link %}
-                                                <div class="{% if is_md %}render-markdown{% endif %}">
-                                                    <a href="{{ item.link }}" target="_blank" title="Go to Resource">{{ item.link }}</a>
-                                                    {% if item.is_visualizable and not request.is_static %}
-                                                    <a href="?read_as={{ request.query_params.get('read_as', '') }}&url={{ item.link | urlencode }}&lang={{ request.query_params.get('lang', 'en') }}" target="_blank" class="ms-1">
-                                                    (visualise it with LODE)
-                                                    </a>
-                                                {% endif %}
-                                                </div>
-                                            {% else %}
-                                                <div class="markdown-with-badge metadata_p text-dark {% if is_md %}render-markdown inline-markdown{% endif %}">{{ item.text }}</div>
-                                            {% endif %}
-
-                                        </div>
+                </summary>
+                <div class="p-3">
+                {% else %}
+                <div>
+                    <div class="p-3">
+                        <div class="resource-frontmatter">
+                            <h1 class="resource-title">
+                                {% if metadata.title %}
+                                    {% for title in metadata.title %}
+                                        {{ title.text }}
                                     {% endfor %}
-                                </div>
+                                {% elif metadata.label %}
+                                    {{ metadata.label[0].text }}
+                                {% endif %}
+                            </h1>
+
+                            <div class="resource-meta-line">
+                                <span class="resource-meta-uri font-monospace text-truncate">{{ metadata.uri[0].link }}</span>
+                                <a href="{{ metadata.uri[0].link }}" target="_blank" class="resource-meta-link" title="Go to Resource">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                {% endif %}
+
+                    <!-- ===== BLOCCO 1: METADATA (dentro il dropdown se single_resource) ===== -->
+                    <section class="metadata-block">
+                        <dl class="row mb-0 lead fs-6">
+                            {% for key, val_list in metadata.items() %}
+                                {% if key not in ['uri', 'label', '_namespaces'] %}
+                                {% if val_list %}
+                                <dt class="text-capitalize fs-7 fw-bold">{{ key }}</dt>
+                                <dd class="m-0 p-0">
+                                    <div class="d-flex flex-column">
+                                        {% for item in val_list %}
+                                            {% set v_type = item.type.lower() if item.type else '' %}
+                                            {% set is_md = v_type in md_types %}
+                                            <div class="ms-5">
+                                                {% if item.link %}
+                                                    <div class="{% if is_md %}render-markdown{% endif %}">
+                                                        <a href="{{ item.link }}" target="_blank" title="Go to Resource">{{ item.link }}</a>
+                                                        {% if item.is_visualizable and not request.is_static %}
+                                                        <a href="?read_as={{ request.query_params.get('read_as', '') }}&url={{ item.link | urlencode }}&lang={{ request.query_params.get('lang', 'en') }}" target="_blank" class="ms-1">
+                                                        (visualise it with LODE)
+                                                        </a>
+                                                    {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <div class="markdown-with-badge metadata_p text-dark {% if is_md %}render-markdown inline-markdown{% endif %}">{{ item.text }}</div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </dd>
+                                {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            <dt class="text-capitalize fs-7 fw-bold">Other visualisation</dt>
+                            <dd class="ms-5">
+                                <a href="https://service.tib.eu/webvowl/#iri={{metadata.uri[0].link}}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
+                                <a href="{{ metadata.uri[0].link }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
                             </dd>
-                            {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                        <dt class="text-capitalize fs-7 fw-bold mb-1">Other visualisation</dt>
-                        <dd class="mb-1 ms-5">
-                            <a href="https://service.tib.eu/webvowl/#iri={{metadata.uri[0].link}}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
-                            <a href="{{ metadata.uri[0].link }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
-                        </dd>
-                        {% if source_url or upload_id %}
-                        {% set _res = request.query_params.get('resource', '') %}
-                        <dt class="text-capitalize fs-7 fw-bold mb-1">Export {% if _res %}subgraph{% else %}graph{% endif %}</dt>
-                        <dd class="mb-1 ms-5">
-                            {% for mime, label, icon, ext in [
-                                ("text/turtle",         "Turtle",  "bi-filetype-raw", "ttl"),
-                                ("application/rdf+xml", "RDF/XML", "bi-file-code",    "rdf"),
-                                ("text/n3",             "N3",      "bi-file-text",    "n3")
-                            ] %}
+                        </dl>
+                    </section>
+                </div>
+            {% if single_resource %}</details>{% else %}</div>{% endif %}
+
+            <!-- ===== BLOCCO 2: EXPORT — SEMPRE VISIBILE, FUORI DAL DROPDOWN ===== -->
+            <section class="metadata-block export-block pb-2">
+                <dl class="mb-0">
+                    {% if source_url or upload_id or export_base %}
+                    {% set _res = request.query_params.get('resource', '') %}
+                    <dt class="text-capitalize fs-7 fw-bold mb-1">Export {% if _res %}subgraph{% else %}graph{% endif %}</dt>
+                    <dd class="ms-5">
+                        {% for mime, label, icon, ext in [
+                            ("text/turtle",         "Turtle",  "bi-filetype-raw", "ttl"),
+                            ("application/rdf+xml", "RDF/XML", "bi-file-code",    "rdf"),
+                            ("text/n3",             "N3",      "bi-file-text",    "n3")
+                        ] %}
                             {% if not request.is_static %}
                             <a href="#"
                                 class="btn btn-sm btn-outline-dark me-2"
-                                onclick="exportGraph('{{ mime }}', '{{ ext }}', '{{ nav_qs }}', '{{ _res }}'); return false;"
+                                onclick="exportGraph('{{ mime }}', '{{ ext }}', '{{ nav_qs }}', '{{ _res }}'); return false;">
+                                <i class="bi {{ icon }}"></i> {{ label }}
+                            </a>
+                            {% elif export_base %}
+                            <a href="{{ export_base }}.{{ ext }}" class="btn btn-sm btn-outline-dark me-2">
                                 <i class="bi {{ icon }}"></i> {{ label }}
                             </a>
                             {% endif %}
-                            {% endfor %}
-                        </dd>
-                        {% endif %}
-                    </dl>
-                </div>
-            </div>
+                        {% endfor %}
+                    </dd>
+                    {% endif %}
+                </dl>
+            </section>
         {% endif %}
 
         {% if grouped_view and sections %}
@@ -202,7 +267,7 @@
             </div>
         {% endfor %}
 
-        {% if metadata and metadata._namespaces %}
+        {% if metadata and metadata._namespaces and not single_resource %}
             <div id="namespaces" class="anchor-offset mb-5">
                 <h3 class="section-header d-flex align-items-center justify-content-between mb-4">
                     Namespace Declarations
@@ -218,9 +283,13 @@
         {% endif %}
 
 
-        {% if single_resource %}
-            <div class="mt-3">
-                <a href="/extract?{{ nav_qs }}" class="btn btn-outline-secondary">← Back to Index</a>
+       {% if single_resource %}
+            <div>
+                {% if is_static %}
+                    <a href="../../index.html" class="btn btn-outline-secondary">← Back to full documentation</a>
+                {% else %}
+                    <a href="/extract?{{ nav_qs }}" class="btn btn-outline-secondary">← Back to full documentation</a>
+                {% endif %}
             </div>
         {% endif %}
 
@@ -298,6 +367,103 @@
                     })
                     .catch(e => alert("Export failed: " + e.message));
             }
+
+            function toggleMetadataAccordion(event) {
+                event.preventDefault();   // blocca il comportamento nativo/bubbling incoerente
+                event.stopPropagation();  // evita il doppio-toggle se il summary lo cattura comunque
+                const details = event.currentTarget.closest('details.metadata-accordion');
+                if (details) details.open = !details.open;
+            }
+            
+            /* SEARCHBAR */
+            (function () {
+                const wrap = document.getElementById('toc-float-search');
+                const toggle = document.getElementById('toc-float-search-toggle');
+                const input = document.getElementById('toc-float-search-input');
+                const countEl = document.getElementById('toc-float-search-count');
+                const prevBtn = document.getElementById('toc-float-search-prev');
+                const nextBtn = document.getElementById('toc-float-search-next');
+                if (!wrap || !toggle || !input) return;
+
+                const cards = Array.from(document.querySelectorAll('.container-fluid .card[id]'));
+                let matches = [];
+                let current = -1;
+
+                function updateCount() {
+                    countEl.textContent = matches.length ? `${current + 1}/${matches.length}` : (input.value ? '0/0' : '');
+                }
+
+                function clearHighlight() {
+                    cards.forEach(c => c.classList.remove('toc-search-current'));
+                }
+
+                function goTo(index) {
+                    if (!matches.length) return;
+                    current = (index + matches.length) % matches.length;
+                    clearHighlight();
+                    const card = matches[current];
+                    card.classList.add('toc-search-current');
+                    card.scrollIntoView({ block: 'start' });
+                    updateCount();
+                }
+
+                function runSearch() {
+                    const q = input.value.trim().toLowerCase();
+                    clearHighlight();
+
+                    // Sidebar: dim + disable non-matching
+                    const sidebar = document.getElementById('toc-sidebar');
+                    if (sidebar) {
+                        sidebar.querySelectorAll('.toc-sidebar-section').forEach(section => {
+                            let anyMatch = false;
+                            section.querySelectorAll('.toc-sidebar-list li').forEach(li => {
+                                const match = !q || li.textContent.toLowerCase().includes(q);
+                                li.classList.toggle('toc-search-dim', !match);
+                                if (match) anyMatch = true;
+                            });
+                            section.classList.toggle('toc-search-dim', q.length > 0 && !anyMatch);
+                            if (q && anyMatch) section.open = true;
+                        });
+                    }
+
+                    if (!q) {
+                        matches = [];
+                        current = -1;
+                        updateCount();
+                        return;
+                    }
+                    matches = cards.filter(card => {
+                        const label = card.querySelector('.card-header h4')?.textContent.toLowerCase() || '';
+                        return label.includes(q);
+                    });
+                    current = -1;
+                    updateCount();
+                    if (matches.length) goTo(0);
+                }
+
+                toggle.addEventListener('click', function () {
+                    const open = wrap.classList.toggle('open');
+                    if (open) {
+                        input.focus();
+                    } else {
+                        input.value = '';
+                        runSearch();
+                    }
+                });
+
+                input.addEventListener('input', runSearch);
+
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (e.shiftKey) goTo(current - 1);
+                        else goTo(current + 1);
+                    }
+                });
+
+                prevBtn.addEventListener('click', () => goTo(current - 1));
+                nextBtn.addEventListener('click', () => goTo(current + 1));
+            })();
         </script>
 
     </div>

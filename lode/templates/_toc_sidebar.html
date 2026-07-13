@@ -6,7 +6,7 @@
 <aside id="toc-sidebar" class="toc-sidebar open" aria-label="Table of Contents">
     <button type="button" class="toc-sidebar-toggle" aria-controls="toc-sidebar" aria-expanded="true"
             title="Toggle Table of Contents">
-        <span class="toc-sidebar-toggle-icon">&laquo;</span>
+        <i class="bi bi-chevron-left toc-sidebar-toggle-icon"></i>
     </button>
 
     <div class="toc-sidebar-inner">
@@ -51,7 +51,9 @@
         sidebar.classList.toggle('open', open);
         sidebar.classList.toggle('closed', !open);
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        icon.innerHTML = open ? '&laquo;' : '&raquo;';
+        icon.className = open
+            ? 'bi bi-chevron-left toc-sidebar-toggle-icon'
+            : 'bi bi-chevron-right toc-sidebar-toggle-icon';
         document.body.classList.toggle('toc-sidebar-open', open);
         document.body.classList.toggle('toc-sidebar-closed', !open);
     }

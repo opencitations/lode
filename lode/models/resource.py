@@ -35,6 +35,9 @@ class Resource():
         # Relation with Models (1..*)
         self.is_included_in = [] # NEEDS TO BE CHECKED
 
+        # Relation with Resources (0..*)
+        self.is_in_range_of = []
+
     def set_has_identifier(self, value):
         """Imposta has_identifier"""
         self.has_identifier = value
@@ -213,3 +216,10 @@ class Resource():
     def set_also_defined_as(self, resource):
         """Aggiunge un Resource alla lista di also_defined_as"""
         self.also_defined_as.append(resource)
+
+    def set_is_in_range_of(self, prop):
+        if prop not in self.is_in_range_of:
+            self.is_in_range_of.append(prop)
+
+    def get_is_in_range_of(self):
+        return list(self.is_in_range_of)

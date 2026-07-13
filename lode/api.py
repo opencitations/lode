@@ -14,6 +14,9 @@ from urllib.parse import urlencode
 from functools import lru_cache
 from uuid import uuid4
 import hashlib
+import minify_html
+from starlette.middleware.gzip import GZipMiddleware
+import re
 
 # Configura logging
 logging.basicConfig(
@@ -32,11 +35,17 @@ DEBUG = os.getenv("LODE_DEBUG", "").strip().lower() in ("1", "true", "yes", "on"
 
 app = FastAPI(title="LODE 2.0 API", version="1.0.0")
 
+# Compress HTML response on wire
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Fix Blocked loading mixed active content on style.css
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 templates = Jinja2Templates(directory="lode/templates")
 app.mount("/static", StaticFiles(directory="lode/static"), name="static")
+
+# beautify produced HTML
+templates.env.trim_blocks = True
+templates.env.lstrip_blocks = True
 
 # Available semantic artefacts types for API in versin 0.1.X
 ENABLED_FORMATS = {"owl"}
@@ -107,6 +116,23 @@ def _prune_spool():
         except OSError:
             pass
 
+def _minify(html: str) -> str:
+    # 1. estrai e metti da parte i blocchi render-markdown (newline-sensitive)
+    stash = []
+    def _hold(m):
+        stash.append(m.group(0))
+        return f"\x00MD{len(stash)-1}\x00"
+    protected = re.sub(
+        r'<(span|div|a|p)\b[^>]*\brender-markdown\b[^>]*>.*?</\1>',
+        _hold, html, flags=re.S,
+    )
+    # 2. minifica la struttura
+    out = minify_html.minify(protected, minify_css=False, minify_js=False)
+    # 3. reinserisci i blocchi intatti
+    for i, block in enumerate(stash):
+        out = out.replace(f"\x00MD{i}\x00", block)
+    return out
+
 # ----------------------------------------------------------
 #  HELPERS FOR \extract endpoints using cache from the reader
 # ----------------------------------------------------------
@@ -120,13 +146,16 @@ def _render_view(request, reader, *, resource, lang, source_url, upload_id, read
     viewer = reader.get_viewer()
     data = viewer.get_view_data(resource_uri=resource, language=lang)
     data["warnings"] = reader.get_warnings()
-    return templates.TemplateResponse("viewer.html", {
+    resp = templates.TemplateResponse("viewer.html", {
         "request": request,
         "source_url": source_url,
         "upload_id": upload_id,
         "nav_qs": _nav_qs(read_as, source_url, upload_id, lang),
         **data,
     })
+    resp.body = _minify(resp.body.decode("utf-8")).encode("utf-8")
+    resp.headers["content-length"] = str(len(resp.body))
+    return resp
 
 def _url_token(url, read_as, imported, closure) -> str:
     key = f"{url}|{read_as}|{imported}|{closure}".encode()

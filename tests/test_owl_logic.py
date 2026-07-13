@@ -1565,23 +1565,6 @@ class TestPopulationEdgeCases:
         triples = logic._triples_map.get(inst, set())
         assert not any(p == OWL.propertyChainAxiom for _, p, _ in triples)
  
-    def test_handler_exception_triple_becomes_statement(self):
-        """When a handler raises an exception, the unmapped triple must produce
-        a Statement in phase6."""
-        logic = _make_logic([
-            (EX.myRel, RDF.type, OWL.ObjectProperty),
-            (EX.myRel, OWL.propertyChainAxiom, EX.notAList),
-        ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
-        pred_ids = [
-            s.get_has_predicate().get_has_identifier()
-            for s in stmts
-            if s.get_has_predicate() is not None
-        ]
-        assert str(OWL.propertyChainAxiom) in pred_ids
- 
- 
 # ===========================================================================
 # CACHE EDGE CASES
 # ===========================================================================

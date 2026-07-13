@@ -517,6 +517,10 @@ class BaseLogic(ABC):
         return container
 
     def _create_statement_for_triple(self, subj, pred, obj):
+        
+        if pred in self._property_mapping:
+            return
+        
         statement = Statement()
         stmt_bnode = BNode()
         statement.set_has_identifier(str(stmt_bnode))

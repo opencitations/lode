@@ -16,11 +16,9 @@ class Property(Resource):
         self.is_equivalent_to = []
         
         # Relation with Resource (1..*) 
-        # Nell'extractor - default per OWL ontologies = OWL.Thing
         self.has_range = []  
         
         # Relations with Concept (1..*)
-        # Nell'extractor - default per OWL ontologies = OWL.Thing
         self.has_domain = []  
 
     # Metodi per is_functional
@@ -50,7 +48,6 @@ class Property(Resource):
         """Restituisce una copia della lista is_disjoint_with"""
         return list(set(self.is_disjoint_with))
 
-    # Metodi per is_equivalent_to
     def set_is_equivalent_to(self, property_obj):
         """Aggiunge una property a is_equivalent_to"""
         self.is_equivalent_to.append(property_obj)

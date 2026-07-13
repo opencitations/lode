@@ -11,7 +11,6 @@ class OwlViewer(BaseViewer):
         'attribute':  {'singular': 'Data Property',        'plural': 'Data Properties',       'abb': 'dp'},
         'annotation': {'singular': 'Annotation Property',  'plural': 'Annotation Properties', 'abb': 'ap'},
         'individual': {'singular': 'Named Individual',     'plural': 'Named Individuals',     'abb': 'ni'},
-        'model':      {'singular': 'Ontology',             'plural': 'Ontologies',            'abb': 'o'},
     }
 
     def get_toc_config(self):

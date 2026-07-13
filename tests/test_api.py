@@ -158,3 +158,31 @@ def test_url_spool_cache_and_bypass(tmp_path, monkeypatch):
     assert seen[0] == "http://x/o"
     assert seen[1].endswith(".rdf") and seen[1] != "http://x/o"   # served from spool
     assert seen[2] == "http://x/o"                                # cache=false refetched
+
+# --- HTML output quality ------------------------------------------------------
+import gzip
+
+def test_html_size_and_whitespace(patched_url):
+    """Peso HTML e whitespace: minify deve tenere il whitespace basso."""
+    resp = client.get("/extract", params={"read_as": "owl", "url": FABIO_URL})
+    html = resp.text
+
+    size_kb = len(resp.content) / 1024
+    stripped = re.sub(r'>\s+<', '><', html)
+    ws = (len(html.encode()) - len(stripped.encode())) / len(html.encode())
+
+    print(f"\nsize: {size_kb:.0f} KB | whitespace: {ws:.1%}")
+    assert size_kb < 6500
+    assert ws < 0.05, f"whitespace {ws:.1%} — minify non attivo?"
+
+
+def test_gzip_compression(patched_url):
+    """La response deve arrivare gzippata e comprimere bene."""
+    resp = client.get("/extract", params={"read_as": "owl", "url": FABIO_URL},
+                      headers={"Accept-Encoding": "gzip"})
+    html = resp.content
+    on_wire = len(gzip.compress(html))
+
+    print(f"\ndisco: {len(html)/1024:.0f} KB | wire: {on_wire/1024:.0f} KB | ratio: {on_wire/len(html):.1%}")
+    assert resp.headers.get("content-encoding") == "gzip"
+    assert on_wire < len(html) * 0.3
