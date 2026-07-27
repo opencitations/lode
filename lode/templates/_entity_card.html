@@ -82,7 +82,7 @@
     <div class="card-body p-0">
         <div class="description p-3">
             <p class="mb-1"><span class="text-dark fw-bold">IRI:</span> {{ item.uri }}</span>
-            {% if item.is_external %}
+            {% if item.is_external or not item.provenance  %}
                 <span></span>
             {% elif is_static %}
                 <a href="{{ resource_url(item.uri, item.type.lower() ~ 's') }}" class="ms-2" title="Go to resource documentation"><i class="bi bi-box-arrow-up-right"></i></a>
@@ -316,50 +316,37 @@
         {% endif %}
 
         
-        {% if item.provenance and (item.provenance.turtle or item.provenance.rdfxml or item.provenance.n3) %}
+        {% if item.provenance %}
             <div class="card-footer bg-white py-0">
                 {% set prov_id = item.anchor_id ~ '_prov' %}
                 <div class="accordion accordion-flush prov-accordion" id="{{ prov_id }}_acc">
                     <div class="accordion-item">
                         <h2 class="accordion-header d-flex justify-content-end" id="{{ prov_id }}_head">
                             <button class="accordion-button collapsed py-1 px-2 small fw-bold text-uppercase text-primary w-auto" title="RDF provenance"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#{{ prov_id }}"
-                                    aria-expanded="false"
-                                    aria-controls="{{ prov_id }}">
-                                <i class="bi bi-code"></i>
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#{{ prov_id }}"
+                                    aria-expanded="false" aria-controls="{{ prov_id }}">
+                                <span>RDF provenance</span> <i class="bi bi-code"></i>
                             </button>
                         </h2>
-                        <div id="{{ prov_id }}"
-                            class="accordion-collapse collapse"
-                            aria-labelledby="{{ prov_id }}_head"
-                            data-bs-parent="#{{ prov_id }}_acc">
+                        <div id="{{ prov_id }}" class="accordion-collapse collapse"
+                            aria-labelledby="{{ prov_id }}_head" data-bs-parent="#{{ prov_id }}_acc">
                             <div class="accordion-body p-2">
                                 <ul class="nav nav-tabs nav-tabs-sm justify-content-end small mb-0" role="tablist">
+                                    {% for fmt in item.provenance %}
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link active py-1 px-2" data-bs-toggle="tab"
-                                                data-bs-target="#{{ prov_id }}_ttl" type="button" role="tab">Turtle</button>
+                                        <button class="nav-link {% if loop.first %}active{% endif %} py-1 px-2"
+                                                data-bs-toggle="tab" data-bs-target="#{{ prov_id }}_{{ loop.index }}"
+                                                type="button" role="tab">{{ fmt.label }}</button>
                                     </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link py-1 px-2" data-bs-toggle="tab"
-                                                data-bs-target="#{{ prov_id }}_xml" type="button" role="tab">RDF/XML</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link py-1 px-2" data-bs-toggle="tab"
-                                                data-bs-target="#{{ prov_id }}_n3" type="button" role="tab">N3</button>
-                                    </li>
+                                    {% endfor %}
                                 </ul>
                                 <div class="tab-content">
-                                    <div class="tab-pane fade show active" id="{{ prov_id }}_ttl" role="tabpanel">
-                                        <pre class="mb-0 small"><code>{{ item.provenance.turtle }}</code></pre>
+                                    {% for fmt in item.provenance %}
+                                    <div class="tab-pane fade {% if loop.first %}show active{% endif %}"
+                                        id="{{ prov_id }}_{{ loop.index }}" role="tabpanel">
+                                        <pre class="mb-0 small"><code>{{ fmt.code }}</code></pre>
                                     </div>
-                                    <div class="tab-pane fade" id="{{ prov_id }}_xml" role="tabpanel">
-                                        <pre class="mb-0 small"><code>{{ item.provenance.rdfxml }}</code></pre>
-                                    </div>
-                                    <div class="tab-pane fade" id="{{ prov_id }}_n3" role="tabpanel">
-                                        <pre class="mb-0 small"><code>{{ item.provenance.n3 }}</code></pre>
-                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>

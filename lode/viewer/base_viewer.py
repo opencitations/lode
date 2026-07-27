@@ -8,6 +8,13 @@ import urllib.parse
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 from rdflib.namespace import RDF, OWL
 
+SERIALIZATION_FORMATS = [
+    {"label": "Turtle",    "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
+    {"label": "RDF/XML",   "fmt": "xml",     "mime": "application/rdf+xml",   "ext": "rdf",    "icon": "bi-file-code"},
+    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
+    {"label": "N-Triples", "fmt": "nt",      "mime": "application/n-triples", "ext": "nt",     "icon": "bi-file-text"},
+]
+
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
     
@@ -128,11 +135,13 @@ class BaseViewer:
         if resource_uri:
             data = self._handle_single_resource(resource_uri, language)
             data['metadata'] = metadata_dict
+            data['export_formats'] = SERIALIZATION_FORMATS
             return data
 
         return {
             'metadata': metadata_dict,
-            'entities': self._format_entities(all_instances, language)
+            'entities': self._format_entities(all_instances, language),
+            'export_formats': SERIALIZATION_FORMATS,
         }
 
     def _is_toc_entity(self, instance) -> bool:
@@ -196,7 +205,8 @@ class BaseViewer:
 
         return {
             'grouped_view': True,
-            'sections': sections
+            'sections': sections,
+            'export_formats': SERIALIZATION_FORMATS
         }
 
     def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
@@ -854,16 +864,15 @@ class BaseViewer:
     
     # ========== PROVENANCE: subgraph serialisation for each card ==========
     
-    def _build_provenance_subgraph(self, instance) -> Dict[str, str]:
+    def _build_provenance_subgraph(self, instance) -> List[Dict[str, str]]:
         sub = self.reader.get_provenance_subgraph(instance)
         if not any(True for _ in sub):
-            return {}
-        return {
-            'turtle': self._safe_serialize(sub, 'turtle'),
-            'rdfxml': self._safe_serialize(sub, 'xml'),
-            'n3':     self._safe_serialize(sub, 'n3'),
-        }
-
+            return []
+        return [
+            {"label": f["label"], "code": self._safe_serialize(sub, f["fmt"])}
+            for f in SERIALIZATION_FORMATS
+        ]
+    
     @staticmethod
     def _safe_serialize(g, fmt: str) -> str:
         try:

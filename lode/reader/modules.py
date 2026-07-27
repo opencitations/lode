@@ -6,7 +6,6 @@ def apply_imported(graph: Graph) -> Graph:
     """Arricchisce il grafo con le triple delle ontologie direttamente importate (profondita 1)."""
     return _expand_owl_imports(graph, max_depth=1)
 
-
 def apply_closure(graph: Graph) -> Graph:
     """Arricchisce il grafo con la chiusura transitiva completa di owl:imports."""
     return _expand_owl_imports(graph, max_depth=None)
@@ -16,7 +15,6 @@ def _expand_owl_imports(graph: Graph, max_depth: Optional[int]) -> Graph:
     for _, _, uri in graph.triples((None, OWL.imports, None)):
         _load_into(graph, str(uri), depth=1, max_depth=max_depth, visited=visited)
     return graph
-
 
 def _load_into(graph: Graph, source: str, depth: int, max_depth: Optional[int], visited: set) -> None:
     if source in visited:

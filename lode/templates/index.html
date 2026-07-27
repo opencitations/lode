@@ -11,357 +11,328 @@
     <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
+    
     <div class="main">
-<div class="row align-items-center submission-form-container">
-    <div class="col-md-4">
-        <img class="img-fluid" src="https://essepuntato.it/assets/img/lode/logo.png" alt="LODE logo">
-    </div>
-    <div class="col-md-8">
-        <div class="submission-form">
-            <!-- novalidate: validation is handled in-page by JS (no native browser popups) -->
-            <form id="extractForm" action="/extract" method="post" enctype="multipart/form-data" novalidate>
-                
-                <!-- Semantic Artefact Source -->
-                <div class="mb-3">
-                    <div class="row align-items-center">
-                                            
-                        <div class="col">
-                            <!-- URL Input with Floating Label -->
-                            <div id="urlSection">
-                                <div class="form-floating">
-                                    <input
-                                        type="url"
-                                        class="form-control"
-                                        id="semanticArtefactUrl"
-                                        name="url"
-                                        placeholder="Semantic artefact URL"
-                                    >
-                                    <label for="semanticArtefactUrl">Semantic artefact URL<span class="text-danger">*</span></label>
-                                    <div id="urlError" class="invalid-feedback"></div>
+        <!-- FORM -->
+        <div class="row align-items-center submission-form-container">
+            <div class="col-md-4">
+                <img class="img-fluid" src="https://essepuntato.it/assets/img/lode/logo.png" alt="LODE logo">
+            </div>
+            <div class="col-md-8">
+                <div class="submission-form">
+                    <!-- novalidate: validation is handled in-page by JS (no native browser popups) -->
+                    <form id="extractForm" action="/extract" method="post" enctype="multipart/form-data" novalidate>
+                        
+                        <!-- Semantic Artefact Source -->
+                        <div class="mb-3">
+                            <div class="row align-items-center">
+                                                    
+                                <div class="col">
+                                    <!-- URL Input with Floating Label -->
+                                    <div id="urlSection">
+                                        <div class="form-floating">
+                                            <input
+                                                type="url"
+                                                class="form-control"
+                                                id="semanticArtefactUrl"
+                                                name="url"
+                                                placeholder="Semantic artefact URL"
+                                            >
+                                            <label for="semanticArtefactUrl">Semantic artefact URL<span class="text-danger">*</span></label>
+                                            <div id="urlError" class="invalid-feedback"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- File Input -->
+                                    <div id="fileSection" class="hide">
+                                        <input
+                                            class="form-control"
+                                            type="file"
+                                            id="semanticArtefactFile"
+                                            name="file"
+                                            accept=".rdf,.owl,.ttl,.n3,.nt,.jsonld,.xml"
+                                            style="height: calc(3.5rem + 2px); padding: 1rem 0.75rem;"
+                                        >
+                                        <div id="fileError" class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-auto">
+                                    <div class="toggle-switch" id="sourceToggle">
+                                        <div class="toggle-slider url-mode" id="toggleSlider"></div>
+                                        <span class="toggle-option active" data-mode="url">
+                                            <i class="bi bi-link-45deg"></i> URL
+                                        </span>
+                                        <span class="toggle-option inactive" data-mode="file">
+                                            <i class="bi bi-file-earmark-arrow-up"></i> File
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- File Input -->
-                            <div id="fileSection" class="hide">
-                                <input
-                                    class="form-control"
-                                    type="file"
-                                    id="semanticArtefactFile"
-                                    name="file"
-                                    accept=".rdf,.owl,.ttl,.n3,.nt,.jsonld,.xml"
-                                    style="height: calc(3.5rem + 2px); padding: 1rem 0.75rem;"
-                                >
-                                <div id="fileError" class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Resource URI -->
+                        <div class="mb-3">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="form-floating">
+                                        <input 
+                                            type="text" 
+                                            id="resource" 
+                                            name="resource"
+                                            class="form-control"
+                                            placeholder="http://example.org/MyResource"
+                                        >
+                                        <label for="resource">Resource URI <span class="text-muted">(optional)</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Format Selection -->
+                        <div class="mb-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select id="readAs" name="read_as" class="form-select" required>
+                                            {% for format in formats %}
+                                                {% set fmt = format.value if format.value is defined else format %}
+                                                <option value="{{ fmt }}" {% if fmt not in enabled_formats %}disabled{% endif %}>
+                                                    {{ fmt }}{% if fmt not in enabled_formats %} — coming soon{% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="readAs">Select a format<span class="text-danger">*</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div id="owlModules" class="hide">
+                                        <span class="form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="imported"  name="imported" value="true">
+                                            <label class="form-check-label" for="imported">Imported</label>
+                                        </span>
+                                        <span class="form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="closure" name="closure"  value="true">
+                                            <label class="form-check-label" for="closure">Closure</label>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Language Code -->
+                        <div class="mb-3">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="form-floating">
+                                        <input 
+                                            type="text" 
+                                            id="language" 
+                                            name="lang"
+                                            class="form-control"
+                                            placeholder="en"
+                                            maxlength="5"
+                                        >
+                                        <label for="language">Language code <span class="text-muted">(optional)</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Warnings -->
+                        <div class="mb-3">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <span class="form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="warnings" name="warnings" value="true">
+                                        <label class="form-check-label" for="warnings">Show warnings</label>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="col-auto">
-                            <div class="toggle-switch" id="sourceToggle">
-                                <div class="toggle-slider url-mode" id="toggleSlider"></div>
-                                <span class="toggle-option active" data-mode="url">
-                                    <i class="bi bi-link-45deg"></i> URL
-                                </span>
-                                <span class="toggle-option inactive" data-mode="file">
-                                    <i class="bi bi-file-earmark-arrow-up"></i> File
-                                </span>
-                            </div>
-                        </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" id="submitBtn" class="button">
+                            Generate live documentation
+                        </button>
+                        <button type="submit" id="buildBtn" class="button button--alt" formaction="/build">
+                            Generate static documentation
+                        </button>
                     </div>
+                    </form>
                 </div>
-
-                <!-- Resource URI -->
-                <div class="mb-3">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="form-floating">
-                                <input 
-                                    type="text" 
-                                    id="resource" 
-                                    name="resource"
-                                    class="form-control"
-                                    placeholder="http://example.org/MyResource"
-                                >
-                                <label for="resource">Resource URI <span class="text-muted">(optional)</span></label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Format Selection -->
-                <div class="mb-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <select id="readAs" name="read_as" class="form-select" required>
-                                    {% for format in formats %}
-                                        <option value="{{ format.value if format.value is defined else format }}">
-                                            {{ format.name if format.name is defined else format }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <label for="readAs">Select a format<span class="text-danger">*</span></label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div id="owlModules" class="hide">
-                                <span class="form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="imported"  name="imported" value="true">
-                                    <label class="form-check-label" for="imported">Imported</label>
-                                </span>
-                                <span class="form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="closure" name="closure"  value="true">
-                                    <label class="form-check-label" for="closure">Closure</label>
-                                    <!-- lingua: name sbagliato (language -> lang) -->
-
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Activate modules (only visible when OWL is selected) -->
-                <div id="owlModules" class="hide">
-                    <div class="mb-3">
-                        <div class="row align-items-center">
-                            
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Language Code -->
-                <div class="mb-3">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="form-floating">
-                                <input 
-                                    type="text" 
-                                    id="language" 
-                                    name="lang"
-                                    class="form-control"
-                                    placeholder="en"
-                                    maxlength="5"
-                                >
-                                <label for="language">Language code <span class="text-muted">(optional)</span></label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Warnings -->
-                <div class="mb-3">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <span class="form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="warnings" name="warnings" value="true">
-                                <label class="form-check-label" for="warnings">Show warnings</label>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <button type="submit" id="submitBtn">
-                    Generate Documentation
-                </button>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
+
+        <!-- DOCUMENTATION -->
         <div class="lode-documentation row p-5">
-            <p>Live <a href="http://www.github.com/essepuntato/LODE">OWL Documentation Environment</a> (LODE) is a service that automatically extracts classes, object properties, data properties, named individuals, annotation properties, general axioms and namespace declarations from an OWL and OWL2 ontology, and renders them as ordered lists, together with their textual definitions, in a human-readable HTML page designed for browsing and navigation by means of embedded links.</p>
-            <p>This LODE service is an open source development, and can be freely used, as described in this document. It may be used in conjunction with content negotiation to display this human-readable version of an OWL ontology when the user accesses the ontology using a web browser, or alternatively to deliver the OWL ontology itself when the user accesses the ontology using an ontology editing tool such as Protégé and NeOn Toolkit. An exemplar implementation of such content negotiation is given in the Best Practice Recipes for Publishing RDF Vocabularies by using the .htaccess file:</p>
-            <pre>
-AddType application/rdf+xml .rdf
+            <p>LODE 2.0 is an open source service that automatically extracts entities from
+                semantic artefacts (OWL, RDF/RDFS, SKOS) and renders them, together with their
+                textual definitions, as a human-readable HTML page designed for browsing and
+                navigation through embedded links. Depending on the parameters specified, the
+                generated page takes into account both ontological axioms and annotations; its
+                stylesheets are based on the W3C CSSs for Recommendation documents. LODE 2.0 is
+                the successor of <a href="http://www.github.com/essepuntato/LODE">LODE</a>.</p>
 
-# Rewrite engine setup
-RewriteEngine On
-            
-# Rewrite rule to serve HTML content
-RewriteCond %{HTTP_ACCEPT} !application/rdf\+xml.*(text/html|application/xhtml\+xml)
-RewriteCond %{HTTP_ACCEPT} text/html [OR]
-RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml [OR]
-RewriteCond %{HTTP_USER_AGENT} ^Mozilla/.*
-<span style='font-weight: 600;'>RewriteRule ^ontology\$ https://w3id.org/lode/http://www.mydomain.com/ontology [R=303,L]</span>
+            <h3>Endpoints</h3>
+            <ul>
+                <li><code>/extract</code> — returns the HTML documentation page, or an RDF
+                    serialization when <code>format</code> is set.</li>
+                <li><code>/build</code> — returns a ZIP with the complete static site: one HTML
+                    page per resource, Turtle/RDF-XML/N3 serializations and stylesheets, ready
+                    for any web server or GitHub Pages.</li>
+            </ul>
 
-# Rewrite rule to serve RDF/XML content if requested
-RewriteCond %{HTTP_ACCEPT} application/rdf\+xml
-RewriteRule ^ontology\$ ontology.owl [R=303]
+            <div class="alert alert-warning" role="alert">
+                <span class="callout-title">Note</span>
+                <p><code>/build</code> is intended for interactive, one-off use. For automated
+                    workflows (CI/CD, GitHub Actions) install LODE locally and use the
+                    <code>lode build</code> command instead.</p>
+            </div>
 
-# Choose the default response
-RewriteRule ^ontology\$ ontology.owl [R=303]
-            </pre>
-        <div> 
-            <p>Depending on the parameters specified, the HTML page created by LODE takes into account both ontological axioms and annotations. The CSSs used for the resulting HTML page are based on the W3C CSSs for Recommendation documents. </p>
+            <div class="alert alert-warning" role="alert">
+                <span class="callout-title">Implementation status</span>
+                <p>Only <code>read_as=owl</code> is currently enabled. RDF/RDFS
+                    (<code>read_as=rdf</code>) and SKOS (<code>read_as=skos</code>) are under
+                    development; requesting them returns an error.</p>
+            </div>
 
-    <h2>API Documentation</h2>
+            <h3>Parameters</h3>
 
-    <p>
-        The LODE 2.0 API exposes a single endpoint — <code>/extract</code> — available via both
-        <code>GET</code> (URL-based) and <code>POST</code> (file upload). It processes a semantic
-        artefact and returns a human-readable HTML documentation page.
-    </p>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Parameter</th><th>Type</th><th>Required</th>
+                        <th>Endpoint</th><th>Description</th><th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>url</code></td><td>string</td><td>Yes, mutually exclusive with <code>file</code></td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td>Full URL of the semantic artefact to process. Both semantic artefact URIs and direct links to RDF files (e.g. <code>.ttl</code>, <code>.rdf</code>, <code>.owl</code>) are accepted. Mutually exclusive with <code>file</code>.</td>
+                        <td><code>url=http://purl.org/spar/fabio.ttl</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>file</code></td><td>file</td><td>Yes, mutually exclusive with <code>url</code></td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td>The semantic artefact file to upload and process. Accepted formats: <code>.rdf</code>, <code>.owl</code>, <code>.ttl</code>, <code>.n3</code>, <code>.nt</code>, <code>.xml</code>. Mutually exclusive with <code>url</code>.</td>
+                        <td><code>file={LOCAL_PATH}</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>read_as</code></td><td>enum</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td>How to interpret the RDF graph. One of <code>owl</code>, <code>rdf</code>, <code>skos</code>. Only <code>owl</code> is currently enabled. Defaults to <code>owl</code>.</td>
+                        <td><code>read_as=owl</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>resource</code></td><td>string (URI)</td><td>No</td>
+                        <td><code>/extract</code> only</td>
+                        <td>URI of a specific resource to render. If omitted, the full artefact is documented.</td>
+                        <td><code>resource=http://purl.org/spar/fabio/ArchivalDocument</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>format</code></td><td>enum</td><td>No</td>
+                        <td><code>/extract</code> only</td>
+                        <td>Returns the RDF serialization instead of the HTML page. One of <code>ttl</code> (Turtle), <code>rdf</code> (RDF/XML), <code>n3</code> (N3). When combined with <code>resource</code>, only the axioms of that resource are serialized. If omitted, the <code>Accept</code> header is honoured (<code>text/turtle</code>, <code>application/rdf+xml</code>, <code>text/n3</code>); otherwise HTML is returned.</td>
+                        <td><code>format=ttl</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>lang</code></td><td>string</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td>Preferred language code for annotations (e.g. <code>en</code>, <code>it</code>, <code>fr</code>). Defaults to <code>en</code>.</td>
+                        <td><code>lang=en</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>warnings</code></td><td>boolean</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td>When set to <code>true</code>, the documentation page also lists structural warnings raised during parsing (e.g. malformed restrictions, OWL 2 DL violations). Defaults to <code>false</code>.</td>
+                        <td><code>warnings=true</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>imported</code></td><td>boolean</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td><em>OWL only.</em> When set to <code>true</code>, the axioms contained in the ontologies <strong>directly imported</strong> by the target artefact are included. If both <code>imported</code> and <code>closure</code> are specified, only <code>imported</code> is used.</td>
+                        <td><code>imported=true</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>closure</code></td><td>boolean</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td><em>OWL only.</em> When set to <code>true</code>, the transitive closure of all imported ontologies is included. If both <code>imported</code> and <code>closure</code> are specified, only <code>imported</code> is used.</td>
+                        <td><code>closure=true</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>cache</code></td><td>boolean</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td><em>URL source only.</em> When <code>true</code> (default), the processed URL is served from a 4-hour server-side cache when available. Set to <code>false</code> to discard the cached copy and re-fetch the URL; the fresh result then replaces the cache.</td>
+                        <td><code>cache=false</code></td>
+                    </tr>
+                </tbody>
+            </table>
 
-    <h3>Parameters</h3>
+            <h3>Examples</h3>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Parameter</th>
-                <th>Method</th>
-                <th>Type</th>
-                <th>Required</th>
-                <th>Description</th>
-                <th>Example</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><code>url</code></td>
-                <td><span class="badge bg-primary">GET</span></td>
-                <td>string</td>
-                <td>Yes</td>
-                <td>Full URL of the semantic artefact to process. Both semantic artefacts URIs and direct links to RDF files 
-(e.g. <code>.ttl</code>, <code>.rdf</code>, <code>.owl</code>) are accepted. </td>
-                <td><code>url=http://purl.org/spar/fabio.ttl</code> [or]<br><code>url=http://purl.org/spar/fabio/</code></td>
-            </tr>
-            <tr>
-                <td><code>file</code></td>
-                <td><span class="badge bg-warning text-dark">POST</span></td>
-                <td>file</td>
-                <td>Yes</td>
-                <td>
-                    The semantic artefact file to upload and process.
-                    Accepted formats: <code>.rdf</code>, <code>.owl</code>, <code>.ttl</code>,
-                    <code>.n3</code>, <code>.nt</code>, <code>.xml</code>.
-                </td>
-                <td><code>file={LOCAL_PATH}</code></td>
-            </tr>
-            <tr>
-                <td><code>read_as</code></td>
-                <td>
-                    <span class="badge bg-primary">GET</span>
-                    <span class="badge bg-warning text-dark">POST</span>
-                </td>
-                <td>enum</td>
-                <td>No</td>
-                <td>
-                    How to interpret the RDF graph. One of <code>owl</code>, <code>rdf</code>,
-                    <code>skos</code>. Defaults to <code>owl</code>.
-                </td>
-                <td><code>read_as=owl</code></td>
-            </tr>
-            <tr>
-                <td><code>resource</code></td>
-                <td>
-                    <span class="badge bg-primary">GET</span>
-                    <span class="badge bg-warning text-dark">POST</span>
-                </td>
-                <td>string (URI)</td>
-                <td>No</td>
-                <td>
-                    URI of a specific resource to render. If omitted, the full artefact is documented.
-                </td>
-                <td><code>resource=http://purl.org/spar/fabio/ArchivalDocument</code></td>
-            </tr>
-            <tr>
-                <td><code>lang</code></td>
-                <td>
-                    <span class="badge bg-primary">GET</span>
-                    <span class="badge bg-warning text-dark">POST</span>
-                </td>
-                <td>string</td>
-                <td>No</td>
-                <td>
-                    Preferred language code for annotations (e.g. <code>en</code>, <code>it</code>,
-                    <code>fr</code>). Defaults to <code>en</code>.
-                </td>
-                <td><code>lang=en</code></td>
-
-            </tr>
-            <tr>
-                <td><code>warnings</code></td>
-                <td>
-                    <span class="badge bg-primary">GET</span>
-                    <span class="badge bg-warning text-dark">POST</span>
-                </td>
-                <td>boolean</td>
-                <td>No</td>
-                <td>
-                    When set to <code>true</code>, the documentation page also lists
-                    structural warnings raised during parsing
-                    (e.g. malformed restrictions, OWL 2 DL violations).
-                    Defaults to <code>false</code>.
-                </td>
-                <td><code>warnings=true</code></td>
-            </tr>
-            <tr>
-                <td><code>imported</code></td>
-                <td>
-                    <span class="badge bg-primary">GET</span>
-                    <span class="badge bg-warning text-dark">POST</span>
-                </td>
-                <td>boolean</td>
-                <td>No</td>
-                <td>
-                    <em>OWL only.</em> When set to <code>true</code>, the axioms contained in the
-                    ontologies <strong>directly imported</strong> by the target artefact are included
-                    in the documentation. If both <code>imported</code> and <code>closure</code> are
-                    specified, only <code>imported</code> is used.
-                </td>
-                <td><code>imports=True</code></td>
-            </tr>
-            <tr>
-                <td><code>closure</code></td>
-                <td>
-                    <span class="badge bg-primary">GET</span>
-                    <span class="badge bg-warning text-dark">POST</span>
-                </td>
-                <td>boolean</td>
-                <td>No</td>
-                <td>
-                    <em>OWL only.</em> When set to <code>true</code>, the transitive closure of all
-                    imported ontologies is included in the documentation. If both
-                    <code>imported</code> and <code>closure</code> are specified, only
-                    <code>imported</code> is used.
-                </td>
-                <td><code>closure=True</code></td>
-            </tr>
-            <tr>
-                <td><code>cache</code></td>
-                <td><span class="badge bg-primary">GET</span></td>
-                <td>boolean</td>
-                <td>No</td>
-                <td>
-                    <em>URL only.</em> When <code>true</code> (default), the processed URL is served
-                    from a 4-hour server-side cache when available. Set to <code>false</code> to
-                    discard the cached copy and re-fetch the URL, so updates to the ontology are
-                    picked up immediately; the fresh result then replaces the cache.
-                </td>
-                <td><code>cache=false</code></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <h3>Examples</h3>
-
+            <h5>Live documentation</h5>
     <pre>
-/extract?url=http://purl.org/spar/fabio.ttl&amp;read_as=owl
-/extract?url=http://purl.org/spar/fabio&amp;read_as=owl
-/extract?url=http://www.w3.org/2004/09/fresnel&read_as=owl&warnings=true
-/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;imported=true&amp;lang=en
-/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;closure=true
-/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;resource=http://purl.org/spar/fabio/Abstract&amp;lang=it
-/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;cache=false
-</pre>
-</div>
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio.ttl&amp;read_as=owl
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl
+    https://lode.opencitations.net/extract?url=http://www.w3.org/2004/09/fresnel&amp;read_as=owl&amp;warnings=true
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;imported=true&amp;lang=en
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;closure=true
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;resource=http://purl.org/spar/fabio/Abstract&amp;lang=it
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;cache=false
+    </pre>
 
-        
+            <h5>RDF content negotiation (<code>format</code>)</h5>
+    <pre>
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;format=ttl
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;format=rdf
+    https://lode.opencitations.net/extract?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;format=n3&amp;resource=http://purl.org/spar/fabio/Abstract
+    </pre>
+
+            <h5>Static documentation (ZIP)</h5>
+    <pre>
+    https://lode.opencitations.net/build?url=http://purl.org/spar/fabio&amp;read_as=owl
+    https://lode.opencitations.net/build?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;lang=en
+    https://lode.opencitations.net/build?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;imported=true
+    https://lode.opencitations.net/build?url=http://purl.org/spar/fabio&amp;read_as=owl&amp;closure=true&amp;warnings=true
+    </pre>
+
+            <h3>Content negotiation</h3>
+            <p>LODE can be combined with content negotiation to serve this human-readable
+                version to browsers and the raw artefact to ontology editors such as Protégé,
+                following the <em>Best Practice Recipes for Publishing RDF Vocabularies</em>.  An exemplar implementation of such content negotiation is given in the Best Practice Recipes for Publishing RDF Vocabularies by using the .htaccess file:</p>
+            <details>
+                <summary>Example <code>.htaccess</code></summary>
+    <pre>
+    AddType application/rdf+xml .rdf
+
+    # Rewrite engine setup
+    RewriteEngine On
+
+    # Rewrite rule to serve HTML content
+    RewriteCond %{HTTP_ACCEPT} !application/rdf\+xml.*(text/html|application/xhtml\+xml)
+    RewriteCond %{HTTP_ACCEPT} text/html [OR]
+    RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml [OR]
+    RewriteCond %{HTTP_USER_AGENT} ^Mozilla/.*
+    <span style="font-weight:600;">RewriteRule ^ontology\$ https://w3id.org/lode/http://www.mydomain.com/ontology [R=303,L]</span>
+
+    # Rewrite rule to serve RDF/XML content if requested
+    RewriteCond %{HTTP_ACCEPT} application/rdf\+xml
+    RewriteRule ^ontology\$ ontology.owl [R=303]
+
+    # Choose the default response
+    RewriteRule ^ontology\$ ontology.owl [R=303]
+    </pre>
+            </details>
+
+            <h3>Reporting bugs</h3>
+            <p>LODE 2.0 is developed in the open. Open an issue at
+                <a href="https://github.com/opencitations/lode/issues" target="_blank" rel="noopener">github.com/opencitations/lode/issues</a>.</p>
         </div>
-    </div>
+    </div> 
+
     <script>
-        // Initialize all popovers
-        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
-        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
-        
         // ── Toggle URL / File ──────────────────────────────────────────────────
         const sourceToggle = document.getElementById('sourceToggle');
         const toggleSlider = document.getElementById('toggleSlider');
@@ -446,6 +417,11 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             urlError.textContent = '';
         });
 
+        const buildBtn = document.getElementById('buildBtn');
+        let wantsZip = false;
+        submitBtn.addEventListener('click', () => { wantsZip = false; });
+        buildBtn.addEventListener('click',  () => { wantsZip = true;  });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -466,7 +442,7 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
                 params.append('read_as', readAs);
 
                 const resource = document.getElementById('resource').value.trim();
-                if (resource) params.append('resource', resource);
+                if (resource && !wantsZip) params.append('resource', resource);
 
                 const language = document.getElementById('language').value.trim();
                 if (language) params.append('lang', language);
@@ -478,7 +454,7 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
                     if (document.getElementById('closure').checked)  params.append('closure',  'true');
                 }
 
-                window.location.href = `/extract?${params.toString()}`;
+                window.location.href = `${wantsZip ? '/build' : '/extract'}?${params.toString()}`;
                 return;
             }
 
@@ -494,6 +470,7 @@ RewriteRule ^ontology\$ ontology.owl [R=303]
             // Validazione ok: submit nativo multipart.
             // Il server fa PRG (303) e atterra su GET /extract?upload_id=...
             // cosi' URL in barra e history sono corretti, e "back" torna all'index.
+            form.action = wantsZip ? '/build' : '/extract';
             form.submit();
         });
     </script>
