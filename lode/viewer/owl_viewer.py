@@ -15,11 +15,11 @@ class OwlViewer(BaseViewer):
 
     def get_toc_config(self):
         return [
-            ('Annotation', 'annotations', 'Annotation'),
             ('Concept',    'concepts',    'Concept'),
             ('Relation',   'relations',   'Relation'),
             ('Attribute',  'attributes',  'Attribute'),
             ('Individual', 'individuals', 'Individual'),
+            ('Annotation', 'annotations', 'Annotation'),
         ]
 
     def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:

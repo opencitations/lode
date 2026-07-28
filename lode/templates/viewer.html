@@ -48,22 +48,24 @@
 
     {% include '_toc_sidebar.html' %}
 
-    <div id="toc-float-search" class="toc-float-search">
-        <button type="button" id="toc-float-search-toggle" class="toc-float-search-toggle" title="Search terms">
-            <i class="bi bi-search"></i>
-        </button>
-        <div class="toc-float-search-panel">
-            <input type="text" id="toc-float-search-input" class="toc-float-search-input"
-                placeholder="Search terms..." autocomplete="off">
-            <span id="toc-float-search-count" class="toc-float-search-count"></span>
-            <button type="button" id="toc-float-search-prev" class="toc-float-search-nav" title="Previous match">
-                <i class="bi bi-chevron-up"></i>
+    {% if not single_resource %}
+        <div id="toc-float-search" class="toc-float-search">
+            <button type="button" id="toc-float-search-toggle" class="toc-float-search-toggle" title="Search terms">
+                <i class="bi bi-search"></i>
             </button>
-            <button type="button" id="toc-float-search-next" class="toc-float-search-nav" title="Next match">
-                <i class="bi bi-chevron-down"></i>
-            </button>
+            <div class="toc-float-search-panel">
+                <input type="text" id="toc-float-search-input" class="toc-float-search-input"
+                    placeholder="Search terms..." autocomplete="off">
+                <span id="toc-float-search-count" class="toc-float-search-count"></span>
+                <button type="button" id="toc-float-search-prev" class="toc-float-search-nav" title="Previous match">
+                    <i class="bi bi-chevron-up"></i>
+                </button>
+                <button type="button" id="toc-float-search-next" class="toc-float-search-nav" title="Next match">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <div class="container-fluid px-4 py-4">
         {% if warnings %}
@@ -180,22 +182,18 @@
                 <dl class="mb-0">
                     {% if source_url or upload_id or export_base %}
                     {% set _res = request.query_params.get('resource', '') %}
-                    <dt class="text-capitalize fs-7 fw-bold mb-1">Export {% if _res %}subgraph{% else %}graph{% endif %}</dt>
+                    <dt class="fs-7 fw-bold mb-1">Export {% if _res %}entity{% endif %}</dt>
                     <dd class="ms-5">
-                        {% for mime, label, icon, ext in [
-                            ("text/turtle",         "Turtle",  "bi-filetype-raw", "ttl"),
-                            ("application/rdf+xml", "RDF/XML", "bi-file-code",    "rdf"),
-                            ("text/n3",             "N3",      "bi-file-text",    "n3")
-                        ] %}
+                        {% for f in export_formats %}
                             {% if not request.is_static %}
                             <a href="#"
                                 class="btn btn-sm btn-outline-dark me-2"
-                                onclick="exportGraph('{{ mime }}', '{{ ext }}', '{{ nav_qs }}', '{{ _res }}'); return false;">
-                                <i class="bi {{ icon }}"></i> {{ label }}
+                                onclick="exportGraph('{{ f.mime }}', '{{ f.ext }}', '{{ nav_qs }}', '{{ _res }}'); return false;">
+                                <i class="bi {{ f.icon }}"></i> {{ f.label }}
                             </a>
                             {% elif export_base %}
-                            <a href="{{ export_base }}.{{ ext }}" class="btn btn-sm btn-outline-dark me-2">
-                                <i class="bi {{ icon }}"></i> {{ label }}
+                            <a href="{{ export_base }}.{{ f.ext }}" class="btn btn-sm btn-outline-dark me-2">
+                                <i class="bi {{ f.icon }}"></i> {{ f.label }}
                             </a>
                             {% endif %}
                         {% endfor %}

@@ -8,6 +8,13 @@ import urllib.parse
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 from rdflib.namespace import RDF, OWL
 
+SERIALIZATION_FORMATS = [
+    {"label": "Turtle",    "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
+    {"label": "RDF/XML",   "fmt": "xml",     "mime": "application/rdf+xml",   "ext": "rdf",    "icon": "bi-file-code"},
+    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
+    {"label": "N-Triples", "fmt": "nt",      "mime": "application/n-triples", "ext": "nt",     "icon": "bi-file-text"},
+]
+
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
     
@@ -128,11 +135,13 @@ class BaseViewer:
         if resource_uri:
             data = self._handle_single_resource(resource_uri, language)
             data['metadata'] = metadata_dict
+            data['export_formats'] = SERIALIZATION_FORMATS
             return data
 
         return {
             'metadata': metadata_dict,
-            'entities': self._format_entities(all_instances, language)
+            'entities': self._format_entities(all_instances, language),
+            'export_formats': SERIALIZATION_FORMATS,
         }
 
     def _is_toc_entity(self, instance) -> bool:
@@ -196,7 +205,8 @@ class BaseViewer:
 
         return {
             'grouped_view': True,
-            'sections': sections
+            'sections': sections,
+            'export_formats': SERIALIZATION_FORMATS
         }
 
     def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
@@ -318,11 +328,13 @@ class BaseViewer:
         """
         ontology_model = None
 
-        # 1. Find the Model
-        for instance in all_instances:
-            if isinstance(instance, Model):
-                ontology_model = instance
-                break
+        # 1. Find the Model (skip imported/closure ontologies)
+        imported = getattr(self.reader, "_imported_uris", set()) or set()
+        models = [i for i in all_instances if isinstance(i, Model)]
+        ontology_model = next(
+            (m for m in models if str(m.get_has_identifier()) not in imported),
+            models[0] if models else None,
+        )
 
         if not ontology_model:
             return {}
@@ -610,12 +622,17 @@ class BaseViewer:
 
         return name
 
-    def _parse_restriction(self, obj, language=None) -> list:
+    def _parse_restriction(self, obj, language=None, _seen=None) -> list:
         """
         Recursively unpacks nested restrictions into a list of display parts
         (each part being a dict with 'text' and 'link').
+        Guards against cyclic class expressions (possible once owl:imports
+        completes cross-ontology definitions) via a visited set.
         """
         if not obj: return []
+
+        if _seen is None:
+            _seen = set()
 
         # 1. Handle lists of restrictions/concepts (e.g., in TruthFunctions or OneOf)
         if isinstance(obj, list) or isinstance(obj, set):
@@ -623,7 +640,7 @@ class BaseViewer:
             for i, item in enumerate(obj):
                 if i > 0:
                     parts.append({'text': ', ', 'link': None})
-                parts.extend(self._parse_restriction(item, language))
+                parts.extend(self._parse_restriction(item, language, _seen))
             return parts
 
         obj_type = type(obj).__name__
@@ -632,6 +649,11 @@ class BaseViewer:
 
         # 2. If it is a Restriction, recursively unpack its specific components
         if obj_type in restriction_types:
+            # cycle guard: a class expression already being expanded upstream
+            if id(obj) in _seen:
+                return [{'text': '…', 'link': None}]
+            _seen.add(id(obj))
+
             parts = []
 
             # Helper to safely call getter methods (e.g., get_applies_on_property)
@@ -652,9 +674,9 @@ class BaseViewer:
                 if is_inv:
                     parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
-                parts.extend(self._parse_restriction(prop, language))
+                parts.extend(self._parse_restriction(prop, language, _seen))
                 parts.append({'text': f' {quant} ', 'link': None})
-                parts.extend(self._parse_restriction(concept, language))
+                parts.extend(self._parse_restriction(concept, language, _seen))
 
             elif obj_type == "Cardinality":
                 prop = _get(obj, 'applies_on_property')
@@ -667,9 +689,9 @@ class BaseViewer:
                 if is_inv:
                     parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
-                parts.extend(self._parse_restriction(prop, language))
+                parts.extend(self._parse_restriction(prop, language, _seen))
                 parts.append({'text': f' {card} {card_num}',  'link': None})
-                parts.extend(self._parse_restriction(concept, language))
+                parts.extend(self._parse_restriction(concept, language, _seen))
 
             elif obj_type == "TruthFunction":
                 operator = _get(obj, 'has_logical_operator', "and")
@@ -685,7 +707,7 @@ class BaseViewer:
                 for i, c in enumerate(concepts):
                     if i > 0:
                         parts.append({'text': f' {operator} ', 'link': None})
-                    parts.extend(self._parse_restriction(c, language))
+                    parts.extend(self._parse_restriction(c, language, _seen))
                 parts.append({'text': ')', 'link': None})
 
             elif obj_type == "OneOf":
@@ -701,7 +723,7 @@ class BaseViewer:
                 for i, r in enumerate(resources):
                     if i > 0:
                         parts.append({'text': ', ', 'link': None})
-                    parts.extend(self._parse_restriction(r, language))
+                    parts.extend(self._parse_restriction(r, language, _seen))
                 parts.append({'text': ' }', 'link': None})
 
             elif obj_type == "Value":
@@ -713,9 +735,9 @@ class BaseViewer:
                 if is_inv:
                     parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
-                parts.extend(self._parse_restriction(prop, language))
+                parts.extend(self._parse_restriction(prop, language, _seen))
                 parts.append({'text': ' value ', 'link': None})
-                parts.extend(self._parse_restriction(resource, language))
+                parts.extend(self._parse_restriction(resource, language, _seen))
 
             elif obj_type == "DatatypeRestriction":
                 concept = _get(obj, 'applies_on_concept')  # Datatype(xsd:string)
@@ -727,13 +749,13 @@ class BaseViewer:
                 if is_inv:
                     parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
-                parts.extend(self._parse_restriction(concept, language))
+                parts.extend(self._parse_restriction(concept, language, _seen))
                 if constraint:
                     parts.append({'text': f' with {constraint} ', 'link': None, 'type': 'Text'})
                 else:
                     parts.append({'text': ' restricted by ', 'link': None, 'type': 'Text'})
 
-                parts.extend(self._parse_restriction(value, language))
+                parts.extend(self._parse_restriction(value, language, _seen))
 
             return parts
 
@@ -854,16 +876,15 @@ class BaseViewer:
     
     # ========== PROVENANCE: subgraph serialisation for each card ==========
     
-    def _build_provenance_subgraph(self, instance) -> Dict[str, str]:
+    def _build_provenance_subgraph(self, instance) -> List[Dict[str, str]]:
         sub = self.reader.get_provenance_subgraph(instance)
         if not any(True for _ in sub):
-            return {}
-        return {
-            'turtle': self._safe_serialize(sub, 'turtle'),
-            'rdfxml': self._safe_serialize(sub, 'xml'),
-            'n3':     self._safe_serialize(sub, 'n3'),
-        }
-
+            return []
+        return [
+            {"label": f["label"], "code": self._safe_serialize(sub, f["fmt"])}
+            for f in SERIALIZATION_FORMATS
+        ]
+    
     @staticmethod
     def _safe_serialize(g, fmt: str) -> str:
         try:

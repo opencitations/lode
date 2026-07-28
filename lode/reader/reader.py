@@ -18,6 +18,7 @@ class Reader:
         self._logic = None  # Logic specializzata (OWL, SKOS, RDF, RDFS)
         self._graph = None
         self._configuration = None
+        self._imported_uris = set()   # needed to get the model before imported/closure models
 
     def get_warnings(self) -> list:
         if not getattr(self, '_warnings_enabled', False):
@@ -34,6 +35,9 @@ class Reader:
         loader = Loader(graph_path, imported=imported, closure=closure)
         self._graph = loader.get_graph()
         
+        # 1.5 saves the imported/closure uris to be reused in viewer so the model metadata are not overwritten 
+        self._imported_uris = getattr(loader, "imported_uris", set())
+
         # 2. Seleziona strategia
         self._configuration = get_configuration(read_as)
         
