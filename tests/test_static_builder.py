@@ -21,6 +21,10 @@ from rdflib import URIRef
 ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
 URIS = [e["uri"] for e in json.loads(ONTOLOGIES_PATH.read_text(encoding="utf-8"))["uris"]]
 
+from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+
+_EXTS = [f["ext"] for f in SERIALIZATION_FORMATS]
+
 
 def _load(uri):
     r = Reader()
@@ -46,7 +50,7 @@ def built(request, tmp_path_factory):
 def test_index_and_ontology_serializations(built):
     out = built["out"]
     assert (out / "index.html").exists()
-    for ext in ("ttl", "rdf", "n3"):
+    for ext in _EXTS:
         assert (out / f"ontology.{ext}").exists(), f"missing ontology.{ext}"
 
 
@@ -66,14 +70,12 @@ def test_every_html_resource_has_all_formats(built):
     res = built["out"] / "resources"
     html_files = list(res.rglob("*.html"))
     assert html_files, f"no resource pages generated for {built['uri']}"
-
     missing = []
     for html in html_files:
-        for ext in ("ttl", "rdf", "n3"):
+        for ext in _EXTS:
             sibling = html.with_suffix(f".{ext}")
             if not sibling.exists():
                 missing.append(str(sibling.relative_to(built["out"])))
-
     assert not missing, "missing serializations:\n" + "\n".join(missing)
 
 
