@@ -8,6 +8,9 @@ from lode.api import _minify
 from lode.models.model import Model
 from rdflib import URIRef
 from rdflib.namespace import split_uri
+from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+
+_SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 
 def _get_template_env(static_path: str = "static") -> Environment:
     try:
@@ -97,7 +100,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
     env_resource = _get_template_env(static_path="../../static")
     
     if reader is not None:
-        for fmt, ext in [("turtle", "ttl"), ("xml", "rdf"), ("n3", "n3")]:
+        for fmt, ext in _SER:
             out = reader._graph.serialize(format=fmt)
             if isinstance(out, bytes):
                 out = out.decode("utf-8")
@@ -123,7 +126,6 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
     res_dir = out_dir / "resources"
     res_dir.mkdir(parents=True, exist_ok=True)
 
-    _SER = [("turtle", "ttl"), ("xml", "rdf"), ("n3", "n3")]
     count = 0
     for class_key, section_id, _ in toc_config:
         for inst in grouped.get(class_key, []):

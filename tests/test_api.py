@@ -92,7 +92,8 @@ def test_get_turtle_full(patched_url):
 @pytest.mark.parametrize("accept,ctype", [
     ("text/turtle", "text/turtle"),
     ("application/rdf+xml", "application/rdf+xml"),
-    ("text/n3", "text/n3"),
+    ("application/ld+json", "application/ld+json"),
+    ("application/n-triples", "application/n-triples"),
 ])
 def test_get_accept_negotiation(patched_url, accept, ctype):
     resp = client.get("/extract",
@@ -133,6 +134,23 @@ def test_format_wins_over_accept(patched_url):
                       params={"read_as": "owl", "url": FABIO_URL, "format": "ttl"},
                       headers={"Accept": "application/rdf+xml"})
     assert resp.headers["content-type"].startswith("text/turtle")
+
+def test_get_accept_with_qvalues(patched_url):
+    # header realistico con q-value e parametri: deve comunque negoziare N-Triples
+    resp = client.get("/extract",
+                      params={"read_as": "owl", "url": FABIO_URL},
+                      headers={"Accept": "application/n-triples;q=0.9, text/html;q=0.8"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/n-triples")
+
+
+def test_get_accept_unknown_falls_back_to_html(patched_url):
+    # mime non servito -> HTML
+    resp = client.get("/extract",
+                      params={"read_as": "owl", "url": FABIO_URL},
+                      headers={"Accept": "text/n3"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/html")
 
 # --- URL cache ---------------------------------------------------------------
 def test_url_spool_cache_and_bypass(tmp_path, monkeypatch):
