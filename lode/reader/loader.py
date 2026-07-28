@@ -20,6 +20,7 @@ class Loader:
         self.graph = Graph()
         self._imported = imported
         self._closure = closure
+        self.imported_uris = set() # needed to keep track of original model to document
 
         if file_path:
             self.load(file_path)
@@ -61,13 +62,12 @@ class Loader:
     # ----------------------------------------------------------
 
     def _apply_modules(self) -> None:
-
         if self._imported and self._closure:
-            self.graph = modules.apply_closure(self.graph)
+            self.graph, self.imported_uris = modules.apply_closure(self.graph)
         if self._imported:
-            self.graph = modules.apply_imported(self.graph)
+            self.graph, self.imported_uris = modules.apply_imported(self.graph)
         elif self._closure:
-            self.graph = modules.apply_closure(self.graph)
+            self.graph, self.imported_uris = modules.apply_closure(self.graph)
 
     ## ----------------------------------------------------------
     #  CONTENT NEGOTIATION FOR URLS
