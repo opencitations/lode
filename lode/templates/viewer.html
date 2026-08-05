@@ -114,7 +114,7 @@
                 <div class="p-3">
                 {% else %}
                 <div>
-                    <div class="p-3">
+                    <div>
                         <div class="resource-frontmatter">
                             <h1 class="resource-title">
                                 {% if metadata.title %}
@@ -178,8 +178,8 @@
             {% if single_resource %}</details>{% else %}</div>{% endif %}
 
             <!-- ===== BLOCCO 2: EXPORT — SEMPRE VISIBILE, FUORI DAL DROPDOWN ===== -->
-            <section class="metadata-block export-block pb-2">
-                <dl class="mb-0">
+            <section class="metadata-block export-block">
+                <dl class="mb-0 pb-3">
                     {% if source_url or upload_id or export_base %}
                     {% set _res = request.query_params.get('resource', '') %}
                     <dt class="fs-7 fw-bold mb-1">Export {% if _res %}entity{% endif %}</dt>

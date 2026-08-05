@@ -406,8 +406,13 @@ class BaseViewer:
         # 9. Statements
         data.update(self._format_statement(all_instances, ontology_model, language))
 
+        # Ordine alfabetico su tutti i metadati (uri/label in testa)
+        pinned = ['uri', 'label']
+        rest = sorted(k for k in data if k not in pinned)
+        data = {k: data[k] for k in pinned if k in data} | {k: data[k] for k in rest}
+
         return data
-    
+            
     def _resolve_chain_value(self, chain, language=None) -> dict:
         """Renderizza una property chain ordinata (lista di Relation) come un
         unico valore con parti cliccabili unite dall'operatore di composizione."""
