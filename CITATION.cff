@@ -1,0 +1,44 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: LODE - Live OWL Documentation Environment
+message: >-
+  New reengineered version of LODE, maintained by
+  OpenCitations.
+type: software
+authors:
+  - given-names: Valentina
+    family-names: Pasqual
+    email: valentina.pasqual2@unibo.it
+    orcid: 'https://orcid.org/0000-0001-5931-5187'
+    affiliation: >-
+      Digital Humanities Advanced Research Centre (/DH.arc),
+      Department of Classical Philology and Italian Studies,
+      University of Bologna, Bologna, Italy
+  - given-names: Silvio
+    family-names: Peroni
+    email: silvio.peroni@unibo.it
+    affiliation: >-
+      Research Centre for Open Scholarly Metadata,
+      Department of Classical Philology and Italian Studies,
+      University of Bologna, Bologna, Italy
+    orcid: 'https://orcid.org/0000-0003-0530-4305'
+  - given-names: Ahmadreza
+    family-names: Nazari
+    orcid: 'https://orcid.org/0009-0000-3884-1575'
+    email: ahmadreza.nazari@studio.unibo.it
+    affiliation: >-
+      Digital Humanities and Digital Knowledge, Department
+      of Classical Philology and Italian Studies, University
+      of Bologna, Bologna, Italy
+repository-code: 'https://github.com/opencitations/lode'
+url: 'https://lode.opencitations.net/'
+abstract: >-
+  LODE is a re-engineered and extensible framework for generating human-readable documentation of semantic artefacts. It preserves the established single-page, W3C Recommendation-style documentation paradigm of its legacy verision, while introducing a modular architecture that decouples artefact interpretation, internal representation, and rendering. This design enables the framework to support multiple semantic artefact types through configurable interpretation modules. The current implementation supports OWL ontology documentation.
+keywords:
+  - Ontology documentation
+  - OWL ontologies
+  - Semantic artefacts documentation
+  - Web tool
+license: ISC

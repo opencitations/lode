@@ -209,14 +209,17 @@ def _minify(html: str) -> str:
         out = out.replace(f"\x00MD{i}\x00", block)
     return out
 
-
-def _nav_qs(read_as: str, url, upload_id, lang) -> str:
+def _nav_qs(read_as: str, url, upload_id, lang, imported, closure) -> str:
     p = {"read_as": read_as, "lang": lang or ""}
     p["upload_id" if upload_id else "url"] = upload_id or (url or "")
+    if imported:
+        p["imported"] = "true"
+    if closure:
+        p["closure"] = "true"
     return urlencode(p)
 
-
-def _render_view(request, reader, *, resource, lang, source_url, upload_id, read_as):
+def _render_view(request, reader, *, resource, lang, source_url, upload_id, read_as,
+                 imported=None, closure=None):
     viewer = reader.get_viewer()
     data = viewer.get_view_data(resource_uri=resource, language=lang)
     data["warnings"] = reader.get_warnings()
@@ -224,7 +227,7 @@ def _render_view(request, reader, *, resource, lang, source_url, upload_id, read
         "request": request,
         "source_url": source_url,
         "upload_id": upload_id,
-        "nav_qs": _nav_qs(read_as, source_url, upload_id, lang),
+        "nav_qs": _nav_qs(read_as, source_url, upload_id, lang, imported, closure),
         **data,
     })
     resp.body = _minify(resp.body.decode("utf-8")).encode("utf-8")
@@ -491,7 +494,8 @@ def extract_get(
     
     logger.info("=== REQUEST SUCCESS ===")
     return _render_view(request, reader, resource=resource, lang=lang,
-                        source_url=url, upload_id=upload_id, read_as=read_as.value)
+                        source_url=url, upload_id=upload_id, read_as=read_as.value,
+                        imported=imported, closure=closure)
 
 
 @app.post("/extract", response_class=HTMLResponse)
@@ -520,7 +524,8 @@ async def extract_post(
         imported=imported, closure=closure, warnings=warnings,
     )
     return _render_view(request, reader, resource=resource, lang=lang,
-                        source_url=None, upload_id=token, read_as=read_as.value)
+                        source_url=None, upload_id=token, read_as=read_as.value,
+                        imported=imported, closure=closure)
 
 
 # ==========================================================================
