@@ -790,18 +790,25 @@ class BaseViewer:
         if any(path.endswith(ext) for ext in ontology_exts):
             return True
 
+        # Match registries against the parsed hostname, not the raw string:
+        # a substring check would also match e.g. https://evil.com/w3id.org/x
+        host = parsed.hostname or ''
+
+        def _host_is(domain: str) -> bool:
+            return host == domain or host.endswith('.' + domain)
+
         # 4. Common Ontology Registries & Permanent URLs
         ontology_domains = [
             'w3id.org',
             'purl.org',
             'xmlns.com'  # Often used for FOAF
         ]
-        if any(domain in clean_url for domain in ontology_domains):
+        if any(_host_is(domain) for domain in ontology_domains):
             return True
 
         # 5. Core W3C Namespaces
         w3c_core = ['/1999/02/22-rdf-syntax-ns', '/2000/01/rdf-schema', '/2002/07/owl']
-        if 'w3.org' in clean_url and any(ns in clean_url for ns in w3c_core):
+        if _host_is('w3.org') and any(ns in path for ns in w3c_core):
             return True
 
         # 6. Broad Keywords & Famous Standard Acronyms

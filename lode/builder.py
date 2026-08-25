@@ -1,4 +1,5 @@
 # lode/builder.py
+import re
 import shutil
 from pathlib import Path
 from urllib.parse import quote
@@ -35,9 +36,24 @@ def _get_template_env(static_path: str = "static") -> Environment:
 def _prefix_map(graph):
     return {str(ns): (p or 'default') for p, ns in graph.namespaces()}
 
+def _safe_segment(seg: str) -> str:
+    """Restrict a slug path segment to a filesystem-safe whitelist.
+
+    Prefix and local name come from IRIs in the loaded ontology, i.e. from
+    user-controlled input: path separators, '..', NUL etc. must never reach
+    the filesystem (path injection). An empty result means "no usable local
+    part" and is treated by callers as a namespace IRI (page skipped).
+    """
+    seg = re.sub(r"[^A-Za-z0-9._-]", "-", seg).strip("-.")
+    if not seg or set(seg) == {"."}:
+        return ""
+    return seg[:100]
+
+
 def _rel_slug(uri, graph):
     prefix, ns, local = graph.namespace_manager.compute_qname(URIRef(str(uri)), generate=True)
-    return f"{prefix or 'default'}/{local}"
+    prefix = _safe_segment(prefix or "default") or "default"
+    return f"{prefix}/{_safe_segment(local)}"
 
 
 def _local_name(uri: str) -> str:
@@ -141,6 +157,10 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
                 continue
 
             page = res_dir / f"{rel}.html"
+            # Defense in depth: even if a slug ever slipped through the
+            # whitelist, never write outside the resources directory.
+            if not page.resolve().is_relative_to(res_dir.resolve()):
+                continue
             page.parent.mkdir(parents=True, exist_ok=True)
 
             for fmt, ext in _SER:
