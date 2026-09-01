@@ -9,7 +9,8 @@ from urllib.parse import urlparse, urljoin
 
 import lode.reader.modules as modules
 from lode.reader import security
-from lode.exceptions import ArtefactLoadError, ArtefactNotFoundError, ArtefactValidationError
+from lode.exceptions import (ArtefactLoadError, ArtefactNotFoundError,
+                             ArtefactUnavailableError, ArtefactValidationError)
 
 
 class Loader:
@@ -81,7 +82,9 @@ class Loader:
             "Accept": (
                 "text/turtle, application/rdf+xml, application/ld+json, "
                 "application/n-triples, application/n-quads, */*;q=0.1"
-            )
+            ),
+            # Sent on every redirect hop too, since this dict is reused there.
+            "User-Agent": security.USER_AGENT,
         }
 
         response = None
@@ -89,8 +92,15 @@ class Loader:
             # SECURITY: fetch with per-hop URL validation (anti-SSRF); manual redirects, no auto-follow into unchecked hosts
             response = self._fetch_following_redirects(url, headers)
 
-            # Error: Cannot Load RDF
+            # Error: Cannot Load RDF. A 5xx says the host is broken right now,
+            # not that the artefact is missing: telling the two apart is the
+            # difference between "check your URL" and "try again later".
             if response.status_code != 200:
+                if response.status_code >= 500:
+                    raise ArtefactUnavailableError(
+                        "The remote server is not responding, please try again later",
+                        context={"url": url, "http_status": response.status_code}
+                    )
                 raise ArtefactNotFoundError(
                     "Cannot load provided Semantic Artefact",
                     context={"url": url, "http_status": response.status_code}

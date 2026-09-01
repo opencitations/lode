@@ -18,6 +18,11 @@ class ArtefactNotFoundError(LODEError):
     """Artefatto risponde 404 o errore di rete."""
     pass
 
+class ArtefactUnavailableError(LODEError):
+    """Host remoto raggiunto ma in errore server (5xx): l'artefatto puo' esistere,
+    e' il servizio a essere temporaneamente non disponibile."""
+    pass
+
 class ArtefactValidationError(LODEError):
     """Artefatto rifiutato dai security check (size, estensione, scheme/SSRF, non testo)."""
     pass
