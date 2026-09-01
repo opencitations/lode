@@ -13,6 +13,25 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _user_agent() -> str:
+    """Identify LODE to remote hosts.
+
+    The requests default ("python-requests/x.y") is rejected outright by the
+    bot filters in front of some ontology registries, which reaches the user
+    as a bogus 502 on an artefact that is actually available.
+    """
+    try:
+        from importlib.metadata import version
+        v = version("lode")
+    except Exception:
+        v = "0"
+    return os.getenv(
+        "LODE_USER_AGENT",
+        f"LODE/{v} (+https://github.com/opencitations/lode)",
+    )
+
+
+USER_AGENT = _user_agent()
 MAX_BYTES = _env_int("LODE_MAX_UPLOAD_MB", 10) * 1024 * 1024  # 10 MB default
 MAX_REDIRECTS = _env_int("LODE_MAX_REDIRECTS", 6)  # hops followed when fetching a URL
 MAX_ENTITY_DECLARATIONS = _env_int("LODE_MAX_XML_ENTITIES", 100)

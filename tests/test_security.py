@@ -22,7 +22,8 @@ import pytest
 
 from lode.reader import security
 from lode.reader.loader import Loader
-from lode.exceptions import ArtefactValidationError, ArtefactLoadError
+from lode.exceptions import (ArtefactValidationError, ArtefactLoadError,
+                             ArtefactNotFoundError, ArtefactUnavailableError)
 
 
 # ----------------------------------------------------------------------
@@ -625,3 +626,60 @@ class TestSpoolQuota:
         api._prune_spool()
         names = set(os.listdir(api.SPOOL_DIR))
         assert "old.rdf" not in names and "new.rdf" in names
+
+
+# ----------------------------------------------------------------------
+#  User-Agent sent to remote hosts
+# ----------------------------------------------------------------------
+class TestUserAgent:
+    """The requests default UA is rejected by the bot filters in front of some
+    ontology registries (gotriple.eu answers a bogus 502 to it)."""
+
+    def test_default_ua_is_not_the_requests_one(self):
+        assert "python-requests" not in security.USER_AGENT
+        assert security.USER_AGENT.startswith("LODE/")
+
+    def test_ua_overridable_from_env(self, monkeypatch):
+        monkeypatch.setenv("LODE_USER_AGENT", "custom-agent/1.0")
+        assert security._user_agent() == "custom-agent/1.0"
+
+    def test_ua_sent_on_every_redirect_hop(self, monkeypatch):
+        sent = []
+
+        def fake_get(url, **kwargs):
+            sent.append(kwargs.get("headers", {}).get("User-Agent"))
+            if len(sent) == 1:
+                return FakeResponse(status_code=302,
+                                    headers={"Location": "http://8.8.8.8/final.ttl"})
+            return FakeResponse(status_code=200)
+
+        monkeypatch.setattr("lode.reader.loader.requests.get", fake_get)
+        Loader()._fetch_following_redirects(
+            "http://93.184.216.34/onto.ttl",
+            headers={"User-Agent": security.USER_AGENT})
+
+        assert sent == [security.USER_AGENT, security.USER_AGENT]
+
+
+# ----------------------------------------------------------------------
+#  4xx vs 5xx classification
+# ----------------------------------------------------------------------
+class TestRemoteStatusClassification:
+    """A broken host and a wrong URL must not produce the same message."""
+
+    def _load(self, monkeypatch, status):
+        monkeypatch.setattr("lode.reader.loader.requests.get",
+                            make_fake_get([FakeResponse(status_code=status)]))
+        Loader()._load_from_url_with_content_negotiation("http://93.184.216.34/onto.ttl")
+
+    @pytest.mark.parametrize("status", [500, 502, 503])
+    def test_server_error_is_unavailable(self, monkeypatch, status):
+        with pytest.raises(ArtefactUnavailableError) as exc:
+            self._load(monkeypatch, status)
+        assert exc.value.context["http_status"] == status
+
+    @pytest.mark.parametrize("status", [400, 403, 404])
+    def test_client_error_is_not_found(self, monkeypatch, status):
+        with pytest.raises(ArtefactNotFoundError) as exc:
+            self._load(monkeypatch, status)
+        assert exc.value.context["http_status"] == status
