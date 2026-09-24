@@ -28,8 +28,9 @@ import tempfile
 import threading
 import time
 import traceback
+from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -37,9 +38,14 @@ from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.gzip import GZipMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-import minify_html
 
 # Internal modules
+from lode.helpers.formats import (
+    ENABLED_FORMATS, ReadAsFormat,
+    check_format_enabled as _check_format_enabled,
+)
+from lode.helpers.html_utils import minify as _minify
+import lode.helpers.spool as spool
 from lode.reader import Reader
 from lode.reader import security
 from lode.exceptions import LODEError, ArtefactValidationError
@@ -58,93 +64,34 @@ logger = logging.getLogger(__name__)
 # When enabled, error pages include the full traceback (development only).
 DEBUG = os.getenv("LODE_DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
 
-app = FastAPI(title="LODE 2.0 API", version="1.0.0")
+TAGS_METADATA = [
+    {"name": "extract", "description": "Render a semantic artefact as HTML or serialized RDF."},
+    {"name": "build", "description": "Generate a full static documentation site, delivered as a ZIP."},
+    {"name": "ops", "description": "Operational endpoints: web form and health probe."},
+]
+
+app = FastAPI(
+    title="LODE 2.0 API",
+    version="0.3.12",
+    description="Live OWL Documentation Environment — extract and document "
+                "RDF/OWL/SKOS semantic artefacts as browsable HTML.",
+    license_info={"name": "ISC"},
+    contact={"name": "OpenCitations", "url": "https://github.com/opencitations/lode"},
+    openapi_tags=TAGS_METADATA,
+)
 
 # Compress HTML responses on the wire.
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Fix "blocked loading mixed active content" on style.css behind a proxy.
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
-templates = Jinja2Templates(directory="lode/templates")
-app.mount("/static", StaticFiles(directory="lode/static"), name="static")
+_PKG_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(_PKG_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(_PKG_DIR / "static")), name="static")
 
 # Beautify produced HTML.
 templates.env.trim_blocks = True
 templates.env.lstrip_blocks = True
-
-
-# ==========================================================================
-# 3. FORMATS
-# ==========================================================================
-# Semantic artefact types enabled in version 0.1.X
-ENABLED_FORMATS = {"owl"}
-
-
-class ReadAsFormat(str, Enum):
-    owl = "owl"
-    rdf = "rdf"
-    skos = "skos"
-
-def _check_format_enabled(read_as: "ReadAsFormat") -> None:
-    if read_as.value not in ENABLED_FORMATS:
-        raise ArtefactValidationError(
-            f"Format '{read_as.value}' is not available yet",
-            context={"requested": read_as.value, "supported": sorted(ENABLED_FORMATS)},
-        )
-
-# ==========================================================================
-# 4. SPOOL — disk cache for uploads and fetched URLs
-# ==========================================================================
-SPOOL_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "spool"))
-os.makedirs(SPOOL_DIR, exist_ok=True)
-_SPOOL_TTL = 4 * 60 * 60      # entries are cached for 4 hours
-_SPOOL_MAX_BYTES = 1024 ** 3  # 1 GB total budget shared by uploads + URLs
-
-
-def _spool_path(token: str) -> str:
-    # Spool tokens are opaque IDs we mint ourselves (uuid4 hex / "url_"+sha256).
-    # Resolve and confirm the path stays inside SPOOL_DIR, so a crafted upload_id
-    # cannot traverse out of it (path injection).
-    path = os.path.realpath(os.path.join(SPOOL_DIR, f"{token}.rdf"))
-    if os.path.commonpath((SPOOL_DIR, path)) != SPOOL_DIR:
-        raise ArtefactValidationError("Invalid upload token", context={"token": token})
-    return path
-
-
-def _prune_spool():
-    """Evict expired entries, then enforce the total-size budget by deleting the
-    oldest (by cache-write time) until back under the cap. Uploads and URL caches
-    share the same budget. Best-effort across workers (races caught via OSError).
-    """
-    cutoff = time.time() - _SPOOL_TTL
-    survivors = []  # (mtime, size, path) of entries still within the TTL
-    for name in os.listdir(SPOOL_DIR):
-        p = os.path.join(SPOOL_DIR, name)
-        try:
-            st = os.stat(p)
-        except OSError:
-            continue
-        if st.st_mtime < cutoff:
-            try:
-                os.unlink(p)
-            except OSError:
-                pass
-            continue
-        survivors.append((st.st_mtime, st.st_size, p))
-
-    total = sum(size for _, size, _ in survivors)
-    if total <= _SPOOL_MAX_BYTES:
-        return
-    survivors.sort()  # oldest cache-write time first
-    for _, size, p in survivors:
-        if total <= _SPOOL_MAX_BYTES:
-            break
-        try:
-            os.unlink(p)
-            total -= size
-        except OSError:
-            pass
-
 
 # ==========================================================================
 # 5. BUILD WORKSPACE — quota and concurrency for /build
@@ -152,7 +99,7 @@ def _prune_spool():
 # Builds write hundreds of files each, so they get their own directory with an
 # explicit budget instead of filling up /tmp.
 BUILD_DIR = os.path.realpath(
-    os.getenv("LODE_BUILD_DIR", os.path.join(os.path.dirname(__file__), "builds"))
+    os.getenv("LODE_BUILD_DIR", os.path.join(tempfile.gettempdir(), "lode-builds"))
 )
 os.makedirs(BUILD_DIR, exist_ok=True)
 _BUILD_TTL = 30 * 60                          # orphans (aborted downloads) age out
@@ -190,24 +137,6 @@ def _prune_builds() -> int:
 # ==========================================================================
 # 6. HTML HELPERS
 # ==========================================================================
-def _minify(html: str) -> str:
-    # 1. estrai e metti da parte i blocchi render-markdown (newline-sensitive)
-    stash = []
-
-    def _hold(m):
-        stash.append(m.group(0))
-        return f"\x00MD{len(stash)-1}\x00"
-
-    protected = re.sub(
-        r'<(span|div|a|p)\b[^>]*\brender-markdown\b[^>]*>.*?</\1>',
-        _hold, html, flags=re.S,
-    )
-    # 2. minifica la struttura
-    out = minify_html.minify(protected, minify_css=False, minify_js=False)
-    # 3. reinserisci i blocchi intatti
-    for i, block in enumerate(stash):
-        out = out.replace(f"\x00MD{i}\x00", block)
-    return out
 
 def _nav_qs(read_as: str, url, upload_id, lang, imported, closure) -> str:
     p = {"read_as": read_as, "lang": lang or ""}
@@ -247,9 +176,9 @@ def _load_url(url, read_as, imported, closure, warnings, use_cache=True):
     # Enforce http(s)://host up front: a non-URL value (local path, file://, ...)
     # must never reach the loader and be opened as a local file.
     security.check_url_safe(url)
-    _prune_spool()
+    spool.prune()
     token = _url_token(url, read_as, imported, closure)
-    path = _spool_path(token)
+    path = spool.get_path(token)
     if use_cache and os.path.exists(path):
         # cache hit: ricostruisci dal Turtle salvato
         reader = Reader()
@@ -279,7 +208,7 @@ def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings,
                     use_cache=True):
     if upload_id:
         # Uploads are not re-fetched, so the cache flag does not apply to them.
-        path = _spool_path(upload_id)
+        path = spool.get_path(upload_id)
         if not os.path.exists(path):
             raise ArtefactValidationError("Upload expired, please re-upload",
                                           context={"upload_id": upload_id})
@@ -290,15 +219,6 @@ def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings,
     if url:
         return _load_url(url, read_as, imported, closure, warnings, use_cache=use_cache)
     raise ArtefactValidationError("Missing 'url' or 'upload_id'")
-
-
-def _spool_upload(content: bytes) -> str:
-    """Persist a validated upload and return its spool token."""
-    _prune_spool()
-    token = uuid4().hex
-    with open(_spool_path(token), "wb") as f:
-        f.write(content)
-    return token
 
 
 async def _read_validated_upload(file: UploadFile) -> bytes:
@@ -431,7 +351,7 @@ async def limit_upload_size(request: Request, call_next):
 # ==========================================================================
 # 11. ROUTES — pages
 # ==========================================================================
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, tags=["ops"], summary="Web input form")
 async def input_web_interface(request: Request):
     """Interfaccia web per l'API"""
     return templates.TemplateResponse("index.html", {
@@ -441,28 +361,31 @@ async def input_web_interface(request: Request):
     })
 
 
-@app.get("/health")
+@app.get("/health", tags=["ops"], summary="Liveness probe")
 async def health_check():
+    """Return 200 with a fixed body. Used by Docker/K8s readiness checks."""
     return {"status": "ok"}
 
 
 # ==========================================================================
 # 12. ROUTES — /extract
 # ==========================================================================
-@app.get("/extract")
+@app.get("/extract", tags=["extract"], summary="Render an artefact as HTML or RDF")
 def extract_get(
     request: Request,
-    read_as: ReadAsFormat,
-    url: Optional[str] = None,
-    upload_id: Optional[str] = None,
-    resource: Optional[str] = None,
-    lang: Optional[str] = None,
-    imported: Optional[bool] = None,
-    closure: Optional[bool] = None,
-    format: Optional[str] = None,
-    warnings: bool = False,
-    cache: bool = True,
+    read_as: ReadAsFormat = Query(description="Read the source as this artefact type"),
+    url: Optional[str] = Query(None, description="Public http(s) URL of the artefact"),
+    upload_id: Optional[str] = Query(None, description="Token of a previously uploaded file"),
+    resource: Optional[str] = Query(None, description="IRI of a single resource; omit for the whole ontology"),
+    lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
+    imported: Optional[bool] = Query(None, description="Also load owl:imports (depth 1)"),
+    closure: Optional[bool] = Query(None, description="Load the full owl:imports closure"),
+    format: Optional[str] = Query(None, description="Force a serialization (ttl, rdf, jsonld…) instead of HTML"),
+    warnings: bool = Query(False, description="Collect and show reader warnings"),
+    cache: bool = Query(True, description="Use the disk cache for fetched URLs"),
 ):
+    """Render an artefact. Returns HTML by default, or RDF when a serialization
+    is requested via the `format` query or the `Accept` header."""
     _check_format_enabled(read_as)
 
     reader = _resolve_reader(read_as.value, url, upload_id, imported, closure,
@@ -498,29 +421,30 @@ def extract_get(
                         imported=imported, closure=closure)
 
 
-@app.post("/extract", response_class=HTMLResponse)
+@app.post("/extract", response_class=HTMLResponse, tags=["extract"],
+          summary="Render an uploaded artefact as HTML")
 async def extract_post(
     request: Request,
-    read_as: ReadAsFormat = Form(...),
-    file: UploadFile = File(...),
-    resource: Optional[str] = Form(None),
-    lang: Optional[str] = Form(None),
-    imported: Optional[str] = Form(None),
-    closure: Optional[str] = Form(None),
-    warnings: bool = Form(False),
+    read_as: ReadAsFormat = Form(..., description="Read the uploaded file as this artefact type"),
+    file: UploadFile = File(..., description="The artefact file (ttl, rdf, owl…)"),
+    resource: Optional[str] = Form(None, description="IRI of a single resource; omit for the whole ontology"),
+    lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
+    imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
+    closure: Optional[bool] = Form(None, description="Load the full owl:imports closure"),
+    warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
-    """Visualizza semantic artefact da file."""
+    """Render an artefact from an uploaded file instead of a URL."""
     logger.info("=== FILE UPLOAD START ===")
     logger.info(f"Filename: {file.filename}")
     logger.info(f"Format: {read_as.value}")
 
     _check_format_enabled(read_as)
     content = await _read_validated_upload(file)
-    token = _spool_upload(content)
+    token = spool.save(content)
 
     reader = Reader()
     await run_in_threadpool(
-        reader.load_instances, _spool_path(token), read_as.value,
+        reader.load_instances, spool.get_path(token), read_as.value,
         imported=imported, closure=closure, warnings=warnings,
     )
     return _render_view(request, reader, resource=resource, lang=lang,
@@ -531,16 +455,16 @@ async def extract_post(
 # ==========================================================================
 # 13. ROUTES — /build
 # ==========================================================================
-@app.get("/build")
+@app.get("/build", tags=["build"], summary="Build a static site (ZIP) from a URL")
 def build_get(
-    read_as: ReadAsFormat,
-    url: Optional[str] = None,
-    upload_id: Optional[str] = None,
-    lang: Optional[str] = None,
-    imported: Optional[bool] = None,
-    closure: Optional[bool] = None,
-    warnings: bool = False,
-    cache: bool = True,
+    read_as: ReadAsFormat = Query(description="Read the source as this artefact type"),
+    url: Optional[str] = Query(None, description="Public http(s) URL of the artefact"),
+    upload_id: Optional[str] = Query(None, description="Token of a previously uploaded file"),
+    lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
+    imported: Optional[bool] = Query(None, description="Also load owl:imports (depth 1)"),
+    closure: Optional[bool] = Query(None, description="Load the full owl:imports closure"),
+    warnings: bool = Query(False, description="Collect and show reader warnings"),
+    cache: bool = Query(True, description="Use the disk cache for fetched URLs"),
 ):
     """Static documentation site as a ZIP. Sync on purpose: FastAPI runs
     non-async endpoints in the threadpool, keeping the event loop free."""
@@ -550,22 +474,23 @@ def build_get(
     return _zip_response(reader, _slug(url), lang)
 
 
-@app.post("/build")
+@app.post("/build", tags=["build"], summary="Build a static site (ZIP) from an upload")
 async def build_post(
-    read_as: ReadAsFormat = Form(...),
-    file: UploadFile = File(...),
-    lang: Optional[str] = Form(None),
-    imported: Optional[str] = Form(None),
-    closure: Optional[str] = Form(None),
-    warnings: bool = Form(False),
+    read_as: ReadAsFormat = Form(..., description="Read the uploaded file as this artefact type"),
+    file: UploadFile = File(..., description="The artefact file (ttl, rdf, owl…)"),
+    lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
+    imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
+    closure: Optional[bool] = Form(None, description="Load the full owl:imports closure"),
+    warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
+    """Build the static site from an uploaded file instead of a URL."""
     _check_format_enabled(read_as)
     content = await _read_validated_upload(file)
-    token = _spool_upload(content)
+    token = spool.save(content)
 
     reader = Reader()
     await run_in_threadpool(
-        reader.load_instances, _spool_path(token), read_as.value,
+        reader.load_instances, spool.get_path(token), read_as.value,
         imported=imported, closure=closure, warnings=warnings,
     )
     return await run_in_threadpool(_zip_response, reader, _slug(file.filename), lang)

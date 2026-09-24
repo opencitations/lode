@@ -1,6 +1,6 @@
 [project]
 name = "lode"
-version = "0.3.12"
+version = "0.3.13"
 description = "New reengineered version of LODE, maintained by OpenCitations"
 authors = [{name = "Valentina Pasqual, Silvio Peroni", email = "valentina.pasqual2@unibo.it"}]
 readme = "README.md"
@@ -52,7 +52,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["lode"]
 
-# AGGIUNTO - include template e static nel wheel
-[tool.hatch.build.targets.wheel.shared-data]
-"lode/templates" = "lode/templates"
-"lode/static" = "lode/static"
+# include template e static nel wheel
+# [tool.hatch.build.targets.wheel.shared-data]
+# "lode/templates" = "lode/templates"
+# "lode/static" = "lode/static"

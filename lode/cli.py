@@ -9,7 +9,6 @@ import argparse
 import sys
 from pathlib import Path
 
-
 def cmd_serve(args):
     import uvicorn
     uvicorn.run("lode.api:app", host="0.0.0.0", port=args.port, reload=False)
@@ -17,26 +16,22 @@ def cmd_serve(args):
 
 def cmd_build(args):
     from lode.reader import Reader
-    from lode.builder import build_html 
+    from lode.builder import build_html
+    from lode.helpers.formats import check_format_enabled, ReadAsFormat
+
+    check_format_enabled(ReadAsFormat(args.read_as))
 
     source = args.url or args.file
-    if not source:
-        print("ERROR: --url o --file richiesto", file=sys.stderr)
-        sys.exit(1)
-
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     reader = Reader()
     reader.load_instances(
-        source,
-        args.read_as,
+        source, args.read_as,
         imported=args.imported or None,
         closure=args.closure or None,
     )
-    viewer = reader.get_viewer()
-
-    build_html(viewer, out_dir, lang=args.lang, reader=reader)
+    build_html(reader.get_viewer(), out_dir, lang=args.lang, reader=reader)
     print(f"Done -> {out_dir}")
 
 

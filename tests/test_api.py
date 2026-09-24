@@ -159,9 +159,10 @@ def test_url_spool_cache_and_bypass(tmp_path, monkeypatch):
     import os
     from rdflib import Graph
     from lode import api
+    import lode.helpers.spool as spool_mod
 
     monkeypatch.setattr(api.security, "check_url_safe", lambda u: None)
-    monkeypatch.setattr(api, "SPOOL_DIR", os.path.realpath(str(tmp_path)))
+    monkeypatch.setattr(spool_mod, "SPOOL_DIR", os.path.realpath(str(tmp_path)))
 
     seen = []
     def fake_load(self, graph_path, read_as, **kw):
