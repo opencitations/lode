@@ -1,0 +1,34 @@
+---
+title: LODE 2.0
+description: Live OWL Documentation Environment — extract and document RDF/OWL/SKOS semantic artefacts as browsable HTML.
+template: splash
+hero:
+  title: LODE 2.0
+  tagline: Live OWL Documentation Environment — extract and document semantic artefacts as browsable, interlinked HTML.
+  actions:
+    - text: Get started
+      link: /lode/getting_started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/opencitations/lode
+      icon: external
+      variant: minimal
+---
+
+## Features
+
+- Extracts and documents OWL classes, properties, individuals, restrictions and more
+- Renders browsable HTML with embedded navigation links
+- Serves a dynamic web interface and REST API
+- Generates self-contained static sites from the CLI
+- Content negotiation: returns RDF serializations on request
+- Docker-ready with configurable storage via environment variables
+
+## Quick start
+
+```bash
+pip install lode2
+lode serve --port 8000
+```
+
+Open `http://localhost:8000` to use the web form, or `http://localhost:8000/docs` for the interactive API.
