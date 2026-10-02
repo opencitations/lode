@@ -12,6 +12,7 @@ class Property(Resource):
         
         # Relations with Properties (0..*)
         self.is_sub_property_of = []
+        self.is_super_property_of = []
         self.is_disjoint_with = []
         self.is_equivalent_to = []
         
@@ -30,15 +31,24 @@ class Property(Resource):
         """Restituisce is_functional"""
         return self.is_functional
 
-    # Metodi per is_sub_property_of
+    # Metodi per is_sub_property_of / is_super_property_of
     def set_is_sub_property_of(self, property_obj):
-        """Aggiunge una property a is_sub_property_of"""
-        self.is_sub_property_of.append(property_obj)
-    
-    def get_is_sub_property_of(self):
-        """Restituisce una copia della lista is_sub_property_of"""
-        return list(set(self.is_sub_property_of))
+        if property_obj not in self.is_sub_property_of:
+            self.is_sub_property_of.append(property_obj)
+        inv = getattr(property_obj, 'is_super_property_of', None)
+        if inv is not None and self not in inv:
+            inv.append(self)
 
+    def get_is_sub_property_of(self):
+        return list(self.is_sub_property_of)
+
+    def set_is_super_property_of(self, property_obj):
+        if property_obj not in self.is_super_property_of:
+            self.is_super_property_of.append(property_obj)
+
+    def get_is_super_property_of(self):
+        return list(self.is_super_property_of)
+    
     # Metodi per is_disjoint_with
     def set_is_disjoint_with(self, property_obj):
         """Aggiunge una property a is_disjoint_with"""

@@ -8,6 +8,7 @@ class Concept(Resource):
 
         # Relations with Concepts
         self.is_sub_concept_of = []   # 0..*
+        self.is_super_concept_of = [] # 0..*
         self.is_disjoint_with = []    # 0..*
         self.is_equivalent_to = []    # 0..*
         self.is_related_to = []       # 0..*
@@ -21,7 +22,6 @@ class Concept(Resource):
         self.is_in_domain_of = []     # 0..*
 
 
-
     def set_has_key(self, prop):
         self.has_key.append(prop)
 
@@ -30,8 +30,19 @@ class Concept(Resource):
 
     # Setter e Getter per is_sub_concept_of
     def set_is_sub_concept_of(self, concept):
-        """Aggiunge un Concept a is_sub_concept_of"""
-        self.is_sub_concept_of.append(concept)
+        if concept not in self.is_sub_concept_of:
+            self.is_sub_concept_of.append(concept)
+        # inverso: solo se il target supporta la relazione (es. Restriction/TruthFunction potrebbero non averlo)
+        inv = getattr(concept, 'is_super_concept_of', None)
+        if inv is not None and self not in inv:
+            inv.append(self)
+
+    def set_is_super_concept_of(self, concept):
+        if concept not in self.is_super_concept_of:
+            self.is_super_concept_of.append(concept)
+
+    def get_is_super_concept_of(self):
+        return self.is_super_concept_of
     
     def get_is_sub_concept_of(self):
         """Restituisce la lista is_sub_concept_of"""

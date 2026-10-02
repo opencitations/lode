@@ -49,7 +49,9 @@ import lode.helpers.spool as spool
 from lode.reader import Reader
 from lode.reader import security
 from lode.exceptions import LODEError, ArtefactValidationError
-from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+from lode.viewer.base_viewer import formats_for
+from lode.reader.provenance_graph import ProvenanceGraph
+from lode.helpers.rdf import iri_local_name
 
 
 # ==========================================================================
@@ -138,25 +140,27 @@ def _prune_builds() -> int:
 # 6. HTML HELPERS
 # ==========================================================================
 
-def _nav_qs(read_as: str, url, upload_id, lang, imported, closure) -> str:
+def _nav_qs(read_as: str, url, upload_id, lang, imported, closure, partial_import) -> str:
     p = {"read_as": read_as, "lang": lang or ""}
     p["upload_id" if upload_id else "url"] = upload_id or (url or "")
     if imported:
         p["imported"] = "true"
     if closure:
         p["closure"] = "true"
+    if partial_import:
+        p["partial_import"] = "true"
+        
     return urlencode(p)
 
 def _render_view(request, reader, *, resource, lang, source_url, upload_id, read_as,
-                 imported=None, closure=None):
+                 imported=None, closure=None, partial_import=None):
     viewer = reader.get_viewer()
     data = viewer.get_view_data(resource_uri=resource, language=lang)
     data["warnings"] = reader.get_warnings()
-    resp = templates.TemplateResponse("viewer.html", {
-        "request": request,
+    resp = templates.TemplateResponse(request, "viewer.html", {
         "source_url": source_url,
         "upload_id": upload_id,
-        "nav_qs": _nav_qs(read_as, source_url, upload_id, lang, imported, closure),
+        "nav_qs": _nav_qs(read_as, source_url, upload_id, lang, imported, closure, partial_import),
         **data,
     })
     resp.body = _minify(resp.body.decode("utf-8")).encode("utf-8")
@@ -167,22 +171,22 @@ def _render_view(request, reader, *, resource, lang, source_url, upload_id, read
 # ==========================================================================
 # 7. READER RESOLUTION
 # ==========================================================================
-def _url_token(url, read_as, imported, closure) -> str:
-    key = f"{url}|{read_as}|{imported}|{closure}".encode()
+def _url_token(url, read_as, imported, closure, partial_import) -> str:
+    key = f"{url}|{read_as}|{imported}|{closure}|{partial_import}".encode()
     return "url_" + hashlib.sha256(key).hexdigest()[:32]
 
 
-def _load_url(url, read_as, imported, closure, warnings, use_cache=True):
+def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cache=True):
     # Enforce http(s)://host up front: a non-URL value (local path, file://, ...)
     # must never reach the loader and be opened as a local file.
     security.check_url_safe(url)
     spool.prune()
-    token = _url_token(url, read_as, imported, closure)
+    token = _url_token(url, read_as, imported, closure,  partial_import)
     path = spool.get_path(token)
     if use_cache and os.path.exists(path):
         # cache hit: ricostruisci dal Turtle salvato
         reader = Reader()
-        reader.load_instances(path, read_as, imported=imported, closure=closure,
+        reader.load_instances(path, read_as, imported=imported, closure=closure,  partial_import=partial_import,
                               warnings=warnings)
         return reader
     if not use_cache:
@@ -193,18 +197,19 @@ def _load_url(url, read_as, imported, closure, warnings, use_cache=True):
             pass
     # cache miss (or forced refresh): scarica e processa dalla URL
     reader = Reader()
-    reader.load_instances(url, read_as, imported=imported, closure=closure,
+    reader.load_instances(url, read_as, imported=imported, closure=closure, partial_import=partial_import,
                           warnings=warnings)
-    # persisti il grafo normalizzato per i prossimi hit
+    # persisti SOLO il documento principale: i moduli vengono riapplicati a ogni hit,
     try:
+        g = reader._graph
+        main = g.graph(reader._ontology_iri) if isinstance(g, ProvenanceGraph) else g
         with open(path, "wb") as f:
-            f.write(reader._graph.serialize(format="turtle").encode("utf-8"))
+            f.write(main.serialize(format="turtle").encode("utf-8"))
     except OSError:
         pass
     return reader
 
-
-def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings,
+def _resolve_reader(read_as: str, url, upload_id, imported, closure, partial_import, warnings,
                     use_cache=True):
     if upload_id:
         # Uploads are not re-fetched, so the cache flag does not apply to them.
@@ -213,11 +218,11 @@ def _resolve_reader(read_as: str, url, upload_id, imported, closure, warnings,
             raise ArtefactValidationError("Upload expired, please re-upload",
                                           context={"upload_id": upload_id})
         reader = Reader()
-        reader.load_instances(path, read_as, imported=imported, closure=closure,
+        reader.load_instances(path, read_as, imported=imported, closure=closure,  partial_import=partial_import, 
                               warnings=warnings)
         return reader
     if url:
-        return _load_url(url, read_as, imported, closure, warnings, use_cache=use_cache)
+        return _load_url(url, read_as, imported, closure, partial_import, warnings, use_cache=use_cache)
     raise ArtefactValidationError("Missing 'url' or 'upload_id'")
 
 
@@ -380,6 +385,7 @@ def extract_get(
     lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Query(None, description="Also load owl:imports (depth 1)"),
     closure: Optional[bool] = Query(None, description="Load the full owl:imports closure"),
+    partial_import: Optional[bool] =  Query(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
     format: Optional[str] = Query(None, description="Force a serialization (ttl, rdf, jsonld…) instead of HTML"),
     warnings: bool = Query(False, description="Collect and show reader warnings"),
     cache: bool = Query(True, description="Use the disk cache for fetched URLs"),
@@ -388,37 +394,44 @@ def extract_get(
     is requested via the `format` query or the `Accept` header."""
     _check_format_enabled(read_as)
 
-    reader = _resolve_reader(read_as.value, url, upload_id, imported, closure,
+    reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, partial_import,
                              warnings, use_cache=cache)
 
     # Content negotiation
     accept = request.headers.get("accept", "text/html")
     serial = None
 
+    # Content negotiation: i formati disponibili dipendono dal grafo (quadruple solo con moduli)
+    accept = request.headers.get("accept", "text/html")
+    available = formats_for(reader._graph)
+    serial = None
+
     if format:
         fmt_l = format.lower()
-        serial = next((f for f in SERIALIZATION_FORMATS if f["ext"] == fmt_l), None)
+        serial = next((f for f in available if f["ext"] == fmt_l), None)
+        if serial is None:
+            raise HTTPException(406, f"Format '{format}' not available for this request")
     else:
         for part in accept.split(","):
             mime = part.split(";", 1)[0].strip()
-            serial = next((f for f in SERIALIZATION_FORMATS if f["mime"] == mime), None)
+            serial = next((f for f in available if f["mime"] == mime), None)
             if serial:
                 break
 
     if serial:
         if resource:
             serialized = reader.get_viewer().export_resource(resource, serial["fmt"])
-            filename = resource.rstrip("/").split("#")[-1].split("/")[-1] or "resource"
+            filename = iri_local_name(resource) or "resource"
         else:
             serialized = reader._graph.serialize(format=serial["fmt"])
-            filename = (url.rstrip("/").split("/")[-1] if url else "graph") or "graph"
+            filename = (iri_local_name(url) if url else "") or "graph"
         return Response(content=serialized, media_type=serial["mime"],
                         headers={"Content-Disposition": f'inline; filename="{filename}.{serial["ext"]}"'})
     
     logger.info("=== REQUEST SUCCESS ===")
     return _render_view(request, reader, resource=resource, lang=lang,
                         source_url=url, upload_id=upload_id, read_as=read_as.value,
-                        imported=imported, closure=closure)
+                        imported=imported, closure=closure, partial_import=partial_import)
 
 
 @app.post("/extract", response_class=HTMLResponse, tags=["extract"],
@@ -430,6 +443,7 @@ async def extract_post(
     resource: Optional[str] = Form(None, description="IRI of a single resource; omit for the whole ontology"),
     lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
+    partial_import: Optional[bool] =  Form(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
     closure: Optional[bool] = Form(None, description="Load the full owl:imports closure"),
     warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
@@ -445,11 +459,11 @@ async def extract_post(
     reader = Reader()
     await run_in_threadpool(
         reader.load_instances, spool.get_path(token), read_as.value,
-        imported=imported, closure=closure, warnings=warnings,
+        imported=imported, closure=closure, partial_import=partial_import, warnings=warnings,
     )
     return _render_view(request, reader, resource=resource, lang=lang,
                         source_url=None, upload_id=token, read_as=read_as.value,
-                        imported=imported, closure=closure)
+                        imported=imported, closure=closure, partial_import=partial_import)
 
 
 # ==========================================================================
@@ -463,13 +477,14 @@ def build_get(
     lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Query(None, description="Also load owl:imports (depth 1)"),
     closure: Optional[bool] = Query(None, description="Load the full owl:imports closure"),
+    partial_import: Optional[bool] =  Query(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
     warnings: bool = Query(False, description="Collect and show reader warnings"),
     cache: bool = Query(True, description="Use the disk cache for fetched URLs"),
 ):
     """Static documentation site as a ZIP. Sync on purpose: FastAPI runs
     non-async endpoints in the threadpool, keeping the event loop free."""
     _check_format_enabled(read_as)
-    reader = _resolve_reader(read_as.value, url, upload_id, imported, closure,
+    reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, partial_import,
                              warnings, use_cache=cache)
     return _zip_response(reader, _slug(url), lang)
 
@@ -481,6 +496,7 @@ async def build_post(
     lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
     closure: Optional[bool] = Form(None, description="Load the full owl:imports closure"),
+    partial_import: Optional[bool] =  Form(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
     warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
     """Build the static site from an uploaded file instead of a URL."""
@@ -491,7 +507,7 @@ async def build_post(
     reader = Reader()
     await run_in_threadpool(
         reader.load_instances, spool.get_path(token), read_as.value,
-        imported=imported, closure=closure, warnings=warnings,
+        imported=imported, closure=closure, partial_import=partial_import, warnings=warnings,
     )
     return await run_in_threadpool(_zip_response, reader, _slug(file.filename), lang)
 

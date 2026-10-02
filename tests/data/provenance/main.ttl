@@ -1,0 +1,10 @@
+# MAIN: the documented ontology. Imports imp; mentions home#T (home reachable),
+# ver#V (home with a versioned IRI) and missing#X (home unreachable);
+# restates the label of home#T, which must win over the home ontology.
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://ex.org/main> a owl:Ontology ; owl:imports <http://ex.org/imp> .
+<http://ex.org/main#M> a owl:Class ;
+    rdfs:subClassOf <http://ex.org/home#T>, <http://ex.org/ver#V>, <http://ex.org/missing#X> .
+<http://ex.org/home#T> rdfs:label "T from main"@en .

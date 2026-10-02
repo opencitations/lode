@@ -19,6 +19,7 @@ class Reader:
         self._graph = None
         self._configuration = None
         self._imported_uris = set()   # needed to get the model before imported/closure models
+        self._ontology_iri = None
 
     def get_warnings(self) -> list:
         if not getattr(self, '_warnings_enabled', False):
@@ -27,13 +28,14 @@ class Reader:
             return self._logic._warnings
         return []
     
-    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, warnings=False):
+    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, partial_import=None, warnings=False):
         """Carica e processa grafo RDF"""
         self._warnings_enabled = warnings
 
         # 1. Parse generico
-        loader = Loader(graph_path, imported=imported, closure=closure)
+        loader = Loader(graph_path, imported=imported, closure=closure, partial_import=partial_import)
         self._graph = loader.get_graph()
+        self._ontology_iri = loader.ontology_iri
         
         # 1.5 saves the imported/closure uris to be reused in viewer so the model metadata are not overwritten 
         self._imported_uris = getattr(loader, "imported_uris", set())

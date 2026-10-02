@@ -20,10 +20,11 @@ import os
 from pathlib import Path
 
 import pytest
+from rdflib import Graph, URIRef, RDF, OWL, Literal
 
 from lode.models import (
     Concept, Relation, Attribute, Annotation, Individual,
-    Model, Statement, Literal,
+    Model, Statement, Literal, Quantifier
 )
 from lode.viewer import OwlViewer
 import re
@@ -66,15 +67,20 @@ def _entity(cls, uri, label=None):
         inst.set_has_label(lit)   
     return inst
 
-
-def _viewer(*instances):
+def _viewer(*instances, undefined=()):
     """Cache keyed by URI -> set of instances (handles punning: same key,
-    multiple instances)."""
+    multiple instances). Every IRI gets a local triple (it is *defined* in the
+    graph) unless listed in `undefined` (mentioned-only: no card, external ref)."""
     cache = {}
+    g = Graph()
     for inst in instances:
         key = inst.get_has_identifier()
         cache.setdefault(key, set()).add(inst)
-    return OwlViewer(_FakeReader(cache))
+        if key and key not in undefined:
+            g.add((URIRef(key), RDF.type, OWL.Thing))
+    reader = _FakeReader(cache)
+    reader._graph = g
+    return OwlViewer(reader)
 
 # rdflib BNode ids look like 'N' + 32 hex chars, or 'n<digits/hex>' for parsed
 # blank nodes. Anything matching means a raw blank node leaked into the view.
@@ -111,13 +117,14 @@ EXT = "http://purl.org/spar/fabio/ProceedingsPaper"  # not in our cache
 class TestIsTocEntity:
 
     def test_concept_is_toc(self):
-        v = _viewer()
-        assert v._is_toc_entity(_entity(Concept, C)) is True
+        e = _entity(Concept, C)
+        v = _viewer(e)
+        assert v._is_toc_entity(e) is True
 
     def test_relation_is_toc(self):
-        v = _viewer()
-        assert v._is_toc_entity(_entity(Relation, P)) is True
-
+        e = _entity(Relation, P)
+        v = _viewer(e)
+        assert v._is_toc_entity(e) is True
     def test_model_is_not_toc(self):
         """An ontology (Model) is never a ToC entity: Model is not in get_toc_config()."""
         v = _viewer()
@@ -427,3 +434,13 @@ class TestCorpusInvariants:
         assert not offenders, (
             f"ToC links wrongly marked external (lose internal navigation): {offenders[:10]}"
         )
+
+class TestUndefinedEntity:
+    def test_mentioned_only_is_not_toc(self):
+        v = _viewer(_entity(Concept, C), undefined={C})
+        assert v._is_toc_entity(_entity(Concept, C)) is False
+
+    def test_mentioned_only_resolves_external(self):
+        v = _viewer(_entity(Concept, C, "My Class"), undefined={C})
+        d = v._resolve_resource_value(_entity(Concept, C, "My Class"))
+        assert d["is_external"] is True and d["link"] == C

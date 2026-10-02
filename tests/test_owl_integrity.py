@@ -1,4 +1,6 @@
 # tests/test_integrity.py
+# This set of tests is intended to survey possible edge cases not detected by owl_logic whose data are totally syntethic
+
 import json
 import pytest
 from pathlib import Path
@@ -1386,6 +1388,8 @@ def test_value_graph_correspondence(owl_logic):
 #          Subject's get_is_sub_concept_of() must contain object.
 #          Covered by test_concept_relations_subject_object_are_concepts,
 #          test_concept_relations_are_populated.
+#          Inverse: object's get_is_super_concept_of() must contain subject
+#          (named and anonymous superclasses). Covered by test_sub_class_of_inverse_populated.
 #
 # §9.1.2: "EquivalentClasses(CE1...CEn) — equivalent to SubClassOf(CE1 CE2) and
 #          SubClassOf(CE2 CE1) — symmetry required."
@@ -1415,19 +1419,23 @@ def test_value_graph_correspondence(owl_logic):
 #          Subproperty type must match parent type (Relation→Relation, etc.).
 #          Covered by test_property_relations_subject_object_are_properties,
 #          test_property_reclassified_via_sub_property_of.
+#          Inverse: object's get_is_super_property_of() must contain subject.
+#          Covered by test_sub_property_of_inverse_populated.
 #
 # §9.2.1: "SubObjectPropertyOf(ObjectPropertyChain(OPE1...OPEn) OPE) — property chain."
 #          Extraction rule: owl:propertyChainAxiom subject must be Relation with
 #          non-empty get_has_property_chain().
 #          Covered by test_property_chain_matches_graph.
+#          Note: the chain is not a named subproperty — it does not populate
+#          P.get_is_super_property_of(); shown only as has_property_chain on P.
 #
-# §9.2.2 EquivalentObjectProperties
-# "EquivalentObjectProperties(OPE1 OPE2) is equivalent to SubObjectPropertyOf(OPE1 OPE2)
-#  and SubObjectPropertyOf(OPE2 OPE1)" — symmetry required. Handled by test_equivalent_property_is_symmetric.
+# §9.2.2   EquivalentObjectProperties
+#         "EquivalentObjectProperties(OPE1 OPE2) is equivalent to SubObjectPropertyOf(OPE1 OPE2)
+#          and SubObjectPropertyOf(OPE2 OPE1)" — symmetry required. Handled by test_equivalent_property_is_symmetric.
 #
-# §9.2.3 DisjointObjectProperties
-# "DisjointObjectProperties(OPE1...OPEn) — pairwise disjoint."
-# Symmetry required — same reasoning as §9.1.3 DisjointClasses. Handled by test_property_disjoint_with_is_symmetric.
+# §9.2.3   DisjointObjectProperties
+#         "DisjointObjectProperties(OPE1...OPEn) — pairwise disjoint."
+#          Symmetry required — same reasoning as §9.1.3 DisjointClasses. Handled by test_property_disjoint_with_is_symmetric.
 #
 # §9.2.4: "InverseObjectProperties(OPE1 OPE2) — OPE1 inverse of OPE2, and vice versa."
 #          Extraction rule: owl:inverseOf both sides must be Relation. Both
@@ -1558,6 +1566,34 @@ def test_value_graph_correspondence(owl_logic):
 #          Covered by same test as §9.6.5.
 #############################################################################################
 
+def test_sub_class_of_inverse_populated(owl_logic):
+    """§9.1.1 SubClassOf(CE1 CE2) — LODE also exposes the inverse reading.
+    Extraction rule: if A rdfs:subClassOf B then A in B.get_is_super_concept_of().
+    B may be a named class or an anonymous class expression (Restriction):
+    both receive the inverse (legal in OWL; note that restrictions are not rendered as cards)."""
+    from rdflib.namespace import RDFS
+    from rdflib import URIRef
+    from lode.models import Concept, Datatype
+
+    for s, _, o in owl_logic.graph.triples((None, RDFS.subClassOf, None)):
+        if not isinstance(s, URIRef):
+            continue
+        s_cache = owl_logic._instance_cache.get(s, set())
+        o_cache = owl_logic._instance_cache.get(o, set())
+        if any(isinstance(i, Datatype) for i in s_cache | o_cache):
+            continue
+        s_inst = next((i for i in s_cache if type(i) is Concept), None)
+        o_inst = next((i for i in o_cache if isinstance(i, Concept)), None)
+        if s_inst is None or o_inst is None:
+            continue
+        assert o_inst in s_inst.get_is_sub_concept_of(), (
+            f"§9.1.1: {s} subClassOf {o} but o not in s.get_is_sub_concept_of()"
+        )
+        assert s_inst in o_inst.get_is_super_concept_of(), (
+            f"§9.1.1 inverse: {s} subClassOf {o} but s not in "
+            f"o.get_is_super_concept_of()"
+        )
+
 def test_property_reclassified_via_sub_property_of(owl_logic):
     """If A rdfs:subPropertyOf B and B is Relation/Attribute/Annotation,
     then A must be the same concrete type."""
@@ -1617,6 +1653,35 @@ def test_property_relations_subject_object_are_properties(owl_logic):
                     f"{o} is object of {predicate} but not Property in cache: "
                     f"{[type(i).__name__ for i in owl_logic._instance_cache.get(o, set())]}"
                 )
+
+def test_sub_property_of_inverse_populated(owl_logic):
+    """§9.2.1 SubPropertyOf — inverse reading, punning-aware.
+    If A rdfs:subPropertyOf B, the link joins instances of the same property type
+    (Attribute->Attribute, Relation->Relation, Annotation->Annotation) whenever B has
+    one: B in A.get_is_sub_property_of() and A in B.get_is_super_property_of()."""
+    from rdflib.namespace import RDFS
+    from rdflib import URIRef
+    from lode.models import Property
+
+    def props(uri):
+        return [i for i in owl_logic._instance_cache.get(uri, set()) if isinstance(i, Property)]
+
+    for s, _, o in owl_logic.graph.triples((None, RDFS.subPropertyOf, None)):
+        if not isinstance(s, URIRef) or not isinstance(o, URIRef) or s == o:
+            continue
+        for si in props(s):
+            same_kind = [oi for oi in props(o) if type(oi) is type(si)]
+            if not same_kind:
+                continue            # cross-type hierarchy: reported as property_type_mismatch_hierarchy
+            oi = same_kind[0]
+            assert oi in si.get_is_sub_property_of(), (
+                f"§9.2.1: {s} subPropertyOf {o}: {type(si).__name__} not linked to the "
+                f"{type(oi).__name__} instance of o"
+            )
+            assert si in oi.get_is_super_property_of(), (
+                f"§9.2.1 inverse: {s} subPropertyOf {o}: {type(si).__name__} missing from "
+                f"o.get_is_super_property_of()"
+            )
 
 def test_disjoint_union_produces_equivalent_union(owl_logic):
     """§9.1.4 OWL 2 Structural Specification — Disjoint Union.

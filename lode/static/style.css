@@ -50,6 +50,12 @@
     /* --- Sidebar metrics --- */
     --toc-sidebar-w:            18rem;
     --toc-sidebar-collapsed-w:  3.5rem;
+
+    /* --- Override link Bootstrap --- */
+    --bs-link-color:           var(--lode-blue);
+    --bs-link-color-rgb:       3, 69, 117;      /* = #034575 */
+    --bs-link-hover-color:     var(--lode-blue-dark);
+    --bs-link-hover-color-rgb: 2, 49, 84;       /* = #023154 */
 }
 
 
@@ -164,19 +170,29 @@ dd { margin: 0 0 .5em 2em; }
 
 .card-body .row { margin: 0; }
 
+.card a:hover,
+.card a:focus-visible {
+    text-decoration-thickness: 3px;
+    color: var(--lode-blue);
+}
+
 /* Risorse non ulteriormente classificate */
 .external-ref {
     text-decoration: underline dotted;
-    text-decoration-thickness: 1px;
+    text-decoration-thickness: 2px;
     text-underline-offset: 2px;
-    cursor: help;
-    color: inherit;
+    cursor: pointer;
+    color: var(--lode-blue);
+    opacity: 0.8;
+}
+
+.card a.external-ref:hover,
+.card a.external-ref:focus-visible {
+    background-size: 6px 2px;          /* hover: stesso passo, più spesso */
 }
 
 /* Entita definite nell'ontologia vs importate da vocabolari esterni */
 .entity-internal { color: var(--lode-blue); }
-.entity-external { color: var(--lode-muted); }
-.entity-external .bi { font-size: .75em; opacity: .7; }
 
 
 /* ==========================================================================
