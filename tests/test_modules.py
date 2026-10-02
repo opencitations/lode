@@ -26,6 +26,7 @@ comment on its role) and are served at http://ex.org/<file name> by `offline_fet
 
 The ProvenanceGraph container itself and the RDF helpers are tested in
 test_rdf_helpers.py.
+
 """
 from pathlib import Path
 from urllib.parse import urldefrag
