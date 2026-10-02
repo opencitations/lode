@@ -370,10 +370,6 @@ mapper:
     setters: [set_has_predicate: Property]
 
   # ========== Concepts ==========
-  
-  skos:Concept:
-    is: class
-    target_class: Concept
 
   owl:Class:
     is: class

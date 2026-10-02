@@ -1,0 +1,12 @@
+# HOME: home of home#T (ontology IRI = term namespace). The restriction's blank
+# nodes must stay in the home graph.
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://ex.org/home> a owl:Ontology .
+<http://ex.org/home#T> a owl:Class ;
+    rdfs:label "T from home"@en ;
+    rdfs:comment "T defined by home" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+                      owl:onProperty <http://ex.org/home#p> ;
+                      owl:someValuesFrom <http://ex.org/home#U> ] .

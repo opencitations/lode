@@ -7,6 +7,7 @@ from rdflib import Namespace
 SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
 
 from lode.models import *
+from lode.helpers.rdf import iri_local_name, iri_namespace
 
 class BaseLogic(ABC):
     """
@@ -174,6 +175,23 @@ class BaseLogic(ABC):
                 if isinstance(inst, Model):
                     inst.set_has_namespaces(ns)
 
+    # ========== PROVENANCE ========== (nota: _triples_map viene scritto solo da questi tre metodi.)
+
+    def _track(self, instance, *triples):
+        """Attribuisce uno o piu' tripla alla provenance di `instance`."""
+        self._triples_map.setdefault(instance, set()).update(triples)
+
+    def _untrack(self, instance, *triples):
+        """Rimuove tripla dalla provenance di `instance`."""
+        bucket = self._triples_map.get(instance)
+        if bucket:
+            bucket.difference_update(triples)
+
+    def _move_tracking(self, old, new):
+        """Trasferisce la provenance quando un'istanza viene promossa/sostituita."""
+        if old in self._triples_map:
+            self._triples_map.setdefault(new, set()).update(self._triples_map.pop(old))
+
     # ========== UTILITIES ==========
 
     def _traverse_hierarchy(
@@ -310,7 +328,12 @@ class BaseLogic(ABC):
                             obj_str = str(obj)
                             if any(obj_str.startswith(ns) for ns in self._allowed_namespaces) and obj not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
                                 continue
-                        obj_instance = self.get_or_create(obj, value_type)
+                        # punning: prefer the instance of obj with the same class as the subject
+                        obj_instance = next(
+                            (c for c in self._instance_cache.get(obj, ())
+                             if type(c) is type(instance) and isinstance(c, value_type)),
+                            None
+                        ) or self.get_or_create(obj, value_type)
                         if obj_instance:
                             setter(obj_instance)
                     else:
@@ -396,8 +419,7 @@ class BaseLogic(ABC):
                         new.__dict__.update(old.__dict__)
                         self._instance_cache[id].discard(old)
                         self._instance_cache[id].add(new)
-                        if old in self._triples_map:
-                            self._triples_map[new] = self._triples_map.pop(old)
+                        self._move_tracking(old, new)
                         return new
 
             instance = python_class()
@@ -416,63 +438,46 @@ class BaseLogic(ABC):
             return None
 
     def populate_instance(self, instance, uri: Node):
-        
         if isinstance(uri, URIRef):
             instance.set_has_identifier(str(uri))
         elif isinstance(uri, BNode):
             instance.has_identifier = str(uri)
 
-        if instance not in self._triples_map:
-            self._triples_map[instance] = set()
+        is_subordinate = self._is_punning_subordinate(instance, uri)
 
         for predicate, obj in self.graph.predicate_objects(uri):
-            predicate_str = str(predicate)
-            predicate_namespace = (
-                predicate_str.rsplit('#', 1)[0] + '#'
-                if '#' in predicate_str
-                else predicate_str.rsplit('/', 1)[0] + '/'
-            )
-
-            if predicate_namespace not in self._allowed_namespaces:
+            if iri_namespace(str(predicate)) not in self._allowed_namespaces:
                 continue
-        
-            # handles punning priorities wrt config
-            is_subordinate = self._is_punning_subordinate(instance, uri)
-            instance_cls_name = type(instance).__name__
 
-            if predicate in self._property_mapping:
-                config = self._property_mapping[predicate]
+            handled = False
+            config = self._property_mapping.get(predicate)
+
+            if config is not None:
                 target_classes = config.get('target_classes', [])
-
-                # Punning subordinate: apply only if config explicitly targets this class
-                if is_subordinate and type(instance) not in target_classes:
+                if is_subordinate and target_classes and type(instance) not in target_classes:
                     continue
-
                 if target_classes and not self._instance_matches_target(instance, target_classes):
                     continue
 
                 if 'handler' in config:
-                    handler_name = config['handler']
-                    # handler existence already guaranteed by _validate_handlers
-                    handler = getattr(self, handler_name)
                     try:
-                        handler(instance, uri, predicate, obj, None)
-                        self._triples_map[instance].add((uri, predicate, obj))
+                        getattr(self, config['handler'])(instance, uri, predicate, obj, None)
+                        handled = True
                     except Exception as e:
-                        print(f"  Errore handler {handler_name}: {e}")
-                    continue
-
-                if 'setters' in config:
+                        print(f"  Errore handler {config['handler']}: {e}")
+                elif 'setters' in config:
                     try:
                         self._apply_setters(instance, config['setters'], obj)
-                        self._triples_map[instance].add((uri, predicate, obj))
+                        handled = True
                     except Exception as e:
                         print(f"  Errore setters: {e}")
-                    continue
 
-            if self._is_rdf_collection(obj):
+            if not handled and config is None and self._is_rdf_collection(obj):
                 self._handle_collection_object(instance, predicate, obj)
-                self._triples_map[instance].add((uri, predicate, obj))
+                handled = True
+
+            if handled and not (predicate == RDF.type and obj in self._strategy.get_type_mapping()):
+                self._track(instance, (uri, predicate, obj))
 
     # ========== HELPERS ==========
 
@@ -525,9 +530,7 @@ class BaseLogic(ABC):
         stmt_bnode = BNode()
         statement.set_has_identifier(str(stmt_bnode))
 
-        if statement not in self._triples_map:
-            self._triples_map[statement] = set()
-        self._triples_map[statement].add((subj, pred, obj))
+        self._track(statement, (subj, pred, obj))
 
         subj_obj = self.get_or_create(subj, Resource)
         if subj_obj:
@@ -585,11 +588,9 @@ class BaseLogic(ABC):
         if node not in self._instance_cache:
             self._instance_cache[node] = set()
         self._instance_cache[node].add(statement)
-        if statement not in self._triples_map:
-            self._triples_map[statement] = set()
 
         for p, o in self.graph.predicate_objects(node):
-            self._triples_map[statement].add((node, p, o))
+            self._track(statement, (node, p, o))
 
             # The predicate becomes an Annotation if not otherwise known
             if p in self._instance_cache:
@@ -623,7 +624,7 @@ class BaseLogic(ABC):
                     statement.set_has_object(o_inst)
             else:
                 # extra triples live as ad-hoc attributes keyed by the predicate label
-                attr_name = str(p).rsplit('#', 1)[-1].rsplit('/', 1)[-1]
+                attr_name = iri_local_name(p) # rdf helper
                 existing = getattr(statement, attr_name, None)
                 if existing is None:
                     setattr(statement, attr_name, o_inst)
@@ -664,8 +665,7 @@ class BaseLogic(ABC):
                 rule.__dict__.update(existing.__dict__)
                 self._instance_cache[uri].discard(existing)
                 self._instance_cache[uri].add(rule)
-                if existing in self._triples_map:
-                    self._triples_map[rule] = self._triples_map.pop(existing)
+                self._move_tracking(existing, rule)
             else:
                 rule = existing
         else:
@@ -708,7 +708,7 @@ class BaseLogic(ABC):
         prop_pred = self.graph.value(atom_node, SWRL_NS.propertyPredicate)
         if prop_pred:
             atom_type_uri = self.graph.value(atom_node, RDF.type)
-            local = str(atom_type_uri).split('#')[-1] if atom_type_uri else ''
+            local = iri_local_name(atom_type_uri) if atom_type_uri else ''
             if local == 'DatavaluedPropertyAtom':
                 atom.set_has_predicate(self.get_or_create(prop_pred, Attribute))
             else:
@@ -722,7 +722,7 @@ class BaseLogic(ABC):
         # SameIndividualsAtom / DifferentIndividualsAtom — no predicate in RDF
         atom_type_uri = self.graph.value(atom_node, RDF.type)
         if atom_type_uri:
-            local = str(atom_type_uri).split('#')[-1]
+            local = iri_local_name(atom_type_uri)
             if local == 'SameIndividualsAtom':
                 atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
             elif local == 'DifferentIndividualsAtom':

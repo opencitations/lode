@@ -2,6 +2,7 @@
 import hashlib
 from typing import Dict, Optional, List
 from lode.viewer.base_viewer import BaseViewer
+from lode.helpers.rdf import iri_local_name
 
 class SkosViewer(BaseViewer):
     """Viewer SKOS con visualizzazione LODE-style."""
@@ -172,7 +173,7 @@ class SkosViewer(BaseViewer):
             elif isinstance(concept, str):
                 # External URI
                 items.append({
-                    'label': concept.split('/')[-1].split('#')[-1],
+                    'label': iri_local_name(concept),
                     'uri': concept,
                     'anchor_id': None,
                     'external': True

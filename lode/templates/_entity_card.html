@@ -24,7 +24,7 @@
             {% set precise_key = v.link ~ '|' ~ v_type %}
             {% if v.is_external %}
                 <a href="{{ v.link }}" target="_blank" rel="noopener"
-                class="external-ref {{ dep_class }}" title="{{ v.link }}{{ dep_title }}">{{ v.text }}<i class="bi bi-box-arrow-up-right ms-1"></i></a>
+                class="external-ref {{ dep_class }}" title="{{ v.link }}{{ dep_title }}">{{ v.text }}</a>
             {% elif precise_key in anchor_map %}
                 <a href="#{{ anchor_map[precise_key] }}" class="{{ dep_class }}" title="{{ precise_key }}{{ dep_title }}">{{ v.text }}</a>
             {% elif v.link in anchor_map %}
@@ -197,7 +197,9 @@
                                                             {% elif part.link in anchor_map %}
                                                                 <a href="#{{ anchor_map[part.link] }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
                                                             {% elif part.is_external %}
-                                                                <span class="external-ref {% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</span>
+                                                                <a class="external-ref {% if is_md %}render-markdown{% endif %} {{dep_class}}" 
+                                                                href="{{part.link}}" target="_blank"
+                                                                title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
                                                             {% elif is_static %}
                                                                 <a href="{{ resource_url(part.link, v_type ~ 's') }}" class="{% if is_md %}render-markdown{% endif %} {{dep_class}}" title="{{part.link}}{{dep_title}}">{{ part.text }}</a>
                                                             {% else %}
@@ -240,9 +242,10 @@
                                                 {% elif rel_item.link in anchor_map %}
                                                     <a href="#{{ anchor_map[rel_item.link] }}" class="{{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
                                                 {% elif rel_item.is_external %}
-                                                <span class="external-ref {% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}"
+                                                <a class="external-ref {% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}"
+                                                    href="{{rel_item.link}}" target="_blank"
                                                     title="{{rel_item.link}}{{dep_title}}"
-                                                    {% if is_md %}data-md="{{ rel_item.text | e }}"{% endif %}>{{ rel_item.text }}</span>
+                                                    {% if is_md %}data-md="{{ rel_item.text | e }}"{% endif %}>{{ rel_item.text }}</a>
                                                 {% elif is_static %}
                                                 <a href="{{ resource_url(rel_item.link, v_type ~ 's') }}" class="{% if is_md %}render-markdown inline-markdown{% endif %} {{dep_class}}" title="{{rel_item.link}}{{dep_title}}">{{ rel_item.text }}</a>
                                                 {% else %}

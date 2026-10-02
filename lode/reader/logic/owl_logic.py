@@ -82,7 +82,9 @@ class OwlLogic(BaseLogic):
             if not py_class:
                 continue
             for uri in self.graph.subjects(RDF.type, rdf_type):
-                self.get_or_create(uri, py_class, populate=False)
+                inst = self.get_or_create(uri, py_class, populate=False)
+                if inst is not None:
+                    self._track(inst, (uri, RDF.type, rdf_type))
                 # Apply static setters (e.g. set_is_transitive: True) always,
                 # even if instance already existed in cache from phase1.
                 if 'setters' in config:
@@ -384,8 +386,12 @@ class OwlLogic(BaseLogic):
             if len(self._instance_cache[uri]) > 1:
                 existing = instance.get_also_defined_as() or []
                 for other in self._instance_cache[uri]:
-                    if other is not instance and other not in existing:
+                    if other is instance:
+                        continue
+                    if other not in existing:
                         instance.set_also_defined_as(other)
+                    if instance not in (other.get_also_defined_as() or []):
+                        other.set_also_defined_as(instance)
 
 
     def _get_inherited_property_values(self, property_instance, getter_name: str) -> list:
@@ -711,10 +717,7 @@ class OwlLogic(BaseLogic):
                 if facet_node not in self._instance_cache:
                     self._instance_cache[facet_node] = set()
                 self._instance_cache[facet_node].add(instance)
-                if instance not in self._triples_map:
-                    self._triples_map[instance] = set()
-                for fp, fv in self.graph.predicate_objects(facet_node):
-                    self._triples_map[instance].add((facet_node, fp, fv))
+                self._track(instance, *((facet_node, fp, fv) for fp, fv in self.graph.predicate_objects(facet_node)))
 
         except Exception as e:
             print(f"Errore handle_datatype_restriction: {e}")
@@ -958,9 +961,7 @@ class OwlLogic(BaseLogic):
         stmt_bnode = BNode()
         statement.set_has_identifier(str(stmt_bnode))
 
-        if statement not in self._triples_map:
-            self._triples_map[statement] = set()
-        self._triples_map[statement].add((subj, pred, obj))
+        self._track(statement, (subj, pred, obj))
 
         statement.set_has_subject(subj_inst)
         statement.set_has_predicate(pred_inst)

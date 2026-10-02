@@ -11,17 +11,20 @@ import lode.reader.modules as modules
 from lode.reader import security
 from lode.exceptions import (ArtefactLoadError, ArtefactNotFoundError,
                              ArtefactUnavailableError, ArtefactValidationError)
-
+from lode.helpers.rdf import PARSE_FORMATS, parse_any
+from lode.reader.provenance_graph import ProvenanceGraph
 
 class Loader:
     """Gestisce il caricamento di file RDF"""
 
-    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None):
+    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None, partial_import=None):
         
         self.graph = Graph()
+        self.ontology_iri = None
         self._imported = imported
         self._closure = closure
         self.imported_uris = set() # needed to keep track of original model to document
+        self._partial_import = partial_import
 
         if file_path:
             self.load(file_path)
@@ -55,17 +58,20 @@ class Loader:
                 "Parsed graph is empty (wrong URL or not an RDF resource)",
                 context={"source": source}
             )
-        
-        self._apply_modules()
+
+        if self._imported or self._closure or self._partial_import:
+            raw, self.graph = self.graph, ProvenanceGraph()
+            self.ontology_iri = self.graph.add_document(raw, source)
+            self._apply_modules()
     
     # ----------------------------------------------------------
     #  MODULES MAIN HANDLER
     # ----------------------------------------------------------
 
     def _apply_modules(self) -> None:
-        if self._imported and self._closure:
-            self.graph, self.imported_uris = modules.apply_closure(self.graph)
-        if self._imported:
+        if self._partial_import:
+            self.graph, self.imported_uris = modules.apply_partial_import(self.graph)
+        elif self._imported:
             self.graph, self.imported_uris = modules.apply_imported(self.graph)
         elif self._closure:
             self.graph, self.imported_uris = modules.apply_closure(self.graph)
@@ -130,29 +136,11 @@ class Loader:
             content_type = response.headers.get("Content-Type", "").lower()
 
             # Format guessed from HTTP Content-Type (content negotiation handler)
-            guessed_format = self._guess_format_from_content_type(content_type)
-
-            self.graph = Graph()
-
-            if guessed_format:
-                try:
-                    self.graph.parse(data=content, format=guessed_format)
-                    return
-                except Exception:
-                    pass  # fallback below
-
-            for fmt in ["xml", "turtle", "json-ld", "nt", "n3"]:
-                try:
-                    self.graph.parse(data=content, format=fmt)
-                    return
-                except Exception:
-                    continue
-
-            # Error: Unrecognised RDF format
-            raise ArtefactLoadError(  # (5)
-                "Could not parse RDF after content negotiation",
-                context={"url": url, "formats_tried": ["xml", "turtle", "json-ld", "nt", "n3"]}
-            )
+            graph = parse_any(content, preferred=self._guess_format_from_content_type(content_type))
+            if graph is None:
+                raise ArtefactLoadError("Could not parse RDF after content negotiation",
+                                        context={"url": url, "formats_tried": list(PARSE_FORMATS)})
+            self.graph = graph
 
         # Error (Fallback): Cannot Load RDF
         except requests.RequestException as e:
@@ -164,23 +152,14 @@ class Loader:
     # ----------------------------------------------------------
     #  LOCAL FILE LOADING
     # ----------------------------------------------------------
-    def _load_from_local_file(self, path: str) -> None: 
-
+    def _load_from_local_file(self, path: str) -> None:
         with open(path, "rb") as f:
             raw = f.read()
-
-        for fmt in ['xml', 'turtle', 'n3', 'nt', 'json-ld']:
-            try:
-                self.graph = Graph()
-                self.graph.parse(data=raw, format=fmt)
-                return
-            except Exception:
-                continue
-    
-        raise ArtefactLoadError( 
-            "Could not parse RDF with any known format",
-            context={"path": path}
-        )
+        graph = parse_any(raw)
+        if graph is None:
+            raise ArtefactLoadError("Could not parse RDF with any known format",
+                                    context={"path": path, "formats_tried": list(PARSE_FORMATS)})
+        self.graph = graph
 
     # ----------------------------------------------------------
     #  HELPERS

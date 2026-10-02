@@ -115,6 +115,10 @@
                                             <input class="form-check-input" type="checkbox" id="closure" name="closure"  value="true">
                                             <label class="form-check-label" for="closure">Closure</label>
                                         </span>
+                                        <span class="form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="partial_import" name="partial_import"  value="true">
+                                            <label class="form-check-label" for="partial_import">Partial import</label>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -260,6 +264,12 @@
                         <td><code>/extract</code>, <code>/build</code></td>
                         <td><em>OWL only.</em> When set to <code>true</code>, the transitive closure of all imported ontologies is included. If both <code>imported</code> and <code>closure</code> are specified, only <code>imported</code> is used.</td>
                         <td><code>closure=true</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>partial_import</code></td><td>boolean</td><td>No</td>
+                        <td><code>/extract</code>, <code>/build</code></td>
+                        <td><em>OWL only.</em> When set to <code>true</code>, every external entity mentioned in the artefact (including its <code>owl:imports</code>) is dereferenced once, and only the definitions of those entities are added, blank-node axioms included. Nested imports are not followed and the rest of the external ontologies is ignored. Mentioned entities that cannot be resolved get no card and are shown as external links. Takes precedence over <code>imported</code> and <code>closure</code>.</td>
+                        <td><code>partial_import=true</code></td>
                     </tr>
                     <tr>
                         <td><code>cache</code></td><td>boolean</td><td>No</td>
