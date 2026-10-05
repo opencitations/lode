@@ -1,4 +1,3 @@
-from pathlib import Path
 from urllib.parse import urlparse, quote
 from rdflib import Dataset, Graph, URIRef, OWL, RDF
 from rdflib.namespace import SKOS
@@ -30,6 +29,4 @@ class ProvenanceGraph(Dataset):
         parsed = urlparse(fallback)
         if parsed.scheme in {"http", "https"}:
             return URIRef(fallback)
-        if not parsed.scheme:
-            return URIRef(Path(fallback).resolve().as_uri())
         return URIRef(f"urn:lode:source:{quote(fallback, safe='')}")
