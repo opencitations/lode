@@ -27,3 +27,7 @@ htmlcov/
 docs/node_modules/
 docs/.astro/
 docs/dist/
+
+# Runtime spool cache
+**/spool/
+lode/builds/

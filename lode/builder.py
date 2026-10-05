@@ -5,11 +5,14 @@ from pathlib import Path
 from urllib.parse import quote
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import importlib.resources
-from lode.api import _minify
-from lode.models.model import Model
 from rdflib import URIRef
 from rdflib.namespace import split_uri
+
+# internal modules
 from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+from lode.helpers.html_utils import minify as _minify
+from lode.models.model import Model
+
 
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 
