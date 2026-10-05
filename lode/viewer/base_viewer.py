@@ -8,12 +8,24 @@ import urllib.parse
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 from rdflib.namespace import RDF, OWL
 
+from lode.reader.provenance_graph import ProvenanceGraph
+from lode.helpers.rdf import iri_local_name
+
 SERIALIZATION_FORMATS = [
     {"label": "Turtle",    "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
     {"label": "RDF/XML",   "fmt": "xml",     "mime": "application/rdf+xml",   "ext": "rdf",    "icon": "bi-file-code"},
     {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
     {"label": "N-Triples", "fmt": "nt",      "mime": "application/n-triples", "ext": "nt",     "icon": "bi-file-text"},
 ]
+
+QUAD_SERIALIZATION_FORMATS = [
+    {"label": "TriG",      "fmt": "trig",    "mime": "application/trig",      "ext": "trig",   "icon": "bi-filetype-raw"},
+    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
+    {"label": "N-Quads",   "fmt": "nquads",  "mime": "application/n-quads",   "ext": "nq",     "icon": "bi-file-text"},
+]
+
+def formats_for(graph):
+    return QUAD_SERIALIZATION_FORMATS if isinstance(graph, ProvenanceGraph) else SERIALIZATION_FORMATS
 
 class BaseViewer:
     """Base viewer per visualizzare istanze estratte dal Reader."""
@@ -39,6 +51,22 @@ class BaseViewer:
         if not uri:
             return False
         return (URIRef(str(uri)), None, None) in self.reader._graph
+
+    def _formats(self):
+        return formats_for(self.reader._graph)
+
+    def _with_provenance(self, sub):
+        """Con moduli attivi: ricolloca le triple di `sub` nei named graph d'origine."""
+        ds = self.reader._graph
+        if not isinstance(ds, ProvenanceGraph):
+            return sub
+        out = ProvenanceGraph()
+        for prefix, ns in ds.namespaces():
+            out.bind(prefix, ns)
+        for s, p, o in sub:
+            for *_, c in ds.quads((s, p, o, None)):
+                out.graph(c).add((s, p, o))
+        return out
     
     def _is_internal(self, uri) -> bool:
         if not uri:
@@ -114,7 +142,7 @@ class BaseViewer:
         # Final Fallback: The URI Identifier
         resource_id = resource.get_has_identifier()
         if resource_id:
-            clean_resource_id = resource_id.split('#')[-1] if '#' in resource_id else resource_id.split('/')[-1]
+            clean_resource_id = iri_local_name(resource_id)
             # ONLY clean the identifier!
             return self._clean_name(self, clean_resource_id)
 
@@ -135,21 +163,23 @@ class BaseViewer:
         if resource_uri:
             data = self._handle_single_resource(resource_uri, language)
             data['metadata'] = metadata_dict
-            data['export_formats'] = SERIALIZATION_FORMATS
+            data['export_formats'] = self._formats()
             return data
 
         return {
             'metadata': metadata_dict,
             'entities': self._format_entities(all_instances, language),
-            'export_formats': SERIALIZATION_FORMATS,
+            'export_formats': self._formats(),
         }
 
     def _is_toc_entity(self, instance) -> bool:
-            """Browsable (own card + clickable link) iff its type is in get_toc_config. 
+        """Browsable (own card + clickable link) iff its type is in get_toc_config. 
             Resources not listed in get_o_config are shown when mentioned as plain text 
             in cards  (external-ref), just never linked."""
-            toc_keys = {key for key, _id, _title in self.get_toc_config()}
-            return type(instance).__name__ in toc_keys
+        toc_keys = {key for key, _id, _title in self.get_toc_config()}
+        if type(instance).__name__ not in toc_keys:
+            return False
+        return self._has_local_triples(instance.get_has_identifier())
     
     def get_toc_instances(self) -> List:
         return [i for i in self.get_all_instances() if self._is_toc_entity(i)]
@@ -187,7 +217,7 @@ class BaseViewer:
         for class_key, section_id, section_title in group_definitions:
             instances = [
                 inst for inst in all_instances
-                if type(inst).__name__ == class_key
+                if type(inst).__name__ == class_key and self._is_toc_entity(inst)
             ]
 
             if instances:
@@ -206,7 +236,7 @@ class BaseViewer:
         return {
             'grouped_view': True,
             'sections': sections,
-            'export_formats': SERIALIZATION_FORMATS
+            'export_formats': self._formats()
         }
 
     def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
@@ -254,6 +284,10 @@ class BaseViewer:
                             if val_dict['text']: formatted_values.append(val_dict)
 
                         if formatted_values:
+                            if attr in self._FULL_IRI_ATTRS:
+                                for fv in formatted_values:
+                                    if fv.get('link'):
+                                        fv['text'] = str(fv['link'])
                             if clean_name not in relations:
                                 relations[clean_name] = []
                             for v in formatted_values:
@@ -830,6 +864,8 @@ class BaseViewer:
         'Property':   'get_is_sub_property_of',
         # Annotation, Individual: nessuna gerarchia -> non in mappa
     }
+
+    _FULL_IRI_ATTRS = {'is_defined_by'}
     
     def _build_hierarchy(self, instances, parent_getter_name, language=None):
         """
@@ -892,9 +928,10 @@ class BaseViewer:
         sub = self.reader.get_provenance_subgraph(instance)
         if not any(True for _ in sub):
             return []
+        sub = self._with_provenance(sub)
         return [
             {"label": f["label"], "code": self._safe_serialize(sub, f["fmt"])}
-            for f in SERIALIZATION_FORMATS
+            for f in self._formats()
         ]
     
     @staticmethod
@@ -915,4 +952,4 @@ class BaseViewer:
             for inst in inst_iter:
                 for t in self.reader.get_provenance_subgraph(inst):  # già esiste
                     g.add(t)
-        return self._safe_serialize(g, fmt)
+        return self._safe_serialize(self._with_provenance(g), fmt)

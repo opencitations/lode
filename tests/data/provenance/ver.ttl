@@ -1,0 +1,7 @@
+# VER: home of ver#V, but declares a versioned ontology IRI (.../ver/1.0) that
+# differs from the term namespace: found through the dereferenced document.
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://ex.org/ver/1.0> a owl:Ontology .
+<http://ex.org/ver#V> a owl:Class ; rdfs:label "V"@en .

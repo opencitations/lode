@@ -25,7 +25,6 @@ from lode.reader.loader import Loader
 from lode.exceptions import (ArtefactValidationError, ArtefactLoadError,
                              ArtefactNotFoundError, ArtefactUnavailableError)
 
-
 # ----------------------------------------------------------------------
 #  Helpers / fakes
 # ----------------------------------------------------------------------
@@ -550,7 +549,8 @@ class TestUrlMustBeHttp:
     def test_resolve_reader_rejects_non_http_url(self, bad):
         from lode import api
         with pytest.raises(ArtefactValidationError):
-            api._resolve_reader("owl", bad, None, None, None, False)
+            api._resolve_reader(read_as="owl", upload_id=None, url=bad, imported=None, closure=None,
+                  partial_import=None, warnings=False)
 
     def test_loader_rejects_non_http_scheme(self):
         with pytest.raises(ArtefactValidationError):

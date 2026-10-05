@@ -1,0 +1,5 @@
+# ANON: no owl:Ontology: its context falls back to its source (file path or URL).
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://ex.org/anon#A> a owl:Class ; owl:imports <http://ex.org/imp> .

@@ -454,7 +454,9 @@ class TestPhase3:
         assert any(l.get_has_value() == "My Class" for l in labels)
 
     def test_rdfs_subclass_of_populated(self):
-        """rdfs:subClassOf must wire is_sub_concept_of on the Concept."""
+        """    def test_rdfs_subclass_of_populated(self):
+        rdfs:subClassOf must wire is_sub_concept_of on the child and
+        is_super_concept_of on the parent."""
         logic = _make_logic([
             (EX.Child, RDF.type, OWL.Class),
             (EX.Parent, RDF.type, OWL.Class),
@@ -464,18 +466,84 @@ class TestPhase3:
         child = _instance_for_uri(logic, EX.Child, Concept)
         parent = _instance_for_uri(logic, EX.Parent, Concept)
         assert parent in child.get_is_sub_concept_of()
+        assert child in parent.get_is_super_concept_of()
+        assert child.get_is_super_concept_of() == []
+
+    def test_super_concept_of_multiple_children_and_parents(self):
+        """is_super_concept_of must collect all children; multiple inheritance
+        must wire the child into every parent."""
+        logic = _make_logic([
+            (EX.A, RDFS.subClassOf, EX.P1),
+            (EX.B, RDFS.subClassOf, EX.P1),
+            (EX.A, RDFS.subClassOf, EX.P2),
+        ])
+        _run_all(logic)
+        p1 = _instance_for_uri(logic, EX.P1, Concept)
+        p2 = _instance_for_uri(logic, EX.P2, Concept)
+        ids_p1 = {c.get_has_identifier() for c in p1.get_is_super_concept_of()}
+        ids_p2 = {c.get_has_identifier() for c in p2.get_is_super_concept_of()}
+        assert ids_p1 == {str(EX.A), str(EX.B)}
+        assert ids_p2 == {str(EX.A)}
+
+    def test_super_concept_of_no_duplicates(self):
+        """A repeated rdfs:subClassOf triple must not duplicate the inverse."""
+        logic = _make_logic([
+            (EX.Child, RDF.type, OWL.Class),
+            (EX.Parent, RDF.type, OWL.Class),
+            (EX.Child, RDFS.subClassOf, EX.Parent),
+        ])
+        # simulate double processing of the same triple
+        logic.phase1_classify_from_predicates()
+        logic.phase2_create_from_types()
+        logic.phase3_populate_properties()
+        logic.phase3_populate_properties()
+        parent = _instance_for_uri(logic, EX.Parent, Concept)
+        assert len(parent.get_is_super_concept_of()) == 1
+
+    def test_super_concept_of_wired_on_restriction(self):
+        """Restrictions are class expressions: they receive is_super_concept_of
+        like named classes (legal in OWL, not rendered as standalone entities)."""
+        restriction = BNode()
+        logic = _make_logic([
+            (EX.Child, RDF.type, OWL.Class),
+            (restriction, RDF.type, OWL.Restriction),
+            (restriction, OWL.onProperty, EX.myProp),
+            (EX.myProp, RDF.type, OWL.ObjectProperty),
+            (restriction, OWL.someValuesFrom, EX.SomeClass),
+            (EX.Child, RDFS.subClassOf, restriction),
+        ])
+        _run_all(logic)
+        child = _instance_for_uri(logic, EX.Child, Concept)
+        restr = next(iter(logic._instance_cache.get(restriction, set())), None)
+        assert restr in child.get_is_sub_concept_of()
+        assert child in restr.get_is_super_concept_of()
 
     def test_rdfs_sub_property_of_populated(self):
-        """rdfs:subPropertyOf must wire is_sub_property_of on the Property."""
+        """rdfs:subPropertyOf must wire is_sub_property_of on the child and
+        is_super_property_of on the parent."""
         logic = _make_logic([
             (EX.childProp, RDF.type, OWL.ObjectProperty),
             (EX.parentProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
         _run_all(logic)
-        child_prop = _instance_for_uri(logic, EX.childProp, Relation)
-        parent_prop = _instance_for_uri(logic, EX.parentProp, Relation)
-        assert parent_prop in child_prop.get_is_sub_property_of()
+        child = _instance_for_uri(logic, EX.childProp, Relation)
+        parent = _instance_for_uri(logic, EX.parentProp, Relation)
+        assert parent in child.get_is_sub_property_of()
+        assert child in parent.get_is_super_property_of()
+        assert child.get_is_super_property_of() == []
+
+    def test_super_property_of_survives_reclassification(self):
+        """Untyped child of Property is reclassified (e.g., Object property) in phase5: parent must reference the
+        instance currently in cache, once."""
+        logic = _make_logic([
+            (EX.parentProp, RDF.type, OWL.ObjectProperty),
+            (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
+        ])
+        _run_all(logic)
+        child = _instance_for_uri(logic, EX.childProp, Relation)
+        parent = _instance_for_uri(logic, EX.parentProp, Relation)
+        assert parent.get_is_super_property_of() == [child]
 
     def test_owl_deprecated_predicate_applied(self):
         """owl:deprecated true on a resource must set is_deprecated=True on the instance."""

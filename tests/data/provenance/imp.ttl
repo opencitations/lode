@@ -1,0 +1,10 @@
+# IMP: formally imported by main; imports deep. Third-party ontology: its
+# redefinitions of home#T and missing#X must be ignored by partial_import.
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://ex.org/imp> a owl:Ontology ; owl:imports <http://ex.org/deep> .
+<http://ex.org/imp#I> a owl:Class .
+<http://ex.org/home#T> rdfs:comment "T redefined by imp" ;
+    owl:equivalentClass <http://ex.org/imp#I> .
+<http://ex.org/missing#X> rdfs:comment "X redefined by imp" .

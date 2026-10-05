@@ -21,6 +21,7 @@ class OwlViewer(BaseViewer):
             ('Individual', 'individuals', 'Individual'),
             ('Annotation', 'annotations', 'Annotation'),
         ]
+        
 
     def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
         all_instances = self.get_all_instances()

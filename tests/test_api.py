@@ -170,9 +170,9 @@ def test_url_spool_cache_and_bypass(tmp_path, monkeypatch):
         self._graph = Graph()
     monkeypatch.setattr(Reader, "load_instances", fake_load)
 
-    api._load_url("http://x/o", "owl", None, None, False)                   # miss  -> URL
-    api._load_url("http://x/o", "owl", None, None, False)                   # hit   -> spool file
-    api._load_url("http://x/o", "owl", None, None, False, use_cache=False)  # bypass -> URL
+    api._load_url("http://x/o", read_as="owl", imported=None, closure=None, partial_import=None, warnings=False)                     # miss  -> URL
+    api._load_url("http://x/o", read_as="owl", imported=None, closure=None, partial_import=None, warnings=False)                     # hit   -> spool file
+    api._load_url("http://x/o", read_as="owl", imported=None, closure=None, partial_import=None, warnings=False, use_cache=False)    # bypass -> URL
 
     assert seen[0] == "http://x/o"
     assert seen[1].endswith(".rdf") and seen[1] != "http://x/o"   # served from spool

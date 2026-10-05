@@ -6,9 +6,11 @@ from lode.reader.reader import Reader
 from lode.reader.loader import Loader
 from lode.reader.config_manager import get_configuration
 from lode.reader import modules
+from lode.reader.provenance_graph import ProvenanceGraph
 
 __all__ = ['Loader',
            'get_configuration',
            'Reader', 
-           'modules'
+           'modules',
+           'ProvenanceGraph'
            ]
