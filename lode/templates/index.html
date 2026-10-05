@@ -387,6 +387,7 @@
                 // reset checkboxes when hidden
                 document.getElementById('imported').checked = false;
                 document.getElementById('closure').checked  = false;
+                document.getElementById('partial_import').checked  = false;
             }
         }
 
@@ -462,6 +463,7 @@
                 if (readAs === 'owl') {
                     if (document.getElementById('imported').checked) params.append('imported', 'true');
                     if (document.getElementById('closure').checked)  params.append('closure',  'true');
+                    if (document.getElementById('partial_import').checked) params.append('partial_import', 'true');
                 }
 
                 window.location.href = `${wantsZip ? '/build' : '/extract'}?${params.toString()}`;

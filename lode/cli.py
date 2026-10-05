@@ -30,6 +30,7 @@ def cmd_build(args):
         source, args.read_as,
         imported=args.imported or None,
         closure=args.closure or None,
+        partial_import=args.partial_import or None,
     )
     build_html(reader.get_viewer(), out_dir, lang=args.lang, reader=reader)
     print(f"Done -> {out_dir}")
@@ -53,6 +54,7 @@ def main():
     p_build.add_argument("--lang", default="en")
     p_build.add_argument("--imported", action="store_true")
     p_build.add_argument("--closure", action="store_true")
+    p_build.add_argument("--partial-import", action="store_true")
 
     args = parser.parse_args()
     {"serve": cmd_serve, "build": cmd_build}[args.cmd](args)
