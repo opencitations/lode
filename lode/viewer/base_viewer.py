@@ -1,4 +1,8 @@
-# base_viewer.py
+"""Generic viewer: turns model instances into the dictionaries the HTML templates render.
+
+Format-specific viewers (OWL, RDF, SKOS) extend it with their table of contents
+and display names. It also serializes the provenance of each entity.
+"""
 import hashlib
 import re
 from typing import Dict, List, Optional, Tuple
@@ -6,7 +10,6 @@ from lode.models import Literal, Model, Resource, Statement
 import urllib.parse
 
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
-from rdflib.namespace import RDF, OWL
 
 from lode.reader.provenance_graph import ProvenanceGraph
 from lode.helpers.rdf import iri_local_name
@@ -25,18 +28,28 @@ QUAD_SERIALIZATION_FORMATS = [
 ]
 
 def formats_for(graph):
+    """Return the serialization formats available for a graph.
+
+    Quad formats are offered only for a ProvenanceGraph, because only it keeps
+    the named graph of each triple.
+    """
     return QUAD_SERIALIZATION_FORMATS if isinstance(graph, ProvenanceGraph) else SERIALIZATION_FORMATS
 
 class BaseViewer:
-    """Base viewer per visualizzare istanze estratte dal Reader."""
-    
+    """Base viewer to display the instances extracted by the Reader."""
+
     def __init__(self, reader):
+        """Bind the viewer to a Reader and share its instance cache."""
         self.reader = reader
         self._cache = reader._instance_cache  # it uses 
         self._internal_iris = None
         self._ontology_ns = None 
 
     def _get_ontology_ns(self) -> str:
+        """Return the namespace of the documented ontology (its IRI ending in '/' or '#'), or ''.
+
+        Computed once from the first Model instance and then cached.
+        """
         if self._ontology_ns is None:
             self._ontology_ns = ''
             for inst in self.get_all_instances():
@@ -48,15 +61,17 @@ class BaseViewer:
         return self._ontology_ns
 
     def _has_local_triples(self, uri) -> bool:
+        """Return True if the graph has at least one triple whose subject is this IRI."""
         if not uri:
             return False
         return (URIRef(str(uri)), None, None) in self.reader._graph
 
     def _formats(self):
+        """Return the serialization formats available for the loaded graph."""
         return formats_for(self.reader._graph)
 
     def _with_provenance(self, sub):
-        """Con moduli attivi: ricolloca le triple di `sub` nei named graph d'origine."""
+        """With modules active, put the triples of `sub` back into their original named graphs."""
         ds = self.reader._graph
         if not isinstance(ds, ProvenanceGraph):
             return sub
@@ -69,6 +84,10 @@ class BaseViewer:
         return out
     
     def _is_internal(self, uri) -> bool:
+        """Return True if the IRI belongs to a browsable entity of this documentation.
+
+        The set of IRIs is built once, on first use.
+        """
         if not uri:
             return False
         if self._internal_iris is None:
@@ -80,7 +99,7 @@ class BaseViewer:
         return str(uri) in self._internal_iris
     
     def get_all_instances(self) -> List:
-        """Ottiene tutte le istanze (esclusi literal)."""
+        """Return all the instances in the cache, literals excluded."""
         instances = []
         
         for uri_id, instance_set in self._cache.items():
@@ -91,53 +110,49 @@ class BaseViewer:
             instances.extend(instance_list)
 
         return instances
-    
+
     def get_instances_from_single_resource(self, resource_uri: str) -> Optional[set]:
-        """Ottiene istanze per un URI specifico dalla cache."""
-        # Cerca l'URI nella cache
+        """Return the cached instances registered under an IRI, or None when it is unknown."""
+        # Look the IRI up in the cache
         for uri_id in self._cache.keys():
             if str(uri_id) == resource_uri:
                 return self._cache[uri_id]
         
         return None
 
+    def _select_by_language(self, values: List, language: Optional[str] = None) -> List:
+        """Keep the values of one property in the best available language.
+
+        The choice is made per property, not per literal: only with all the
+        siblings in view can a fallback exist. Tags follow BCP 47, so they are
+        compared case-insensitively. Order of preference (RFC 4647 lookup): the
+        exact tag, the tag truncated from the right (en-GB, then en), 'en',
+        untagged literals, then every literal sorted by tag (nothing disappears).
+        Non-literal values always pass, and the input order is kept.
+        """
+        lits = [v for v in values if isinstance(v, Literal)]
+        parts = (language or "en").strip().lower().split("-")
+        # shortcut: no skipping of singleton subtags (zh-x-private), upgrade if such tags matter
+        chain = ["-".join(parts[:i]) for i in range(len(parts), 0, -1)] + ["en"]
+
+        def tagged(wanted: str) -> List:
+            """Literals whose tag is exactly `wanted`, ignoring case."""
+            return [l for l in lits if (l.get_has_language() or "").lower() == wanted]
+
+        chosen = (next((m for m in map(tagged, chain) if m), None)
+                  or [l for l in lits if not l.get_has_language()]
+                  or sorted(lits, key=lambda l: str(l.get_has_language() or "")))
+        keep = {id(l) for l in chosen}
+        return [v for v in values if not isinstance(v, Literal) or id(v) in keep]
+
     def _get_best_label(self, resource, language: Optional[str] = None) -> Optional[str]:
         """Gets the best label to display: language > preferred_label > label > identifier."""
 
-        # 1. Force 'en' as the absolute default if no language makes it this far
-        target_lang = language.strip().lower() if language else "en"
-
-        # Check Preferred Labels for the target language
-        labels = resource.get_has_preferred_label()
-        for label in labels:
-            if hasattr(label, 'get_has_language') and label.get_has_language():
-                if label.get_has_language().lower().startswith(target_lang):
-                    # RETURN RAW LABEL
-                    return label.get_has_value()
-
-        # Check Normal Labels for the target language
-        labels = resource.get_has_label()
-        for label in labels:
-            if hasattr(label, 'get_has_language') and label.get_has_language():
-                if label.get_has_language().lower().startswith(target_lang):
-                    # RETURN RAW LABEL
-                    return label.get_has_value()
-
-        # --- DETERMINISTIC FALLBACKS ---
-        # If we reach here, no English label exists.
-        # We sort them by language tag.
-
-        labels = resource.get_has_preferred_label()
-        if labels:
-            sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
-            # RETURN RAW LABEL
-            return sorted_labels[0].get_has_value()
-
-        labels = resource.get_has_label()
-        if labels:
-            sorted_labels = sorted(labels, key=lambda x: str(x.get_has_language() or ""))
-            # RETURN RAW LABEL
-            return sorted_labels[0].get_has_value()
+        # Preferred labels come first, so they win within the same language
+        labels = list(resource.get_has_preferred_label()) + list(resource.get_has_label())
+        selected = self._select_by_language(labels, language)
+        if selected:
+            return selected[0].get_has_value()
 
         # Final Fallback: The URI Identifier
         resource_id = resource.get_has_identifier()
@@ -182,6 +197,7 @@ class BaseViewer:
         return self._has_local_triples(instance.get_has_identifier())
     
     def get_toc_instances(self) -> List:
+        """Return the instances that get their own card and link (the browsable entities)."""
         return [i for i in self.get_all_instances() if self._is_toc_entity(i)]
     
     def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:
@@ -269,8 +285,8 @@ class BaseViewer:
                         # We use the helper to get clean text for each item
                         formatted_values = []
                         if isinstance(value, list):
-                            for v in value:
-                                # Nested list (es. has_property_chain: lista di catene)
+                            for v in self._select_by_language(value, language):
+                                # Nested list (e.g. has_property_chain: list of chains)
                                 if isinstance(v, list):
                                     chain_dict = self._resolve_chain_value(v, language)
                                     if chain_dict and chain_dict['text']:
@@ -414,7 +430,7 @@ class BaseViewer:
 
                         # 6. Extract the actual text values
                         extracted_values = []
-                        for val in values:
+                        for val in self._select_by_language(values, language):
                             entry = self._resolve_resource_value(val, language)
                             if entry['text']:
                                 # 7. Check if the link if an visualizable ontology or not
@@ -440,7 +456,7 @@ class BaseViewer:
         # 9. Statements
         data.update(self._format_statement(all_instances, ontology_model, language))
 
-        # Ordine alfabetico su tutti i metadati (uri/label in testa)
+        # Alphabetical order on all the metadata (uri/label first)
         pinned = ['uri', 'label']
         rest = sorted(k for k in data if k not in pinned)
         data = {k: data[k] for k in pinned if k in data} | {k: data[k] for k in rest}
@@ -448,8 +464,11 @@ class BaseViewer:
         return data
             
     def _resolve_chain_value(self, chain, language=None) -> dict:
-        """Renderizza una property chain ordinata (lista di Relation) come un
-        unico valore con parti cliccabili unite dall'operatore di composizione."""
+        """Render an ordered property chain (a list of Relations) as a single value.
+
+        The clickable parts are joined by the composition operator. Returns None
+        when no member has a displayable text.
+        """
         members = []
         for m in chain:
             md = self._resolve_resource_value(m, language)
@@ -523,17 +542,6 @@ class BaseViewer:
 
                 lit_lang = obj.get_has_language()
 
-                # If a language is requested (e.g., 'pt')
-                if language:
-                    target_lang = language.strip().lower()
-
-                    # If the literal has a tag, and it DOES NOT match 'pt', destroy it.
-                    if lit_lang and not lit_lang.lower().startswith(target_lang):
-                        return handler_dic
-
-                    # if not lit_lang:
-                    #     return handler_dic
-
                 handler_dic['text'] = obj.get_has_value()
                 handler_dic['lan'] = lit_lang
                 handler_dic['type'] = obj_type
@@ -566,7 +574,7 @@ class BaseViewer:
                 if attr.startswith('_') or attr in skip or not value:
                     continue
                 values = value if isinstance(value, list) else [value]
-                for v in values:
+                for v in self._select_by_language(values, language):
                     resolved = self._resolve_resource_value(v, language)
                     if resolved.get('text') or resolved.get('nested'):
                         siblings.append({
@@ -614,38 +622,41 @@ class BaseViewer:
         if target_instance is None:
             return statements
 
+        # 2. Group the objects by predicate: the language is chosen per property
+        grouped = {}
         for instance in instances:
-            if isinstance(instance, Statement):
-                subj = instance.get_has_subject()
+            if not isinstance(instance, Statement):
+                continue
+            # Identity comparison (handles punning: same URI, different Python instances)
+            if instance.get_has_subject() is not target_instance:
+                continue
+            obj = instance.get_has_object()
+            if not obj:
+                continue
+            predicate = instance.get_has_predicate()
+            pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
+            grouped.setdefault(pred_label, []).append(obj)
 
-                # 2. Identity comparison (handles punning: same URI, different Python instances)
-                if subj is not target_instance:
-                    continue
-
-                predicate = instance.get_has_predicate()
-                obj = instance.get_has_object()
-
-                if obj:
-                    obj_data = self._resolve_resource_value(obj, language)
-
-                # 3. Predicate Resolution
-                pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
-
-                if pred_label not in statements:
-                    statements[pred_label] = []
-
-                # 4. Resolve Object and Prevent Duplicates
-                if obj:
-                    obj_data = self._resolve_resource_value(obj, language)
-
-
-                    if obj_data not in statements[pred_label]:
-                        statements[pred_label].append(obj_data)
+        # 3. Pick the language per property, resolve, drop empties and duplicates
+        for pred_label, objs in grouped.items():
+            values = []
+            for obj in self._select_by_language(objs, language):
+                obj_data = self._resolve_resource_value(obj, language)
+                if obj_data['text'] and obj_data not in values:
+                    values.append(obj_data)
+            if values:
+                statements[pred_label] = values
 
         return statements
 
     @staticmethod
     def _clean_name(self, name: str) -> str:
+        """Turn an attribute or getter name into a display label.
+
+        Drops the has_/get_ prefix, splits camelCase, replaces underscores with
+        spaces and lowercases. It is a staticmethod that still takes `self` as its
+        first argument, so callers pass it explicitly.
+        """
         if not name: return ""
 
         name = re.sub(r'^(get_has_|get_|has_)', '', name)
@@ -697,6 +708,7 @@ class BaseViewer:
 
             # Helper to safely call getter methods (e.g., get_applies_on_property)
             def _get(instance, prop_name, default=None):
+                """Read a property through its getter, or directly as an attribute, with a default for None."""
                 getter = f"get_{prop_name}"
                 if hasattr(instance, getter):
                     res = getattr(instance, getter)()
@@ -829,6 +841,7 @@ class BaseViewer:
         host = parsed.hostname or ''
 
         def _host_is(domain: str) -> bool:
+            """True if the URL host is the domain or one of its subdomains."""
             return host == domain or host.endswith('.' + domain)
 
         # 4. Common Ontology Registries & Permanent URLs
@@ -856,21 +869,21 @@ class BaseViewer:
 
         return False
     
-    # Mappa class_key -> nome del getter del parent (None = no hierarchy)
+    # Map class_key -> name of the parent getter (missing = no hierarchy)
     _HIERARCHY_PARENT_GETTERS = {
         'Concept':    'get_is_sub_concept_of',
         'Relation':   'get_is_sub_property_of',
         'Attribute':  'get_is_sub_property_of',
         'Property':   'get_is_sub_property_of',
-        # Annotation, Individual: nessuna gerarchia -> non in mappa
+        # Annotation, Individual: no hierarchy -> not in the map
     }
 
     _FULL_IRI_ATTRS = {'is_defined_by'}
     
     def _build_hierarchy(self, instances, parent_getter_name, language=None):
         """
-        Costruisce un albero (forest) di dict.
-        anchor_id usa lo stesso formato di _format_entities: id_{md5}_{ClassName}
+        Build a forest (list of trees) of dicts from the parent relation.
+        anchor_id uses the same format as _format_entities: id_{md5}_{ClassName}
         """
         import hashlib
 
@@ -897,6 +910,7 @@ class BaseViewer:
         roots = [uri for uri in by_uri if uri not in has_internal_parent]
 
         def node_dict(uri, visited):
+            """Build the tree node of an entity with its children, stopping on cycles."""
             if uri in visited:
                 return None
             visited = visited | {uri}
@@ -925,6 +939,10 @@ class BaseViewer:
     # ========== PROVENANCE: subgraph serialisation for each card ==========
     
     def _build_provenance_subgraph(self, instance) -> List[Dict[str, str]]:
+        """Serialize the triples an instance comes from, once per available format.
+
+        Returns an empty list when the instance has no provenance.
+        """
         sub = self.reader.get_provenance_subgraph(instance)
         if not any(True for _ in sub):
             return []
@@ -936,13 +954,17 @@ class BaseViewer:
     
     @staticmethod
     def _safe_serialize(g, fmt: str) -> str:
+        """Serialize a graph, returning a comment with the error instead of raising.
+
+        One format that fails must not break the page that shows all of them.
+        """
         try:
             return g.serialize(format=fmt)
         except Exception as e:
             return f"# serialization error ({fmt}): {e}"
         
     def export_resource(self, resource_uri: str, fmt: str = "turtle") -> str:
-        """Serializza il subgraph della singola risorsa (unione su punning)."""
+        """Serialize the subgraph of a single resource (the union of its punned instances)."""
         g = Graph()
         for prefix, ns in self.reader._graph.namespaces():
             g.bind(prefix, ns)
@@ -950,6 +972,6 @@ class BaseViewer:
         if instances:
             inst_iter = instances if isinstance(instances, set) else [instances]
             for inst in inst_iter:
-                for t in self.reader.get_provenance_subgraph(inst):  # già esiste
+                for t in self.reader.get_provenance_subgraph(inst):  # already exists
                     g.add(t)
         return self._safe_serialize(self._with_provenance(g), fmt)

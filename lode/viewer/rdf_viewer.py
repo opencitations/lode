@@ -1,4 +1,4 @@
-# viewer/rdf_viewer.py
+"""Viewer for RDF/RDFS artefacts."""
 from typing import Dict, Optional
 from lode.viewer.base_viewer import BaseViewer
 
@@ -15,6 +15,13 @@ class RdfViewer(BaseViewer):
     }
 
     def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
+        """Build the template data for one resource, or for the vocabulary grouped by concepts, properties and containers.
+
+        Both views also carry the vocabulary metadata and the TYPE_MAP of display names.
+        """
+
+        language = language.strip() if language else "en"
+        
         all_instances = self.get_all_instances()
         metadata_dict = self._find_and_format_metadata(all_instances, language)
 
@@ -24,7 +31,7 @@ class RdfViewer(BaseViewer):
             data['type_map'] = self.TYPE_MAP
             return data
 
-        # title in SINGOLARE per matchare le chiavi di TYPE_MAP
+        # title in SINGULAR to match the TYPE_MAP keys
         toc_config = [
             ('Concept',   'concepts',   'Concept'),
             ('Property',  'properties', 'Property'),
@@ -34,19 +41,5 @@ class RdfViewer(BaseViewer):
         data = self._build_grouped_view(toc_config, language)
         data['metadata'] = metadata_dict
         data['type_map'] = self.TYPE_MAP
-
-        # DEBUG — togliere dopo
-        print("=" * 60)
-        print(f"DEBUG RDF VIEWER")
-        print(f"  grouped_view = {data.get('grouped_view')}")
-        print(f"  sections count = {len(data.get('sections') or [])}")
-        for s in data.get('sections') or []:
-            print(f"    [{s['id']}] title={s['title']!r}  entities={len(s['entities'])}")
-        print(f"  type_map keys = {list(data['type_map'].keys())}")
-        # Conta i tipi reali nel cache
-        from collections import Counter
-        types = Counter(type(i).__name__ for i in self.get_all_instances())
-        print(f"  instances by type = {dict(types)}")
-        print("=" * 60)
 
         return data

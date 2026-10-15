@@ -292,6 +292,61 @@ class TestGroupedView:
                 assert ent["type"] in toc_keys
 
 
+# ---------------------------------------------------------------------------
+# Language selection: per property, with fallback
+# ---------------------------------------------------------------------------
+
+def _lit(text, lang=None):
+    """Build a model Literal with an optional language tag."""
+    lit = Literal()
+    lit.set_has_value(text)
+    if lang:
+        lit.set_has_language(lang)
+    return lit
+
+
+class TestLanguageSelection:
+    """The language is chosen per property: requested, then 'en', then untagged, then all."""
+
+    @pytest.mark.parametrize("tags, requested, expected", [
+        (["da", "en", "it"], "it", ["it"]),
+        (["da", "en"], "cs", ["en"]),
+        (["da", None], "cs", [None]),
+        (["da", "es"], "cs", ["da", "es"]),
+        (["en", None], "en", ["en"]),
+        (["en-GB", "en"], "en", ["en"]),
+        (["en", "en-GB"], "en-GB", ["en-GB"]),
+        (["en", "da"], "en-GB", ["en"]),
+        (["EN", "da"], "en", ["EN"]),
+        (["en-GB", "da"], "en", ["en-GB", "da"]),
+    ])
+    def test_select_by_language(self, tags, requested, expected):
+        v = _viewer()
+        lits = [_lit(str(t), t) for t in tags]
+        picked = v._select_by_language(lits, requested)
+        assert [l.get_has_language() for l in picked] == expected
+
+    def test_label_falls_back_to_en_not_alphabetical(self):
+        c = _entity(Concept, C)
+        for text, lang in (("Datatjeneste", "da"), ("Data service", "en"), ("Servizio", "it")):
+            c.set_has_label(_lit(text, lang))
+        assert _viewer(c)._get_best_label(c, "cs") == "Data service"
+
+    def test_metadata_has_only_requested_language_and_no_none(self):
+        onto = _entity(Model, ONTO)
+        title = _entity(Annotation, "http://purl.org/dc/terms/title", "title")
+        stmts = []
+        for text, lang in (("Title", "en"), ("Titolo", "it")):
+            st = Statement()
+            st.set_has_subject(onto)
+            st.set_has_predicate(title)
+            st.set_has_object(_lit(text, lang))
+            stmts.append(st)
+        v = _viewer(onto, title, *stmts)
+        texts = [e["text"] for e in v.get_view_data(language="en")["metadata"]["title"]]
+        assert texts == ["Title"]
+
+
 # ===========================================================================
 # Integration: real corpus, same loader pattern as test_owl_integrity.
 # ===========================================================================
