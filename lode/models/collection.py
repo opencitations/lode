@@ -1,26 +1,29 @@
+"""Collection: a SKOS collection of concepts."""
 from .resource import Resource
 
 class Collection(Resource):
+    """A SKOS collection: a labelled group of concepts or other collections."""
 
     def __init__(self, **kwargs):
+        """Create an unordered collection with no members."""
         super().__init__(**kwargs)
 
         self.is_ordered= False # bool[1]
         self.has_member= [] # [0..*]
 
     def get_is_ordered(self):
-        """Restituisce il valore is_ordered bool[1]"""
+        """Return is_ordered."""
         return self.is_ordered
     
     def set_is_ordered(self, bool):
-        """Setta il valore di is_ordered bool [1]"""
+        """Set is_ordered."""
         self.is_ordered = bool
 
     def get_has_member(self):
-        """Restituisce il valore has_member [0..*]"""
+        """Return a copy of has_member."""
         return list(self.has_member)
     
     def set_has_member(self, concept_or_collection):
-        """Setta il valore di has_member [0..*]"""
+        """Add a concept or a collection to has_member."""
         self.has_member.append(concept_or_collection)
     

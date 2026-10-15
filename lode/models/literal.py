@@ -1,9 +1,12 @@
+"""Literal: an RDF literal with its value, language and datatype."""
 from .resource import Resource
 
-class Literal(Resource): 
+class Literal(Resource):
+    """An RDF literal: a lexical value with an optional language tag and datatype."""
 
     def __init__(self, **kwargs):
-        
+        """Create an empty literal: no value, language or datatype."""
+
         super().__init__(**kwargs)
         
         # Attributes
@@ -13,23 +16,25 @@ class Literal(Resource):
         self.has_type = None   
 
     def set_has_language(self, literal):
-        """Imposta has_language"""
+        """Set has_language."""
         self.has_language = literal
     
     def get_has_language(self):
-        """Restituisce has_language"""
+        """Return has_language."""
         return self.has_language 
 
     def set_has_value(self, literal):
-        """Imposta has_value"""
+        """Set has_value."""
         self.has_value = literal
     
     def get_has_value(self):
-        """Restituisce has_value"""
+        """Return has_value."""
         return self.has_value 
     
     def set_has_type(self, datatype):
+        """Set has_type, the datatype of the literal."""
         self.has_type = datatype
 
     def get_has_type(self):
+        """Return has_type, the datatype of the literal."""
         return self.has_type

@@ -1,4 +1,4 @@
-# logic.py - LOGICHE SPECIFICHE PER FORMATO
+"""Extraction logic for SKOS artefacts."""
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
@@ -6,27 +6,30 @@ from rdflib.collection import Collection as RDFLibCollection
 from lode.models import *
 from lode.reader.logic.base_logic import BaseLogic
 
+import logging
+logger = logging.getLogger(__name__)
+
 class SkosLogic(BaseLogic):
     """
-    Logica SKOS.
-    
-    Differenze:
-    - Focus su Concept/ConceptScheme
-    - Relazioni skos:broader/narrower
+    SKOS logic.
+
+    Differences:
+    - Focus on Concept/ConceptScheme
+    - skos:broader/narrower relations
     - NO default domain/range
     - NO Restriction, Individual, CompositeClass, Datatype, Attribute
     """
     
     def _get_allowed_namespaces(self) -> set:
+        """Return the RDF, RDFS and SKOS namespaces, ignoring the config 'namespaces' key."""
         return {str(RDF), str(RDFS), str(SKOS)}
     
     def phase1_classify_from_predicates(self):
-        print("\n--- FASE 1: Classificazione SKOS ---")
-        print("  Skip (SKOS usa solo types)")
+        """Do nothing: in SKOS the class always comes from rdf:type."""
+        logger.debug("Phase 1 (SKOS classification): skipped, SKOS uses only rdf:type")
     
     def phase2_create_from_types(self):
-        print("\n--- FASE 2: Types SKOS ---")
-        
+        """Create an unpopulated instance for every subject typed with a mapped SKOS type."""
         type_mapping = self._strategy.get_type_mapping()
         created = 0
         
@@ -40,28 +43,27 @@ class SkosLogic(BaseLogic):
                     self.get_or_create(uri, py_class, populate=False)
                     created += 1
         
-        print(f"  Create: {created}")
+        logger.debug("Phase 2 (SKOS types): created %d instances", created)
     
     def phase3_populate_properties(self):
-        print("\n--- FASE 3: Popolamento SKOS ---")
-        
+        """Fill every cached instance from its triples."""
         for uri in list(self._instance_cache.keys()):
             for instance in list(self._instance_cache[uri]):
                 self.populate_instance(instance, uri)
         
-        print(f"  Popolate: {len(self._instance_cache)}")
+        logger.debug("Phase 3 (SKOS population): populated %d cache entries", len(self._instance_cache))
     
     def phase4_process_group_axioms(self):
-        print("\n--- FASE 4: Axioms SKOS ---")
-        print("  Nessun axiom SKOS")
+        """Do nothing: SKOS has no group axioms."""
+        logger.debug("Phase 4 (SKOS axioms): no group axioms in SKOS")
 
     def phase5_fallback(self):
-        print("\n--- FASE 5: FALLBACK ---")
-        print("TO BE IMPLEMENTED SOON")
+        """Do nothing yet: the SKOS fallback is not implemented."""
+        logger.debug("Phase 5 (SKOS fallback): not implemented yet")
     
-    # Handler specifici SKOS
+    # SKOS-specific handlers
     def handle_membership(self, instance, uri, predicate, obj, value):
-        """Gestisce skos:member"""
+        """Handle skos:member: add the cached members of a Collection."""
         if not isinstance(instance, Collection):
             return
         
@@ -75,7 +77,7 @@ class SkosLogic(BaseLogic):
                 instance.set_has_member(member_obj)
     
     def handle_narrower(self, instance, uri, predicate, obj, value):
-        """Gestisce skos:narrower (inverso)"""
+        """Handle skos:narrower (the inverse of broader): link the concept to its broader concepts."""
         if not isinstance(instance, Concept):
             return
         

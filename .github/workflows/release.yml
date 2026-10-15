@@ -54,4 +54,4 @@ jobs:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
           uv build
-          uv publish --token $UV_PUBLISH_TOKEN
+          uv publish --check-url https://pypi.org/simple/ --token $UV_PUBLISH_TOKEN

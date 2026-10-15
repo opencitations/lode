@@ -36,6 +36,9 @@ from typing import Optional
 from lode.helpers.rdf import iri_namespace, iri_stem
 from lode.reader.provenance_graph import ProvenanceGraph
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Core vocabularies: never treated as external terms to dereference.
 _SKIP_NS = (str(RDF), str(RDFS), str(OWL), str(XSD))
 
@@ -64,12 +67,12 @@ def _load_formal_import(graph: ProvenanceGraph, source: str, depth: int,
     from lode.reader.loader import Loader  # local import: loader imports modules
     try:
         imported_loader = Loader(source)
-    except Exception:
-        print(f"  [formal import] could not load {source}")
+    except Exception as e:
+        logger.warning("Formal import failed for %s: %s", source, e)
         return
 
     imported_graph = imported_loader.get_graph()
-    print(f"  [formal import] {len(imported_graph)} triples from {source}")
+    logger.info("Formal import: %d triples from %s", len(imported_graph), source)
     # Context = ontology IRI declared in the document (fallback: source)
     graph.add_document(imported_graph, source)
 
@@ -78,12 +81,13 @@ def _load_formal_import(graph: ProvenanceGraph, source: str, depth: int,
 
 
 def _load_informal_import(source: str, target: ProvenanceGraph, visited: set, failed: set,
-                          homes: dict) -> None:
+                          homes: dict, name: Optional[str] = None) -> None:
     """Load a single document reached by dereferencing an IRI (informal import) into
     its own named graph of `target`. Its owl:imports are not followed.
 
     Records the outcome: success -> visited + homes[source] (name of its named graph);
     error -> failed (never retried)."""
+
     if source in visited or source in failed:
         return
     from lode.reader.loader import Loader  # local import: loader imports modules
@@ -91,11 +95,11 @@ def _load_informal_import(source: str, target: ProvenanceGraph, visited: set, fa
         g = Loader(source).get_graph()
     except Exception as e:
         failed.add(source)
-        print(f"  [informal import] could not load {source}: {type(e).__name__}: {e}")
+        logger.warning("Informal import failed for %s: %s: %s", source, type(e).__name__, e)
         return
     visited.add(source)
-    print(f"  [informal import] {len(g)} triples from {source}")
-    homes[source] = target.add_document(g, source)
+    logger.info("Informal import: %d triples from %s", len(g), source)
+    homes[source] = target.add_document(g, name or source)
 
 # ----------------------------------------------------------
 #  IMPORTED / CLOSURE MODULES (formal imports)
@@ -123,10 +127,11 @@ def apply_closure(graph: ProvenanceGraph):
 # ----------------------------------------------------------
 #
 #  Boundary: an external term receives
-#    - what the documented ontology says about it (with priority, per predicate), and
-#    - the triples of its "home" graph, i.e. of the ontology that owns it.
-#  Redefinitions found in third-party ontologies (formally imported ones included) are
-#  NOT copied: they belong to the import closure, available through imported/closure.
+#    - what the documented ontology says about it, in the main graph, and
+#    - ALL the triples of its "home" graph (types included), in the home graph.
+#  No per-predicate priority here: both sources are kept with their provenance;
+#  conflicting types become punned instances in the Reader, and the Viewer decides
+#  what to show. Redefinitions in third-party ontologies are NOT copied.
 #  If the home cannot be reached, the term receives no external definition.
 
 def _namespace(term) -> str:
@@ -165,8 +170,9 @@ def _namespace_failed(term, failed: set) -> bool:
 
 
 def apply_partial_import(graph: ProvenanceGraph):
-    """Dereference (1 hop) the external IRIs mentioned and add ONLY their definition,
-    taken from their home ontology (not the redefinitions in other ontologies)."""
+    """Dereference (1 hop) the external IRIs described by the documented ontology and
+    add ONLY their definition, taken from their home ontology (not the redefinitions
+    in other ontologies). Terms that are merely used stay plain external links."""
     # 1. External terms: IRIs mentioned in the graph, excluding the import IRIs, the
     #    core vocabularies and the ontology's own terms.
     import_iris = set(graph.objects(None, OWL.imports))
@@ -175,48 +181,49 @@ def apply_partial_import(graph: ProvenanceGraph):
     external = {t for t in mentioned
                 if not str(t).startswith(_SKIP_NS) and not (own and str(t).startswith(own))}
 
-    # 2. Load into a separate graph (one named graph per document). The owl:imports
+    # 2. Keep only terms the documented ontology describes (subject of at least one of
+    #    its triples): terms it merely uses stay plain external links.
+    described = {s for s, _, _ in graph if s in external}
+
+    # 3. Load into a separate graph (one named graph per document). The owl:imports
     #    documents are loaded first, as informal imports (no recursion): they are often
-    #    the home of the mentioned terms, so they are not downloaded again. Then one
+    #    the home of the described terms, so they are not downloaded again. Then one
     #    attempt per namespace not covered yet.
     fetched = ProvenanceGraph()
     visited, failed, homes = set(), set(), {}           # homes: source -> loaded ontology IRI
-    for iri in import_iris:
+    for iri in (import_iris if described else ()):
         _load_informal_import(str(iri), fetched, visited, failed, homes)
-    for term in external:
+    for term in described:
         if _home(term, homes) is None and not _namespace_failed(term, failed):
-            _load_informal_import(urldefrag(str(term))[0], fetched, visited, failed, homes)
+            doc, frag = urldefrag(str(term))
+            # Slash IRIs dereference the term itself: name the graph after the
+            # namespace, not after the first term fetched (e.g. dcterms:created).
+            _load_informal_import(doc, fetched, visited, failed, homes,
+                                  name=doc if frag else iri_namespace(term))
 
-    # 3. Headers of external ontologies (owl:Ontology) are not terms to document.
-    external -= set(fetched.subjects(RDF.type, OWL.Ontology))
+    # 4. Headers of external ontologies (owl:Ontology) are not terms to document.
+    described -= set(fetched.subjects(RDF.type, OWL.Ontology))
 
-    # 4. Priority to the documented ontology: predicates it already asserts on an
-    #    external term (e.g. rdfs:label) are not copied again from the home.
-    base_pairs = {(s, p) for s, p, _ in graph if s in external}
-
-    # 5. Copy from the home graph only, into its own named graph.
+    # 5. Copy the whole home description, into the home's named graph.
     seen: set = set()
-    for term in external:
+    for term in described:
         home = _home(term, homes)
         if home is not None:                            # home unreachable: no external definition
-            _copy_description(fetched, term, graph, seen, skip=base_pairs, ctx=home)
+            _copy_description(fetched, term, graph, seen, ctx=home)
     return graph, visited
 
 
 def _copy_description(src: ProvenanceGraph, node, dst: ProvenanceGraph, seen: set,
-                      skip=frozenset(), ctx=None) -> None:
+                      ctx=None) -> None:
     """Copy into `dst` the triples of `src` whose subject is `node`, in the same named graph.
 
     ctx   restricts the copy to a single graph (the home); None = all graphs.
-    skip  (subject, predicate) pairs already populated in the base: not overwritten.
     Blank nodes (restrictions, lists) are copied in full and stay in their parent's
     context; `seen` prevents cycles and repeated copies."""
     if node in seen:
         return
     seen.add(node)
     for _, p, o, c in src.quads((node, None, None, ctx)):
-        if (node, p) in skip:
-            continue
         dst.graph(c).add((node, p, o))
         if isinstance(o, BNode):
             _copy_description(src, o, dst, seen, ctx=c)

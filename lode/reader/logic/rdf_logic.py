@@ -1,4 +1,4 @@
-# rdf_logic.py
+"""Extraction logic for RDF/RDFS artefacts."""
 
 from rdflib import URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
@@ -6,6 +6,9 @@ from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import *
 from lode.reader.logic.base_logic import BaseLogic
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class RdfLogic(BaseLogic):
@@ -54,6 +57,10 @@ class RdfLogic(BaseLogic):
             self.get_or_create(uri, py_class, populate=False)
 
     def phase2_create_from_types(self):
+        """Create an instance for every subject typed with a mapped rdf:type.
+
+        Static setters and the handler declared for the type are applied right away.
+        """
         type_mapping = self._strategy.get_type_mapping()
 
         for rdf_type, config in type_mapping.items():
@@ -90,7 +97,7 @@ class RdfLogic(BaseLogic):
         """
         exclude_predicates = {RDF.first, RDF.rest, RDF.nil}
 
-        # 1. predicati -> Property
+        # 1. predicates -> Property
         for pred in set(self.graph.predicates()):
             if pred in self._instance_cache or pred in exclude_predicates:
                 continue
@@ -98,7 +105,7 @@ class RdfLogic(BaseLogic):
                 continue
             self.get_or_create(pred, Property, populate=False)
 
-        # 2. soggetti/oggetti URI -> Resource
+        # 2. URI subjects/objects -> Resource
         for subj in set(self.graph.subjects()):
             if isinstance(subj, URIRef) and subj not in self._instance_cache:
                 if self._is_structural(subj) or self._is_rdf_collection(subj):
@@ -111,7 +118,7 @@ class RdfLogic(BaseLogic):
                     continue
                 self.get_or_create(obj, Resource, populate=False)
 
-        # 3. defaults RDFS su Property
+        # 3. RDFS defaults on Property
         for uri, instances in list(self._instance_cache.items()):
             for instance in list(instances):
                 if isinstance(instance, Property):
@@ -166,6 +173,7 @@ class RdfLogic(BaseLogic):
         of getter_name found on an ancestor.
         """
         def collect(node):
+            """Return the first non-empty value found on an ancestor, never on the property itself."""
             if node is property_instance:
                 return None
             getter = getattr(node, getter_name, None)
@@ -215,8 +223,8 @@ class RdfLogic(BaseLogic):
                     if rest is not None:
                         self._triples_map[instance].add((node, RDF.rest, rest))
                     node = rest
-            except Exception as e:
-                print(f"Errore create_python_container (List): {e}")
+            except Exception:
+                logger.warning("List container build failed for %s", uri, exc_info=True)
             return
 
         # rdf:Bag/Alt/Seq: rdf:_N indexed members
@@ -239,6 +247,7 @@ class RdfLogic(BaseLogic):
             self._triples_map[instance].add((uri, pred, obj))
 
     def _resolve_container_member(self, node):
+        """Resolve a container member: a Literal for literals, a Resource otherwise."""
         if isinstance(node, RDFlibLiteral):
             return self._create_literal(node)
         return self.get_or_create(node, Resource)

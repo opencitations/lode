@@ -1,7 +1,4 @@
----
-title: API Endpoints
-description: LODE REST API reference
----
+# API endpoints
 
 Interactive docs available at `/docs` (Swagger) and `/redoc` (ReDoc) when the server is running.
 

@@ -1,7 +1,4 @@
----
-title: Web Form
-description: How to use the LODE web interface
----
+# Web form
 
 Start the server and open `http://localhost:8000`.
 
@@ -11,7 +8,7 @@ Start the server and open `http://localhost:8000`.
 |-------|-------------|
 | **URL** | Public http(s) URL of the artefact |
 | **File** | Upload a local `.ttl`, `.rdf`, `.owl`, `.n3`, `.jsonld` file |
-| **Format** | Artefact type (`owl` is currently available) |
+| **Format** | Artefact type (`owl`, `rdf`, `skos`) |
 | **Language** | Preferred language for labels (e.g. `en`, `it`) |
 | **Load imports** | Also fetch `owl:imports` at depth 1 |
 | **Load closure** | Fetch the full `owl:imports` closure |

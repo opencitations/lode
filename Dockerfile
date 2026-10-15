@@ -29,7 +29,7 @@ USER appuser
 
 # Install dependencies first for better layer caching (frozen = exact lockfile)
 COPY --chown=appuser:appuser pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project --extra server
 
 # Application code
 COPY --chown=appuser:appuser . .

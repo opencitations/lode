@@ -1,4 +1,8 @@
-# lode/builder.py
+"""Static-site builder: renders an artefact as a folder of plain HTML pages.
+
+Produces an index page, one page per documented resource and the serializations
+of the whole artefact and of each resource, ready to publish on any static host.
+"""
 import re
 import shutil
 from pathlib import Path
@@ -17,6 +21,12 @@ from lode.models.model import Model
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 
 def _get_template_env(static_path: str = "static") -> Environment:
+    """Create the Jinja2 environment used to render the static pages.
+
+    `static_path` is the relative path from the page to the static folder, so it
+    differs between the index and the resource pages. The web app's url_for does
+    not exist here, hence the minimal replacement registered below.
+    """
     try:
         pkg_path = importlib.resources.files("lode").joinpath("templates")
         template_dir = str(pkg_path)
@@ -29,6 +39,7 @@ def _get_template_env(static_path: str = "static") -> Environment:
     )
     
     def url_for(name: str, path: str = "") -> str:
+        """Resolve static files relative to the page; every other route goes to the root."""
         if name == "static":
             return f"{static_path}/{path}"
         return "/"
@@ -37,6 +48,7 @@ def _get_template_env(static_path: str = "static") -> Environment:
     return env
 
 def _prefix_map(graph):
+    """Map each namespace IRI of the graph to its prefix ('default' for the empty one)."""
     return {str(ns): (p or 'default') for p, ns in graph.namespaces()}
 
 def _safe_segment(seg: str) -> str:
@@ -54,21 +66,37 @@ def _safe_segment(seg: str) -> str:
 
 
 def _rel_slug(uri, graph):
+    """Return the 'prefix/local' path of a resource, with both parts made filesystem-safe.
+
+    The local part is empty for a bare namespace IRI: callers skip those.
+    """
     prefix, ns, local = graph.namespace_manager.compute_qname(URIRef(str(uri)), generate=True)
     prefix = _safe_segment(prefix or "default") or "default"
     return f"{prefix}/{_safe_segment(local)}"
 
 
 def _local_name(uri: str) -> str:
+    """Return the part of an IRI after '#', or its last path segment."""
     return uri.split('#', 1)[1] if '#' in uri else uri.rstrip('/').rsplit('/', 1)[-1]
 
 def _copy_static(out_dir: Path) -> None:
+    """Copy the package's static assets into the output folder, once.
+
+    An existing static folder is left untouched, so rebuilding does not overwrite it.
+    """
     static_src = Path(__file__).parent / "static"
     static_dst = out_dir / "static"
     if static_src.exists() and not static_dst.exists():
         shutil.copytree(static_src, static_dst)
 
 def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
+    """Write the whole static site for a viewer into `out_dir`.
+
+    Writes index.html, the serializations of the artefact and, under resources/,
+    one page plus serializations for each resource that belongs to the ontology
+    namespace or has local triples. Blocking and disk-heavy; existing files are
+    overwritten. A page is never written outside resources/, whatever the IRI.
+    """
     from collections import defaultdict
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -97,9 +125,11 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
             materialized.add(str(u))
 
     def _keep(uri):
+        """Tell whether a resource gets its own page, and so can be linked to."""
         return str(uri) in materialized
 
     def resource_url_resource(uri, section=None):
+        """Link to a resource from a resource page; unpublished IRIs stay absolute."""
         if not _keep(uri):
             return uri
         rel = _rel_slug(uri, graph)
@@ -108,6 +138,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
         return f"../{rel}.html"
 
     def resource_url_index(uri, section=None):
+        """Link to a resource from the index page; unpublished IRIs stay absolute."""
         if not _keep(uri):
             return uri
         rel = _rel_slug(uri, graph)
@@ -145,7 +176,6 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
     res_dir = out_dir / "resources"
     res_dir.mkdir(parents=True, exist_ok=True)
 
-    count = 0
     for class_key, section_id, _ in toc_config:
         for inst in grouped.get(class_key, []):
             uri = inst.get_has_identifier()
@@ -178,26 +208,36 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
             data_r["resource_url"] = resource_url_resource
             data_r["export_base"] = _local_name(uri)
             page.write_text(_minify(template_resource.render(**data_r)), encoding="utf-8")
-            count += 1
 
 class _FakeRequest:
+    """Minimal stand-in for a web request, so the viewer templates render without a web app."""
+
     def __init__(self, path: str):
+        """Build a GET request for `path` with no query parameters."""
         self.url = _FakeURL(path)
         self.method = "GET"
         self.query_params = _FakeQueryParams()
         self.is_static = True
 
 class _FakeQueryParams:
+    """Query parameters that are always empty: a static page has no query string."""
+
     def get(self, key: str, default: str = "") -> str:
+        """Return the default for any key."""
         return default
 
-    # Accesso diretto tipo request.query_params.read_as
+    # Direct access such as request.query_params.read_as
     def __getattr__(self, key: str) -> str:
+        """Return an empty string for any attribute."""
         return ""
 
 class _FakeURL:
+    """Minimal URL object exposing only the path, as the templates need."""
+
     def __init__(self, path: str):
+        """Store the page path."""
         self.path = path
 
     def __str__(self) -> str:
+        """Return the page path."""
         return self.path

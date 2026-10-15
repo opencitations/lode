@@ -1,13 +1,10 @@
----
-title: CLI Reference
-description: LODE command line interface
----
+# CLI reference
 
 ## Commands
 
 ### `lode serve`
 
-Start the web server.
+Start the web server (requires the `[server]` extra).
 
 ```bash
 lode serve [--port PORT]
@@ -34,6 +31,7 @@ lode build (--url URL | --file FILE) --read-as FORMAT [OPTIONS]
 | `--lang` | no | Language tag for labels (default `en`) |
 | `--imported` | no | Load `owl:imports` at depth 1 |
 | `--closure` | no | Load the full `owl:imports` closure |
+| `--partial-import` | no | Load only the imported entities that are actually used |
 
 ## Examples
 
@@ -42,7 +40,7 @@ lode build (--url URL | --file FILE) --read-as FORMAT [OPTIONS]
 lode build --url http://purl.org/spar/fabio --read-as owl --out ./fabio
 
 # from a local file
-lode build --file ontology.ttl --read-as owl --out ./docs
+lode build --file ontology.ttl --read-as owl --out ./site
 
 # with Italian labels and imports
 lode build --url http://purl.org/spar/fabio --read-as owl --lang it --imported --out ./fabio
@@ -54,4 +52,5 @@ lode build --url http://purl.org/spar/fabio --read-as owl --lang it --imported -
 |----------|---------|-------------|
 | `LODE_SPOOL_DIR` | `$TMPDIR/lode-spool` | Cache for fetched URLs and uploads |
 | `LODE_BUILD_DIR` | `$TMPDIR/lode-builds` | Workspace for ZIP build jobs |
+| `LODE_LOG_LEVEL` | `WARNING` | Log verbosity (`DEBUG`, `INFO`, `WARNING`, ...) |
 | `LODE_DEBUG` | `false` | Show full tracebacks in error pages |

@@ -445,51 +445,6 @@ wheels = [
 ]
 
 [[package]]
-name = "lode"
-version = "0.3.15"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
-    { name = "gunicorn" },
-    { name = "jinja2" },
-    { name = "minify-html" },
-    { name = "owlready2" },
-    { name = "python-multipart" },
-    { name = "rdflib" },
-    { name = "requests" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "genbadge", extra = ["coverage"] },
-    { name = "httpx" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.104.1" },
-    { name = "gunicorn", specifier = ">=21.0.0" },
-    { name = "jinja2", specifier = ">=3.1.2" },
-    { name = "minify-html", specifier = ">=0.18.1" },
-    { name = "owlready2", specifier = ">=0.50" },
-    { name = "python-multipart", specifier = ">=0.0.6" },
-    { name = "rdflib", specifier = ">=7.4.0" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.24.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "genbadge", extras = ["coverage"], specifier = ">=1.1.3" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pytest", specifier = ">=8.0.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-]
-
-[[package]]
 name = "markupsafe"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -618,10 +573,54 @@ wheels = [
 ]
 
 [[package]]
-name = "owlready2"
-version = "0.50"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a4/67/6fb3a628889d97f8a3d3c64d4597f0637db61a1856c835fe7c65d8e89658/owlready2-0.50.tar.gz", hash = "sha256:7be74c53a35497df138c8223dddcf65510def9b38494ae1fac4aa2a61c4677eb", size = 27328931, upload-time = "2026-02-05T10:42:01.733Z" }
+name = "oc-lode"
+version = "0.3.15"
+source = { editable = "." }
+dependencies = [
+    { name = "jinja2" },
+    { name = "minify-html" },
+    { name = "pyyaml" },
+    { name = "rdflib" },
+    { name = "requests" },
+]
+
+[package.optional-dependencies]
+server = [
+    { name = "fastapi" },
+    { name = "gunicorn" },
+    { name = "python-multipart" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "genbadge", extra = ["coverage"] },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.104.1" },
+    { name = "gunicorn", marker = "extra == 'server'", specifier = ">=21.0.0" },
+    { name = "jinja2", specifier = ">=3.1.2" },
+    { name = "minify-html", specifier = ">=0.18.1" },
+    { name = "python-multipart", marker = "extra == 'server'", specifier = ">=0.0.6" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "rdflib", specifier = ">=7.4.0" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'server'", specifier = ">=0.24.0" },
+]
+provides-extras = ["server"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "genbadge", extras = ["coverage"], specifier = ">=1.1.3" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+]
 
 [[package]]
 name = "packaging"

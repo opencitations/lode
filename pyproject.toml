@@ -1,5 +1,5 @@
 [project]
-name = "lode"
+name = "oc-lode"
 version = "0.3.15"
 description = "New reengineered version of LODE, maintained by OpenCitations"
 authors = [{name = "Valentina Pasqual, Silvio Peroni", email = "valentina.pasqual2@unibo.it"}]
@@ -18,18 +18,21 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "rdflib>=7.4.0",
+    "jinja2>=3.1.2",
+    "requests>=2.31.0",
+    "minify-html>=0.18.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+server = [
     "fastapi>=0.104.1",
     "uvicorn[standard]>=0.24.0",
     "gunicorn>=21.0.0",
     "python-multipart>=0.0.6",
-    "rdflib>=7.4.0",
-    "jinja2>=3.1.2",
-    "requests>=2.31.0",
-    "owlready2>=0.50",
-    "minify-html>=0.18.1",
 ]
 
-# AGGIUNTO
 [project.scripts]
 lode = "lode.cli:main"
 
@@ -52,7 +55,5 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["lode"]
 
-# include template e static nel wheel
-# [tool.hatch.build.targets.wheel.shared-data]
-# "lode/templates" = "lode/templates"
-# "lode/static" = "lode/static"
+[tool.hatch.build.targets.sdist]
+include = ["lode", "tests"]

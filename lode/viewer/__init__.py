@@ -1,4 +1,4 @@
-# viewer/__init__.py
+"""Viewer layer: renders the model as view data for the HTML templates."""
 
 from .base_viewer import BaseViewer
 from .owl_viewer import OwlViewer
@@ -14,7 +14,10 @@ __all__ = [
 
 
 def get_viewer(read_as: str, reader):
-    """Factory per il viewer corretto in base al formato."""
+    """Return the viewer that matches the artefact format (owl, rdf/rdfs, skos).
+
+    An unknown format falls back to the generic BaseViewer.
+    """
     key = read_as.lower()
     if key == 'owl':
         return OwlViewer(reader)

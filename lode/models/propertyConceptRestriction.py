@@ -1,7 +1,11 @@
+"""PropertyConceptRestriction: a restriction that links a property to a concept."""
 from .restriction import Restriction
 
 class PropertyConceptRestriction(Restriction):
+    """Base of the restrictions that apply a property to a concept (quantifiers, cardinalities)."""
+
     def __init__(self, **kwargs):
+        """Create a restriction with no property, no concept, and is_inverse False."""
         super().__init__(**kwargs)
 
         self.applies_on_property = None # 1
@@ -9,25 +13,25 @@ class PropertyConceptRestriction(Restriction):
         self.is_inverse = False #bool 1
 
     def get_applies_on_property(self):
-        """Restituisce il valore applies on property"""
+        """Return applies_on_property."""
         return self.applies_on_property
         
     def set_applies_on_property(self, property):
-        """Aggiunge un Property a applies_on_property """
+        """Set applies_on_property."""
         self.applies_on_property = property
 
     def get_applies_on_concept(self):
-        """Restituisce la lista applies on concept"""
+        """Return applies_on_concept."""
         return self.applies_on_concept
         
     def set_applies_on_concept(self, concept):
-        """Aggiunge un Concept a applies_on_concept """
+        """Set applies_on_concept."""
         self.applies_on_concept = concept
 
     def get_is_inverse(self):
-        """Restituisce la lista applies on concept"""
+        """Return is_inverse."""
         return self.is_inverse
         
     def set_is_inverse(self, boolean):
-        """Sets if the restriction is inverse"""
+        """Set is_inverse: whether the restriction is on the inverse of the property."""
         self.is_inverse = boolean

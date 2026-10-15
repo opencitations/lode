@@ -1,4 +1,9 @@
-# config_magarer.py - STRATEGIE CON CONFIG UNIFICATA
+"""Configuration managers: bind each artefact type to its YAML mapper, logic and viewer.
+
+The mapping from RDF/OWL/SKOS constructs to the model lives in the YAML files
+under reader/config, not in Python: a manager loads base.yaml, merges the
+type-specific file on top and exposes the result to the logic classes.
+"""
 
 import yaml
 from pathlib import Path
@@ -7,25 +12,34 @@ from rdflib import URIRef, Graph, Node
 from lode.models import *
 
 class ConfigManager(ABC):
-    """Strategia basata su config YAML unico"""
-    
+    """Strategy driven by a single merged YAML configuration.
+
+    Subclasses only say which config file they use and how to build their
+    logic and viewer; parsing and caching of the mappings is shared here.
+    """
+
     def __init__(self):
+        """Load and merge the YAML configuration; mappings are parsed lazily."""
         self.config = self._load_config()
         self._type_mapping_cache = None
         self._property_mapping_cache = None
     
     @abstractmethod
     def create_logic(self, graph: Graph, cache: dict):
-        """Factory method per creare Logic specifica"""
+        """Factory method: build the logic specific to this artefact type."""
         pass
 
     @property
     @abstractmethod
     def config_name(self) -> str:
-        """Nome del file config specifico: 'owl' | 'skos' | 'rdfs'"""
+        """Name of the type-specific config file: 'owl' | 'skos' | 'rdf'."""
         pass
     
     def _load_config(self) -> dict:
+        """Read base.yaml and the type-specific YAML, and return them deep-merged.
+
+        Files are looked up next to this module so the config ships inside the wheel.
+        """
         config_dir = Path(__file__).parent / 'config'
         
         with open(config_dir / 'base.yaml') as f:
@@ -37,6 +51,10 @@ class ConfigManager(ABC):
         return self._deep_merge(base, specific)
     
     def _deep_merge(self, base: dict, override: dict) -> dict:
+        """Merge `override` into a copy of `base`, recursing into nested dicts.
+
+        The 'name' and 'inherits' keys only describe the file and are not merged.
+        """
         result = base.copy()
         for key, value in override.items():
             if key in ('name', 'inherits'):
@@ -47,18 +65,9 @@ class ConfigManager(ABC):
                 result[key] = value
         return result
     
-    # def _load_config(self) -> dict:
-    #     """Carica config da file YAML unico"""
-    #     config_path = Path(__file__).parent / 'config' / 'base.yaml'
-        
-    #     with open(config_path, 'r') as f:
-    #         config = yaml.safe_load(f)
-        
-    #     return config
-    
     @abstractmethod
     def create_viewer(self, reader):
-        """Factory method per creare Viewer specifico"""
+        """Factory method: build the viewer specific to this artefact type."""
         pass
     
     # ========== NAMESPACE MAP ==========
@@ -80,6 +89,10 @@ class ConfigManager(ABC):
         return URIRef(self.NAMESPACES[prefix] + local)
     
     def _parse_class(self, class_name: str):
+        """Resolve a model class name from the YAML into the class itself.
+
+        Raises KeyError for an unknown name, so a typo in the config fails loudly.
+        """
         import lode.models as _models
         cls = getattr(_models, class_name, None)
         if cls is None:
@@ -87,6 +100,10 @@ class ConfigManager(ABC):
         return cls
 
     def _parse_value(self, value):
+        """Convert a setter argument from the YAML: model class names become classes.
+
+        'Literal', booleans and strings that are not model classes are kept as they are.
+        """
         if value == 'Literal':
             return 'Literal'
         elif value is True or value is False:
@@ -121,7 +138,7 @@ class ConfigManager(ABC):
         return self._property_mapping_cache
     
     def _parse_config(self, cfg: dict) -> dict:
-        """Parse un blocco di config"""
+        """Parse one mapper entry: resolve class names (and setter arguments) into classes."""
         parsed = cfg.copy()
         
         if 'target_class' in parsed:
@@ -152,6 +169,10 @@ class ConfigManager(ABC):
         }
     
     def get_fallback_class(self) -> type | None:
+        """Return the class given to resources no mapping recognised, or None if unset.
+
+        An unknown class name in the config falls back to Statement.
+        """
         fallback = self.config.get('mapper', {}).get('fallback_class')
         if fallback:
             import lode.models as _models
@@ -161,21 +182,21 @@ class ConfigManager(ABC):
     # ========== HELPER METHODS ==========
     
     def get_classifier_predicates(self) -> set[URIRef]:
-        """Predicati con 'inferred_class'"""
+        """Predicates whose config declares an 'inferred_class'."""
         return {
             pred for pred, cfg in self.get_property_mapping().items()
             if 'inferred_class' in cfg
         }
     
     def classify_by_predicate(self, uri: Node, graph: Graph) -> type | None:
-            """Classifica guardando predicati.
-            - inferred_class: tipo del soggetto (BNode restrictions, quantifiers, etc.) -> priorita' massima
-              Se piu' predicati hanno inferred_class, vince la classe piu' specifica (issubclass).
-            - target_classes con 1 elemento, nessun inferred_class, classify != false: 
-              tipo implicito del soggetto (fallback)
-            - target_classes con 2+ elementi: ambiguo, gestito dall'handler -> None
-            - classify: false nel config: il predicato non classifica il soggetto,
-              serve solo per i setters in phase3 (es. facet XSD)
+            """Classify a subject by looking at the mapped predicates it uses.
+            - inferred_class: type of the subject (BNode restrictions, quantifiers, etc.) -> highest priority.
+              If several predicates have an inferred_class, the most specific class wins (issubclass).
+            - target_classes with 1 element, no inferred_class, classify != false: 
+              implicit type of the subject (fallback)
+            - target_classes with 2+ elements: ambiguous, left to the handler -> None
+            - classify: false in the config: the predicate does not classify the subject,
+              it is only used by the setters in phase3 (e.g. XSD facets)
             """
             fallback = None
             inferred = None
@@ -191,50 +212,65 @@ class ConfigManager(ABC):
             return inferred if inferred else fallback
     
     def get_punning_priority(self):
+        """Return the classes in the order that decides which one wins on a punned IRI."""
         names = self.config.get('punning_priority', [])
         return [self._parse_class(n) for n in names]
     
     
-# config_manager.py - aggiungi nei concrete managers
+# ========== CONCRETE MANAGERS ==========
 
 class OwlConfigManager(ConfigManager):
+    """Configuration for OWL artefacts."""
     
     @property
     def config_name(self) -> str:
+        """Use owl.yaml on top of base.yaml."""
         return 'owl'
-    
+
     def create_logic(self, graph: Graph, cache: dict):
+        """Build the OWL logic."""
         from lode.reader.logic import OwlLogic
         return OwlLogic(graph, cache, self)
     
     def create_viewer(self, reader):
+        """Build the OWL viewer."""
         from lode.viewer import OwlViewer
         return OwlViewer(reader)
 
 class RdfConfigManager(ConfigManager):
+    """Configuration for RDF/RDFS artefacts."""
+
     @property
     def config_name(self) -> str:
+        """Use rdf.yaml on top of base.yaml."""
         return 'rdf'
 
     def create_logic(self, graph: Graph, cache: dict):
+        """Build the RDF logic."""
         from lode.reader.logic import RdfLogic
         return RdfLogic(graph, cache, self)
 
     def create_viewer(self, reader):
+        """Build the RDF viewer."""
         from lode.viewer import RdfViewer
         return RdfViewer(reader)
 
 
 class SkosConfigManager(ConfigManager):
+    """Configuration for SKOS artefacts."""
+
     @property
     def config_name(self) -> str:
+        """Use skos.yaml on top of base.yaml."""
         return 'skos'
 
     def create_logic(self, graph: Graph, cache: dict):
+        """Build the SKOS logic."""
         from lode.reader.logic import SkosLogic
         return SkosLogic(graph, cache, self)
 
     def create_viewer(self, reader):
+        """Build the SKOS viewer."""
         from lode.viewer import SkosViewer
         return SkosViewer(reader)
 
@@ -248,6 +284,10 @@ CONFIGURATION_REGISTRY = {
 
 
 def get_configuration(configuration_name: str) -> ConfigManager:
+    """Return a new manager for the given artefact type (case-insensitive).
+
+    Raises ValueError listing the available types when the name is unknown.
+    """
     key = configuration_name.upper()
     if key not in CONFIGURATION_REGISTRY:
         available = ', '.join(CONFIGURATION_REGISTRY.keys())

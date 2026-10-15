@@ -1,4 +1,8 @@
-# base_logic.py
+"""Format-independent core of the extraction logic.
+
+BaseLogic turns the triples of a graph into model instances in phases. What is
+specific to OWL, RDF or SKOS lives in the subclasses and in the YAML mapper.
+"""
 from abc import ABC, abstractmethod
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
@@ -9,12 +13,23 @@ SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
 from lode.models import *
 from lode.helpers.rdf import iri_local_name, iri_namespace
 
+import logging
+logger = logging.getLogger(__name__)
+
 class BaseLogic(ABC):
     """
-    Logica base comune per parsing RDF.
+    Common base logic for RDF parsing.
+
+    Owns the instance cache, the triples-to-instance provenance map and the
+    generic machinery (get_or_create, populate_instance, SWRL, statements);
+    subclasses implement the phases that differ between formats.
     """
 
     def __init__(self, graph: Graph, instance_cache: dict, strategy):
+        """Bind the logic to a graph, a shared instance cache and a config manager.
+
+        Fails fast if the config names a handler this logic does not implement.
+        """
         self.graph = graph
         self._instance_cache = instance_cache
         self._strategy = strategy
@@ -28,10 +43,12 @@ class BaseLogic(ABC):
         self._warnings = []
 
     def add_warning(self, code, subject, message):
+        """Record a reader warning with a machine-readable code, its subject and a message."""
         self._warnings.append({'code': code, 'subject': str(subject), 'message': message})
 
     def get_warnings(self):
-        if not getattr(self, '_warnings_enabled', False):  # self qui è la LOGIC
+        """Return the collected warnings, or [] when they were not requested."""
+        if not getattr(self, '_warnings_enabled', False):  # self is the logic here
             return []
 
     def save_warnings(self, filepath: str = None):
@@ -49,6 +66,7 @@ class BaseLogic(ABC):
             json.dump(self._warnings, f, indent=2, ensure_ascii=False)
 
     def _get_allowed_classes(self) -> set:
+        """Resolve the 'allowed_classes' names of the config into the model classes."""
         class_names = self._strategy.config.get('allowed_classes', [])
         import lode.models as _models
         return {getattr(_models, name) for name in class_names if getattr(_models, name, None) is not None}
@@ -66,25 +84,35 @@ class BaseLogic(ABC):
 
     @abstractmethod
     def phase1_classify_from_predicates(self):
+        """Phase 1: create instances for subjects whose predicates reveal their class."""
         pass
 
     @abstractmethod
     def phase2_create_from_types(self):
+        """Phase 2: create instances from the rdf:type declarations of the graph."""
         pass
 
     @abstractmethod
     def phase3_populate_properties(self):
+        """Phase 3: fill every instance from its triples, through the property mapping."""
         pass
 
     @abstractmethod
     def phase4_process_group_axioms(self):
+        """Phase 4: process axioms that involve several entities at once (e.g. AllDisjointClasses)."""
         pass
 
     @abstractmethod
     def phase5_fallback(self):
+        """Phase 5: give a class (and the format defaults) to whatever is still unclassified."""
         pass
 
     def phase6_create_statements(self):
+        """Phase 6: reify every triple no earlier phase consumed as a Statement.
+
+        Structural list triples and structural vocabulary subjects without a type
+        are skipped; triples already tracked by an instance are not duplicated.
+        """
         for subj, pred, obj in self.graph:
             # if pred in self._property_mapping:
             #     continue
@@ -100,13 +128,13 @@ class BaseLogic(ABC):
                 continue
             self._create_statement_for_triple(subj, pred, obj)
 
-    # ========== VALIDAZIONE CONFIG -> LOGIC ==========
+    # ========== CONFIG -> LOGIC VALIDATION ==========
 
     def _validate_handlers(self):
         """
-        Fail-fast: verifica che tutti gli handler dichiarati nel config
-        esistano come metodi su questa istanza Logic.
-        Solleva AttributeError subito, prima di qualsiasi parsing.
+        Fail-fast: check that every handler declared in the config
+        exists as a method on this Logic instance.
+        Raises AttributeError immediately, before any parsing.
         """
         errors = []
 
@@ -131,7 +159,7 @@ class BaseLogic(ABC):
                 + "\n".join(f"  - {e}" for e in errors)
             )
 
-    # ========== RISOLUZIONE CLASSI AMMESSE ==========
+    # ========== ALLOWED CLASS RESOLUTION ==========
 
     def _resolve_allowed_class(self, python_class: type, id: Node = None) -> type:
         """
@@ -145,7 +173,7 @@ class BaseLogic(ABC):
         if python_class in self._allowed_classes:
             return python_class
 
-        # Hook per logica custom pre-MRO (es. OWL: controlla cache)
+        # Hook for custom pre-MRO logic (e.g. OWL: check the cache)
         resolved = self._pre_resolve_hook(python_class, id)
         if resolved:
             return resolved
@@ -154,41 +182,41 @@ class BaseLogic(ABC):
             if parent_class in self._allowed_classes:
                 return parent_class
 
-        print(f"  [WARN] {python_class.__name__} -> Resource (fallback finale)")
+        logger.warning("%s fell back to Resource", python_class.__name__)
         return Resource
 
     def _pre_resolve_hook(self, python_class: type, id: Node) -> type | None:
         """
-        Hook opzionale per logica custom pre-MRO.
-        Le subclass possono override senza toccare _resolve_allowed_class.
-        Ritorna None per delegare al comportamento base.
+        Optional hook for custom pre-MRO logic.
+        Subclasses can override it without touching _resolve_allowed_class.
+        Returns None to delegate to the base behaviour.
         """
         return None
     
     # ========== Namespaces resolution ==========
     
     def populate_namespaces(self):
-        """Attacca i prefissi del grafo a ogni Model in cache."""
+        """Attach the graph prefixes to every cached Model."""
         ns = {prefix: str(uri) for prefix, uri in self.graph.namespaces()}
         for instances in self._instance_cache.values():
             for inst in instances:
                 if isinstance(inst, Model):
                     inst.set_has_namespaces(ns)
 
-    # ========== PROVENANCE ========== (nota: _triples_map viene scritto solo da questi tre metodi.)
+    # ========== PROVENANCE ========== (note: _triples_map is written only by these three methods.)
 
     def _track(self, instance, *triples):
-        """Attribuisce uno o piu' tripla alla provenance di `instance`."""
+        """Attribute one or more triples to the provenance of `instance`."""
         self._triples_map.setdefault(instance, set()).update(triples)
 
     def _untrack(self, instance, *triples):
-        """Rimuove tripla dalla provenance di `instance`."""
+        """Remove triples from the provenance of `instance`."""
         bucket = self._triples_map.get(instance)
         if bucket:
             bucket.difference_update(triples)
 
     def _move_tracking(self, old, new):
-        """Trasferisce la provenance quando un'istanza viene promossa/sostituita."""
+        """Move the provenance from `old` to `new` when an instance is promoted or replaced."""
         if old in self._triples_map:
             self._triples_map.setdefault(new, set()).update(self._triples_map.pop(old))
 
@@ -199,8 +227,8 @@ class BaseLogic(ABC):
         start: object,
         next_getter: str,
         direction: str = "up",          # "up" | "down" | "both"
-        collect: callable = None,       # (node) -> value | None  — ferma e ritorna quando non None
-        visit_all: callable = None,     # (node) -> None          — visita ogni nodo senza fermarsi
+        collect: callable = None,       # (node) -> value | None  — stops and returns when not None
+        visit_all: callable = None,     # (node) -> None          — visits every node without stopping
     ) -> object | None:
         """
         Generic BFS traversal along a property hierarchy.
@@ -276,6 +304,11 @@ class BaseLogic(ABC):
 
 
     def _create_literal(self, rdflib_literal):
+        """Return the model Literal for an rdflib literal, one per distinct lexical form.
+
+        The instance is cached under a LITERAL:: key; language and datatype are
+        copied over when present.
+        """
         literal_key = f"LITERAL::{rdflib_literal}"
         if literal_key in self._instance_cache:
             return next(iter(self._instance_cache[literal_key]))
@@ -295,9 +328,11 @@ class BaseLogic(ABC):
         return literal
 
     def _is_rdf_collection(self, node: Node) -> bool:
+        """Return True if the node is the head of an RDF list (it has an rdf:first)."""
         return (node, RDF.first, None) in self.graph
 
     def _instance_matches_target(self, instance, target_classes: list) -> bool:
+        """Return True if the instance is of one of the target classes, or a subclass of one."""
         instance_class = instance.__class__
         if instance_class in target_classes:
             return True
@@ -307,6 +342,14 @@ class BaseLogic(ABC):
         return False
 
     def _apply_setters(self, instance, setters_config, obj):
+        """Call the setters declared in the config on `instance`, using `obj` as the value.
+
+        Per entry: 'Literal' builds a Literal from obj; a bool or a string is passed
+        as a constant; a model class resolves obj to an instance of that class (the
+        punned instance of the same class if one is cached); anything else passes
+        obj as is. An entry with no value calls the setter with no argument.
+        Structural vocabulary URIs are never added to has_type.
+        """
         for setter_item in setters_config:
             if isinstance(setter_item, dict):
                 for setter_name, value_type in setter_item.items():
@@ -343,6 +386,10 @@ class BaseLogic(ABC):
                     getattr(instance, setter_item)()
 
     def _handle_collection_object(self, instance, predicate, collection_uri):
+        """Resolve an RDF list used as an object and pass its members to the first matching setter.
+
+        Failures are logged and swallowed: one malformed list must not stop the read.
+        """
         try:
             collection = RDFLibCollection(self.graph, collection_uri)
             items = []
@@ -361,15 +408,24 @@ class BaseLogic(ABC):
                         if hasattr(instance, setter_name):
                             getattr(instance, setter_name)(items)
                             break
-        except Exception as e:
-            print(f"Errore Collection: {e}")
+        except Exception:
+            logger.warning("Collection handling failed on %s (predicate %s)",
+                           instance, predicate, exc_info=True)
 
     def clear_cache(self):
+        """Empty the shared instance cache."""
         self._instance_cache.clear()
 
     # ========== LOGIC CORE ==========
 
     def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
+        """Return the model instance for a node, creating (and populating) it when needed.
+
+        Literals go through _create_literal; built-in datatypes and undeclared XSD
+        terms are always Datatype. A cached instance is reused; a single cached
+        instance of a broader class is promoted to the requested one, so punning
+        keeps working. Returns None, after logging, when creation fails.
+        """
         try:
             
             if isinstance(id, RDFlibLiteral):
@@ -394,7 +450,7 @@ class BaseLogic(ABC):
             #         if uri_str.startswith(ns) and id not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
             #             return None
 
-            # Individual punning: non sovrascrivere tipi esistenti non-Individual
+            # Individual punning: do not override existing non-Individual types
             if python_class == Individual and id in self._instance_cache:
                 is_named_individual = (id, RDF.type, OWL.NamedIndividual) in self.graph
                 if not is_named_individual:
@@ -433,17 +489,25 @@ class BaseLogic(ABC):
 
             return instance
 
-        except Exception as e:
-            print(f"Cannot create {python_class.__name__ if python_class else 'Unknown'} for {id}: {e}")
+        except Exception:
+            logger.warning("Cannot create %s for %s",
+                           python_class.__name__ if python_class else "Unknown", id, exc_info=True)
             return None
 
     def populate_instance(self, instance, uri: Node):
+        """Fill an instance from the triples of `uri`, following the property mapping.
+
+        Only predicates in the allowed namespaces are read. A configured handler or
+        setters list runs for each predicate; failures are logged and skipped. Every
+        handled triple is recorded in the provenance map, except the rdf:type that
+        selected the instance's class.
+        """
         if isinstance(uri, URIRef):
             instance.set_has_identifier(str(uri))
         elif isinstance(uri, BNode):
             instance.has_identifier = str(uri)
 
-        is_subordinate = self._is_punning_subordinate(instance, uri)
+        # is_subordinate = self._is_punning_subordinate(instance, uri)
 
         for predicate, obj in self.graph.predicate_objects(uri):
             if iri_namespace(str(predicate)) not in self._allowed_namespaces:
@@ -454,23 +518,26 @@ class BaseLogic(ABC):
 
             if config is not None:
                 target_classes = config.get('target_classes', [])
-                if is_subordinate and target_classes and type(instance) not in target_classes:
-                    continue
+                #if is_subordinate and target_classes and type(instance) not in target_classes:
+                #    continue
                 if target_classes and not self._instance_matches_target(instance, target_classes):
                     continue
 
                 if 'handler' in config:
                     try:
-                        getattr(self, config['handler'])(instance, uri, predicate, obj, None)
-                        handled = True
-                    except Exception as e:
-                        print(f"  Errore handler {config['handler']}: {e}")
+                        # An explicit False means "not admissible for this instance".
+                        result = getattr(self, config['handler'])(instance, uri, predicate, obj, None)
+                        handled = result is not False
+                    except Exception:
+                        logger.warning("Handler %s failed on %s (predicate %s)",
+                                       config['handler'], uri, predicate, exc_info=True)
                 elif 'setters' in config:
                     try:
                         self._apply_setters(instance, config['setters'], obj)
                         handled = True
-                    except Exception as e:
-                        print(f"  Errore setters: {e}")
+                    except Exception:
+                        logger.warning("Setters failed on %s (predicate %s)",
+                                       uri, predicate, exc_info=True)
 
             if not handled and config is None and self._is_rdf_collection(obj):
                 self._handle_collection_object(instance, predicate, obj)
@@ -482,6 +549,7 @@ class BaseLogic(ABC):
     # ========== HELPERS ==========
 
     def _is_triple_mapped(self, subj, pred, obj) -> bool:
+        """Return True if some instance already tracks this triple in its provenance."""
         if subj not in self._instance_cache:
             return False
         instances = self._instance_cache[subj]
@@ -493,6 +561,11 @@ class BaseLogic(ABC):
         return False
 
     def _convert_collection_to_container(self, collection_uri):
+        """Return the Container that represents an RDF list, building and caching it once.
+
+        The container is cached before its members are resolved, so a list that
+        contains itself cannot loop forever.
+        """
         if collection_uri in self._instance_cache:
             for cached in self._instance_cache[collection_uri]:
                 if isinstance(cached, Container):
@@ -516,13 +589,18 @@ class BaseLogic(ABC):
                     if member_instance:
                         members.append(member_instance)
             container.set_has_members(members)
-        except Exception as e:
-            print(f"Errore Collection: {e}")
+        except Exception:
+            logger.warning("Collection to container conversion failed for %s",
+                           collection_uri, exc_info=True)
 
         return container
 
     def _create_statement_for_triple(self, subj, pred, obj):
-        
+        """Reify one triple as a Statement, unless its predicate is already mapped.
+
+        Lists in object position become Containers and literals become Literals.
+        """
+
         if pred in self._property_mapping:
             return
         
@@ -636,6 +714,10 @@ class BaseLogic(ABC):
         return statement
 
     def _get_punning_dominant(self, uri):
+        """Return the instance that wins when an IRI is used as several things (punning).
+
+        The winner follows the config's punning priority; with no match, any cached one.
+        """
         if uri not in self._instance_cache:
             return None
         cached = self._instance_cache[uri]
@@ -651,12 +733,14 @@ class BaseLogic(ABC):
         return next(iter(cached))
 
     def _is_punning_subordinate(self, instance, uri):
+        """Return True if `instance` loses against another instance of the same IRI."""
         dom = self._get_punning_dominant(uri)
         return dom is not None and dom is not instance
 
     # ========== SWRL ==========
 
     def handle_swrl_imp(self, uri):
+        """Build a Rule from a swrl:Imp, with its body atoms as antecedent and head atoms as consequent."""
         # Force promotion to Rule if cached as something else
         if uri in self._instance_cache:
             existing = next(iter(self._instance_cache[uri]))
@@ -681,8 +765,8 @@ class BaseLogic(ABC):
                     atom = self._parse_swrl_atom(atom_node)
                     if atom:
                         rule.set_has_antecedent(atom)
-            except Exception as e:
-                print(f"Errore body AtomList: {e}")
+            except Exception:
+                logger.warning("SWRL body parsing failed for rule %s", uri, exc_info=True)
 
         head_node = self.graph.value(uri, SWRL_NS.head)
         if head_node:
@@ -691,10 +775,11 @@ class BaseLogic(ABC):
                     atom = self._parse_swrl_atom(atom_node)
                     if atom:
                         rule.set_has_consequent(atom)
-            except Exception as e:
-                print(f"Errore head AtomList: {e}")
+            except Exception:
+                logger.warning("SWRL head parsing failed for rule %s", uri, exc_info=True)
 
     def _parse_swrl_atom(self, atom_node):
+        """Build an Atom from a SWRL atom node: its predicate (by atom kind) and its arguments."""
         atom = self.get_or_create(atom_node, Atom)
         if not atom:
             return None
@@ -742,18 +827,20 @@ class BaseLogic(ABC):
         if arg2:
             atom.set_has_arguments(self._resolve_swrl_arg(arg2))
 
-        # arguments (BuiltinAtom — lista RDF)
+        # arguments (BuiltinAtom — RDF list)
         args_node = self.graph.value(atom_node, SWRL_NS.arguments)
         if args_node:
             try:
                 for arg in RDFLibCollection(self.graph, args_node):
                     atom.set_has_arguments(self._resolve_swrl_arg(arg))
-            except Exception as e:
-                print(f"Errore builtin arguments: {e}")
+            except Exception:
+                logger.warning("SWRL builtin arguments failed for atom %s",
+                               atom_node, exc_info=True)
 
         return atom
 
     def _resolve_swrl_arg(self, node):
+        """Resolve a SWRL argument: a Literal, a Variable or, by default, an Individual."""
         if isinstance(node, RDFlibLiteral):
             return self._create_literal(node)
         if (node, RDF.type, SWRL_NS.Variable) in self.graph:

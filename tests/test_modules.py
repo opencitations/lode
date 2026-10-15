@@ -261,11 +261,6 @@ class TestPartialImport:
         assert contexts(ds, (H.T, RDF.type, OWL.Class)) == {HOME}
         assert contexts(ds, (H.T, RDFS.comment, Literal("T defined by home"))) == {HOME}
 
-    def test_documented_ontology_has_priority(self, ds):
-        """main restates the label of home#T: main's label wins, home's is not copied."""
-        assert set(ds.objects(H.T, RDFS.label)) == {Literal("T from main", lang="en")}
-        assert contexts(ds, (H.T, RDFS.label, Literal("T from main", lang="en"))) == {MAIN}
-
     def test_third_party_redefinition_is_not_copied(self, ds):
         """imp redefines home#T, but imp is not home#T's home."""
         assert (H.T, RDFS.comment, Literal("T redefined by imp")) not in ds
@@ -278,6 +273,23 @@ class TestPartialImport:
             assert contexts(ds, t) == {HOME}
         assert set(ds.predicates(restr)) == {RDF.type, OWL.onProperty, OWL.someValuesFrom}
 
+    # -- priority of documented ontology over imported ontos --------------
+    
+    def test_both_definitions_kept_with_provenance(self, ds):
+        """main restates the label of home#T: both labels kept, each in its own graph."""
+        assert contexts(ds, (H.T, RDFS.label, Literal("T from main", lang="en"))) == {MAIN}
+        assert contexts(ds, (H.T, RDFS.label, Literal("T from home", lang="en"))) == {HOME}
+
+    def test_documented_values_come_first(self, main_path):
+        """The Reader puts main's label of home#T before home's."""
+        from lode.reader.reader import Reader
+        reader = Reader()
+        reader.load_instances(graph_path=main_path, read_as="owl", partial_import=True)
+        for inst in reader._instance_cache[H.T]:
+            labels = [l.get_has_value() for l in inst.get_has_label()]
+            if labels:
+                assert labels[0] == "T from main", labels
+
     # -- finding the home -------------------------------------------------
 
     def test_home_by_dereferenced_document_when_iri_differs(self, ds):
@@ -285,9 +297,10 @@ class TestPartialImport:
         assert contexts(ds, (V.V, RDF.type, OWL.Class)) == {VER}
 
     def test_unreachable_home_gets_no_external_definition(self, ds, offline_fetch):
-        """missing is not served: imp's redefinition of missing#X must not fill the gap."""
+        """missing is not served: only main's own triple, imp's redefinition must not fill the gap."""
         assert "http://ex.org/missing" in offline_fetch
-        assert set(ds.predicate_objects(X.X)) == set()
+        assert set(ds.predicate_objects(X.X)) == {(RDFS.comment, Literal("X described by main"))}
+        assert contexts(ds, (X.X, RDFS.comment, Literal("X described by main"))) == {MAIN}
 
     # -- fetching ---------------------------------------------------------
 
@@ -307,6 +320,8 @@ class TestPartialImport:
         path = write_ttl(tmp_path, "m.ttl", """
 <http://ex.org/m2> a owl:Ontology .
 <http://ex.org/m2#X> rdfs:seeAlso <http://ex.org/voc/a>, <http://ex.org/voc/b> .
+<http://ex.org/voc/a> rdfs:comment "a described by m2" .
+<http://ex.org/voc/b> rdfs:comment "b described by m2" .
 """)
         ds = Loader(path, partial_import=True).get_graph()
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/voc/")]) == 1
@@ -317,6 +332,9 @@ class TestPartialImport:
         path = write_ttl(tmp_path, "m.ttl", """
 <http://ex.org/m3> a owl:Ontology .
 <http://ex.org/m3#X> rdfs:seeAlso <http://ex.org/dead/a>, <http://ex.org/dead/b>, <http://ex.org/dead/c> .
+<http://ex.org/dead/a> rdfs:comment "a" .
+<http://ex.org/dead/b> rdfs:comment "b" .
+<http://ex.org/dead/c> rdfs:comment "c" .
 """)
         Loader(path, partial_import=True)
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/dead/")]) == 1
@@ -553,9 +571,20 @@ class TestUploadPartialImport:
     def test_graphs_are_main_and_homes_only(self, ds):
         assert graphs(ds) == {MAIN, HOME, VER}
 
-    def test_documented_ontology_has_priority(self, ds):
-        assert set(ds.objects(H.T, RDFS.label)) == {Literal("T from main", lang="en")}
+    def test_both_definitions_kept_with_provenance(self, ds):
+        """main restates the label of home#T: both labels kept, each in its own graph."""
         assert contexts(ds, (H.T, RDFS.label, Literal("T from main", lang="en"))) == {MAIN}
+        assert contexts(ds, (H.T, RDFS.label, Literal("T from home", lang="en"))) == {HOME}
+
+    def test_documented_values_come_first(self, main_path):
+        """The Reader puts main's label of home#T before home's."""
+        from lode.reader.reader import Reader
+        reader = Reader()
+        reader.load_instances(graph_path=main_path, read_as="owl", partial_import=True)
+        for inst in reader._instance_cache[H.T]:
+            labels = [l.get_has_value() for l in inst.get_has_label()]
+            if labels:
+                assert labels[0] == "T from main", labels
 
     def test_home_definition_in_home_graph(self, ds):
         assert contexts(ds, (H.T, RDFS.comment, Literal("T defined by home"))) == {HOME}
@@ -573,7 +602,7 @@ class TestUploadPartialImport:
         assert contexts(ds, (V.V, RDF.type, OWL.Class)) == {VER}
 
     def test_unreachable_home_gives_no_external_definition(self, ds):
-        assert set(ds.predicate_objects(X.X)) == set()
+        assert set(ds.predicate_objects(X.X)) == {(RDFS.comment, Literal("X described by main"))}
 
     def test_external_ontology_headers_absent(self, ds):
         assert set(ds.subjects(RDF.type, OWL.Ontology)) == {MAIN}
@@ -702,3 +731,4 @@ class TestUploadEdgeCases:
         assert graphs(a) == graphs(b)
         for g in graphs(a):
             assert isomorphic(a.graph(g), b.graph(g)), g
+            

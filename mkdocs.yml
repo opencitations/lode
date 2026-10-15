@@ -1,0 +1,40 @@
+site_name: LODE 2.0
+site_description: Live OWL Documentation Environment — extract and document RDF/OWL/SKOS semantic artefacts as browsable HTML.
+site_url: https://opencitations.github.io/lode/
+repo_url: https://github.com/opencitations/lode
+repo_name: opencitations/lode
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Getting started: getting_started.md
+  - Usage:
+      - Web form: usage/web_form.md
+      - CLI: usage/cli.md
+      - Docker: usage/docker.md
+  - API reference:
+      - Endpoints: api/endpoints.md

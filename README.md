@@ -9,19 +9,22 @@ LODE 2.0 is an open source service that automatically extracts entities from sem
 ## Installation
 
 ```bash
-pip install lode
+pip install oc-lode
+
+# with the web service (`lode serve`)
+pip install "oc-lode[server]"
 ```
 
-## Usage
+ ## Usage
+ 
+```bash
+# Build static documentation from an ontology URL or a local file
+lode build --url <url> --read-as <owl|rdf|skos> [--out ./docs] [--lang en] [--imported] [--closure]
+lode build --file <path> --read-as <owl|rdf|skos> [--out ./docs]
 
-```python
-from lode import example_function
-
-result = example_function()
-print(result)
+# Run the web service (requires the [server] extra)
+lode serve --port 8000
 ```
-
-
 
 ## Documentation
 

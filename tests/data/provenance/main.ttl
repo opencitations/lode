@@ -8,3 +8,6 @@
 <http://ex.org/main#M> a owl:Class ;
     rdfs:subClassOf <http://ex.org/home#T>, <http://ex.org/ver#V>, <http://ex.org/missing#X> .
 <http://ex.org/home#T> rdfs:label "T from main"@en .
+
+<http://ex.org/ver#V> rdfs:comment "V described by main" .
+<http://ex.org/missing#X> rdfs:comment "X described by main" .

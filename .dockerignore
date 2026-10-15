@@ -24,9 +24,7 @@ htmlcov/
 .idea/
 
 # Docs site build artifacts
-docs/node_modules/
-docs/.astro/
-docs/dist/
+site/
 
 # Runtime spool cache
 **/spool/

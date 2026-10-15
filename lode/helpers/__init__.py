@@ -1,1 +1,1 @@
-# helpers/__init__.py
+"""Small helpers shared by the reader, the viewer, the builder and the API."""
