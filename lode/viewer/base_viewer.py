@@ -5,7 +5,10 @@ and display names. It also serializes the provenance of each entity.
 """
 import hashlib
 import re
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+import yaml
 from lode.models import Literal, Model, Resource, Statement
 import urllib.parse
 
@@ -28,6 +31,41 @@ QUAD_SERIALIZATION_FORMATS = [
     {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
     {"label": "N-Quads",   "fmt": "nquads",  "mime": "application/n-quads",   "ext": "nq",     "icon": "bi-file-text"},
 ]
+
+_ANNOTATION_ORDER_FILE = Path(__file__).parent / "config" / "model_annotations_deterministic_sorting.yaml"
+
+
+def _normalize_annotation_key(key: str) -> str:
+    """Reduce a displayed metadata key to a comparable form.
+
+    Case, spaces, underscores and hyphens are dropped so that 'version info',
+    'versionInfo' and 'version_info' land in the same slot of the order list.
+    """
+    return re.sub(r"[\s_\-]+", "", key.lower())
+
+
+def _load_annotation_order() -> Dict[str, int]:
+    """Read the YAML order list and map each normalized key to its rank.
+
+    Loaded once at import time. A missing or malformed file raises: a silent
+    fallback would make the page order depend on the environment again.
+    """
+    with open(_ANNOTATION_ORDER_FILE, encoding="utf-8") as f:
+        order = yaml.safe_load(f)["order"]
+    return {_normalize_annotation_key(k): i for i, k in enumerate(order)}
+
+
+_ANNOTATION_RANK = _load_annotation_order()
+
+
+def _annotation_sort_key(key: str) -> Tuple[int, str]:
+    """Sort key for a header metadata entry: configured rank, then alphabetical.
+
+    Unlisted keys get a rank past the last listed one, so they follow the known
+    ones and stay in alphabetical order among themselves.
+    """
+    return (_ANNOTATION_RANK.get(_normalize_annotation_key(key), len(_ANNOTATION_RANK)), key.lower())
+
 
 class BaseViewer:
     """Base viewer to display the instances extracted by the Reader."""
@@ -457,9 +495,9 @@ class BaseViewer:
         # 9. Statements
         data.update(self._format_statement(all_instances, ontology_model, language))
 
-        # Alphabetical order on all the metadata (uri/label first)
+        # uri/label first, then the order from the YAML, then alphabetical
         pinned = ['uri', 'label']
-        rest = sorted(k for k in data if k not in pinned)
+        rest = sorted((k for k in data if k not in pinned), key=_annotation_sort_key)
         data = {k: data[k] for k in pinned if k in data} | {k: data[k] for k in rest}
 
         return data
