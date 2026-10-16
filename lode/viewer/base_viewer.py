@@ -14,26 +14,20 @@ from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 from lode.reader.provenance_graph import ProvenanceGraph
 from lode.helpers.rdf import iri_local_name
 
+# Export formats: triples of the loaded artefact only.
 SERIALIZATION_FORMATS = [
-    {"label": "Turtle",    "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
+    {"label": "Turtle",   "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
     {"label": "RDF/XML",   "fmt": "xml",     "mime": "application/rdf+xml",   "ext": "rdf",    "icon": "bi-file-code"},
     {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
     {"label": "N-Triples", "fmt": "nt",      "mime": "application/n-triples", "ext": "nt",     "icon": "bi-file-text"},
 ]
 
+# Provenance formats: quads, the named graph of each triple is always shown.
 QUAD_SERIALIZATION_FORMATS = [
     {"label": "TriG",      "fmt": "trig",    "mime": "application/trig",      "ext": "trig",   "icon": "bi-filetype-raw"},
     {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
     {"label": "N-Quads",   "fmt": "nquads",  "mime": "application/n-quads",   "ext": "nq",     "icon": "bi-file-text"},
 ]
-
-def formats_for(graph):
-    """Return the serialization formats available for a graph.
-
-    Quad formats are offered only for a ProvenanceGraph, because only it keeps
-    the named graph of each triple.
-    """
-    return QUAD_SERIALIZATION_FORMATS if isinstance(graph, ProvenanceGraph) else SERIALIZATION_FORMATS
 
 class BaseViewer:
     """Base viewer to display the instances extracted by the Reader."""
@@ -67,20 +61,27 @@ class BaseViewer:
         return (URIRef(str(uri)), None, None) in self.reader._graph
 
     def _formats(self):
-        """Return the serialization formats available for the loaded graph."""
-        return formats_for(self.reader._graph)
+        """Return the export formats (triples): the same whatever modules are active."""
+        return SERIALIZATION_FORMATS
 
     def _with_provenance(self, sub):
-        """With modules active, put the triples of `sub` back into their original named graphs."""
+        """Return `sub` as quads, each triple in the named graph(s) it comes from.
+
+        With modules active the graphs are the ones of the source ontologies;
+        without, every triple goes in the graph of the loaded artefact.
+        """
         ds = self.reader._graph
-        if not isinstance(ds, ProvenanceGraph):
-            return sub
         out = ProvenanceGraph()
         for prefix, ns in ds.namespaces():
             out.bind(prefix, ns)
-        for s, p, o in sub:
-            for *_, c in ds.quads((s, p, o, None)):
-                out.graph(c).add((s, p, o))
+        if isinstance(ds, ProvenanceGraph):
+            for s, p, o in sub:
+                for *_, c in ds.quads((s, p, o, None)):
+                    out.graph(c).add((s, p, o))
+        else:
+            main = out.graph(self.reader._ontology_iri)
+            for t in sub:
+                main.add(t)
         return out
     
     def _is_internal(self, uri) -> bool:
@@ -955,7 +956,7 @@ class BaseViewer:
         sub = self._with_provenance(sub)
         return [
             {"label": f["label"], "code": self._safe_serialize(sub, f["fmt"])}
-            for f in self._formats()
+            for f in QUAD_SERIALIZATION_FORMATS
         ]
     
     @staticmethod
@@ -970,14 +971,20 @@ class BaseViewer:
             return f"# serialization error ({fmt}): {e}"
         
     def export_resource(self, resource_uri: str, fmt: str = "turtle") -> str:
-        """Serialize the subgraph of a single resource (the union of its punned instances)."""
+        """Serialize the subgraph of a single resource (the union of its punned instances).
+
+        Only triples of the loaded artefact are exported; the ones that come from
+        imported modules belong to the provenance, not to the export.
+        """
         g = Graph()
         for prefix, ns in self.reader._graph.namespaces():
             g.bind(prefix, ns)
+        main = self.reader.get_main_graph()
         instances = self.get_instances_from_single_resource(resource_uri)
         if instances:
             inst_iter = instances if isinstance(instances, set) else [instances]
             for inst in inst_iter:
-                for t in self.reader.get_provenance_subgraph(inst):  # already exists
-                    g.add(t)
-        return self._safe_serialize(self._with_provenance(g), fmt)
+                for t in self.reader.get_provenance_subgraph(inst):
+                    if t in main:
+                        g.add(t)
+        return self._safe_serialize(g, fmt)

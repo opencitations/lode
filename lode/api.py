@@ -46,7 +46,7 @@ import lode.helpers.spool as spool
 from lode.reader import Reader
 from lode.reader import security
 from lode.exceptions import LODEError, ArtefactValidationError
-from lode.viewer.base_viewer import formats_for
+from lode.viewer.base_viewer import SERIALIZATION_FORMATS
 from lode.reader.provenance_graph import ProvenanceGraph
 from lode.helpers.rdf import iri_local_name
 
@@ -210,7 +210,7 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
         # cache hit: rebuild from the saved Turtle
         reader = Reader()
         reader.load_instances(path, read_as, imported=imported, closure=closure,  partial_import=partial_import,
-                              warnings=warnings)
+                              warnings=warnings, source_name=url)
         return reader
     if not use_cache:
         # cache=false: drop the stale copy so the fresh fetch replaces it
@@ -434,9 +434,9 @@ def extract_get(
     reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, partial_import,
                              warnings, use_cache=cache)
 
-    # Content negotiation: the available formats depend on the graph (quads only with modules)
+    # Content negotiation: triples of the loaded artefact only, quads are never negotiable
     accept = request.headers.get("accept", "text/html")
-    available = formats_for(reader._graph)
+    available = SERIALIZATION_FORMATS
     serial = None
 
     if format:
@@ -456,7 +456,7 @@ def extract_get(
             serialized = reader.get_viewer().export_resource(resource, serial["fmt"])
             filename = iri_local_name(resource) or "resource"
         else:
-            serialized = reader._graph.serialize(format=serial["fmt"])
+            serialized = reader.get_main_graph().serialize(format=serial["fmt"])
             filename = (iri_local_name(url) if url else "") or "graph"
         return Response(content=serialized, media_type=serial["mime"],
                         headers={"Content-Disposition": f'inline; filename="{filename}.{serial["ext"]}"'})

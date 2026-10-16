@@ -5,8 +5,9 @@ What is tested
 Each module (imported, closure, partial_import) loads external documents into the
 graph of the documented ontology. With any module active the graph is a
 ProvenanceGraph: every triple sits in the named graph of the document that asserts
-it, and keeps that context through the URL cache, per-entity export and the
-quad serializations (TriG, N-Quads, JSON-LD).
+it, and keeps that context through the URL cache and the per-entity provenance
+(quads: TriG, N-Quads, JSON-LD). Exports and content negotiation, instead, return
+only the triples of the loaded artefact, with or without modules.
 
 Sections
 --------
@@ -16,7 +17,7 @@ Sections
 4. partial_import    only the home definition of each mentioned external term
 5. URL cache         only the main document is cached; modules re-applied on a hit
 6. Per-entity provenance (viewer)
-7. HTTP API          the same guarantees end-to-end, through serialization
+7. HTTP API          exports are triples of the loaded artefact only, end-to-end
 
 Fixtures
 --------
@@ -45,9 +46,8 @@ from lode.api import app
 from lode.exceptions import ArtefactNotFoundError
 from lode.reader.loader import Loader
 from lode.reader.provenance_graph import ProvenanceGraph
-from lode.viewer.base_viewer import (
-    QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS, BaseViewer, formats_for,
-)
+from lode.reader.reader import Reader
+from lode.viewer.base_viewer import QUAD_SERIALIZATION_FORMATS, BaseViewer
 
 # ==========================================================================
 # FIXTURES
@@ -374,13 +374,14 @@ class TestCacheRoundTrip:
 class FakeReader:
     """Minimal reader for BaseViewer: only the graph and an empty instance cache."""
 
-    def __init__(self, graph):
+    def __init__(self, graph, ontology_iri=None):
         self._graph = graph
         self._instance_cache = {}
+        self._ontology_iri = ontology_iri
 
 
 def entity_provenance(ds, subject):
-    """What an entity card exports: its triples, placed back in their origin graphs."""
+    """What an entity card shows as provenance: its triples, placed in their origin graphs."""
     sub = Graph()
     for t in ds.triples((subject, None, None)):
         sub.add(t)
@@ -390,19 +391,25 @@ def entity_provenance(ds, subject):
 class TestEntityProvenance:
     """Formats offered, and each triple of an entity in the graph(s) it comes from."""
 
-    def test_formats_without_modules_are_triple_formats(self):
-        assert formats_for(Graph()) is SERIALIZATION_FORMATS
-
-    def test_formats_with_modules_are_quad_formats(self):
-        assert formats_for(ProvenanceGraph()) is QUAD_SERIALIZATION_FORMATS
+    def test_quad_formats_have_no_rdfxml(self):
         assert "xml" not in {f["fmt"] for f in QUAD_SERIALIZATION_FORMATS}
 
-    def test_without_modules_provenance_is_unchanged(self):
+    def test_without_modules_provenance_is_a_quad_in_the_artefact_graph(self):
         g = Graph()
         g.add((M.A, RDF.type, OWL.Class))
         sub = Graph()
         sub.add((M.A, RDF.type, OWL.Class))
-        assert BaseViewer(FakeReader(g))._with_provenance(sub) is sub
+        out = BaseViewer(FakeReader(g, MAIN))._with_provenance(sub)
+        assert isinstance(out, ProvenanceGraph)
+        assert graphs(out) == {MAIN}
+
+    def test_card_provenance_names_the_graph_without_modules(self, main_path):
+        reader = Reader()
+        reader.load_instances(main_path, "owl")
+        viewer = reader.get_viewer()
+        codes = [f["code"] for inst in reader._instance_cache[H.T]
+                 for f in viewer._build_provenance_subgraph(inst) if f["label"] == "TriG"]
+        assert codes and all(f"<{MAIN}>" in c for c in codes)
 
     def test_partial_import_term_spans_main_and_home(self, main_path):
         """home#T: label from main, definition from home, nothing from imp."""
@@ -440,12 +447,14 @@ class TestEntityProvenance:
 # 7. HTTP API (end-to-end)
 # ==========================================================================
 #
+# Exports and content negotiation return the triples of the loaded artefact, with or
+# without modules: imported documents show up only in the provenance of each card.
 # Uploads go through the spool (spool.save) and are requested with
-# GET /extract?upload_id=..., the same path as _resolve_reader. Quad serializations
-# are parsed back into a Dataset (default_union=True, so objects()/subjects()/`in`
-# see the named graphs) to check that contexts survive serialization.
+# GET /extract?upload_id=..., the same path as _resolve_reader.
 
-RDFLIB_FMT = {"trig": "trig", "nq": "nquads", "jsonld": "json-ld"}
+TRIPLE_FORMATS = {"ttl": "turtle", "nt": "nt", "rdf": "xml", "jsonld": "json-ld"}
+QUAD_EXTS = ["trig", "nq"]
+ALL_FLAGS = [None, *MODULES]
 
 
 @pytest.fixture(scope="module")
@@ -466,6 +475,11 @@ def upload(content: str) -> str:
 
 def _flags(flags) -> dict:
     return {k: "true" for k, v in flags.items() if v}
+
+
+def flags_of(flag) -> dict:
+    """Request flags for one module, or none."""
+    return {flag: True} if flag else {}
 
 
 def get(client, token, fmt, resource=None, **flags):
@@ -494,16 +508,11 @@ def get_url(client, url, fmt=None, resource=None, cache=False, **flags):
     return client.get("/extract", params=params)
 
 
-def as_dataset(resp, fmt) -> Dataset:
+def as_graph(resp, fmt) -> Graph:
+    """Parse an export response back into a plain Graph (a quad format would not parse here)."""
     assert resp.status_code == 200, resp.text[:500]
     assert "text/html" not in resp.headers.get("content-type", ""), f"{fmt}: got HTML instead of RDF"
-    ds = Dataset(default_union=True)
-    ds.parse(data=resp.text, format=RDFLIB_FMT[fmt])
-    return ds
-
-
-def default_graph_is_empty(ds) -> bool:
-    return len(ds.graph(DATASET_DEFAULT_GRAPH_ID)) == 0
+    return Graph().parse(data=resp.text, format=TRIPLE_FORMATS[fmt])
 
 
 def filename(resp) -> str:
@@ -512,73 +521,29 @@ def filename(resp) -> str:
     return cd.split('filename="', 1)[1].rstrip('"')
 
 
-class TestUploadWithoutModules:
-    """No modules: plain graph, no quad formats."""
+class TestExportIsLoadedArtefactOnly:
+    """Whatever the modules, an export holds the triples of the loaded document and nothing else."""
 
-    @pytest.mark.parametrize("fmt", ["trig", "nq"])
-    def test_quad_formats_rejected(self, client, fmt):
-        assert get(client, upload(MAIN_TTL), fmt).status_code == 406
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    @pytest.mark.parametrize("fmt", list(TRIPLE_FORMATS))
+    def test_whole_export_is_the_main_document(self, client, fmt, flag):
+        g = as_graph(get(client, upload(MAIN_TTL), fmt, **flags_of(flag)), fmt)
+        assert isomorphic(g, doc("main"))
 
-    @pytest.mark.parametrize("fmt", ["ttl", "nt", "rdf", "jsonld"])
-    def test_triple_formats_available(self, client, fmt):
-        assert get(client, upload(MAIN_TTL), fmt).status_code == 200
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    @pytest.mark.parametrize("fmt", QUAD_EXTS)
+    def test_quad_formats_rejected(self, client, fmt, flag):
+        assert get(client, upload(MAIN_TTL), fmt, **flags_of(flag)).status_code == 406
 
-    def test_html_offers_triple_formats_only(self, client):
-        html = client.post("/extract", data={"read_as": "owl"},
-                           files={"file": ("main.ttl", MAIN_TTL, "text/turtle")}).text
-        assert "N-Triples" in html
-        assert "TriG" not in html and "N-Quads" not in html
-
-
-class TestUploadImportedClosure:
-    """Formal imports through the API: graphs survive serialization."""
-
-    def test_html_offers_quad_formats(self, client):
-        html = client.post("/extract", data={"read_as": "owl", "imported": "true"},
-                           files={"file": ("main.ttl", MAIN_TTL, "text/turtle")}).text
-        assert "TriG" in html and "N-Quads" in html
-        assert "N-Triples" not in html and "RDF/XML" not in html
-
-    @pytest.mark.parametrize("fmt", ["trig", "nq", "jsonld"])
-    def test_imported_graphs_survive_serialization(self, client, fmt):
-        ds = as_dataset(get(client, upload(MAIN_TTL), fmt, imported=True), fmt)
-        assert graphs(ds) == {MAIN, IMP}
-        assert default_graph_is_empty(ds)
-        assert contexts(ds, (I.I, RDF.type, OWL.Class)) == {IMP}
-        assert (D.D, None, None) not in ds
-
-    def test_upload_context_is_declared_ontology_not_spool_path(self, client):
-        ds = as_dataset(get(client, upload(MAIN_TTL), "trig", imported=True), "trig")
-        assert not any(str(g).startswith("file:") for g in graphs(ds))
-
-    def test_closure_fallback_context_is_url(self, client):
-        ds = as_dataset(get(client, upload(MAIN_TTL), "nq", closure=True), "nq")
-        assert graphs(ds) == {MAIN, IMP, DEEP}
-        assert contexts(ds, (D.D, RDF.type, OWL.Class)) == {DEEP}
-
-    def test_imported_redefinition_stays_in_imported_graph(self, client):
-        ds = as_dataset(get(client, upload(MAIN_TTL), "trig", imported=True), "trig")
-        assert contexts(ds, (H.T, RDFS.comment, Literal("T redefined by imp"))) == {IMP}
-
-
-class TestUploadPartialImport:
-    """partial_import through the API: same boundary as TestPartialImport."""
-
-    @pytest.fixture
-    def ds(self, client):
-        return as_dataset(get(client, upload(MAIN_TTL), "trig", partial_import=True), "trig")
-
-    def test_graphs_are_main_and_homes_only(self, ds):
-        assert graphs(ds) == {MAIN, HOME, VER}
-
-    def test_both_definitions_kept_with_provenance(self, ds):
-        """main restates the label of home#T: both labels kept, each in its own graph."""
-        assert contexts(ds, (H.T, RDFS.label, Literal("T from main", lang="en"))) == {MAIN}
-        assert contexts(ds, (H.T, RDFS.label, Literal("T from home", lang="en"))) == {HOME}
+    def test_resource_export_has_main_triples_only(self, client):
+        """home#T: the label restated by main is exported, the definition of home is not."""
+        g = as_graph(get(client, upload(MAIN_TTL), "ttl", resource=H.T, partial_import=True), "ttl")
+        assert ground(g) <= ground(doc("main"))
+        assert (H.T, RDFS.label, Literal("T from main", lang="en")) in g
+        assert (H.T, RDFS.comment, Literal("T defined by home")) not in g
 
     def test_documented_values_come_first(self, main_path):
         """The Reader puts main's label of home#T before home's."""
-        from lode.reader.reader import Reader
         reader = Reader()
         reader.load_instances(graph_path=main_path, read_as="owl", partial_import=True)
         for inst in reader._instance_cache[H.T]:
@@ -586,71 +551,43 @@ class TestUploadPartialImport:
             if labels:
                 assert labels[0] == "T from main", labels
 
-    def test_home_definition_in_home_graph(self, ds):
-        assert contexts(ds, (H.T, RDFS.comment, Literal("T defined by home"))) == {HOME}
 
-    def test_third_party_redefinition_absent(self, ds):
-        assert (H.T, RDFS.comment, Literal("T redefined by imp")) not in ds
-        assert (H.T, OWL.equivalentClass, I.I) not in ds
+class TestHtmlOffers:
+    """The page offers triples to export and quads as provenance, with or without modules."""
 
-    def test_restriction_blank_nodes_in_home_graph(self, ds):
-        (restr,) = [o for o in ds.objects(H.T, RDFS.subClassOf) if isinstance(o, BNode)]
-        for t in ds.triples((restr, None, None)):
-            assert contexts(ds, t) == {HOME}
-
-    def test_versioned_home_found_via_dereferenced_document(self, ds):
-        assert contexts(ds, (V.V, RDF.type, OWL.Class)) == {VER}
-
-    def test_unreachable_home_gives_no_external_definition(self, ds):
-        assert set(ds.predicate_objects(X.X)) == {(RDFS.comment, Literal("X described by main"))}
-
-    def test_external_ontology_headers_absent(self, ds):
-        assert set(ds.subjects(RDF.type, OWL.Ontology)) == {MAIN}
-
-    @pytest.mark.parametrize("fmt", ["trig", "nq", "jsonld"])
-    def test_resource_export_has_origin_graphs(self, client, fmt):
-        ds = as_dataset(get(client, upload(MAIN_TTL), fmt, resource=H.T, partial_import=True), fmt)
-        assert graphs(ds) == {MAIN, HOME}
-        assert default_graph_is_empty(ds)
-        assert contexts(ds, (H.T, RDF.type, OWL.Class)) == {HOME}
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    def test_export_in_triples_provenance_in_quads(self, client, flag):
+        html = client.post("/extract", data={"read_as": "owl", **_flags(flags_of(flag))},
+                           files={"file": ("main.ttl", MAIN_TTL, "text/turtle")}).text
+        assert "N-Triples" in html and "RDF/XML" in html
+        assert "TriG" in html and "N-Quads" in html
 
 
 class TestDownloadAccept:
     """Accept is a preference: an unavailable format falls back to HTML
     (406 only for an explicit ?format=)."""
 
-    @pytest.mark.parametrize("mime,fmt", [("application/trig", "trig"),
-                                          ("application/n-quads", "nq"),
-                                          ("application/ld+json", "jsonld")])
-    def test_quad_mime_with_modules(self, client, mime, fmt):
-        resp = get_accept(client, upload(MAIN_TTL), mime, imported=True)
-        assert resp.headers["content-type"].startswith(mime)
-        assert graphs(as_dataset(resp, fmt)) == {MAIN, IMP}
-
-    def test_first_available_mime_wins(self, client):
-        resp = get_accept(client, upload(MAIN_TTL), "application/n-quads;q=0.9, text/html;q=0.8",
-                          imported=True)
-        assert resp.headers["content-type"].startswith("application/n-quads")
-
-    def test_resource_export_via_accept(self, client):
-        resp = get_accept(client, upload(MAIN_TTL), "application/trig", resource=H.T, partial_import=True)
-        assert graphs(as_dataset(resp, "trig")) == {MAIN, HOME}
-
-    def test_quad_mime_without_modules_falls_back_to_html(self, client):
-        resp = get_accept(client, upload(MAIN_TTL), "application/trig")
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    @pytest.mark.parametrize("mime", ["application/trig", "application/n-quads"])
+    def test_quad_mime_falls_back_to_html(self, client, mime, flag):
+        resp = get_accept(client, upload(MAIN_TTL), mime, **flags_of(flag))
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/html")
 
-    def test_triple_mime_without_modules(self, client):
-        resp = get_accept(client, upload(MAIN_TTL), "text/turtle")
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    def test_triple_mime(self, client, flag):
+        resp = get_accept(client, upload(MAIN_TTL), "text/turtle", **flags_of(flag))
         assert resp.headers["content-type"].startswith("text/turtle")
-        assert len(Graph().parse(data=resp.text, format="turtle")) > 0
+        assert isomorphic(as_graph(resp, "ttl"), doc("main"))
 
-    def test_triple_mime_with_modules_falls_back_to_html(self, client):
-        """Current behaviour: with modules, Turtle is not offered. Update this test if the
-        union is ever served as Turtle alongside the quad formats."""
-        resp = get_accept(client, upload(MAIN_TTL), "text/turtle", imported=True)
-        assert resp.headers["content-type"].startswith("text/html")
+    def test_first_available_mime_wins(self, client):
+        resp = get_accept(client, upload(MAIN_TTL), "application/n-quads;q=0.9, text/turtle;q=0.8",
+                          imported=True)
+        assert resp.headers["content-type"].startswith("text/turtle")
+
+    def test_resource_export_via_accept(self, client):
+        resp = get_accept(client, upload(MAIN_TTL), "text/turtle", resource=H.T, partial_import=True)
+        assert (H.T, RDFS.comment, Literal("T defined by home")) not in as_graph(resp, "ttl")
 
     def test_browser_accept_gets_html(self, client):
         resp = get_accept(client, upload(MAIN_TTL), "text/html,application/xhtml+xml,*/*;q=0.8",
@@ -662,73 +599,64 @@ class TestDownloadFilename:
     """Content-Disposition file name: resource -> local name; graph -> last URL segment,
     or 'graph' for uploads."""
 
-    @pytest.mark.parametrize("fmt", ["trig", "nq", "jsonld"])
+    @pytest.mark.parametrize("fmt", ["ttl", "jsonld"])
     def test_upload_whole_graph(self, client, fmt):
         assert filename(get(client, upload(MAIN_TTL), fmt, imported=True)) == f"graph.{fmt}"
 
-    @pytest.mark.parametrize("fmt", ["trig", "nq"])
-    def test_resource_uses_local_name(self, client, fmt):
-        resp = get(client, upload(MAIN_TTL), fmt, resource=H.T, partial_import=True)
-        assert filename(resp) == f"T.{fmt}"
+    def test_resource_uses_local_name(self, client):
+        resp = get(client, upload(MAIN_TTL), "ttl", resource=H.T, partial_import=True)
+        assert filename(resp) == "T.ttl"
 
     def test_url_whole_graph_uses_last_segment(self, client, served_main):
-        assert filename(get_url(client, served_main, "trig", imported=True)) == "main.trig"
+        assert filename(get_url(client, served_main, "ttl", imported=True)) == "main.ttl"
 
     def test_url_trailing_slash(self, client, served_main):
-        assert filename(get_url(client, served_main + "/", "trig", imported=True)) == "main.trig"
-
-    def test_triple_format_without_modules(self, client):
-        assert filename(get(client, upload(MAIN_TTL), "ttl")) == "graph.ttl"
+        assert filename(get_url(client, served_main + "/", "ttl", imported=True)) == "main.ttl"
 
 
 class TestDownloadUrl:
     """?url= path: fetch of the main document plus the spool cache."""
 
-    def test_imported_graphs(self, client, served_main):
-        ds = as_dataset(get_url(client, served_main, "trig", imported=True), "trig")
-        assert graphs(ds) == {MAIN, IMP}
-        assert contexts(ds, (I.I, RDF.type, OWL.Class)) == {IMP}
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    def test_export_is_the_main_document(self, client, served_main, flag):
+        g = as_graph(get_url(client, served_main, "ttl", **flags_of(flag)), "ttl")
+        assert isomorphic(g, doc("main"))
 
-    def test_partial_import_homes(self, client, served_main):
-        ds = as_dataset(get_url(client, served_main, "nq", partial_import=True), "nq")
-        assert graphs(ds) == {MAIN, HOME, VER}
-        assert (H.T, RDFS.comment, Literal("T redefined by imp")) not in ds
-
-    def test_quad_format_without_modules_is_406(self, client, served_main):
-        assert get_url(client, served_main, "trig").status_code == 406
+    @pytest.mark.parametrize("flag", ALL_FLAGS)
+    def test_quad_format_is_406(self, client, served_main, flag):
+        assert get_url(client, served_main, "trig", **flags_of(flag)).status_code == 406
 
     @pytest.mark.parametrize("flag", MODULES)
     def test_cache_stores_main_document_only(self, client, served_main, flag):
         """Regression: the cache held the enriched union, and on a hit the imported
         triples ended up in the main graph."""
-        get_url(client, served_main, "trig", cache=False, **{flag: True})
+        get_url(client, served_main, "ttl", cache=False, **{flag: True})
         token = api._url_token(served_main, "owl", *(True if f == flag else None for f in MODULES))
         cached = Graph().parse(spool.get_path(token), format="turtle")
-        assert isomorphic(cached, Graph().parse(data=MAIN_TTL, format="turtle"))
+        assert isomorphic(cached, doc("main"))
 
     @pytest.mark.parametrize("flag", MODULES)
-    def test_cache_hit_preserves_provenance(self, client, served_main, flag):
-        fresh = as_dataset(get_url(client, served_main, "trig", cache=False, **{flag: True}), "trig")
-        hit = as_dataset(get_url(client, served_main, "trig", cache=True, **{flag: True}), "trig")
-        assert graphs(hit) == graphs(fresh)
-        for g in graphs(fresh):
-            assert isomorphic(hit.graph(g), fresh.graph(g)), g
+    def test_cache_hit_gives_the_same_export(self, client, served_main, flag):
+        fresh = as_graph(get_url(client, served_main, "ttl", cache=False, **{flag: True}), "ttl")
+        hit = as_graph(get_url(client, served_main, "ttl", cache=True, **{flag: True}), "ttl")
+        assert isomorphic(hit, fresh)
+
+    def test_cache_hit_keeps_the_url_as_graph_name(self, monkeypatch):
+        """Without a declared owl:Ontology the graph is named after the URL, not the spool copy."""
+        monkeypatch.setattr(security, "check_url_safe", lambda url: None)
+        url = "http://ex.org/anon"
+        for use_cache in (False, True):
+            reader = api._load_url(url, "owl", None, None, None, False, use_cache=use_cache)
+            assert reader._ontology_iri == URIRef(url)
 
 
-class TestUploadEdgeCases:
-    def test_upload_without_ontology_uses_spool_path(self, client):
-        """Known and accepted: without owl:Ontology the context is the spool path."""
-        ds = as_dataset(get(client, upload(DOCS["http://ex.org/anon"]), "trig", imported=True), "trig")
-        local = {g for g in graphs(ds) if str(g).startswith("file:")}
-        assert len(local) == 1
-        assert contexts(ds, (URIRef("http://ex.org/anon#A"), RDF.type, OWL.Class)) == local
+class TestSourceName:
+    """`source_name` names the graph when the ontology declares no IRI."""
 
-    @pytest.mark.parametrize("flag", MODULES)
-    def test_same_upload_reloaded_gives_same_quads(self, client, flag):
-        token = upload(MAIN_TTL)
-        a = as_dataset(get(client, token, "trig", **{flag: True}), "trig")
-        b = as_dataset(get(client, token, "trig", **{flag: True}), "trig")
-        assert graphs(a) == graphs(b)
-        for g in graphs(a):
-            assert isomorphic(a.graph(g), b.graph(g)), g
-            
+    def test_names_the_graph_without_declared_ontology(self, tmp_path):
+        p = tmp_path / "x.ttl"
+        p.write_text("<http://ex.org/a> a <http://ex.org/B> .", encoding="utf-8")
+        assert Loader(str(p), source_name="http://ex.org/x.ttl").ontology_iri == URIRef("http://ex.org/x.ttl")
+
+    def test_declared_ontology_wins(self, main_path):
+        assert Loader(main_path, source_name="http://ex.org/other").ontology_iri == MAIN

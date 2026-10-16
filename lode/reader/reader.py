@@ -7,7 +7,8 @@ CLI, API and viewers never depend on parsing details.
 from lode.reader.loader import Loader
 from lode.reader.config_manager import get_configuration
 from lode.models import *
-from rdflib import URIRef
+from typing import Optional
+from rdflib import Graph, URIRef
 from lode.reader.provenance_graph import ProvenanceGraph
 
 import logging
@@ -70,17 +71,20 @@ class Reader:
                         value.sort(key=lambda v: _value_key(v) not in local)
 
 
-    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, partial_import=None, warnings=False):
+    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, partial_import=None,
+                       warnings=False, source_name: Optional[str] = None):
         """Load an artefact and extract its model instances.
 
         `read_as` selects the configuration (owl, rdf, skos). Imports, closure and
         partial_import are forwarded to the Loader; `warnings` turns on the reader
-        warnings. Blocking: it may fetch remote documents.
+        warnings. `source_name` names the artefact when `graph_path` is only a local
+        copy of it. Blocking: it may fetch remote documents.
         """
         self._warnings_enabled = warnings
 
         # 1. Generic parsing
-        loader = Loader(graph_path, imported=imported, closure=closure, partial_import=partial_import)
+        loader = Loader(graph_path, imported=imported, closure=closure, partial_import=partial_import,
+                        source_name=source_name)
         self._graph = loader.get_graph()
         self._ontology_iri = loader.ontology_iri
         
@@ -158,11 +162,21 @@ class Reader:
             return self._logic._triples_map
         return {}
 
+    def get_main_graph(self) -> Graph:
+        """Return the triples of the loaded artefact only, as a plain Graph view.
+
+        Imported and partially imported ontologies are left out: this is what
+        exports and content negotiation must return. Without modules it is the
+        loaded graph itself.
+        """
+        if isinstance(self._graph, ProvenanceGraph):
+            return self._graph.graph(self._ontology_iri)
+        return self._graph
+
     def get_provenance_subgraph(self, instance):
         """Return the rdflib.Graph subgraph that provenanced `instance`."""
         if self._logic and hasattr(self._logic, 'build_provenance_subgraph'):
             return self._logic.build_provenance_subgraph(instance)
-        from rdflib import Graph
         return Graph()
     
      

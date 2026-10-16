@@ -20,18 +20,23 @@ class Loader:
     """Load an RDF artefact into a graph, optionally together with its imports.
 
     The loaded graph is a plain Graph, or a ProvenanceGraph (one named graph per
-    ontology) when imported, closure or partial_import is requested.
+    ontology) when imported, closure or partial_import is requested. In both cases
+    `ontology_iri` names the loaded artefact.
     """
 
-    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None, partial_import=None):
+    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None, partial_import=None,
+                 source_name: Optional[str] = None):
         """Prepare the loader and, when `file_path` is given, load it immediately.
 
         `imported`, `closure` and `partial_import` select the module applied
         after loading (see lode.reader.modules); at most one of them is used.
+        `source_name` is the name of the artefact when it differs from `file_path`
+        (e.g. a cached copy of a URL): it names the graph if the ontology declares no IRI.
         """
 
         self.graph = Graph()
         self.ontology_iri = None
+        self._source_name = source_name
         self._imported = imported
         self._closure = closure
         self.imported_uris = set() # needed to keep track of original model to document
@@ -69,10 +74,15 @@ class Loader:
                 context={"source": source}
             )
 
+        name = self._source_name or source
         if self._imported or self._closure or self._partial_import:
             raw, self.graph = self.graph, ProvenanceGraph()
-            self.ontology_iri = self.graph.add_document(raw, source)
+            self.ontology_iri = self.graph.add_document(raw, name)
             self._apply_modules()
+        else:
+            # no modules: the graph stays plain, only its name is needed so that
+            # the provenance of an entity can still be written as a quad
+            self.ontology_iri = ProvenanceGraph.ontology_iri(self.graph, name)
     
     # ----------------------------------------------------------
     #  MODULES MAIN HANDLER

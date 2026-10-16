@@ -125,6 +125,15 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     
     ontology_ns = viewer._get_ontology_ns()
     graph = reader._graph if reader else viewer.reader._graph
+    main_graph = viewer.reader.get_main_graph()
+
+    def _in_main_graph(uri) -> bool:
+        """Tell whether the loaded artefact itself says something about this IRI.
+
+        Resources described only by imported modules get no page: their export
+        would be empty, as exports carry the triples of the loaded artefact only.
+        """
+        return (URIRef(str(uri)), None, None) in main_graph
 
     grouped = defaultdict(list)
     for inst in viewer.get_all_instances():
@@ -139,7 +148,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
             u = inst.get_has_identifier()
             if not u:
                 continue
-            if not (u.startswith(ontology_ns) or viewer._has_local_triples(u)):
+            if not (u.startswith(ontology_ns) or _in_main_graph(u)):
                 continue
             if _rel_slug(u, graph).rsplit("/", 1)[-1] == "":   # namespace IRI, no local
                 continue
@@ -172,7 +181,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     
     if reader is not None:
         for fmt, ext in _SER:
-            out = reader._graph.serialize(format=fmt)
+            out = reader.get_main_graph().serialize(format=fmt)
             if isinstance(out, bytes):
                 out = out.decode("utf-8")
             (out_dir / f"{artefact_name}.{ext}").write_text(out, encoding="utf-8")
@@ -203,7 +212,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
             if not uri:
                 continue
             native = uri.startswith(ontology_ns)
-            if not (native or viewer._has_local_triples(uri)):
+            if not (native or _in_main_graph(uri)):
                 continue
 
             rel = _rel_slug(uri, graph)
