@@ -915,3 +915,119 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 
 .toggle-slider.url-mode  { left: 0;   width: 50%; }
 .toggle-slider.file-mode { left: 50%; width: 50%; }
+
+/* ===== SKOS entity card (templates/_card_skos.html) ===== */
+/* LODE-style entity card */
+.entity-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: #fff;
+}
+
+.entity-header {
+    background: #f8f9fa;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.entity-label {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0d6efd;
+    margin: 0;
+}
+
+.entity-label a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.entity-label a:hover {
+    text-decoration: underline;
+}
+
+.back-to-toc {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.back-to-toc a {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.back-to-toc a:hover {
+    color: #0d6efd;
+}
+
+.entity-uri {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #495057;
+    word-break: break-all;
+}
+
+.entity-body {
+    padding: 1.25rem;
+}
+
+.entity-definition {
+    font-size: 1rem;
+    color: #212529;
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+}
+
+/* Semantic sections */
+.semantic-section {
+    margin-bottom: 0.75rem;
+}
+
+.semantic-title {
+    font-weight: 600;
+    color: #495057;
+    margin-right: 0.5rem;
+}
+
+.semantic-items {
+    display: inline;
+}
+
+.semantic-item {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.semantic-item:hover {
+    text-decoration: underline;
+}
+
+.semantic-item.external {
+    color: #6f42c1;
+}
+
+.semantic-item.external::after {
+    content: ' ↗';
+    font-size: 0.75em;
+}
+
+.semantic-separator {
+    color: #6c757d;
+    margin: 0 0.25rem;
+}
+
+/* Subscript style for type indicators */
+.type-indicator {
+    font-size: 0.7rem;
+    vertical-align: sub;
+    color: #6c757d;
+    margin-left: 0.1rem;
+}
+
+/* Anchor offset */
+.anchor-offset {
+    scroll-margin-top: 1rem;
+}
+

@@ -4,78 +4,57 @@ Format-specific viewers (OWL, RDF, SKOS) extend it with their table of contents
 and display names. It also serializes the provenance of each entity.
 """
 import hashlib
-import re
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import yaml
 from lode.models import Literal, Model, Resource, Statement
-import urllib.parse
 
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 
 from lode.reader.provenance_graph import ProvenanceGraph
 from lode.helpers.rdf import iri_local_name
 
-# Export formats: triples of the loaded artefact only.
-SERIALIZATION_FORMATS = [
-    {"label": "Turtle",   "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
-    {"label": "RDF/XML",   "fmt": "xml",     "mime": "application/rdf+xml",   "ext": "rdf",    "icon": "bi-file-code"},
-    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
-    {"label": "N-Triples", "fmt": "nt",      "mime": "application/n-triples", "ext": "nt",     "icon": "bi-file-text"},
-]
-
-# Provenance formats: quads, the named graph of each triple is always shown.
-QUAD_SERIALIZATION_FORMATS = [
-    {"label": "TriG",      "fmt": "trig",    "mime": "application/trig",      "ext": "trig",   "icon": "bi-filetype-raw"},
-    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
-    {"label": "N-Quads",   "fmt": "nquads",  "mime": "application/n-quads",   "ext": "nq",     "icon": "bi-file-text"},
-]
-
-_ANNOTATION_ORDER_FILE = Path(__file__).parent / "config" / "model_annotations_deterministic_sorting.yaml"
-
-
-def _normalize_annotation_key(key: str) -> str:
-    """Reduce a displayed metadata key to a comparable form.
-
-    Case, spaces, underscores and hyphens are dropped so that 'version info',
-    'versionInfo' and 'version_info' land in the same slot of the order list.
-    """
-    return re.sub(r"[\s_\-]+", "", key.lower())
-
-
-def _load_annotation_order() -> Dict[str, int]:
-    """Read the YAML order list and map each normalized key to its rank.
-
-    Loaded once at import time. A missing or malformed file raises: a silent
-    fallback would make the page order depend on the environment again.
-    """
-    with open(_ANNOTATION_ORDER_FILE, encoding="utf-8") as f:
-        order = yaml.safe_load(f)["order"]
-    return {_normalize_annotation_key(k): i for i, k in enumerate(order)}
-
-
-_ANNOTATION_RANK = _load_annotation_order()
-
-
-def _annotation_sort_key(key: str) -> Tuple[int, str]:
-    """Sort key for a header metadata entry: configured rank, then alphabetical.
-
-    Unlisted keys get a rank past the last listed one, so they follow the known
-    ones and stay in alphabetical order among themselves.
-    """
-    return (_ANNOTATION_RANK.get(_normalize_annotation_key(key), len(_ANNOTATION_RANK)), key.lower())
+from lode.viewer.helpers import (
+    QUAD_SERIALIZATION_FORMATS,
+    SERIALIZATION_FORMATS,
+    annotation_sort_key,
+    clean_name,
+    is_likely_ontology,
+    load_viewer_config,
+    safe_serialize,
+)
 
 
 class BaseViewer:
-    """Base viewer to display the instances extracted by the Reader."""
+    """Base viewer to display the instances extracted by the Reader.
+
+    It orchestrates the view: everything that differs between formats (display
+    names, table of contents, hierarchy, card template, vocabulary) is read from
+    the YAML file named by CONFIG_NAME. Subclasses set that name and override
+    only the steps that really need code.
+    """
+
+    # Name of config/<name>_viewer.yaml; None gives the generic flat list view.
+    CONFIG_NAME: Optional[str] = None
 
     def __init__(self, reader):
-        """Bind the viewer to a Reader and share its instance cache."""
+        """Bind the viewer to a Reader, share its instance cache and load its config."""
         self.reader = reader
-        self._cache = reader._instance_cache  # it uses 
+        self._cache = reader._instance_cache  # it uses
         self._internal_iris = None
-        self._ontology_ns = None 
+        self._ontology_ns = None
+        self._config = (
+            load_viewer_config(self.CONFIG_NAME) if self.CONFIG_NAME
+            else {"type_map": {}, "toc": [], "card": "_card_owl.html",
+                  "vocabulary": {}, "hierarchy": {}, "characteristics": []}
+        )
+
+    def get_toc_config(self) -> List[Tuple[str, str, str]]:
+        """Return the table of contents: (class name, section id, type_map key) in display order."""
+        return [tuple(entry) for entry in self._config["toc"]]
+
+    def _clean_name(self, name: str) -> str:
+        """Turn an attribute or getter name into a display label, using this viewer's vocabulary."""
+        return clean_name(name, self._config["vocabulary"])
 
     def _get_ontology_ns(self) -> str:
         """Return the namespace of the documented ontology (its IRI ending in '/' or '#'), or ''.
@@ -198,33 +177,36 @@ class BaseViewer:
         if resource_id:
             clean_resource_id = iri_local_name(resource_id)
             # ONLY clean the identifier!
-            return self._clean_name(self, clean_resource_id)
+            return self._clean_name(clean_resource_id)
 
         return None
 
     def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
-        """
-        Main entry point called by the API
-        Subclasses should override this to define their specific view strategy
+        """Build the template data for one resource, or for the whole artefact grouped by entity type.
+
+        Main entry point called by the API and by the static builder. Both views also
+        carry the header metadata, the export formats, the display names of the types
+        and the card template. Without a table of contents (generic viewer) the
+        artefact is shown as a flat list.
         """
         # If no language is provided, the default would be English
         language = language.strip() if language else "en"
 
-        # Fallback: generic flat list
         all_instances = self.get_all_instances()
         metadata_dict = self._find_and_format_metadata(all_instances, language)
 
         if resource_uri:
             data = self._handle_single_resource(resource_uri, language)
-            data['metadata'] = metadata_dict
-            data['export_formats'] = self._formats()
-            return data
+        elif self._config["toc"]:
+            data = self._build_grouped_view(self.get_toc_config(), language)
+        else:
+            data = {'entities': self._format_entities(all_instances, language)}
 
-        return {
-            'metadata': metadata_dict,
-            'entities': self._format_entities(all_instances, language),
-            'export_formats': self._formats(),
-        }
+        data['metadata'] = metadata_dict
+        data['export_formats'] = self._formats()
+        data['type_map'] = self._config["type_map"]
+        data['card_template'] = self._config["card"]
+        return data
 
     def _is_toc_entity(self, instance) -> bool:
         """Browsable (own card + clickable link) iff its type is in get_toc_config. 
@@ -282,7 +264,7 @@ class BaseViewer:
                     'entities': self._format_entities(instances, language),
                 }
 
-                parent_getter = self._HIERARCHY_PARENT_GETTERS.get(class_key)
+                parent_getter = self._config["hierarchy"].get(class_key)
                 if parent_getter:
                     section['tree'] = self._build_hierarchy(instances, parent_getter, language)
 
@@ -318,7 +300,7 @@ class BaseViewer:
                     if not attr.startswith('_') and value:
                         # Skip attributes that are handled elsewhere or are empty
                         # Clean up name:
-                        clean_name = self._clean_name(self,attr)
+                        clean_name = self._clean_name(attr)
 
                         # Process value (could be a list of objects)clean
                         # We use the helper to get clean text for each item
@@ -372,12 +354,7 @@ class BaseViewer:
                     ordered_relations[key] = relations[key]
 
             characteristics = {}
-            char_attributes = [
-                'is_functional', 'is_inverse_functional', 'is_transitive',
-                'is_symmetric', 'is_asymmetric', 'is_reflexive', 'is_irreflexive'
-            ]
-
-            for attr in char_attributes:
+            for attr in self._config["characteristics"]:
                 getter = f"get_{attr}"
                 # Safely get the boolean value
                 is_true = getattr(instance, getter)() if hasattr(instance, getter) else getattr(instance, attr, False)
@@ -461,7 +438,7 @@ class BaseViewer:
 
                     if values:
                         # 4. Auto-format the key name
-                        clean_key = self._clean_name(self, attr_name)
+                        clean_key = self._clean_name(attr_name)
 
                         # 5. Ensure values are in a list
                         if not isinstance(values, list):
@@ -474,7 +451,7 @@ class BaseViewer:
                             if entry['text']:
                                 # 7. Check if the link if an visualizable ontology or not
                                 if entry.get('link'):
-                                    entry['is_visualizable'] = self._is_likely_ontology(entry['link'])
+                                    entry['is_visualizable'] = is_likely_ontology(entry['link'])
                                 else:
                                     entry['is_visualizable'] = False
 
@@ -497,7 +474,7 @@ class BaseViewer:
 
         # uri/label first, then the order from the YAML, then alphabetical
         pinned = ['uri', 'label']
-        rest = sorted((k for k in data if k not in pinned), key=_annotation_sort_key)
+        rest = sorted((k for k in data if k not in pinned), key=annotation_sort_key)
         data = {k: data[k] for k in pinned if k in data} | {k: data[k] for k in rest}
 
         return data
@@ -617,7 +594,7 @@ class BaseViewer:
                     resolved = self._resolve_resource_value(v, language)
                     if resolved.get('text') or resolved.get('nested'):
                         siblings.append({
-                            'predicate': self._clean_name(self, attr),
+                            'predicate': self._clean_name(attr),
                             'value': resolved,
                         })
             # Reader order depends on the source file: sort by label, then by value
@@ -693,29 +670,6 @@ class BaseViewer:
                 statements[pred_label] = sorted(values, key=lambda v: (str(v.get('nested')), v['text'].lower()))
 
         return dict(sorted(statements.items(), key=lambda kv: kv[0].lower()))
-
-    @staticmethod
-    def _clean_name(self, name: str) -> str:
-        """Turn an attribute or getter name into a display label.
-
-        Drops the has_/get_ prefix, splits camelCase, replaces underscores with
-        spaces and lowercases. It is a staticmethod that still takes `self` as its
-        first argument, so callers pass it explicitly.
-        """
-        if not name: return ""
-
-        name = re.sub(r'^(get_has_|get_|has_)', '', name)
-        # Put space between camelCase letters
-        name = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', name)
-        name = name.replace('_', ' ')
-
-        # Strip extra spaces
-        name = ' '.join(name.split())
-
-        # lowercase everything
-        name = name.lower()
-
-        return name
 
     def _parse_restriction(self, obj, language=None, _seen=None) -> list:
         """
@@ -864,65 +818,6 @@ class BaseViewer:
 
         return []
 
-    def _is_likely_ontology(self, url: str) -> bool:
-        """Determines if a URL likely points to an ontology based on naming patterns."""
-        if not url or not isinstance(url, str) or not url.startswith('http'):
-            return False
-
-        # 1. Clean the string
-        clean_url = url.strip().lower()
-
-        # 2. Safely parse the URL to ignore fragments (#) and queries (?) for extension checking
-        parsed = urllib.parse.urlparse(clean_url)
-        path = parsed.path.rstrip('/')
-
-        # 3. Standard Ontology File Extensions
-        ontology_exts = ['.owl', '.rdf', '.ttl', '.nt', '.n3', '.jsonld']
-        if any(path.endswith(ext) for ext in ontology_exts):
-            return True
-
-        # Match registries against the parsed hostname, not the raw string:
-        # a substring check would also match e.g. https://evil.com/w3id.org/x
-        host = parsed.hostname or ''
-
-        def _host_is(domain: str) -> bool:
-            """True if the URL host is the domain or one of its subdomains."""
-            return host == domain or host.endswith('.' + domain)
-
-        # 4. Common Ontology Registries & Permanent URLs
-        ontology_domains = [
-            'w3id.org',
-            'purl.org',
-            'xmlns.com'  # Often used for FOAF
-        ]
-        if any(_host_is(domain) for domain in ontology_domains):
-            return True
-
-        # 5. Core W3C Namespaces
-        w3c_core = ['/1999/02/22-rdf-syntax-ns', '/2000/01/rdf-schema', '/2002/07/owl']
-        if _host_is('w3.org') and any(ns in path for ns in w3c_core):
-            return True
-
-        # 6. Broad Keywords & Famous Standard Acronyms
-        # Looking for these anywhere in the URL string
-        path_keywords = [
-            'ontology', 'vocab', 'schema', # General terms
-            'skos', 'foaf', 'crm', 'cidoc' # Famous standards
-        ]
-        if any(keyword in clean_url for keyword in path_keywords):
-            return True
-
-        return False
-    
-    # Map class_key -> name of the parent getter (missing = no hierarchy)
-    _HIERARCHY_PARENT_GETTERS = {
-        'Concept':    'get_is_sub_concept_of',
-        'Relation':   'get_is_sub_property_of',
-        'Attribute':  'get_is_sub_property_of',
-        'Property':   'get_is_sub_property_of',
-        # Annotation, Individual: no hierarchy -> not in the map
-    }
-
     _FULL_IRI_ATTRS = {'is_defined_by'}
     
     def _build_hierarchy(self, instances, parent_getter_name, language=None):
@@ -993,21 +888,10 @@ class BaseViewer:
             return []
         sub = self._with_provenance(sub)
         return [
-            {"label": f["label"], "code": self._safe_serialize(sub, f["fmt"])}
+            {"label": f["label"], "code": safe_serialize(sub, f["fmt"])}
             for f in QUAD_SERIALIZATION_FORMATS
         ]
     
-    @staticmethod
-    def _safe_serialize(g, fmt: str) -> str:
-        """Serialize a graph, returning a comment with the error instead of raising.
-
-        One format that fails must not break the page that shows all of them.
-        """
-        try:
-            return g.serialize(format=fmt)
-        except Exception as e:
-            return f"# serialization error ({fmt}): {e}"
-        
     def export_resource(self, resource_uri: str, fmt: str = "turtle") -> str:
         """Serialize the subgraph of a single resource (the union of its punned instances).
 
@@ -1025,4 +909,4 @@ class BaseViewer:
                 for t in self.reader.get_provenance_subgraph(inst):
                     if t in main:
                         g.add(t)
-        return self._safe_serialize(g, fmt)
+        return safe_serialize(g, fmt)

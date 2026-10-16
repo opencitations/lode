@@ -5,47 +5,16 @@ from lode.viewer.base_viewer import BaseViewer
 from lode.helpers.rdf import iri_local_name
 
 class SkosViewer(BaseViewer):
-    """SKOS viewer with LODE-style rendering."""
+    """SKOS viewer with LODE-style rendering.
 
-    def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
-        """Build the template data for one resource, or for the scheme grouped by collections and concepts."""
-        # 1. Single resource detail view
-        if resource_uri:
-            return super().get_view_data(resource_uri, language)
+    Display names, table of contents and card come from config/skos_viewer.yaml;
+    only the entity formatting differs from the base, because SKOS cards show
+    semantic relations between concepts instead of OWL-style statements.
+    """
 
-        # 2. Define the Table of Contents structure for SKOS
-        toc_config = [
-            ('Collection', 'collections', 'Collections'),
-            ('Concept', 'concepts', 'Concepts'),
-        ]
+    CONFIG_NAME = "skos"
 
-        # 3. Build grouped view with SKOS-specific formatting
-        return self._build_skos_grouped_view(toc_config, language)
-
-    def _build_skos_grouped_view(self, group_definitions: List, language: Optional[str] = None) -> Dict:
-        """Build the grouped view with SKOS-style formatting."""
-        all_instances = self.get_all_instances()
-        sections = []
-
-        for class_key, section_id, section_title in group_definitions:
-            instances = [
-                inst for inst in all_instances 
-                if type(inst).__name__ == class_key
-            ]
-
-            if instances:
-                sections.append({
-                    'id': section_id,
-                    'title': section_title,
-                    'entities': self._format_skos_entities(instances, language)
-                })
-
-        return {
-            'grouped_view': True,
-            'sections': sections
-        }
-
-    def _format_skos_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
+    def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
         """Format the SKOS entities in LODE style, sorted by label (or IRI when there is none)."""
         entities = []
         

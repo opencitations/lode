@@ -1,0 +1,50 @@
+<div class="entity-card shadow-sm anchor-offset" id="{{ item.anchor_id }}">
+    <div class="entity-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h4 class="entity-label">
+                    <a href="#{{ item.anchor_id }}">{{ item.label }}</a><span class="type-indicator">c</span>
+                </h4>
+                {% if section.id %}
+                <span class="back-to-toc">
+                    <a href="#toc">back to ToC</a> or <a href="#{{ section.id }}-toc">{{ section.title }} ToC</a>
+                </span>
+                {% endif %}
+            </div>
+            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                {{ item.type }}
+            </span>
+        </div>
+        <div class="entity-uri mt-2">
+            IRI: <a href="{{ item.uri }}" target="_blank">{{ item.uri }}</a>
+        </div>
+    </div>
+    
+    <div class="entity-body">
+        {% if item.definition %}
+        <p class="entity-definition">{{ item.definition }}</p>
+        {% endif %}
+        
+        {% if item.semantic_sections %}
+            {% for sem_section in item.semantic_sections %}
+            <div class="semantic-section">
+                <span class="semantic-title">{{ sem_section.title }}</span>
+                <span class="semantic-items">
+                    {% for concept in sem_section.concepts %}
+                        {% if concept.external %}
+                            <a href="{{ concept.uri }}" class="semantic-item external" target="_blank" title="{{ concept.uri }}">{{ concept.label }}</a>
+                        {% else %}
+                            <a href="#{{ concept.anchor_id }}" class="semantic-item" title="{{ concept.uri }}">{{ concept.label }}<span class="type-indicator">c</span></a>
+                        {% endif %}
+                        {% if not loop.last %}<span class="semantic-separator">,</span>{% endif %}
+                    {% endfor %}
+                </span>
+            </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if not item.definition and not item.semantic_sections %}
+        <p class="text-muted small fst-italic">No definition or semantic relations defined.</p>
+        {% endif %}
+    </div>
+</div>

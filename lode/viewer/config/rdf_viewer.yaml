@@ -1,0 +1,39 @@
+# Settings of the RDF/RDFS viewer. Read by lode.viewer.helpers.load_viewer_config.
+
+# Same card as OWL for now; point to a dedicated partial when the two diverge.
+card: _card_owl.html
+
+# Display vocabulary: internal word -> shown word. Applied to whole words of the
+# property labels (e.g. "is sub concept of" -> "is sub class of").
+vocabulary:
+  concept: class
+  concepts: classes
+
+# Display names of the entity types, keyed by the lowercase model class name.
+type_map:
+  concept:   {singular: Class,      plural: Classes,       abb: c}
+  property:  {singular: Property,   plural: Properties,    abb: p}
+  container: {singular: Container,  plural: Containers,    abb: cont}
+  resource:  {singular: Resource,   plural: Resources,     abb: r}
+  model:     {singular: Vocabulary, plural: Vocabularies,  abb: v}
+
+# Table of contents in display order: model class name, section id, type_map key.
+toc:
+  - [Concept,   concepts,   Concept]
+  - [Property,  properties, Property]
+  - [Container, containers, Container]
+
+# Model class -> getter of its parents, for the hierarchy tree of a section.
+hierarchy:
+  Concept:  get_is_sub_concept_of
+  Property: get_is_sub_property_of
+
+# Boolean flags shown as characteristics of a property.
+characteristics:
+  - is_functional
+  - is_inverse_functional
+  - is_transitive
+  - is_symmetric
+  - is_asymmetric
+  - is_reflexive
+  - is_irreflexive
