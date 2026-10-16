@@ -635,14 +635,15 @@ class BaseLogic(ABC):
     def _is_unmapped_structured_bnode(self, node) -> bool:
         """A BNode is a structured Statement value if:
         - it's a BNode (not URIRef, not Literal)
-        - it's not already in the instance cache (not classified by any phase)
+        - it's not already classified by any phase (a bare Resource in the cache is
+        only a placeholder made by a mapped predicate such as rdfs:seeAlso)
         - it has at least one outgoing triple
         - none of its outgoing predicates carry a useful rdf:type for our model
         (i.e. it's not declaring itself as a typed entity)
         """
         if not isinstance(node, BNode):
             return False
-        if node in self._instance_cache:
+        if any(type(i) is not Resource for i in self._instance_cache.get(node, ())):
             return False
         has_out = False
         for _ in self.graph.predicate_objects(node):
@@ -663,9 +664,8 @@ class BaseLogic(ABC):
         statement = Statement()
         statement.set_has_identifier(str(node))
 
-        if node not in self._instance_cache:
-            self._instance_cache[node] = set()
-        self._instance_cache[node].add(statement)
+        # drop the placeholder Resource: the node is represented by the Statement
+        self._instance_cache[node] = {statement}
 
         for p, o in self.graph.predicate_objects(node):
             self._track(statement, (node, p, o))
@@ -691,7 +691,7 @@ class BaseLogic(ABC):
             elif self._is_unmapped_structured_bnode(o):
                 o_inst = self._create_nested_statement(o)
             else:
-                o_inst = self.get_or_create(o, Individual)
+                o_inst = self.get_or_create(o, Resource)
 
             # The first (predicate, object) pair fills the Statement slots;
             # additional pairs are stored as side annotations on the Statement

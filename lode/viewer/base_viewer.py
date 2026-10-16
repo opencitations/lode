@@ -581,7 +581,13 @@ class BaseViewer:
                             'predicate': self._clean_name(self, attr),
                             'value': resolved,
                         })
-            handler_dic['nested'] = {'main': inner, 'siblings': siblings}
+            # Reader order depends on the source file: sort by label, then by value
+            pairs = sorted(
+                [inner] + siblings,
+                key=lambda p: ((p['predicate'] or '').lower(),
+                               ((p['value'] or {}).get('text') or '').lower()),
+            )
+            handler_dic['nested'] = {'main': pairs[0], 'siblings': pairs[1:]}
             # Pick a primary text for collapsed display: the inner value's text
             handler_dic['text'] = (inner.get('value') or {}).get('text') or '[Statement]'
             return handler_dic
@@ -645,7 +651,7 @@ class BaseViewer:
                 if obj_data['text'] and obj_data not in values:
                     values.append(obj_data)
             if values:
-                statements[pred_label] = values
+                statements[pred_label] = sorted(values, key=lambda v: (str(v.get('nested')), v['text'].lower()))
 
         return statements
 

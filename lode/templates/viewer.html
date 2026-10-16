@@ -46,6 +46,9 @@
 
     {% set md_types = ['Literal', 'Str', 'literal', 'str', 'string'] %}
 
+    {# after the sets above: "with context" only sees variables defined before the import #}
+    {% from '_value.html' import render_value with context %}
+
     {% include '_toc_sidebar.html' %}
 
     {% if not single_resource %}
@@ -157,6 +160,8 @@
                                                         </a>
                                                     {% endif %}
                                                     </div>
+                                                {% elif item.type == 'Statement' and item.nested %}
+                                                    {{ render_value(item, 0, true) }}
                                                 {% else %}
                                                     <div class="markdown-with-badge metadata_p text-dark {% if is_md %}render-markdown inline-markdown{% endif %}">{{ item.text }}</div>
                                                 {% endif %}
@@ -284,7 +289,7 @@
        {% if single_resource %}
             <div>
                 {% if is_static %}
-                    <a href="../../index.html" class="btn btn-outline-secondary">← Back to full documentation</a>
+                    <a href="../../{{ artefact_name }}.html" class="btn btn-outline-secondary">← Back to full documentation</a>
                 {% else %}
                     <a href="/extract?{{ nav_qs }}" class="btn btn-outline-secondary">← Back to full documentation</a>
                 {% endif %}

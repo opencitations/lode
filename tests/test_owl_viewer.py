@@ -347,6 +347,63 @@ class TestLanguageSelection:
         assert texts == ["Title"]
 
 
+# ---------------------------------------------------------------------------
+# Structured blank nodes in the ontology header (e.g. bibo:editor [ a foaf:Person ... ])
+# ---------------------------------------------------------------------------
+
+_HEADER_TTL = """
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.org/onto> a owl:Ontology ;
+    bibo:editor %s .
+"""
+
+_PERSON_A = ('[ a foaf:Person ; foaf:name "Alice Example" ; '
+             'org:memberOf [ foaf:name "Example Org" ] ]')
+_PERSON_B = '[ a foaf:Person ; foaf:name "Bob Example" ; rdfs:seeAlso <https://orcid.org/0000-0000-0000-0001> ]'
+
+
+def _render_index(tmp_path, ttl):
+    """Load `ttl` through the Reader and return the HTML of the static index page."""
+    from lode.builder import build_html
+    from lode.reader import Reader
+
+    src = tmp_path / "onto.ttl"
+    src.write_text(ttl, encoding="utf-8")
+    reader = Reader()
+    reader.load_instances(str(src), read_as="owl")
+    out = tmp_path / "site"
+    build_html(reader.get_viewer(), out, reader=reader)
+    return (out / "index.html").read_text(encoding="utf-8")
+
+
+class TestHeaderStructuredBnodes:
+    """Header values that are blank nodes must show their content, not their id."""
+
+    def test_header_shows_bnode_content_not_ids(self, tmp_path):
+        html = _render_index(tmp_path, _HEADER_TTL % f"{_PERSON_A}, {_PERSON_B}")
+        for expected in ("Alice Example", "Bob Example", "Example Org"):
+            assert expected in html
+        assert not re.search(r"\b(?:N[0-9a-f]{32}|n[0-9a-f]{20,})\b", html), "raw BNode id in header"
+
+    def test_header_order_is_independent_of_source_order(self, tmp_path):
+        """Same graph, triples written in a different order: same rendered header."""
+        a = tmp_path / "a"
+        b = tmp_path / "b"
+        a.mkdir()
+        b.mkdir()
+        html_a = _render_index(a, _HEADER_TTL % f"{_PERSON_A}, {_PERSON_B}")
+        html_b = _render_index(b, _HEADER_TTL % f"{_PERSON_B}, {_PERSON_A}")
+        def alice_first(h):
+            """True when Alice is rendered before Bob."""
+            return h.index("Alice Example") < h.index("Bob Example")
+        assert alice_first(html_a) == alice_first(html_b)
+
+
 # ===========================================================================
 # Integration: real corpus, same loader pattern as test_owl_integrity.
 # ===========================================================================
