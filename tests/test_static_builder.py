@@ -15,6 +15,7 @@ import pytest
 from rdflib import Graph
 
 from lode.reader import Reader
+from lode.exceptions import ArtefactValidationError
 from lode.builder import build_html, _rel_slug, _prefix_map
 from rdflib import URIRef
 
@@ -51,7 +52,7 @@ def test_index_and_ontology_serializations(built):
     out = built["out"]
     assert (out / "index.html").exists()
     for ext in _EXTS:
-        assert (out / f"ontology.{ext}").exists(), f"missing ontology.{ext}"
+        assert (out / f"index.{ext}").exists(), f"missing index.{ext}"
 
 
 def test_resources_folder_created(built):
@@ -59,9 +60,26 @@ def test_resources_folder_created(built):
 
 
 def test_index_export_base(built):
-    """Index header must export the whole graph (ontology.*), not a single resource."""
+    """Index header must export the whole graph (index.*), not a single resource."""
     html = (built["out"] / "index.html").read_text(encoding="utf-8")
-    assert "ontology.ttl" in html
+    assert "index.ttl" in html
+
+
+def test_renamed_artefact(built, tmp_path):
+    """A renamed artefact renames root page and RDF; resource pages link back to it."""
+    out = tmp_path / "site"
+    build_html(built["viewer"], out, reader=built["reader"], artefact_name="home")
+    assert (out / "home.html").exists() and (out / "home.ttl").exists()
+    assert not (out / "index.html").exists()
+    page = next((out / "resources").rglob("*.html"))
+    assert "../../home.html" in page.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("bad", ["../x", "a/b", "..", "x.html "])
+def test_artefact_name_rejected(bad, tmp_path):
+    """Names with path parts or odd characters are rejected before any file is written."""
+    with pytest.raises(ArtefactValidationError):
+        build_html(None, tmp_path / "s", artefact_name=bad)
 
 
 # --- INVARIANT: every HTML resource has all three serializations ---

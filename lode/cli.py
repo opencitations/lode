@@ -1,8 +1,8 @@
 # lode/cli.py
 """
 lode serve [--port 8000]
-lode build --url <url>  --read-as <owl|rdf|skos> [--out ./docs] [--lang en] [--imported] [--closure]
-lode build --file <path> --read-as <owl|rdf|skos> [--out ./docs] [--lang en] [--imported] [--closure]
+lode build --url <url>  --read-as <owl|rdf|skos> [--out ./docs] [--lang en] [--artefact-name index] [--imported] [--closure]
+lode build --file <path> --read-as <owl|rdf|skos> [--out ./docs] [--lang en] [--artefact-name index] [--imported] [--closure]
 """
 
 import argparse
@@ -47,7 +47,8 @@ def cmd_build(args):
         closure=args.closure or None,
         partial_import=args.partial_import or None,
     )
-    build_html(reader.get_viewer(), out_dir, lang=args.lang, reader=reader)
+    build_html(reader.get_viewer(), out_dir, lang=args.lang, reader=reader,
+               artefact_name=args.artefact_name)
     print(f"Done -> {out_dir}")
 
 
@@ -72,6 +73,8 @@ def main():
     p_build.add_argument("--read-as", required=True, choices=["owl", "rdf", "skos"])
     p_build.add_argument("--out", default="./lode_output")
     p_build.add_argument("--lang", default="en")
+    p_build.add_argument("--artefact-name", default="index",
+                         help="File stem of the root page and its serializations (default: index)")
     p_build.add_argument("--imported", action="store_true")
     p_build.add_argument("--closure", action="store_true")
     p_build.add_argument("--partial-import", action="store_true")

@@ -16,6 +16,7 @@ from rdflib.namespace import split_uri
 from lode.viewer.base_viewer import SERIALIZATION_FORMATS
 from lode.helpers.html_utils import minify as _minify
 from lode.models.model import Model
+from lode.exceptions import ArtefactValidationError
 
 
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
@@ -79,6 +80,21 @@ def _local_name(uri: str) -> str:
     """Return the part of an IRI after '#', or its last path segment."""
     return uri.split('#', 1)[1] if '#' in uri else uri.rstrip('/').rsplit('/', 1)[-1]
 
+def _check_artefact_name(name: str) -> str:
+    """Return `name` if it is a plain file stem, else raise.
+
+    The name is user-chosen (CLI) and becomes file names in the output folder
+    and links in every page: path separators or '..' would let the root files
+    escape the output directory.
+    """
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", name) or set(name) == {"."}:
+        raise ArtefactValidationError(
+            "Invalid artefact name: use only letters, digits, '.', '_' and '-' (no extension)",
+            context={"artefact_name": name},
+        )
+    return name
+
+
 def _copy_static(out_dir: Path) -> None:
     """Copy the package's static assets into the output folder, once.
 
@@ -89,16 +105,21 @@ def _copy_static(out_dir: Path) -> None:
     if static_src.exists() and not static_dst.exists():
         shutil.copytree(static_src, static_dst)
 
-def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
+def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
+               artefact_name: str = "index") -> None:
     """Write the whole static site for a viewer into `out_dir`.
 
-    Writes index.html, the serializations of the artefact and, under resources/,
+    Writes the index page, the serializations of the artefact and, under resources/,
     one page plus serializations for each resource that belongs to the ontology
     namespace or has local triples. Blocking and disk-heavy; existing files are
     overwritten. A page is never written outside resources/, whatever the IRI.
+    `artefact_name` is the file stem of the root files (<name>.html, <name>.ttl, ...):
+    links back to the index use it, so a renamed index stays reachable. Resource
+    files are not affected, they are named after their IRI.
     """
     from collections import defaultdict
 
+    artefact_name = _check_artefact_name(artefact_name)
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_static(out_dir)
     
@@ -134,7 +155,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
             return uri
         rel = _rel_slug(uri, graph)
         if rel.rsplit("/", 1)[-1] == "":      # namespace IRI
-            return "../../index.html"
+            return f"../../{artefact_name}.html"
         return f"../{rel}.html"
 
     def resource_url_index(uri, section=None):
@@ -143,7 +164,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
             return uri
         rel = _rel_slug(uri, graph)
         if rel.rsplit("/", 1)[-1] == "":
-            return "index.html"
+            return f"{artefact_name}.html"
         return f"resources/{rel}.html"
 
     env_index = _get_template_env(static_path="static")
@@ -154,7 +175,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
             out = reader._graph.serialize(format=fmt)
             if isinstance(out, bytes):
                 out = out.decode("utf-8")
-            (out_dir / f"ontology.{ext}").write_text(out, encoding="utf-8")
+            (out_dir / f"{artefact_name}.{ext}").write_text(out, encoding="utf-8")
 
     template_index = env_index.get_template("viewer.html")
     template_resource = env_resource.get_template("viewer.html")
@@ -166,9 +187,9 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
     data["request"] = _FakeRequest("/")
     data["is_static"] = True
     data["resource_url"] = resource_url_index
-    data["export_base"] = "ontology"
-    (out_dir / "index.html").write_text(_minify(template_index.render(**data)), encoding="utf-8")
-    print("  [build] index.html")
+    data["export_base"] = artefact_name
+    (out_dir / f"{artefact_name}.html").write_text(_minify(template_index.render(**data)), encoding="utf-8")
+    print(f"  [build] {artefact_name}.html")
 
     if not toc_config:
         return
@@ -207,6 +228,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None) -> None:
             data_r["is_static"] = True
             data_r["resource_url"] = resource_url_resource
             data_r["export_base"] = _local_name(uri)
+            data_r["artefact_name"] = artefact_name
             page.write_text(_minify(template_resource.render(**data_r)), encoding="utf-8")
 
 class _FakeRequest:
