@@ -692,7 +692,7 @@ class BaseViewer:
             if values:
                 statements[pred_label] = sorted(values, key=lambda v: (str(v.get('nested')), v['text'].lower()))
 
-        return statements
+        return dict(sorted(statements.items(), key=lambda kv: kv[0].lower()))
 
     @staticmethod
     def _clean_name(self, name: str) -> str:
