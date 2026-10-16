@@ -14,6 +14,25 @@ pip install oc-lode
 pip install "oc-lode[server]"
 ```
 
+### Which install do I need?
+
+The base install is enough for the CLI and for using LODE as a library: `lode build`
+and the `lode.reader` / `lode.viewer` modules. It installs `rdflib`, `jinja2`,
+`requests`, `minify-html` and `pyyaml`.
+
+The web service and the REST API (`lode serve`, `lode.api`) need the `[server]` extra,
+which adds `fastapi`, `uvicorn`, `gunicorn` and `python-multipart`.
+
+| You want to... | Install |
+|----------------|---------|
+| Build static docs with `lode build` | `pip install oc-lode` |
+| Run `lode serve` or import `lode.api` | `pip install "oc-lode[server]"` |
+
+!!! warning
+    Without the extra, `lode serve` exits with
+    `Server dependencies missing: pip install oc-lode[server]`, and
+    `import lode.api` fails with `ModuleNotFoundError: No module named 'fastapi'`.
+
 ## First run
 
 Start the web server (requires the `[server]` extra):

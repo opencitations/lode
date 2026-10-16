@@ -1,6 +1,7 @@
 # Web form
 
-Start the server and open `http://localhost:8000`.
+Start the server and open `http://localhost:8000`. This needs the `[server]` extra:
+`pip install "oc-lode[server]"` (see [Getting started](../getting_started.md#which-install-do-i-need)).
 
 ## Input
 
@@ -8,7 +9,7 @@ Start the server and open `http://localhost:8000`.
 |-------|-------------|
 | **URL** | Public http(s) URL of the artefact |
 | **File** | Upload a local `.ttl`, `.rdf`, `.owl`, `.n3`, `.jsonld` file |
-| **Format** | Artefact type (`owl`, `rdf`, `skos`) |
+| **Format** | Artefact type (`owl`, `rdf`, `skos`) - Currently only `owl` is available |
 | **Language** | Preferred language for labels (e.g. `en`, `it`) |
 | **Load imports** | Also fetch `owl:imports` at depth 1 |
 | **Load closure** | Fetch the full `owl:imports` closure |

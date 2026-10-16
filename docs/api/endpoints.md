@@ -1,5 +1,8 @@
 # API endpoints
 
+The API is part of the web service and needs the `[server]` extra
+(`pip install "oc-lode[server]"`, see [Getting started](../getting_started.md#which-install-do-i-need)).
+
 Interactive docs available at `/docs` (Swagger) and `/redoc` (ReDoc) when the server is running.
 
 ## GET /
@@ -16,7 +19,7 @@ Render an artefact as HTML or RDF.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `read_as` | enum | yes | `owl` \| `rdf` \| `skos` |
+| `read_as` | enum | yes | `owl` \| `rdf` \| `skos` - Currently only `owl` is available|
 | `url` | string | one of | Public http(s) URL |
 | `upload_id` | string | one of | Token from a previous upload |
 | `resource` | string | no | IRI of a single resource |
