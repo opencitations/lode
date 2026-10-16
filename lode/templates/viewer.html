@@ -71,17 +71,6 @@
     {% endif %}
 
     <div class="container-fluid px-4 py-4">
-        {% if warnings %}
-            <div class="mb-4">
-                {% for w in warnings %}
-                <div class="alert alert-warning py-2 mb-1" role="alert">
-                    <strong>{{ w.type }}</strong> — {{ w.message }}
-                    {% if w.uri %}<span class="text-muted font-monospace ms-2" style="font-size:0.8em">{{ w.uri }}</span>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        
         {% if metadata %}
             {% if single_resource %}
             {% set current = entities[0] if entities else None %}
@@ -300,6 +289,37 @@
         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 
+        {% if warnings %}
+        <div id="warning-toasts" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1100"></div>
+        <script>
+            (function () {
+                var MAX = 5;   // more than this would cover the page; the rest is in the server log
+                var warnings = {{ warnings|tojson }};
+                var box = document.getElementById("warning-toasts");
+
+                function show(title, text) {
+                    var el = document.createElement("div");
+                    el.className = "toast text-bg-warning";
+                    el.setAttribute("role", "alert");
+                    el.innerHTML = '<div class="toast-header text-bg-warning"><strong class="me-auto"></strong>' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="toast"></button></div>' +
+                        '<div class="toast-body"></div>';
+                    // textContent: messages carry IRIs from the ontology, never inject them as HTML
+                    el.querySelector("strong").textContent = title;
+                    el.querySelector(".toast-body").textContent = text;
+                    box.appendChild(el);
+                    el.addEventListener("hidden.bs.toast", function () { el.remove(); });
+                    new bootstrap.Toast(el, { delay: 8000 }).show();
+                }
+
+                warnings.slice(0, MAX).forEach(function (w) { show(w.code, w.message); });
+                if (warnings.length > MAX) {
+                    show("warnings", "+" + (warnings.length - MAX) + " more, see the server log");
+                }
+            })();
+        </script>
+        {% endif %}
+
        <script>
             document.addEventListener("DOMContentLoaded", function() {
 
@@ -470,5 +490,6 @@
         </script>
 
     </div>
+    <footer>Powered by LODE</footer>
 </body>
 </html>

@@ -270,10 +270,10 @@ class Reader:
 
             if self._logic._warnings:
                 logger.warning("%d reader warnings", len(self._logic._warnings))
+                # details only at DEBUG: the viewer words them with display names
+                # for popups, report and CLI, so raw model names would be confusing
                 for w in self._logic._warnings:
-                    logger.warning("[%s] %s", w['code'], w['message'])
-
-            self._logic.save_warnings()
+                    logger.debug("[%s] %s", w['code'], w['message'])
     
     def _phase5_fallback(self):
         """Fallback per risorse non categorizzate (comune)"""

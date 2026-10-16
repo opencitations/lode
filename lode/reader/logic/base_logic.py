@@ -46,25 +46,6 @@ class BaseLogic(ABC):
         """Record a reader warning with a machine-readable code, its subject and a message."""
         self._warnings.append({'code': code, 'subject': str(subject), 'message': message})
 
-    def get_warnings(self):
-        """Return the collected warnings, or [] when they were not requested."""
-        if not getattr(self, '_warnings_enabled', False):  # self is the logic here
-            return []
-
-    def save_warnings(self, filepath: str = None):
-        """Save warnings to JSON file."""
-        import json
-        from pathlib import Path
-        
-        if not self._warnings:
-            return
-        
-        if filepath is None:
-            filepath = Path(__file__).parent.parent.parent / 'warnings.json'
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(self._warnings, f, indent=2, ensure_ascii=False)
-
     def _get_allowed_classes(self) -> set:
         """Resolve the 'allowed_classes' names of the config into the model classes."""
         class_names = self._strategy.config.get('allowed_classes', [])

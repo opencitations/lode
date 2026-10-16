@@ -4,6 +4,7 @@ Format-specific viewers (OWL, RDF, SKOS) extend it with their table of contents
 and display names. It also serializes the provenance of each entity.
 """
 import hashlib
+import re
 from typing import Dict, List, Optional, Tuple
 
 from lode.models import Literal, Model, Resource, Statement
@@ -51,6 +52,22 @@ class BaseViewer:
     def get_toc_config(self) -> List[Tuple[str, str, str]]:
         """Return the table of contents: (class name, section id, type_map key) in display order."""
         return [tuple(entry) for entry in self._config["toc"]]
+
+    def format_warnings(self, warnings: List[Dict]) -> List[Dict]:
+        """Return the reader warnings with model class names replaced by this viewer's display names.
+
+        The reader words its messages with internal class names (Attribute, Annotation) and
+        cannot know how a format shows them; the display names live in the type_map of this
+        viewer, so the swap happens here, before the warnings reach any output. Only standalone
+        words are replaced: a class name inside an IRI (.../Concept, ...#Concept) is left alone.
+        Returns copies, the reader's own list is never modified.
+        """
+        names = {key.capitalize(): entry["singular"] for key, entry in self._config["type_map"].items()}
+        if not names:
+            return [dict(w) for w in warnings]
+        pattern = re.compile(r"(?<![\w/#:-])(" + "|".join(map(re.escape, names)) + r")(?![\w/#:-])")
+        return [{**w, "message": pattern.sub(lambda m: names[m.group(1)], w["message"])}
+                for w in warnings]
 
     def _clean_name(self, name: str) -> str:
         """Turn an attribute or getter name into a display label, using this viewer's vocabulary."""

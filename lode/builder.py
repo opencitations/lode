@@ -105,6 +105,17 @@ def _copy_static(out_dir: Path) -> None:
     if static_src.exists() and not static_dst.exists():
         shutil.copytree(static_src, static_dst)
 
+def _write_warnings_report(warnings: list, out_dir: Path) -> None:
+    """Write the reader warnings to report.txt in the output folder.
+
+    Written only when there is something to report, so a build without warnings
+    leaves no file. An older report.txt is not removed: it may be the user's own.
+    """
+    if not warnings:
+        return
+    lines = [f"[{w['code']}] {w['message']}" for w in warnings]
+    (out_dir / "report.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
 def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
                artefact_name: str = "index") -> None:
     """Write the whole static site for a viewer into `out_dir`.
@@ -122,7 +133,9 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     artefact_name = _check_artefact_name(artefact_name)
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_static(out_dir)
-    
+    if reader is not None:
+        _write_warnings_report(viewer.format_warnings(reader.get_warnings()), out_dir)
+
     ontology_ns = viewer._get_ontology_ns()
     graph = reader._graph if reader else viewer.reader._graph
     main_graph = viewer.reader.get_main_graph()

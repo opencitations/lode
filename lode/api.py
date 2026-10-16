@@ -168,7 +168,7 @@ def _render_view(request, reader, *, resource, lang, source_url, upload_id, read
     """
     viewer = reader.get_viewer()
     data = viewer.get_view_data(resource_uri=resource, language=lang)
-    data["warnings"] = reader.get_warnings()
+    data["warnings"] = viewer.format_warnings(reader.get_warnings())
     resp = templates.TemplateResponse(request, "viewer.html", {
         "source_url": source_url,
         "upload_id": upload_id,

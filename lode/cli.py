@@ -46,9 +46,19 @@ def cmd_build(args):
         imported=args.imported or None,
         closure=args.closure or None,
         partial_import=args.partial_import or None,
+        warnings=args.warnings,
     )
-    build_html(reader.get_viewer(), out_dir, lang=args.lang, reader=reader,
+    viewer = reader.get_viewer()
+    build_html(viewer, out_dir, lang=args.lang, reader=reader,
                artefact_name=args.artefact_name)
+    if args.warnings:
+        warnings = viewer.format_warnings(reader.get_warnings())
+        for w in warnings:
+            print(f"[{w['code']}] {w['message']}")
+        if warnings:
+            print(f"Warnings report -> {out_dir / 'report.txt'}")
+        else:
+            print("No reader warnings")
     print(f"Done -> {out_dir}")
 
 
@@ -78,6 +88,8 @@ def main():
     p_build.add_argument("--imported", action="store_true")
     p_build.add_argument("--closure", action="store_true")
     p_build.add_argument("--partial-import", action="store_true")
+    p_build.add_argument("--warnings", action="store_true",
+                         help="Print reader warnings and write them to report.txt in the output folder")
 
     args = parser.parse_args()
     {"serve": cmd_serve, "build": cmd_build}[args.cmd](args)
