@@ -1031,3 +1031,57 @@ body.toc-sidebar-closed { margin-left: 5rem; }
     scroll-margin-top: 1rem;
 }
 
+
+/* ==========================================================================
+   14. RESPONSIVE
+   Long IRIs must wrap instead of widening the page; the index form must
+   stay usable on narrow phones.
+   ========================================================================== */
+
+/* "anywhere" breaks only when a word would overflow, unlike break-all */
+.container-fluid a,
+.container-fluid code,
+.container-fluid dd,
+.container-fluid .card-body {
+    overflow-wrap: anywhere;
+}
+
+/* Header IRI: wrap on as many lines as needed instead of being cut */
+.resource-meta-uri {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 767.98px) {
+    .submission-form-container { padding: 1.5rem 1rem; }
+    .submission-form-container img {
+        display: block;
+        max-width: 10rem;
+        margin: 0 auto 1rem;
+    }
+    .resource-meta-uri { max-width: 100%; }
+}
+
+@media (max-width: 575.98px) {
+    /* full-width toggle: the 50% slider keeps working */
+    .toggle-switch { display: flex; width: 100%; }
+    .toggle-option { flex: 1 1 0; padding: 8px 12px; text-align: center; }
+}
+
+
+/* ==========================================================================
+   15. FOOTER
+   Shared by the index page and the viewer (live and static site).
+   ========================================================================== */
+
+.site-footer {
+    margin-top: 3rem;
+    padding: 1rem;
+    border-top: 1px solid var(--lode-blue-hairline);
+    text-align: center;
+    font-size: .85rem;
+    color: var(--lode-muted);
+}
+
+.site-footer a { color: var(--lode-blue); }
+

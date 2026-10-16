@@ -25,9 +25,9 @@
                         
                         <!-- Semantic Artefact Source -->
                         <div class="mb-3">
-                            <div class="row align-items-center">
+                            <div class="row g-2 align-items-center">
                                                     
-                                <div class="col">
+                                <div class="col-12 col-sm">
                                     <!-- URL Input with Floating Label -->
                                     <div id="urlSection">
                                         <div class="form-floating">
@@ -57,7 +57,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="col-auto">
+                                <div class="col-12 col-sm-auto">
                                     <div class="toggle-switch" id="sourceToggle">
                                         <div class="toggle-slider url-mode" id="toggleSlider"></div>
                                         <span class="toggle-option active" data-mode="url">
@@ -155,7 +155,7 @@
                             </div>
                         </div>
                         
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-column flex-sm-row gap-2">
                         <button type="submit" id="submitBtn" class="button">
                             Generate live documentation
                         </button>
@@ -169,7 +169,7 @@
         </div>
 
         <!-- DOCUMENTATION -->
-        <div class="lode-documentation row p-5">
+        <div class="lode-documentation row p-3 p-md-5">
             <p>LODE 2.0 is an open source service that automatically extracts entities from
                 semantic artefacts (OWL, RDF/RDFS, SKOS) and renders them, together with their
                 textual definitions, as a human-readable HTML page designed for browsing and
@@ -203,6 +203,7 @@
 
             <h3>Parameters</h3>
 
+            <div class="table-responsive">
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -279,6 +280,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
 
             <h3>Examples</h3>
 
@@ -340,7 +342,14 @@
             <p>LODE 2.0 is developed in the open. Open an issue at
                 <a href="https://github.com/opencitations/lode/issues" target="_blank" rel="noopener">github.com/opencitations/lode/issues</a>.</p>
         </div>
-    </div> 
+    </div>
+
+    <footer class="site-footer">
+        <strong>LODE 2.0</strong> ·
+        Maintained by <a href="https://opencitations.net" target="_blank" rel="noopener">OpenCitations</a> ·
+        <a href="https://github.com/opencitations/lode" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://github.com/opencitations/lode/blob/main/LICENSE.md" target="_blank" rel="noopener">ISC License</a>
+    </footer>
 
     <script>
         // ── Toggle URL / File ──────────────────────────────────────────────────

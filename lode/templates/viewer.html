@@ -70,7 +70,7 @@
         </div>
     {% endif %}
 
-    <div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-3 px-md-4 py-4">
         {% if metadata %}
             {% if single_resource %}
             {% set current = entities[0] if entities else None %}
@@ -83,7 +83,7 @@
 
                         
                         <div class="resource-meta-line">
-                            <span class="resource-meta-uri font-monospace text-truncate">{{ current.uri if current else '' }}</span>
+                            <span class="resource-meta-uri font-monospace">{{ current.uri if current else '' }}</span>
                             <a href="{{ current.uri if current else '' }}" target="_blank" class="resource-meta-link" title="Go to Resource">
                                 <i class="bi bi-box-arrow-up-right"></i>
                             </a>
@@ -119,7 +119,7 @@
                             </h1>
 
                             <div class="resource-meta-line">
-                                <span class="resource-meta-uri font-monospace text-truncate">{{ metadata.uri[0].link }}</span>
+                                <span class="resource-meta-uri font-monospace">{{ metadata.uri[0].link }}</span>
                                 <a href="{{ metadata.uri[0].link }}" target="_blank" class="resource-meta-link" title="Go to Resource">
                                     <i class="bi bi-box-arrow-up-right"></i>
                                 </a>
@@ -490,6 +490,11 @@
         </script>
 
     </div>
-    <footer>Powered by LODE</footer>
+    <footer class="site-footer">
+        <strong>LODE 2.0</strong> ·
+        Maintained by <a href="https://opencitations.net" target="_blank" rel="noopener">OpenCitations</a> ·
+        <a href="https://github.com/opencitations/lode" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://github.com/opencitations/lode/blob/main/LICENSE.md" target="_blank" rel="noopener">ISC License</a>
+    </footer>
 </body>
 </html>
