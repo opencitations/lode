@@ -6,7 +6,7 @@ authors = [{name = "Valentina Pasqual, Silvio Peroni", email = "valentina.pasqua
 readme = "README.md"
 license = {text = "ISC"}
 requires-python = ">=3.10"
-keywords = []
+keywords = ["owl", "ontology", "rdf", "skos", "documentation", "semantic-web", "opencitations"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -39,6 +39,8 @@ lode = "lode.cli:main"
 [project.urls]
 Homepage = "https://github.com/opencitations/lode"
 Repository = "https://github.com/opencitations/lode"
+Documentation = "https://opencitations.github.io/lode/"
+Issues = "https://github.com/opencitations/lode/issues"
 
 [dependency-groups]
 dev = [
