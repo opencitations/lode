@@ -2,15 +2,22 @@
 name = "oc-lode"
 version = "2.1.0"
 description = "New reengineered version of LODE, maintained by OpenCitations"
-authors = [{name = "Valentina Pasqual, Silvio Peroni", email = "valentina.pasqual2@unibo.it"}]
+authors = [
+    {name = "Valentina Pasqual", email = "valentina.pasqual2@unibo.it"},
+    {name = "Ahmadreza Nazari"},
+    {name = "Silvio Peroni", email = "silvio.peroni@unibo.it"},
+]
 readme = "README.md"
-license = {text = "ISC"}
+license = "ISC"
+license-files = ["LICENSE.md"]
 requires-python = ">=3.10"
 keywords = ["owl", "ontology", "rdf", "skos", "documentation", "semantic-web", "opencitations"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: ISC License (ISCL)",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Documentation",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -51,7 +58,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling>=1.26"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
