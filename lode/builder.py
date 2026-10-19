@@ -3,6 +3,7 @@
 Produces an index page, one page per documented resource and the serializations
 of the whole artefact and of each resource, ready to publish on any static host.
 """
+import os
 import re
 import shutil
 from pathlib import Path
@@ -103,13 +104,15 @@ def _write_in(base: Path, name: str, text: str) -> None:
     both are user-chosen, so the resolved target is checked against `base`
     before anything touches the filesystem (path injection).
     """
-    target = base / name
-    if not target.resolve().is_relative_to(base.resolve()):
+    root = os.path.realpath(base)
+    target = os.path.realpath(os.path.join(root, name))
+    if not target.startswith(root + os.sep):
         raise ArtefactValidationError(
             "Refusing to write outside the output folder",
             context={"base": str(base), "name": name},
         )
-    target.write_text(text, encoding="utf-8")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(text)
 
 
 def _copy_static(out_dir: Path) -> None:
