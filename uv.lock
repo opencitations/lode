@@ -574,7 +574,7 @@ wheels = [
 
 [[package]]
 name = "oc-lode"
-version = "0.3.15"
+version = "2.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
