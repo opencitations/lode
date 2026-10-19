@@ -1,5 +1,7 @@
-"""
-Reader - Caricamento e validazione file RDF
+"""Loading and validation of RDF artefacts, from a local file or from a URL.
+
+Every security check on remote content (SSRF, size, text-only, XXE) runs here,
+before the RDF parser sees any byte.
 """
 import requests
 import os
@@ -15,12 +17,26 @@ from lode.helpers.rdf import PARSE_FORMATS, parse_any
 from lode.reader.provenance_graph import ProvenanceGraph
 
 class Loader:
-    """Gestisce il caricamento di file RDF"""
+    """Load an RDF artefact into a graph, optionally together with its imports.
 
-    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None, partial_import=None):
-        
+    The loaded graph is a plain Graph, or a ProvenanceGraph (one named graph per
+    ontology) when imported, closure or partial_import is requested. In both cases
+    `ontology_iri` names the loaded artefact.
+    """
+
+    def __init__(self, file_path: Optional[str] = None, imported=None, closure=None, partial_import=None,
+                 source_name: Optional[str] = None):
+        """Prepare the loader and, when `file_path` is given, load it immediately.
+
+        `imported`, `closure` and `partial_import` select the module applied
+        after loading (see lode.reader.modules); at most one of them is used.
+        `source_name` is the name of the artefact when it differs from `file_path`
+        (e.g. a cached copy of a URL): it names the graph if the ontology declares no IRI.
+        """
+
         self.graph = Graph()
         self.ontology_iri = None
+        self._source_name = source_name
         self._imported = imported
         self._closure = closure
         self.imported_uris = set() # needed to keep track of original model to document
@@ -38,7 +54,6 @@ class Loader:
         if self._is_url(source):
             self._load_from_url_with_content_negotiation(source)
 
-        # ADD  BY VALE TO FIX WINDOWS LOCAL BUG - COMMENTED FOR PRODUCTION
         elif os.path.isfile(source):
             self._load_from_local_file(source)    
         else:
@@ -59,16 +74,26 @@ class Loader:
                 context={"source": source}
             )
 
+        name = self._source_name or source
         if self._imported or self._closure or self._partial_import:
             raw, self.graph = self.graph, ProvenanceGraph()
-            self.ontology_iri = self.graph.add_document(raw, source)
+            self.ontology_iri = self.graph.add_document(raw, name)
             self._apply_modules()
+        else:
+            # no modules: the graph stays plain, only its name is needed so that
+            # the provenance of an entity can still be written as a quad
+            self.ontology_iri = ProvenanceGraph.ontology_iri(self.graph, name)
     
     # ----------------------------------------------------------
     #  MODULES MAIN HANDLER
     # ----------------------------------------------------------
 
     def _apply_modules(self) -> None:
+        """Apply the requested import module to the loaded graph.
+
+        Precedence: partial_import, then imported, then closure. Also records the
+        IRIs that were imported, so the viewer can keep the original model metadata.
+        """
         if self._partial_import:
             self.graph, self.imported_uris = modules.apply_partial_import(self.graph)
         elif self._imported:
@@ -112,6 +137,17 @@ class Loader:
                     context={"url": url, "http_status": response.status_code}
                 )
 
+            # Reject HTML/XHTML pages before downloading: servers answer with a
+            # human-readable page when no RDF serialization is available.
+            content_type = response.headers.get("Content-Type", "").lower()
+            mime = content_type.split(";")[0].strip()
+            if mime in ("text/html", "application/xhtml+xml"):
+                response.close()
+                raise ArtefactLoadError(
+                    "Resource is an HTML page, not an RDF serialization",
+                    context={"url": url, "content_type": mime},
+                )
+
             # SECURITY: reject by declared Content-Length before downloading the body
             declared = response.headers.get("Content-Length")
             if declared and declared.isdigit():
@@ -153,6 +189,11 @@ class Loader:
     #  LOCAL FILE LOADING
     # ----------------------------------------------------------
     def _load_from_local_file(self, path: str) -> None:
+        """Parse a local file, trying every known RDF format.
+
+        Raises ArtefactLoadError if no format can parse it. The caller is expected
+        to have excluded URLs: this method opens `path` on the local disk.
+        """
         with open(path, "rb") as f:
             raw = f.read()
         graph = parse_any(raw)
@@ -165,12 +206,17 @@ class Loader:
     #  HELPERS
     # ----------------------------------------------------------
     def _is_url(self, s: str) -> bool:
+        """Return True only for http(s) URLs; other schemes are not treated as URLs."""
         try:
             return urlparse(s).scheme in ("http", "https")
         except Exception:
             return False
 
     def _guess_format_from_content_type(self, content_type: str) -> Optional[str]:
+        """Map an HTTP Content-Type to an rdflib format name, or None when unknown.
+
+        The result is only a hint: parse_any still falls back to the other formats.
+        """
         if "text/turtle" in content_type or "application/x-turtle" in content_type:
             return "turtle"
         if "application/rdf+xml" in content_type:
@@ -182,6 +228,7 @@ class Loader:
         return None
 
     def get_graph(self) -> Graph:
+        """Return the loaded graph (a ProvenanceGraph when modules were applied)."""
         return self.graph
     
     def _fetch_following_redirects(self, url: str, headers: dict, max_redirects: int = security.MAX_REDIRECTS):

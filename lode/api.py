@@ -13,12 +13,9 @@ Endpoints:
 # ==========================================================================
 # 1. IMPORTS
 # ==========================================================================
-from enum import Enum
-from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
-from uuid import uuid4
 import hashlib
 import logging
 import os
@@ -49,7 +46,7 @@ import lode.helpers.spool as spool
 from lode.reader import Reader
 from lode.reader import security
 from lode.exceptions import LODEError, ArtefactValidationError
-from lode.viewer.base_viewer import formats_for
+from lode.viewer.base_viewer import SERIALIZATION_FORMATS
 from lode.reader.provenance_graph import ProvenanceGraph
 from lode.helpers.rdf import iri_local_name
 
@@ -57,10 +54,15 @@ from lode.helpers.rdf import iri_local_name
 # ==========================================================================
 # 2. APP SETUP
 # ==========================================================================
+LOG_LEVEL = os.getenv("LODE_LOG_LEVEL", "WARNING").strip().upper()
+
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=LOG_LEVEL,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+# Third-party loggers: silence per-request HTTP noise and URI warnings.
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("rdflib").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # When enabled, error pages include the full traceback (development only).
@@ -127,7 +129,7 @@ def _prune_builds() -> int:
         if st.st_mtime < cutoff:
             shutil.rmtree(p, ignore_errors=True)
             continue
-        for root, _dirs, files in os.walk(p):
+        for root, _, files in os.walk(p):
             for f in files:
                 try:
                     total += os.path.getsize(os.path.join(root, f))
@@ -141,6 +143,11 @@ def _prune_builds() -> int:
 # ==========================================================================
 
 def _nav_qs(read_as: str, url, upload_id, lang, imported, closure, partial_import) -> str:
+    """Build the query string that keeps the current view parameters in navigation links.
+
+    Exactly one of `upload_id` and `url` is emitted, so a link never mixes the two
+    sources. Boolean options are included only when enabled.
+    """
     p = {"read_as": read_as, "lang": lang or ""}
     p["upload_id" if upload_id else "url"] = upload_id or (url or "")
     if imported:
@@ -154,9 +161,14 @@ def _nav_qs(read_as: str, url, upload_id, lang, imported, closure, partial_impor
 
 def _render_view(request, reader, *, resource, lang, source_url, upload_id, read_as,
                  imported=None, closure=None, partial_import=None):
+    """Render one resource (or the whole artefact) as the minified viewer page.
+
+    The body is minified after rendering, so Content-Length is recomputed:
+    keeping the old value would truncate the response.
+    """
     viewer = reader.get_viewer()
     data = viewer.get_view_data(resource_uri=resource, language=lang)
-    data["warnings"] = reader.get_warnings()
+    data["warnings"] = viewer.format_warnings(reader.get_warnings())
     resp = templates.TemplateResponse(request, "viewer.html", {
         "source_url": source_url,
         "upload_id": upload_id,
@@ -172,11 +184,22 @@ def _render_view(request, reader, *, resource, lang, source_url, upload_id, read
 # 7. READER RESOLUTION
 # ==========================================================================
 def _url_token(url, read_as, imported, closure, partial_import) -> str:
-    key = f"{url}|{read_as}|{imported}|{closure}|{partial_import}".encode()
+    """Return the stable cache key for a URL and its load options.
+
+    Every option that changes the loaded graph is part of the key, so two
+    requests share a cached copy only if they would produce the same result.
+    """
+    key =f"{url}|{read_as}|{imported}|{closure}|{partial_import}".encode()
     return "url_" + hashlib.sha256(key).hexdigest()[:32]
 
 
 def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cache=True):
+    """Load an artefact from a URL, through the disk cache when allowed.
+
+    The URL is validated first (SSRF protection). Only the main document is
+    cached: modules (imports, closure) are re-applied on every hit, so the cache
+    never goes stale on remote ontologies. Blocking: network and disk I/O.
+    """
     # Enforce http(s)://host up front: a non-URL value (local path, file://, ...)
     # must never reach the loader and be opened as a local file.
     security.check_url_safe(url)
@@ -184,10 +207,10 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
     token = _url_token(url, read_as, imported, closure,  partial_import)
     path = spool.get_path(token)
     if use_cache and os.path.exists(path):
-        # cache hit: ricostruisci dal Turtle salvato
+        # cache hit: rebuild from the saved Turtle
         reader = Reader()
         reader.load_instances(path, read_as, imported=imported, closure=closure,  partial_import=partial_import,
-                              warnings=warnings)
+                              warnings=warnings, source_name=url)
         return reader
     if not use_cache:
         # cache=false: drop the stale copy so the fresh fetch replaces it
@@ -195,11 +218,11 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
             os.unlink(path)
         except OSError:
             pass
-    # cache miss (or forced refresh): scarica e processa dalla URL
+    # cache miss (or forced refresh): fetch and process the URL
     reader = Reader()
     reader.load_instances(url, read_as, imported=imported, closure=closure, partial_import=partial_import,
                           warnings=warnings)
-    # persisti SOLO il documento principale: i moduli vengono riapplicati a ogni hit,
+    # persist ONLY the main document: modules are re-applied on every hit.
     try:
         g = reader._graph
         main = g.graph(reader._ontology_iri) if isinstance(g, ProvenanceGraph) else g
@@ -211,6 +234,11 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
 
 def _resolve_reader(read_as: str, url, upload_id, imported, closure, partial_import, warnings,
                     use_cache=True):
+    """Build a Reader from an uploaded file or from a URL.
+
+    Raises ArtefactValidationError when the upload has expired or when neither
+    source is given. Uploads win over URLs and are never re-fetched.
+    """
     if upload_id:
         # Uploads are not re-fetched, so the cache flag does not apply to them.
         path = spool.get_path(upload_id)
@@ -259,7 +287,7 @@ def _zip_response(reader, slug: str, lang: Optional[str] = None) -> FileResponse
 
     Blocking and disk-heavy: callers must keep it off the event loop.
     """
-    from lode.builder import build_html  # lazy: evita l'import circolare
+    from lode.builder import build_html  # lazy: avoids a circular import
 
     if not _BUILD_SLOTS.acquire(timeout=_BUILD_WAIT):
         raise HTTPException(503, "Server busy: too many concurrent builds",
@@ -303,6 +331,11 @@ def _zip_response(reader, slug: str, lang: Optional[str] = None) -> FileResponse
 # 9. ERROR RENDERING
 # ==========================================================================
 def _error_payload(exc: Exception) -> dict:
+    """Build the dict used by error.html for any exception.
+
+    The traceback is included only for non-LODE errors and only when LODE_DEBUG
+    is set: it is always logged server-side and never shown to users otherwise.
+    """
     is_lode = isinstance(exc, LODEError)
     return {
         "type": type(exc).__name__,
@@ -317,6 +350,7 @@ def _error_payload(exc: Exception) -> dict:
 
 @app.exception_handler(LODEError)
 async def lode_error_handler(request: Request, exc: LODEError):
+    """Show a domain error (LODEError) as an HTML page with HTTP 400."""
     logger.error(f"{type(exc).__name__}: {exc}")
     return templates.TemplateResponse(
         "error.html", {"request": request, "error": _error_payload(exc)}, status_code=400
@@ -325,6 +359,10 @@ async def lode_error_handler(request: Request, exc: LODEError):
 
 @app.exception_handler(Exception)
 async def unexpected_error_handler(request: Request, exc: Exception):
+    """Show an unhandled exception as an HTML page with HTTP 500.
+
+    The full traceback goes to the server log; the page shows it only in debug mode.
+    """
     logger.exception("Unexpected error")
     return templates.TemplateResponse(
         "error.html", {"request": request, "error": _error_payload(exc)}, status_code=500
@@ -358,9 +396,8 @@ async def limit_upload_size(request: Request, call_next):
 # ==========================================================================
 @app.get("/", response_class=HTMLResponse, tags=["ops"], summary="Web input form")
 async def input_web_interface(request: Request):
-    """Interfaccia web per l'API"""
-    return templates.TemplateResponse("index.html", {
-        "request": request,
+    """Serve the HTML input form, the entry point of the web interface."""
+    return templates.TemplateResponse(request, "index.html", {
         "formats": [format.value for format in ReadAsFormat],
         "enabled_formats": sorted(ENABLED_FORMATS),
     })
@@ -385,7 +422,7 @@ def extract_get(
     lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Query(None, description="Also load owl:imports (depth 1)"),
     closure: Optional[bool] = Query(None, description="Load the full owl:imports closure"),
-    partial_import: Optional[bool] =  Query(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
+    partial_import: Optional[bool] =  Query(None, description="Additionally load only explicitly mentioned entities from other ontologies"),
     format: Optional[str] = Query(None, description="Force a serialization (ttl, rdf, jsonld…) instead of HTML"),
     warnings: bool = Query(False, description="Collect and show reader warnings"),
     cache: bool = Query(True, description="Use the disk cache for fetched URLs"),
@@ -397,13 +434,9 @@ def extract_get(
     reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, partial_import,
                              warnings, use_cache=cache)
 
-    # Content negotiation
+    # Content negotiation: triples of the loaded artefact only, quads are never negotiable
     accept = request.headers.get("accept", "text/html")
-    serial = None
-
-    # Content negotiation: i formati disponibili dipendono dal grafo (quadruple solo con moduli)
-    accept = request.headers.get("accept", "text/html")
-    available = formats_for(reader._graph)
+    available = SERIALIZATION_FORMATS
     serial = None
 
     if format:
@@ -423,7 +456,7 @@ def extract_get(
             serialized = reader.get_viewer().export_resource(resource, serial["fmt"])
             filename = iri_local_name(resource) or "resource"
         else:
-            serialized = reader._graph.serialize(format=serial["fmt"])
+            serialized = reader.get_main_graph().serialize(format=serial["fmt"])
             filename = (iri_local_name(url) if url else "") or "graph"
         return Response(content=serialized, media_type=serial["mime"],
                         headers={"Content-Disposition": f'inline; filename="{filename}.{serial["ext"]}"'})
@@ -443,7 +476,7 @@ async def extract_post(
     resource: Optional[str] = Form(None, description="IRI of a single resource; omit for the whole ontology"),
     lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
-    partial_import: Optional[bool] =  Form(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
+    partial_import: Optional[bool] =  Form(None, description="Additionally load only explicitly mentioned entities from other ontologies"),
     closure: Optional[bool] = Form(None, description="Load the full owl:imports closure"),
     warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
@@ -477,7 +510,7 @@ def build_get(
     lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Query(None, description="Also load owl:imports (depth 1)"),
     closure: Optional[bool] = Query(None, description="Load the full owl:imports closure"),
-    partial_import: Optional[bool] =  Query(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
+    partial_import: Optional[bool] =  Query(None, description="Additionally load only explicitly mentioned entities from other ontologies"),
     warnings: bool = Query(False, description="Collect and show reader warnings"),
     cache: bool = Query(True, description="Use the disk cache for fetched URLs"),
 ):
@@ -496,7 +529,7 @@ async def build_post(
     lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
     closure: Optional[bool] = Form(None, description="Load the full owl:imports closure"),
-    partial_import: Optional[bool] =  Form(None, description="Additiornally load only explicitly mentioned entities from other ontologies"),
+    partial_import: Optional[bool] =  Form(None, description="Additionally load only explicitly mentioned entities from other ontologies"),
     warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
     """Build the static site from an uploaded file instead of a URL."""

@@ -25,6 +25,10 @@ def has_warning(logic, code: str, subject=None) -> bool:
 # ====================================================================
 
 def flag_malformed_restrictions(logic, classified):
+    """Warn about BNodes that mix several restriction axioms (not valid OWL 2 DL).
+
+    Warnings are grouped by the parent resource that holds the malformed BNodes.
+    """
     axiom_preds = {
         p for p, cfg in logic._property_mapping.items()
         if isinstance(cfg.get('inferred_class'), type)
@@ -48,11 +52,13 @@ def flag_malformed_restrictions(logic, classified):
             f"OWL 2 DL: malformed restrictions on {parent} ({', '.join(names)})")
 
 def empty_truth_function(logic, instance, bnode, operator):
+    """Warn that a truth function has an empty operand list and was ignored."""
     ident = instance.get_has_identifier()
     logic.add_warning('empty_truth_function', ident,
         f'§8.1.1: Truth Function ({ident}, {operator}) is empty — ignored (collection BNode: {bnode})')
 
 def singleton_truth_function(logic, instance, bnode, operator):
+    """Warn that a truth function has a single operand, which usually points to an ontology mistake."""
     ident = instance.get_has_identifier()
     logic.add_warning('singleton_truth_function', ident,
         f'§8.1.1: TruthFunction ({ident}, {operator}) has a single element — ontology should be checked (collection BNode: {bnode})')
@@ -78,6 +84,7 @@ def run_post_checks(logic):
 
 
 def _check_orphan_restriction(logic, instance, uri):
+    """Warn about a restriction with no property; an anonymous one without owl:onProperty is also removed."""
     if not isinstance(instance, PropertyConceptRestriction):
         return
     if instance.get_applies_on_property() is not None:
@@ -91,6 +98,7 @@ def _check_orphan_restriction(logic, instance, uri):
             f'{type(instance).__name__} has owl:onProperty but applies_on_property is None')
 
 def _check_inverse_multiplicity(logic, instance, uri):
+    """Warn about a relation declared inverse of more than one relation."""
     if not isinstance(instance, Relation):
         return
     inv = instance.get_is_inverse_of()
@@ -109,11 +117,13 @@ def _check_inverse_multiplicity(logic, instance, uri):
 #             f'§6.1.1: Relation {uri} is inverse of itself')
 
 def _check_empty_truth_function_post(logic, instance, uri):
+    """Warn about a truth function that still has no concepts after the whole read."""
     if isinstance(instance, TruthFunction) and len(instance.get_applies_on_concept()) == 0:
         logic.add_warning('empty_restriction', uri,
             f'{type(instance).__name__} has empty applies_on_concept')
 
 def _check_property_hierarchy(logic, instance, uri):
+    """Warn when a property is a sub property of a property of a different kind (relation, attribute, annotation)."""
     if not isinstance(instance, (Relation, Attribute, Annotation)):
         return
     for sup in (instance.get_is_sub_property_of() or []):
@@ -123,6 +133,7 @@ def _check_property_hierarchy(logic, instance, uri):
                 f'{type(sup).__name__} {sup.get_has_identifier()}')
 
 def _check_class_datatype_hierarchy(logic, instance, uri):
+    """Warn when a class is a subclass of a datatype, or the other way round."""
     if not isinstance(instance, (Concept, Datatype)) or isinstance(instance, DatatypeRestriction):
         return
     for sup in (instance.get_is_sub_concept_of() or []):
@@ -132,6 +143,7 @@ def _check_class_datatype_hierarchy(logic, instance, uri):
                 f'{type(sup).__name__} {sup.get_has_identifier()}')
 
 def _check_punning_conflicts(logic, uri, instances):
+    """Warn about an IRI used as both class and datatype, or as several property kinds (illegal punning)."""
     types = {type(i) for i in instances}
     if Concept in types and Datatype in types:
         logic.add_warning('class_datatype_conflict', uri,
@@ -142,6 +154,7 @@ def _check_punning_conflicts(logic, uri, instances):
             f'§5.8.1: {uri} has multiple property types: {sorted(t.__name__ for t in prop_types)}')
 
 def _check_config_mismatches(logic):
+    """Warn when the subject of a mapped predicate was not given one of the classes the config expects."""
     for pred, cfg in logic._property_mapping.items():
         target_classes = cfg.get('target_classes', [])
         if not target_classes:

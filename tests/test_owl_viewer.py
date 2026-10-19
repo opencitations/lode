@@ -292,6 +292,118 @@ class TestGroupedView:
                 assert ent["type"] in toc_keys
 
 
+# ---------------------------------------------------------------------------
+# Language selection: per property, with fallback
+# ---------------------------------------------------------------------------
+
+def _lit(text, lang=None):
+    """Build a model Literal with an optional language tag."""
+    lit = Literal()
+    lit.set_has_value(text)
+    if lang:
+        lit.set_has_language(lang)
+    return lit
+
+
+class TestLanguageSelection:
+    """The language is chosen per property: requested, then 'en', then untagged, then all."""
+
+    @pytest.mark.parametrize("tags, requested, expected", [
+        (["da", "en", "it"], "it", ["it"]),
+        (["da", "en"], "cs", ["en"]),
+        (["da", None], "cs", [None]),
+        (["da", "es"], "cs", ["da", "es"]),
+        (["en", None], "en", ["en"]),
+        (["en-GB", "en"], "en", ["en"]),
+        (["en", "en-GB"], "en-GB", ["en-GB"]),
+        (["en", "da"], "en-GB", ["en"]),
+        (["EN", "da"], "en", ["EN"]),
+        (["en-GB", "da"], "en", ["en-GB", "da"]),
+    ])
+    def test_select_by_language(self, tags, requested, expected):
+        v = _viewer()
+        lits = [_lit(str(t), t) for t in tags]
+        picked = v._select_by_language(lits, requested)
+        assert [l.get_has_language() for l in picked] == expected
+
+    def test_label_falls_back_to_en_not_alphabetical(self):
+        c = _entity(Concept, C)
+        for text, lang in (("Datatjeneste", "da"), ("Data service", "en"), ("Servizio", "it")):
+            c.set_has_label(_lit(text, lang))
+        assert _viewer(c)._get_best_label(c, "cs") == "Data service"
+
+    def test_metadata_has_only_requested_language_and_no_none(self):
+        onto = _entity(Model, ONTO)
+        title = _entity(Annotation, "http://purl.org/dc/terms/title", "title")
+        stmts = []
+        for text, lang in (("Title", "en"), ("Titolo", "it")):
+            st = Statement()
+            st.set_has_subject(onto)
+            st.set_has_predicate(title)
+            st.set_has_object(_lit(text, lang))
+            stmts.append(st)
+        v = _viewer(onto, title, *stmts)
+        texts = [e["text"] for e in v.get_view_data(language="en")["metadata"]["title"]]
+        assert texts == ["Title"]
+
+
+# ---------------------------------------------------------------------------
+# Structured blank nodes in the ontology header (e.g. bibo:editor [ a foaf:Person ... ])
+# ---------------------------------------------------------------------------
+
+_HEADER_TTL = """
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.org/onto> a owl:Ontology ;
+    bibo:editor %s .
+"""
+
+_PERSON_A = ('[ a foaf:Person ; foaf:name "Alice Example" ; '
+             'org:memberOf [ foaf:name "Example Org" ] ]')
+_PERSON_B = '[ a foaf:Person ; foaf:name "Bob Example" ; rdfs:seeAlso <https://orcid.org/0000-0000-0000-0001> ]'
+
+
+def _render_index(tmp_path, ttl):
+    """Load `ttl` through the Reader and return the HTML of the static index page."""
+    from lode.builder import build_html
+    from lode.reader import Reader
+
+    src = tmp_path / "onto.ttl"
+    src.write_text(ttl, encoding="utf-8")
+    reader = Reader()
+    reader.load_instances(str(src), read_as="owl")
+    out = tmp_path / "site"
+    build_html(reader.get_viewer(), out, reader=reader)
+    return (out / "index.html").read_text(encoding="utf-8")
+
+
+class TestHeaderStructuredBnodes:
+    """Header values that are blank nodes must show their content, not their id."""
+
+    def test_header_shows_bnode_content_not_ids(self, tmp_path):
+        html = _render_index(tmp_path, _HEADER_TTL % f"{_PERSON_A}, {_PERSON_B}")
+        for expected in ("Alice Example", "Bob Example", "Example Org"):
+            assert expected in html
+        assert not re.search(r"\b(?:N[0-9a-f]{32}|n[0-9a-f]{20,})\b", html), "raw BNode id in header"
+
+    def test_header_order_is_independent_of_source_order(self, tmp_path):
+        """Same graph, triples written in a different order: same rendered header."""
+        a = tmp_path / "a"
+        b = tmp_path / "b"
+        a.mkdir()
+        b.mkdir()
+        html_a = _render_index(a, _HEADER_TTL % f"{_PERSON_A}, {_PERSON_B}")
+        html_b = _render_index(b, _HEADER_TTL % f"{_PERSON_B}, {_PERSON_A}")
+        def alice_first(h):
+            """True when Alice is rendered before Bob."""
+            return h.index("Alice Example") < h.index("Bob Example")
+        assert alice_first(html_a) == alice_first(html_b)
+
+
 # ===========================================================================
 # Integration: real corpus, same loader pattern as test_owl_integrity.
 # ===========================================================================

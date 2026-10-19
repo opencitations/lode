@@ -1,45 +1,44 @@
----
-title: Docker
-description: Deploy LODE with Docker
----
+# Docker
+
+The image listens on port `8080`.
 
 ## Quick start
 
 ```bash
 docker build -t lode .
-docker run -p 8000:8000 lode
+docker run -p 8080:8080 lode
 ```
 
-Open `http://localhost:8000`.
+Open `http://localhost:8080`.
+
+## From Docker Hub
+
+```bash
+docker run -p 8080:8080 opencitations/lode:latest
+```
+
+Replace `latest` with the desired version tag.
 
 ## With persistent storage
 
 ```bash
-docker run -p 8000:8000 \
+docker run -p 8080:8080 \
   -v lode-data:/data \
   -e LODE_SPOOL_DIR=/data/spool \
   -e LODE_BUILD_DIR=/data/builds \
-  lode
+  opencitations/lode:latest
 ```
 
 ## Production (read-only filesystem)
 
 ```bash
-docker run -p 8000:8000 \
+docker run -p 8080:8080 \
   --read-only \
   --tmpfs /tmp \
   -v lode-data:/data \
   -e LODE_SPOOL_DIR=/data/spool \
   -e LODE_BUILD_DIR=/data/builds \
-  lode
-```
-
-## From the registry
-
-Once published:
-
-```bash
-docker run -p 8000:8000 ghcr.io/opencitations/lode:latest
+  opencitations/lode:latest
 ```
 
 ## Environment variables

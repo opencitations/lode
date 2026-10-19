@@ -1,51 +1,21 @@
-# viewer/skos.py
+"""Viewer for SKOS artefacts."""
 import hashlib
 from typing import Dict, Optional, List
 from lode.viewer.base_viewer import BaseViewer
 from lode.helpers.rdf import iri_local_name
 
 class SkosViewer(BaseViewer):
-    """Viewer SKOS con visualizzazione LODE-style."""
+    """SKOS viewer with LODE-style rendering.
 
-    def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
-        # 1. Single resource detail view
-        if resource_uri:
-            return super().get_view_data(resource_uri, language)
+    Display names, table of contents and card come from config/skos_viewer.yaml;
+    only the entity formatting differs from the base, because SKOS cards show
+    semantic relations between concepts instead of OWL-style statements.
+    """
 
-        # 2. Define the Table of Contents structure for SKOS
-        toc_config = [
-            ('Collection', 'collections', 'Collections'),
-            ('Concept', 'concepts', 'Concepts'),
-        ]
+    CONFIG_NAME = "skos"
 
-        # 3. Build grouped view with SKOS-specific formatting
-        return self._build_skos_grouped_view(toc_config, language)
-
-    def _build_skos_grouped_view(self, group_definitions: List, language: Optional[str] = None) -> Dict:
-        """Costruisce la vista raggruppata con formattazione SKOS-style."""
-        all_instances = self.get_all_instances()
-        sections = []
-
-        for class_key, section_id, section_title in group_definitions:
-            instances = [
-                inst for inst in all_instances 
-                if type(inst).__name__ == class_key
-            ]
-
-            if instances:
-                sections.append({
-                    'id': section_id,
-                    'title': section_title,
-                    'entities': self._format_skos_entities(instances, language)
-                })
-
-        return {
-            'grouped_view': True,
-            'sections': sections
-        }
-
-    def _format_skos_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
-        """Formatta le entità SKOS in stile LODE."""
+    def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
+        """Format the SKOS entities in LODE style, sorted by label (or IRI when there is none)."""
         entities = []
         
         for instance in instances:
@@ -159,7 +129,7 @@ class SkosViewer(BaseViewer):
         return entities
 
     def _format_concept_list(self, concepts, language: Optional[str]) -> List[Dict]:
-        """Formatta una lista di concetti con label e URI."""
+        """Format a list of concepts with label and IRI; plain string IRIs are marked as external."""
         items = []
         concept_list = concepts if isinstance(concepts, (list, set)) else [concepts]
         
@@ -182,22 +152,19 @@ class SkosViewer(BaseViewer):
         return items
 
     def _get_definition(self, instance, language: Optional[str]) -> Optional[str]:
-        """Estrae la definizione."""
+        """Extract the definition text in the given language, or None when there is none."""
         if hasattr(instance, 'has_definition') and instance.has_definition:
             return self._get_literal_value(instance.has_definition, language)
         return None
 
     def _get_literal_value(self, value, language: Optional[str]) -> Optional[str]:
-        """Estrae il valore stringa da un Literal o lista di Literal."""
+        """Extract the string value of a Literal or of a list of Literals.
+
+        The first literal in the best available language wins (see `_select_by_language`).
+        """
         if isinstance(value, (set, list)):
-            if language:
-                for v in value:
-                    if hasattr(v, 'get_has_language') and v.get_has_language() == language:
-                        return v.get_has_value() if hasattr(v, 'get_has_value') else str(v)
-            for v in value:
-                if hasattr(v, 'get_has_value'):
-                    return v.get_has_value()
-                return str(v)
+            for v in self._select_by_language(list(value), language):
+                return v.get_has_value() if hasattr(v, 'get_has_value') else str(v)
         elif hasattr(value, 'get_has_value'):
             return value.get_has_value()
         elif value:

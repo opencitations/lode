@@ -1,8 +1,11 @@
+"""Statement: a reified RDF triple."""
 from .resource import Resource
 
 class Statement(Resource):
+    """An RDF triple (subject, predicate, object) described as a resource, so it can be documented."""
 
     def __init__(self, **kwargs):
+        """Create a positive statement with no subject, predicate or object."""
         super().__init__(**kwargs)
 
         self.is_positive_statement = True # bool [1]
@@ -12,35 +15,35 @@ class Statement(Resource):
         
     # Attributes
     def get_is_positive_statement(self):
-        """Restituisce il valore is_positive_statement [1]"""
+        """Return is_positive_statement."""
         return self.is_positive_statement
     
     def set_is_positive_statement(self, statement):
-        """Setta il valore di a is_positive_statement [1]"""
+        """Set is_positive_statement."""
         self.is_positive_statement = statement
 
     # Relations with Resource
     def get_has_subject(self):
-        """Restituisce il valore has_subject [1]"""
+        """Return has_subject."""
         return self.has_subject
     
     def set_has_subject(self, statement):
-        """Setta il valore di a has_subject [1]"""
+        """Set has_subject."""
         self.has_subject = statement
 
     def get_has_object(self):
-        """Restituisce il valore has_object [1]"""
+        """Return has_object."""
         return self.has_object
     
     def set_has_object(self, statement):
-        """Setta il valore di a has_object [1]"""
+        """Set has_object."""
         self.has_object = statement
 
     # Relation with Property
     def get_has_predicate(self):
-        """Restituisce il valore has_predicate [1]"""
+        """Return has_predicate."""
         return self.has_predicate
     
     def set_has_predicate(self, statement):
-        """Setta il valore di a has_predicate [1]"""
+        """Set has_predicate."""
         self.has_predicate = statement

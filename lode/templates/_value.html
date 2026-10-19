@@ -1,0 +1,55 @@
+{# Shared renderer for a resolved value: literals, links, restrictions and nested statements. #}
+{% macro render_value(v, depth=0, full_link=false) %}
+    {% if v.type == 'Statement' and v.nested %}
+        <div class="nested-statement ms-2" style="border-left: 2px solid #ddd; padding-left: 0.5rem; margin-top: 0.25rem; margin-bottom: 0.5rem;">
+            {% set main = v.nested.main %}
+            {% if main and main.value and main.value.text %}
+                <div><strong class="me-1">{{ main.predicate }}:</strong>{{ render_value(main.value, depth + 1, full_link) }}</div>
+            {% endif %}
+            {% if v.nested.siblings %}
+                {% for s in v.nested.siblings %}
+                    <div><strong class="me-1">{{ s.predicate }}:</strong>{{ render_value(s.value, depth + 1, full_link) }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% else %}
+        {% set v_type = v.type.lower() if v.type else '' %}
+        {% set is_md = ('str' in v_type) or ('literal' in v_type) %}
+        {% set dep_class = 'text-decoration-line-through text-muted' if v.is_deprecated else '' %}
+        {% set dep_title = ' -- Deprecated ' if v.is_deprecated else '' %}
+
+        {% if v.link %}
+            {% set precise_key = v.link ~ '|' ~ v_type %}
+            {% if v.is_external %}
+                <a href="{{ v.link }}" target="_blank" rel="noopener"
+                class="{{ '' if full_link else 'external-ref' }} {{ dep_class }}" title="{{ v.link }}{{ dep_title }}">{{ v.link if full_link and v_type == 'resource' else v.text }}</a>
+            {% elif precise_key in anchor_map %}
+                <a href="#{{ anchor_map[precise_key] }}" class="{{ dep_class }}" title="{{ precise_key }}{{ dep_title }}">{{ v.text }}</a>
+            {% elif v.link in anchor_map %}
+                <a href="#{{ anchor_map[v.link] }}" class="{{ dep_class }}" title="{{ v.link }}{{ dep_title }}">{{ v.text }}</a>
+            {% elif is_static %}
+                <a href="{{ resource_url(v.link, v_type ~ 's') }}" class="{{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" title="{{ v.link }}{{ dep_title }}">{{ v.text }}</a>
+            {% else %}
+                <a href="/extract?{{ nav_qs }}&resource={{ v.link | urlencode }}" class="{{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" title="{{ v.link }}{{ dep_title }}">{{ v.text }}</a>
+            {% endif %}
+
+            {% if v_type in type_map %}
+                <sup class="badge text-secondary {{ type_map[v_type].abb }}" title="{{ type_map[v_type].singular }}">{{ type_map[v_type].abb }}</sup>
+            {% endif %}
+
+        {% else %}
+            {# inline inside a nested statement so "name: value" stays on one line #}
+            {% set tag = 'span' if depth else 'div' %}
+            <{{ tag }}>
+                <{{ tag }} class="markdown-with-badge {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}"
+                title="{{ v.link }}{{dep_title}}"
+                {% if is_md %}data-md="{{ v.text | e }}"{% endif %}>
+                    {{ v.text }}
+                </{{ tag }}>
+                {% if is_md and v.lan %}
+                    <sup class="badge text-secondary lan" title="{{ lang_map.get(v.lan[:2] | lower, v.lan | upper) }}">{{ v.lan }}</sup>
+                {% endif %}
+            </{{ tag }}>
+        {% endif %}
+    {% endif %}
+{% endmacro %}

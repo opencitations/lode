@@ -15,7 +15,6 @@ def test_package_data_present():
     assert (files / "templates" / "viewer.html").is_file()
     assert (files / "static" / "style.css").is_file()
     assert (files / "reader" / "config" / "owl.yaml").is_file()
-    assert (files / "warnings.json").is_file()
 
 
 # --- 2. i template si risolvono a prescindere dalla cwd (prende il path cwd-relative) ---

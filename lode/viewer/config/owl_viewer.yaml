@@ -1,0 +1,49 @@
+# Settings of the OWL viewer. Read by lode.viewer.helpers.load_viewer_config.
+
+# Partial included once per entity by viewer.html.
+card: _card_owl.html
+
+# Display vocabulary: internal word -> shown word. Applied to whole words of the
+# property labels (e.g. "is sub concept of" -> "is sub class of").
+vocabulary:
+  concept: class
+  concepts: classes
+  relation: object property
+  relations: object properties
+  attribute: data property
+  attributes: data properties
+
+# Display names of the entity types, keyed by the lowercase model class name.
+# abb is the badge shown next to a label.
+type_map:
+  concept:    {singular: Class,               plural: Classes,               abb: c}
+  relation:   {singular: Object Property,     plural: Object Properties,     abb: op}
+  attribute:  {singular: Data Property,       plural: Data Properties,       abb: dp}
+  annotation: {singular: Annotation Property, plural: Annotation Properties, abb: ap}
+  individual: {singular: Named Individual,    plural: Named Individuals,     abb: ni}
+
+# Table of contents in display order: model class name, section id, type_map key.
+# Only these classes are browsable (own card and link).
+toc:
+  - [Concept,    concepts,    Concept]
+  - [Relation,   relations,   Relation]
+  - [Attribute,  attributes,  Attribute]
+  - [Individual, individuals, Individual]
+  - [Annotation, annotations, Annotation]
+
+# Model class -> getter of its parents, for the hierarchy tree of a section.
+# A class that is missing has no hierarchy.
+hierarchy:
+  Concept:   get_is_sub_concept_of
+  Relation:  get_is_sub_property_of
+  Attribute: get_is_sub_property_of
+
+# Boolean flags shown as characteristics of a property.
+characteristics:
+  - is_functional
+  - is_inverse_functional
+  - is_transitive
+  - is_symmetric
+  - is_asymmetric
+  - is_reflexive
+  - is_irreflexive

@@ -1,0 +1,42 @@
+# Deterministic display order of the ontology header metadata.
+# Each entry is matched against the displayed key, ignoring case, spaces,
+# underscores and hyphens, so dc:creator and dcterms:creator share one slot.
+# Keys not listed here come after these, in alphabetical order.
+order:
+  # versioning
+  - version info
+  - version
+  - prior version
+  - replaces
+  - is version of
+  - imports
+  - backward compatible with
+  - incompatible with
+  - top concept
+  - changes
+  # title and description
+  - title
+  - alternative
+  - description
+  - abstract
+  - comment
+  - keywords
+  # responsibility
+  - author
+  - creator
+  - contributor
+  - publisher
+  - rights holder
+  - funder
+  # dates
+  - created
+  - issued
+  - modified
+  - date
+  # rights
+  - license
+  - rights
+  # references
+  - source
+  - see also
+  - is defined by

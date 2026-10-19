@@ -1,3 +1,8 @@
+"""Internal representation of the entities extracted from an ontology (the Model layer).
+
+The Reader fills these classes and the Viewer renders them: neither depends on
+how the other works.
+"""
 from .resource import Resource
 from .property import Property
 from .relation import Relation

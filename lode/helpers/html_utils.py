@@ -18,6 +18,7 @@ def minify(html: str) -> str:
     stash: list[str] = []
 
     def _hold(m: re.Match) -> str:
+        """Replace a protected block with a numbered placeholder and remember the block."""
         stash.append(m.group(0))
         return f"\x00MD{len(stash)-1}\x00"
 

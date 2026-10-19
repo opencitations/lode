@@ -1,0 +1,17 @@
+# Settings of the SKOS viewer. Read by lode.viewer.helpers.load_viewer_config.
+
+# Partial included once per entity by viewer.html.
+card: _card_skos.html
+
+# SKOS keeps the model terms as they are.
+vocabulary: {}
+
+# Display names of the entity types, keyed by the lowercase model class name.
+type_map:
+  collection: {singular: Collection, plural: Collections, abb: col}
+  concept:    {singular: Concept,    plural: Concepts,    abb: c}
+
+# Table of contents in display order: model class name, section id, type_map key.
+toc:
+  - [Collection, collections, Collection]
+  - [Concept,    concepts,    Concept]

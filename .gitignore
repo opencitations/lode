@@ -19,9 +19,11 @@ htmlcov/
 .idea/
 
 # Starlight/Astro
-docs/node_modules/
-docs/.astro/
-docs/dist/
+site/
 
 # saved files
 spool/
+
+# claude
+CLAUDE.md
+.claude/
