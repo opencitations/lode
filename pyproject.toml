@@ -1,6 +1,6 @@
 [project]
 name = "oc-lode"
-version = "2.1.1"
+version = "2.1.0"
 description = "New reengineered version of LODE, maintained by OpenCitations"
 authors = [
     {name = "Valentina Pasqual", email = "valentina.pasqual2@unibo.it"},
