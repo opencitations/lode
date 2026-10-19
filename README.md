@@ -4,7 +4,7 @@
 [![Coverage](https://opencitations.github.io/lode/coverage/coverage-badge.svg)](https://opencitations.github.io/lode/coverage/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-LODE 2.0 is an open source service that automatically extracts entities from semantic artefacts (OWL, RDF/RDFS, SKOS) and renders them, together with their textual definitions, as a human-readable HTML page designed for browsing and navigation through embedded links. This new reengineered version of LODE is maintained by OpenCitations. 
+Live Owl Documentation Enviroment (LODE) is an open source service that automatically extracts entities from semantic artefacts (OWL, RDF/RDFS, SKOS) and renders them, together with their textual definitions, as a human-readable HTML page designed for browsing and navigation through embedded links. This new reengineered version of LODE is maintained by OpenCitations. 
 
 **Try it online:** a hosted instance of the web service is available at https://lode.opencitations.net/, with no installation needed.
 
