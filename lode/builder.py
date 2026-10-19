@@ -80,6 +80,7 @@ def _local_name(uri: str) -> str:
     """Return the part of an IRI after '#', or its last path segment."""
     return uri.split('#', 1)[1] if '#' in uri else uri.rstrip('/').rsplit('/', 1)[-1]
 
+
 def _check_artefact_name(name: str) -> str:
     """Return `name` if it is a plain file stem, else raise.
 
@@ -93,6 +94,22 @@ def _check_artefact_name(name: str) -> str:
             context={"artefact_name": name},
         )
     return name
+
+
+def _write_in(base: Path, name: str, text: str) -> None:
+    """Write `text` to `base / name`, refusing any path that leaves `base`.
+
+    `base` is the output folder and `name` a root file (<artefact_name>.html, ...):
+    both are user-chosen, so the resolved target is checked against `base`
+    before anything touches the filesystem (path injection).
+    """
+    target = base / name
+    if not target.resolve().is_relative_to(base.resolve()):
+        raise ArtefactValidationError(
+            "Refusing to write outside the output folder",
+            context={"base": str(base), "name": name},
+        )
+    target.write_text(text, encoding="utf-8")
 
 
 def _copy_static(out_dir: Path) -> None:
@@ -114,7 +131,7 @@ def _write_warnings_report(warnings: list, out_dir: Path) -> None:
     if not warnings:
         return
     lines = [f"[{w['code']}] {w['message']}" for w in warnings]
-    (out_dir / "report.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _write_in(out_dir, "report.txt", "\n".join(lines) + "\n")
 
 def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
                artefact_name: str = "index") -> None:
@@ -197,7 +214,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
             out = reader.get_main_graph().serialize(format=fmt)
             if isinstance(out, bytes):
                 out = out.decode("utf-8")
-            (out_dir / f"{artefact_name}.{ext}").write_text(out, encoding="utf-8")
+            _write_in(out_dir, f"{artefact_name}.{ext}", out)
 
     template_index = env_index.get_template("viewer.html")
     template_resource = env_resource.get_template("viewer.html")
@@ -210,7 +227,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     data["is_static"] = True
     data["resource_url"] = resource_url_index
     data["export_base"] = artefact_name
-    (out_dir / f"{artefact_name}.html").write_text(_minify(template_index.render(**data)), encoding="utf-8")
+    _write_in(out_dir, f"{artefact_name}.html", _minify(template_index.render(**data)))
     print(f"  [build] {artefact_name}.html")
 
     if not toc_config:

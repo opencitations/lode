@@ -16,7 +16,7 @@ from rdflib import Graph
 
 from lode.reader import Reader
 from lode.exceptions import ArtefactValidationError
-from lode.builder import build_html, _rel_slug, _prefix_map
+from lode.builder import build_html, _rel_slug, _prefix_map, _write_in
 from rdflib import URIRef
 
 ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
@@ -210,3 +210,10 @@ def test_format_warnings_uses_display_names(tmp_path):
 def test_no_report_without_warnings_flag(tmp_path):
     """No report.txt when warnings were not requested."""
     assert not (_build_warn_ttl(tmp_path, warnings=False) / "report.txt").exists()
+
+def test_write_in_refuses_escape(tmp_path):
+    """A name that leaves the output folder is rejected and nothing is written."""
+    with pytest.raises(ArtefactValidationError):
+        _write_in(tmp_path / "out", "../evil.html", "x")
+    assert not (tmp_path / "evil.html").exists()
+    
