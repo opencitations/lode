@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/opencitations/lode/compare/v2.1.0...v2.1.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* partial import fixes and updates [release] ([42f352a](https://github.com/opencitations/lode/commit/42f352a1bf40f51546ee8231ddc117b859ec5d3f))
+
 # [2.1.0](https://github.com/opencitations/lode/compare/v2.0.0...v2.1.0) (2026-10-19)
 
 
