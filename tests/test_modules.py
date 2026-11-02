@@ -242,8 +242,8 @@ class TestPartialImport:
     # -- which graphs, which content -------------------------------------
 
     def test_graphs_are_main_and_homes_only(self, ds):
-        """imp is formally imported but is nobody's home: no graph for it; missing is
-        unreachable: no graph either."""
+        """imp is not loaded by partial_import (formal imports are for imported/closure):
+        no graph for it; missing is unreachable: no graph either."""
         assert graphs(ds) == {MAIN, HOME, VER}
 
     @pytest.mark.parametrize("name,ctx", [("home", HOME), ("ver", VER)])
@@ -299,7 +299,8 @@ class TestPartialImport:
     def test_unreachable_home_gets_no_external_definition(self, ds, offline_fetch):
         """missing is not served: only main's own triple, imp's redefinition must not fill the gap."""
         assert "http://ex.org/missing" in offline_fetch
-        assert set(ds.predicate_objects(X.X)) == {(RDFS.comment, Literal("X described by main"))}
+        assert set(ds.predicate_objects(X.X)) == {(RDFS.comment, Literal("X described by main")),
+                                                  (RDFS.isDefinedBy, URIRef("http://ex.org/missing"))}
         assert contexts(ds, (X.X, RDFS.comment, Literal("X described by main"))) == {MAIN}
 
     # -- fetching ---------------------------------------------------------
@@ -320,8 +321,8 @@ class TestPartialImport:
         path = write_ttl(tmp_path, "m.ttl", """
 <http://ex.org/m2> a owl:Ontology .
 <http://ex.org/m2#X> rdfs:seeAlso <http://ex.org/voc/a>, <http://ex.org/voc/b> .
-<http://ex.org/voc/a> rdfs:comment "a described by m2" .
-<http://ex.org/voc/b> rdfs:comment "b described by m2" .
+<http://ex.org/voc/a> rdfs:comment "a described by m2" ; rdfs:isDefinedBy <http://ex.org/voc/a> .
+<http://ex.org/voc/b> rdfs:comment "b described by m2" ; rdfs:isDefinedBy <http://ex.org/voc/b> .
 """)
         ds = Loader(path, partial_import=True).get_graph()
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/voc/")]) == 1
@@ -332,12 +333,31 @@ class TestPartialImport:
         path = write_ttl(tmp_path, "m.ttl", """
 <http://ex.org/m3> a owl:Ontology .
 <http://ex.org/m3#X> rdfs:seeAlso <http://ex.org/dead/a>, <http://ex.org/dead/b>, <http://ex.org/dead/c> .
-<http://ex.org/dead/a> rdfs:comment "a" .
-<http://ex.org/dead/b> rdfs:comment "b" .
-<http://ex.org/dead/c> rdfs:comment "c" .
+<http://ex.org/dead/a> rdfs:comment "a" ; rdfs:isDefinedBy <http://ex.org/dead/a> .
+<http://ex.org/dead/b> rdfs:comment "b" ; rdfs:isDefinedBy <http://ex.org/dead/b> .
+<http://ex.org/dead/c> rdfs:comment "c" ; rdfs:isDefinedBy <http://ex.org/dead/c> .
 """)
         Loader(path, partial_import=True)
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/dead/")]) == 1
+
+    # -- isDefinedBy gate -------------------------------------------------
+
+    def test_term_without_is_defined_by_is_not_fetched(self, tmp_path, offline_fetch):
+        """A described external term without rdfs:isDefinedBy triggers no download."""
+        path = write_ttl(tmp_path, "m.ttl", """
+<http://ex.org/m4> a owl:Ontology .
+<http://ex.org/m4#X> rdfs:seeAlso <http://ex.org/home#T> .
+<http://ex.org/home#T> rdfs:comment "T described by m4" .
+""")
+        ds = Loader(path, partial_import=True).get_graph()
+        assert not [u for u in offline_fetch if u.startswith("http://ex.org/home")]
+        assert (H.T, RDF.type, OWL.Class) not in ds
+
+    def test_partial_import_runs_on_top_of_imported(self, main_path):
+        """With both flags the formal import comes first, then the homes of the
+        isDefinedBy terms are added."""
+        ds = Loader(main_path, imported=True, partial_import=True).get_graph()
+        assert graphs(ds) == {MAIN, IMP, HOME, VER}
 
 
 # ==========================================================================
@@ -442,6 +462,25 @@ class TestEntityProvenance:
             if line.rstrip().endswith("{"):
                 assert line.startswith("<"), line
 
+    @pytest.mark.parametrize("flag", ["imported", "closure"])
+    def test_header_is_the_loaded_ontology_not_an_imported_one(self, tmp_path, monkeypatch, flag):
+        """The page header describes the loaded ontology, even when an import declares a
+        different ontology IRI than the one it is imported by (e.g. versioned vs. base IRI,
+        as PROV-O does), so the filter on imported IRIs alone cannot recognise it."""
+        foreign_doc = "http://ex.org/foreign-20130430"          # the IRI owl:imports points to
+        monkeypatch.setitem(DOCS, foreign_doc, PREFIXES + """
+    <http://ex.org/foreign#> a owl:Ontology ; rdfs:label "Foreign title" .
+    <http://ex.org/foreign#F> a owl:Class .
+    """)
+        path = write_ttl(tmp_path, "own.ttl", f"""
+    <http://ex.org/own> a owl:Ontology ; rdfs:label "Own title" ; owl:imports <{foreign_doc}> .
+    <http://ex.org/own#O> a owl:Class .
+    """)
+        reader = Reader()
+        reader.load_instances(path, "owl", **{flag: True})
+        label = str(reader.get_viewer().get_view_data()["metadata"]["label"])
+        assert "Own title" in label
+        assert "Foreign title" not in label
 
 # ==========================================================================
 # 7. HTTP API (end-to-end)
@@ -452,10 +491,9 @@ class TestEntityProvenance:
 # Uploads go through the spool (spool.save) and are requested with
 # GET /extract?upload_id=..., the same path as _resolve_reader.
 
-TRIPLE_FORMATS = {"ttl": "turtle", "nt": "nt", "rdf": "xml", "jsonld": "json-ld"}
+TRIPLE_FORMATS = {"ttl": "turtle", "nt": "nt", "xml": "xml", "jsonld": "json-ld"}
 QUAD_EXTS = ["trig", "nq"]
 ALL_FLAGS = [None, *MODULES]
-
 
 @pytest.fixture(scope="module")
 def client():

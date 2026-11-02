@@ -2,12 +2,12 @@
 """Enrichment modules: load external documents and add them to the graph of the
 documented ontology.
 
-Three modules, activated by the Loader (one at a time; partial_import takes precedence):
+Three modules, activated by the Loader (one at a time; partial_import has the lowest precedence):
 
   imported        direct owl:imports (depth 1)
   closure         transitive closure of owl:imports (depth N)
-  partial_import  only the definitions of the external terms mentioned, taken from
-                  their "home" ontology (1-hop dereferencing)
+  partial_import  only the definitions of the external terms declared with
+                  rdfs:isDefinedBy, taken from their "home" ontology (1-hop dereferencing)
 
 Two ways of loading an external document, shared by the modules:
 
@@ -124,7 +124,9 @@ def apply_closure(graph: ProvenanceGraph):
 
 # ----------------------------------------------------------
 #  PARTIAL IMPORT MODULE (informal imports)
-# ----------------------------------------------------------
+#
+#  Only terms declared with rdfs:isDefinedBy are considered.
+#----------------------------------------------------------
 #
 #  Boundary: an external term receives
 #    - what the documented ontology says about it, in the main graph, and
@@ -171,8 +173,12 @@ def _namespace_failed(term, failed: set) -> bool:
 
 def apply_partial_import(graph: ProvenanceGraph):
     """Dereference (1 hop) the external IRIs described by the documented ontology and
-    add ONLY their definition, taken from their home ontology (not the redefinitions
-    in other ontologies). Terms that are merely used stay plain external links."""
+    declared with rdfs:isDefinedBy, and add ONLY their definition, taken from their
+    home ontology (not the redefinitions in other ontologies).
+
+    Without rdfs:isDefinedBy a term stays a plain external link and nothing is
+    downloaded for it. owl:imports documents are not loaded here: that is the job
+    of the imported/closure modules."""
     # 1. External terms: IRIs mentioned in the graph, excluding the import IRIs, the
     #    core vocabularies and the ontology's own terms.
     import_iris = set(graph.objects(None, OWL.imports))
@@ -181,18 +187,14 @@ def apply_partial_import(graph: ProvenanceGraph):
     external = {t for t in mentioned
                 if not str(t).startswith(_SKIP_NS) and not (own and str(t).startswith(own))}
 
-    # 2. Keep only terms the documented ontology describes (subject of at least one of
-    #    its triples): terms it merely uses stay plain external links.
-    described = {s for s, _, _ in graph if s in external}
+    # 2. Keep only terms declared with rdfs:isDefinedBy: the explicit signal that the
+    #    term has a home worth downloading; other terms stay plain external links.
+    described = set(graph.subjects(RDFS.isDefinedBy, None)) & external
 
-    # 3. Load into a separate graph (one named graph per document). The owl:imports
-    #    documents are loaded first, as informal imports (no recursion): they are often
-    #    the home of the described terms, so they are not downloaded again. Then one
-    #    attempt per namespace not covered yet.
+    # 3. Load into a separate graph (one named graph per document): one attempt per
+    #    namespace not covered yet.
     fetched = ProvenanceGraph()
     visited, failed, homes = set(), set(), {}           # homes: source -> loaded ontology IRI
-    for iri in (import_iris if described else ()):
-        _load_informal_import(str(iri), fetched, visited, failed, homes)
     for term in described:
         if _home(term, homes) is None and not _namespace_failed(term, failed):
             doc, frag = urldefrag(str(term))
