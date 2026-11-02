@@ -91,15 +91,18 @@ class Loader:
     def _apply_modules(self) -> None:
         """Apply the requested import module to the loaded graph.
 
-        Precedence: partial_import, then imported, then closure. Also records the
-        IRIs that were imported, so the viewer can keep the original model metadata.
+        Formal imports come first (imported, else closure); partial_import then runs on
+        top of them, so it only dereferences terms the imports did not already bring in.
+        Also records the IRIs that were imported, so the viewer can keep the original
+        model metadata.
         """
-        if self._partial_import:
-            self.graph, self.imported_uris = modules.apply_partial_import(self.graph)
-        elif self._imported:
+        if self._imported:
             self.graph, self.imported_uris = modules.apply_imported(self.graph)
         elif self._closure:
             self.graph, self.imported_uris = modules.apply_closure(self.graph)
+        if self._partial_import:
+            self.graph, visited = modules.apply_partial_import(self.graph)
+            self.imported_uris = set(self.imported_uris or ()) | visited
 
     ## ----------------------------------------------------------
     #  CONTENT NEGOTIATION FOR URLS

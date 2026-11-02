@@ -4,8 +4,8 @@ version = "2.1.0"
 description = "New reengineered version of LODE, maintained by OpenCitations"
 authors = [
     {name = "Valentina Pasqual", email = "valentina.pasqual2@unibo.it"},
-    {name = "Ahmadreza Nazari"},
     {name = "Silvio Peroni", email = "silvio.peroni@unibo.it"},
+    {name = "Ahmadreza Nazari", email = "ahmadreza.nazari@studio.unibo.it"},
 ]
 readme = "README.md"
 license = "ISC"

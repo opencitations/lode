@@ -41,6 +41,7 @@ class _FakeReader:
     def __init__(self, cache):
         self._instance_cache = cache
         self._graph = _FakeGraph()
+        self._ontology_iri = None
 
     def get_provenance_subgraph(self, instance):
         return _FakeGraph()

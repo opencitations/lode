@@ -73,6 +73,26 @@ class BaseViewer:
         """Turn an attribute or getter name into a display label, using this viewer's vocabulary."""
         return clean_name(name, self._config["vocabulary"])
 
+    def _get_main_model(self) -> Optional[Model]:
+        """Return the Model of the documented ontology, or None when there is none.
+
+        The documented ontology is the one that names the loaded graph
+        (`reader._ontology_iri`), so the choice does not depend on the order of the
+        cache: it also holds Models for imports, version IRIs and imported
+        ontologies. Artefacts that declare no ontology IRI fall back to the first
+        Model that does not come from an import.
+        """
+        main_iri = str(self.reader._ontology_iri) if self.reader._ontology_iri else None
+        imported = getattr(self.reader, "_imported_uris", set()) or set()
+        models = [i for i in self.get_all_instances() if isinstance(i, Model)]
+        by_iri = next((m for m in models if str(m.get_has_identifier()) == main_iri), None)
+        if by_iri is not None:
+            return by_iri
+        return next(
+            (m for m in models if str(m.get_has_identifier()) not in imported),
+            models[0] if models else None,
+        )
+
     def _get_ontology_ns(self) -> str:
         """Return the namespace of the documented ontology (its IRI ending in '/' or '#'), or ''.
 
@@ -80,12 +100,10 @@ class BaseViewer:
         """
         if self._ontology_ns is None:
             self._ontology_ns = ''
-            for inst in self.get_all_instances():
-                if isinstance(inst, Model):
-                    nid = inst.get_has_identifier()
-                    if nid:
-                        self._ontology_ns = nid if nid.endswith(('/', '#')) else nid + '/'
-                    break
+            model = self._get_main_model()
+            nid = model.get_has_identifier() if model else None
+            if nid:
+                self._ontology_ns = nid if nid.endswith(('/', '#')) else nid + '/'
         return self._ontology_ns
 
     def _has_local_triples(self, uri) -> bool:
@@ -409,17 +427,12 @@ class BaseViewer:
         Searches for the Model and its Statements and formatting them
         for the template.
         """
-        ontology_model = None
-
-        # 1. Find the Model (skip imported/closure ontologies)
-        imported = getattr(self.reader, "_imported_uris", set()) or set()
-        models = [i for i in all_instances if isinstance(i, Model)]
-        ontology_model = next(
-            (m for m in models if str(m.get_has_identifier()) not in imported),
-            models[0] if models else None,
-        )
+        
+        # 1. Find the Model of the documented ontology (not the imported ones)
+        ontology_model = self._get_main_model()
 
         if not ontology_model:
+
             return {}
 
         # 2. Prepare Output
@@ -773,3 +786,12 @@ class BaseViewer:
                     if t in main:
                         g.add(t)
         return safe_serialize(g, fmt)
+
+    def export_main(self, fmt: str = "turtle") -> str:
+        """Serialize the main graph, i.e. the triples of the loaded artefact only.
+
+        Imported modules are left out: they belong to the provenance, not to the
+        export. A format that fails yields an error comment instead of raising, so
+        one bad format cannot break the whole export or build.
+        """
+        return safe_serialize(self.reader.get_main_graph(), fmt)

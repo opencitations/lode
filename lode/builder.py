@@ -214,10 +214,8 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     
     if reader is not None:
         for fmt, ext in _SER:
-            out = reader.get_main_graph().serialize(format=fmt)
-            if isinstance(out, bytes):
-                out = out.decode("utf-8")
-            _write_in(out_dir, f"{artefact_name}.{ext}", out)
+            _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))
+
 
     template_index = env_index.get_template("viewer.html")
     template_resource = env_resource.get_template("viewer.html")
