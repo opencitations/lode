@@ -456,8 +456,9 @@ def extract_get(
             serialized = reader.get_viewer().export_resource(resource, serial["fmt"])
             filename = iri_local_name(resource) or "resource"
         else:
-            serialized = reader.get_main_graph().serialize(format=serial["fmt"])
+            serialized = reader.get_viewer().export_main(serial["fmt"])
             filename = (iri_local_name(url) if url else "") or "graph"
+
         return Response(content=serialized, media_type=serial["mime"],
                         headers={"Content-Disposition": f'inline; filename="{filename}.{serial["ext"]}"'})
     
