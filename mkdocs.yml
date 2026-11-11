@@ -32,9 +32,11 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting started: getting_started.md
+  - Architecture: architecture.md
   - Usage:
       - Web form: usage/web_form.md
       - CLI: usage/cli.md
+      - Python API: usage/python_api.md
       - Docker: usage/docker.md
   - API reference:
       - Endpoints: api/endpoints.md

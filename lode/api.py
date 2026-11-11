@@ -46,10 +46,9 @@ import lode.helpers.spool as spool
 from lode.reader import Reader
 from lode.reader import security
 from lode.exceptions import LODEError, ArtefactValidationError
+from lode.viewer import get_viewer 
 from lode.viewer.base_viewer import SERIALIZATION_FORMATS
-from lode.reader.provenance_graph import ProvenanceGraph
 from lode.helpers.rdf import iri_local_name
-
 
 # ==========================================================================
 # 2. APP SETUP
@@ -166,7 +165,7 @@ def _render_view(request, reader, *, resource, lang, source_url, upload_id, read
     The body is minified after rendering, so Content-Length is recomputed:
     keeping the old value would truncate the response.
     """
-    viewer = reader.get_viewer()
+    viewer = get_viewer(reader.get_artefact())
     data = viewer.get_view_data(resource_uri=resource, language=lang)
     data["warnings"] = viewer.format_warnings(reader.get_warnings())
     resp = templates.TemplateResponse(request, "viewer.html", {
@@ -224,8 +223,7 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
                           warnings=warnings)
     # persist ONLY the main document: modules are re-applied on every hit.
     try:
-        g = reader._graph
-        main = g.graph(reader._ontology_iri) if isinstance(g, ProvenanceGraph) else g
+        main = reader.get_artefact().main_graph()
         with open(path, "wb") as f:
             f.write(main.serialize(format="turtle").encode("utf-8"))
     except OSError:
@@ -302,7 +300,7 @@ def _zip_response(reader, slug: str, lang: Optional[str] = None) -> FileResponse
         site_dir = Path(workdir) / slug
         site_dir.mkdir(parents=True, exist_ok=True)
 
-        build_html(reader.get_viewer(), site_dir, lang=lang or "en", reader=reader)
+        build_html(get_viewer(reader.get_artefact()), site_dir, lang=lang or "en")
 
         zip_path = shutil.make_archive(
             os.path.join(workdir, f"{slug}-lode"), "zip",
@@ -453,10 +451,10 @@ def extract_get(
 
     if serial:
         if resource:
-            serialized = reader.get_viewer().export_resource(resource, serial["fmt"])
+            serialized = get_viewer(reader.get_artefact()).export_resource(resource, serial["fmt"])
             filename = iri_local_name(resource) or "resource"
         else:
-            serialized = reader.get_viewer().export_main(serial["fmt"])
+            serialized = get_viewer(reader.get_artefact()).export_main(serial["fmt"])
             filename = (iri_local_name(url) if url else "") or "graph"
 
         return Response(content=serialized, media_type=serial["mime"],

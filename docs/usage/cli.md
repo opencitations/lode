@@ -26,7 +26,7 @@ lode build (--url URL | --file FILE) --read-as FORMAT [OPTIONS]
 |--------|----------|-------------|
 | `--url` | one of | Public http(s) URL of the artefact |
 | `--file` | one of | Local file path |
-| `--read-as` | yes | Artefact type: `owl`, `rdf`, `skos` - Currently only `owl` is available |
+| `--read-as` | yes | Artefact type: `owl` or `skos` (`rdf` is not enabled yet) |
 | `--out` | no | Output directory (default `./lode_output`) |
 | `--lang` | no | Language tag for labels (default `en`) |
 | `--artefact-name` | no | File name (without extension) of the root page and its serializations (if omitted, falls back to `index`, so the site starts at `index.html`). Only letters, digits, `.`, `_` and `-` are allowed |
