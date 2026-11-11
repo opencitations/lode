@@ -741,7 +741,7 @@ class OwlLogic(BaseLogic):
             logger.warning("disjointUnion failed for %s", uri, exc_info=True)
 
     def handle_datatype_restriction(self, instance, uri, predicate, obj, setter=None):
-        """Handle owl:withRestrictions on a datatype: set the datatype and one facet value per facet.
+        """Handle owl:withRestrictions: preserve the base datatype and every facet/value pair.
 
         Facet nodes (e.g. xsd:minInclusive) are cached and tracked, so phase 6
         does not turn them into Statements.
@@ -769,9 +769,8 @@ class OwlLogic(BaseLogic):
                             str(XSD.maxLength): "maxLength",
                         }
                         manchester_facet = FACET_MAP.get(str(facet_pred), str(facet_pred))
-                        instance.set_applies_on_concept(manchester_facet)
                         literal = self._create_literal(facet_val)
-                        instance.set_has_restriction_value(literal)
+                        instance.set_has_facet(manchester_facet, literal)
 
                 # Register facet node in cache keyed to the parent DatatypeRestriction
                 # and mark all its triples as mapped, so phase6 does not create

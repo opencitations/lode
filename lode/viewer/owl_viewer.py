@@ -158,9 +158,8 @@ class OwlViewer(BaseViewer):
                 parts.extend(self._parse_restriction(resource, language, _seen))
 
             elif obj_type == "DatatypeRestriction":
-                concept = _get(obj, 'applies_on_concept')  # Datatype(xsd:string)
-                constraint = _get(obj, 'has_constraint')  # "pattern"
-                value = _get(obj, 'has_restriction_value')  #  Literal("[0-9]+")
+                concept = _get(obj, 'applies_on_concept')
+                facets = _get(obj, 'has_facets', [])
 
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
@@ -168,12 +167,14 @@ class OwlViewer(BaseViewer):
                     parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
 
                 parts.extend(self._parse_restriction(concept, language, _seen))
-                if constraint:
-                    parts.append({'text': f' with {constraint} ', 'link': None, 'type': 'Text'})
-                else:
-                    parts.append({'text': ' restricted by ', 'link': None, 'type': 'Text'})
-
-                parts.extend(self._parse_restriction(value, language, _seen))
+                if facets:
+                    parts.append({'text': '[', 'link': None, 'type': 'Text'})
+                    for i, (constraint, value) in enumerate(facets):
+                        if i > 0:
+                            parts.append({'text': ', ', 'link': None, 'type': 'Text'})
+                        parts.append({'text': f'{constraint} ', 'link': None, 'type': 'Text'})
+                        parts.extend(self._parse_restriction(value, language, _seen))
+                    parts.append({'text': ']', 'link': None, 'type': 'Text'})
 
             return parts
 
