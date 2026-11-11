@@ -91,15 +91,14 @@
             {% endfor %}
         </div>
 
-        {% if item.relations %}
-            {% set hidden_relations = ['Identifier', 'identifier'] %}
-            {% set visible_relations = [] %}
-            {% for key in item.relations %}
-                {% if key not in priority_relations and key not in hidden_relations %}
-                    {% set _ = visible_relations.append(key) %}
-                {% endif %}
-            {% endfor %}
-            {% if visible_relations %}
+        {% set hidden_relations = ['Identifier', 'identifier'] %}
+        {% set visible_relations = [] %}
+        {% for key in item.relations %}
+            {% if key not in priority_relations and key not in hidden_relations %}
+                {% set _ = visible_relations.append(key) %}
+            {% endif %}
+        {% endfor %}
+        {% if visible_relations or item.characteristics %}
                 <div class="attribute p-3 border-top border-bottom bg-light-subtle">
                     {% if item.characteristics %}
                         <div class=" mb-3">
@@ -236,7 +235,6 @@
                     {% endfor %}
 
                 </div>
-            {% endif %}
         {% endif %}
 
         {% if item.statements %}
