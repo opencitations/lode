@@ -136,7 +136,7 @@ def _write_warnings_report(warnings: list, out_dir: Path) -> None:
     lines = [f"[{w['code']}] {w['message']}" for w in warnings]
     _write_in(out_dir, "report.txt", "\n".join(lines) + "\n")
 
-def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
+def build_html(viewer, out_dir: Path, lang: str = "en",
                artefact_name: str = "index") -> None:
     """Write the whole static site for a viewer into `out_dir`.
 
@@ -153,12 +153,11 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     artefact_name = _check_artefact_name(artefact_name)
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_static(out_dir)
-    if reader is not None:
-        _write_warnings_report(viewer.format_warnings(reader.get_warnings()), out_dir)
+    _write_warnings_report(viewer.format_warnings(viewer.artefact.warnings), out_dir)
 
     ontology_ns = viewer._get_ontology_ns()
-    graph = reader._graph if reader else viewer.reader._graph
-    main_graph = viewer.reader.get_main_graph()
+    graph = viewer.artefact.graph
+    main_graph = viewer.artefact.main_graph()
 
     def _in_main_graph(uri) -> bool:
         """Tell whether the loaded artefact itself says something about this IRI.
@@ -212,9 +211,8 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     env_index = _get_template_env(static_path="static")
     env_resource = _get_template_env(static_path="../../static")
     
-    if reader is not None:
-        for fmt, ext in _SER:
-            _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))
+    for fmt, ext in _SER:
+        _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))
 
 
     template_index = env_index.get_template("viewer.html")
@@ -229,7 +227,6 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     data["resource_url"] = resource_url_index
     data["export_base"] = artefact_name
     _write_in(out_dir, f"{artefact_name}.html", _minify(template_index.render(**data)))
-    print(f"  [build] {artefact_name}.html")
 
     if not toc_config:
         return

@@ -45,9 +45,11 @@ from lode import api
 from lode.api import app
 from lode.exceptions import ArtefactNotFoundError
 from lode.reader.loader import Loader
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.provenance_graph import ProvenanceGraph
 from lode.reader.reader import Reader
+from lode.viewer import get_viewer
 from lode.viewer.base_viewer import QUAD_SERIALIZATION_FORMATS, BaseViewer
+from lode.artefact import Artefact
 
 # ==========================================================================
 # FIXTURES
@@ -391,13 +393,9 @@ class TestCacheRoundTrip:
 # 6. PER-ENTITY PROVENANCE (viewer)
 # ==========================================================================
 
-class FakeReader:
-    """Minimal reader for BaseViewer: only the graph and an empty instance cache."""
-
-    def __init__(self, graph, ontology_iri=None):
-        self._graph = graph
-        self._instance_cache = {}
-        self._ontology_iri = ontology_iri
+def fake_artefact(graph, ontology_iri=None):
+    """Minimal Artefact for BaseViewer: only the graph and no entities."""
+    return Artefact(entities={}, graph=graph, ontology_iri=ontology_iri)
 
 
 def entity_provenance(ds, subject):
@@ -405,8 +403,7 @@ def entity_provenance(ds, subject):
     sub = Graph()
     for t in ds.triples((subject, None, None)):
         sub.add(t)
-    return BaseViewer(FakeReader(ds))._with_provenance(sub)
-
+    return BaseViewer(fake_artefact(ds))._with_provenance(sub)
 
 class TestEntityProvenance:
     """Formats offered, and each triple of an entity in the graph(s) it comes from."""
@@ -419,15 +416,15 @@ class TestEntityProvenance:
         g.add((M.A, RDF.type, OWL.Class))
         sub = Graph()
         sub.add((M.A, RDF.type, OWL.Class))
-        out = BaseViewer(FakeReader(g, MAIN))._with_provenance(sub)
+        out = BaseViewer(fake_artefact(g, MAIN))._with_provenance(sub)
         assert isinstance(out, ProvenanceGraph)
         assert graphs(out) == {MAIN}
 
     def test_card_provenance_names_the_graph_without_modules(self, main_path):
         reader = Reader()
         reader.load_instances(main_path, "owl")
-        viewer = reader.get_viewer()
-        codes = [f["code"] for inst in reader._instance_cache[H.T]
+        viewer = get_viewer(reader.get_artefact())
+        codes =[f["code"] for inst in reader._instance_cache[H.T]
                  for f in viewer._build_provenance_subgraph(inst) if f["label"] == "TriG"]
         assert codes and all(f"<{MAIN}>" in c for c in codes)
 
@@ -478,7 +475,7 @@ class TestEntityProvenance:
     """)
         reader = Reader()
         reader.load_instances(path, "owl", **{flag: True})
-        label = str(reader.get_viewer().get_view_data()["metadata"]["label"])
+        label = str(get_viewer(reader.get_artefact()).get_view_data()["metadata"]["label"])
         assert "Own title" in label
         assert "Foreign title" not in label
 

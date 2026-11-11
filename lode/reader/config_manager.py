@@ -1,4 +1,4 @@
-"""Configuration managers: bind each artefact type to its YAML mapper, logic and viewer.
+"""Configuration managers: bind each artefact type to its YAML mapper and logic.
 
 The mapping from RDF/OWL/SKOS constructs to the model lives in the YAML files
 under reader/config, not in Python: a manager loads base.yaml, merges the
@@ -15,7 +15,8 @@ class ConfigManager(ABC):
     """Strategy driven by a single merged YAML configuration.
 
     Subclasses only say which config file they use and how to build their
-    logic and viewer; parsing and caching of the mappings is shared here.
+    logic; parsing and caching of the mappings is shared here. Viewers are not
+    a concern of this layer: see lode.viewer.get_viewer.
     """
 
     def __init__(self):
@@ -64,12 +65,7 @@ class ConfigManager(ABC):
             else:
                 result[key] = value
         return result
-    
-    @abstractmethod
-    def create_viewer(self, reader):
-        """Factory method: build the viewer specific to this artefact type."""
-        pass
-    
+
     # ========== NAMESPACE MAP ==========
     NAMESPACES = {
         'owl': 'http://www.w3.org/2002/07/owl#',
@@ -239,11 +235,6 @@ class OwlConfigManager(ConfigManager):
         """Build the OWL logic."""
         from lode.reader.logic import OwlLogic
         return OwlLogic(graph, cache, self)
-    
-    def create_viewer(self, reader):
-        """Build the OWL viewer."""
-        from lode.viewer import OwlViewer
-        return OwlViewer(reader)
 
 class RdfConfigManager(ConfigManager):
     """Configuration for RDF/RDFS artefacts."""
@@ -258,12 +249,6 @@ class RdfConfigManager(ConfigManager):
         from lode.reader.logic import RdfLogic
         return RdfLogic(graph, cache, self)
 
-    def create_viewer(self, reader):
-        """Build the RDF viewer."""
-        from lode.viewer import RdfViewer
-        return RdfViewer(reader)
-
-
 class SkosConfigManager(ConfigManager):
     """Configuration for SKOS artefacts."""
 
@@ -276,11 +261,6 @@ class SkosConfigManager(ConfigManager):
         """Build the SKOS logic."""
         from lode.reader.logic import SkosLogic
         return SkosLogic(graph, cache, self)
-
-    def create_viewer(self, reader):
-        """Build the SKOS viewer."""
-        from lode.viewer import SkosViewer
-        return SkosViewer(reader)
 
 # ========== CONFIGURATIONS REGISTRY ==========
 

@@ -9,6 +9,7 @@ from rdflib.namespace import XSD
 from lode.builder import build_html
 from lode.models import Datatype, DatatypeRestriction
 from lode.reader import Reader
+from lode.viewer import get_viewer
 
 
 EX = Namespace("http://example.org/ranges#")
@@ -54,7 +55,7 @@ def range_reader(tmp_path):
                          ids=[case[0] for case in CASES])
 def test_range_preserves_datatype_and_every_facet(range_reader, name, datatype,
                                                 expected):
-    viewer = range_reader.get_viewer()
+    viewer = get_viewer(range_reader.get_artefact())
     data = viewer.get_view_data(str(EX[name]))
     rendered = data["entities"][0]["relations"]["range"][0]
 
@@ -98,7 +99,7 @@ class _RestrictionText(HTMLParser):
 
 def test_static_index_and_resource_pages_show_complete_ranges(range_reader, tmp_path):
     out = tmp_path / "site"
-    build_html(range_reader.get_viewer(), out, reader=range_reader)
+    build_html(get_viewer(range_reader.get_artefact()), out)
 
     def compact(text):
         return "".join(text.split())

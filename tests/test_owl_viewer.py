@@ -22,30 +22,19 @@ from pathlib import Path
 import pytest
 from rdflib import Graph, URIRef, RDF, OWL, Literal
 
+from lode.artefact import Artefact
+
 from lode.models import (
     Concept, Relation, Attribute, Annotation, Individual,
     Model, Statement, Literal, Quantifier
 )
-from lode.viewer import OwlViewer
+from lode.viewer import OwlViewer, get_viewer
 import re
 
 
 # ---------------------------------------------------------------------------
 # Unit-test scaffolding: a minimal fake reader the viewer can consume.
 # ---------------------------------------------------------------------------
-
-class _FakeReader:
-    """Mimics the parts of Reader that BaseViewer touches: an instance cache,
-    a provenance subgraph hook, and a graph for namespace binding."""
-
-    def __init__(self, cache):
-        self._instance_cache = cache
-        self._graph = _FakeGraph()
-        self._ontology_iri = None
-
-    def get_provenance_subgraph(self, instance):
-        return _FakeGraph()
-
 
 class _FakeGraph:
     def namespaces(self):
@@ -79,9 +68,7 @@ def _viewer(*instances, undefined=()):
         cache.setdefault(key, set()).add(inst)
         if key and key not in undefined:
             g.add((URIRef(key), RDF.type, OWL.Thing))
-    reader = _FakeReader(cache)
-    reader._graph = g
-    return OwlViewer(reader)
+    return OwlViewer(Artefact(entities=cache, graph=g))
 
 # rdflib BNode ids look like 'N' + 32 hex chars, or 'n<digits/hex>' for parsed
 # blank nodes. Anything matching means a raw blank node leaked into the view.
@@ -378,7 +365,7 @@ def _render_index(tmp_path, ttl):
     reader = Reader()
     reader.load_instances(str(src), read_as="owl")
     out = tmp_path / "site"
-    build_html(reader.get_viewer(), out, reader=reader)
+    build_html(get_viewer(reader.get_artefact()), out)
     return (out / "index.html").read_text(encoding="utf-8")
 
 
@@ -431,7 +418,7 @@ def viewer(request):
         reader.load_instances(request.param, "owl")
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
-    v = reader.get_viewer()
+    v = get_viewer(reader.get_artefact())
     yield v
     reader.clear_cache()
 
@@ -465,7 +452,7 @@ class TestCorpusInvariants:
         ToC facets, if any)."""
         from rdflib.namespace import RDF, OWL
         from rdflib import URIRef
-        for onto in viewer.reader._graph.subjects(RDF.type, OWL.Ontology):
+        for onto in viewer.artefact.graph.subjects(RDF.type, OWL.Ontology):
             if not isinstance(onto, URIRef):
                 continue
             data = viewer.get_view_data(resource_uri=str(onto))

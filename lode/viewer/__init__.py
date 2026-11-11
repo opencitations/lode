@@ -5,24 +5,17 @@ from .owl_viewer import OwlViewer
 from .rdf_viewer import RdfViewer
 from .skos_viewer import SkosViewer
 
-__all__ = [
-    'BaseViewer',
-    'OwlViewer',
-    'RdfViewer',
-    'SkosViewer',
-]
+_VIEWERS = {
+    'owl': OwlViewer,
+    'rdf': RdfViewer,
+    'skos': SkosViewer,
+}
 
 
-def get_viewer(read_as: str, reader):
-    """Return the viewer that matches the artefact format (owl, rdf/rdfs, skos).
+def get_viewer(artefact):
+    """Return the viewer that matches the format the artefact was read as.
 
-    An unknown format falls back to the generic BaseViewer.
+    The format comes from `artefact.read_as`. An unknown or missing format falls
+    back to the generic BaseViewer.
     """
-    key = read_as.lower()
-    if key == 'owl':
-        return OwlViewer(reader)
-    if key in ('rdf', 'rdfs'):
-        return RdfViewer(reader)
-    if key == 'skos':
-        return SkosViewer(reader)
-    return BaseViewer(reader)
+    return _VIEWERS.get((artefact.read_as or '').lower(), BaseViewer)(artefact)

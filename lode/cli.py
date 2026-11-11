@@ -32,6 +32,7 @@ def cmd_build(args):
     """
     from lode.reader import Reader
     from lode.builder import build_html
+    from lode.viewer import get_viewer
     from lode.helpers.formats import check_format_enabled, ReadAsFormat
 
     check_format_enabled(ReadAsFormat(args.read_as))
@@ -48,9 +49,9 @@ def cmd_build(args):
         partial_import=args.partial_import or None,
         warnings=args.warnings,
     )
-    viewer = reader.get_viewer()
-    build_html(viewer, out_dir, lang=args.lang, reader=reader,
-               artefact_name=args.artefact_name)
+    viewer = get_viewer(reader.get_artefact())
+    build_html(viewer, out_dir, lang=args.lang, artefact_name=args.artefact_name)
+    
     if args.warnings:
         warnings = viewer.format_warnings(reader.get_warnings())
         for w in warnings:

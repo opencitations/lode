@@ -17,6 +17,7 @@ from rdflib import Graph
 from lode.reader import Reader
 from lode.exceptions import ArtefactValidationError
 from lode.builder import build_html, _rel_slug, _prefix_map, _write_in
+from lode.viewer import get_viewer
 from rdflib import URIRef
 
 ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
@@ -30,7 +31,7 @@ _EXTS = [f["ext"] for f in SERIALIZATION_FORMATS]
 def _load(uri):
     r = Reader()
     r.load_instances(uri, "owl")
-    return r.get_viewer(), r
+    return get_viewer(r.get_artefact()), r
 
 
 @pytest.fixture(scope="module", params=URIS, ids=lambda u: u.rstrip("/").split("/")[-1])
@@ -42,7 +43,7 @@ def built(request, tmp_path_factory):
     except Exception as e:
         pytest.skip(f"load failed for {uri}: {e}")
     out = tmp_path_factory.mktemp("docs")
-    build_html(viewer, out, reader=reader)
+    build_html(viewer, out)
     return {"uri": uri, "viewer": viewer, "reader": reader, "out": out}
 
 
@@ -68,7 +69,7 @@ def test_index_export_base(built):
 def test_renamed_artefact(built, tmp_path):
     """A renamed artefact renames root page and RDF; resource pages link back to it."""
     out = tmp_path / "site"
-    build_html(built["viewer"], out, reader=built["reader"], artefact_name="home")
+    build_html(built["viewer"], out, artefact_name="home")
     assert (out / "home.html").exists() and (out / "home.ttl").exists()
     assert not (out / "index.html").exists()
     page = next((out / "resources").rglob("*.html"))
@@ -122,7 +123,7 @@ def test_object_only_has_no_page(built):
     materialization criterion as the builder, so test and builder cannot diverge."""
     viewer = built["viewer"]
     res = built["out"] / "resources"
-    graph = viewer.reader._graph
+    graph = viewer.artefact.graph
     ontology_ns = viewer._get_ontology_ns()
 
     for i in viewer.get_toc_instances():
@@ -179,7 +180,7 @@ def _build_warn_ttl(tmp_path, warnings):
     reader = Reader()
     reader.load_instances(str(src), "owl", warnings=warnings)
     out = tmp_path / "out"
-    build_html(reader.get_viewer(), out, reader=reader)
+    build_html(get_viewer(reader.get_artefact()), out)
     return out
 
 
@@ -202,7 +203,7 @@ def test_format_warnings_uses_display_names(tmp_path):
 """, encoding="utf-8")
     reader = Reader()
     reader.load_instances(str(src), "owl", warnings=True)
-    msg = reader.get_viewer().format_warnings(reader.get_warnings())[0]["message"]
+    msg = get_viewer(reader.get_artefact()).format_warnings(reader.get_warnings())[0]["message"]
     assert "Object Property http://ex.org/Attribute/p" in msg
     assert "Data Property http://ex.org/Attribute/q" in msg
 

@@ -11,7 +11,7 @@ from lode.models import Literal, Model, Resource, Statement
 
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.provenance_graph import ProvenanceGraph # needed as its called for each visualised entity
 from lode.helpers.rdf import iri_local_name
 
 from lode.viewer.helpers import (
@@ -37,10 +37,9 @@ class BaseViewer:
     # Name of config/<name>_viewer.yaml; None gives the generic flat list view.
     CONFIG_NAME: Optional[str] = None
 
-    def __init__(self, reader):
+    def __init__(self, artefact):
         """Bind the viewer to a Reader, share its instance cache and load its config."""
-        self.reader = reader
-        self._cache = reader._instance_cache  # it uses
+        self.artefact = artefact
         self._internal_iris = None
         self._ontology_ns = None
         self._config = (
@@ -82,8 +81,8 @@ class BaseViewer:
         ontologies. Artefacts that declare no ontology IRI fall back to the first
         Model that does not come from an import.
         """
-        main_iri = str(self.reader._ontology_iri) if self.reader._ontology_iri else None
-        imported = getattr(self.reader, "_imported_uris", set()) or set()
+        main_iri = str(self.artefact.ontology_iri) if self.artefact.ontology_iri else None
+        imported = self.artefact.imported_uris or set()
         models = [i for i in self.get_all_instances() if isinstance(i, Model)]
         by_iri = next((m for m in models if str(m.get_has_identifier()) == main_iri), None)
         if by_iri is not None:
@@ -110,7 +109,7 @@ class BaseViewer:
         """Return True if the graph has at least one triple whose subject is this IRI."""
         if not uri:
             return False
-        return (URIRef(str(uri)), None, None) in self.reader._graph
+        return (URIRef(str(uri)), None, None) in self.artefact.graph
 
     def _formats(self):
         """Return the export formats (triples): the same whatever modules are active."""
@@ -122,7 +121,7 @@ class BaseViewer:
         With modules active the graphs are the ones of the source ontologies;
         without, every triple goes in the graph of the loaded artefact.
         """
-        ds = self.reader._graph
+        ds = self.artefact.graph
         out = ProvenanceGraph()
         for prefix, ns in ds.namespaces():
             out.bind(prefix, ns)
@@ -131,7 +130,7 @@ class BaseViewer:
                 for *_, c in ds.quads((s, p, o, None)):
                     out.graph(c).add((s, p, o))
         else:
-            main = out.graph(self.reader._ontology_iri)
+            main = out.graph(self.artefact.ontology_iri)
             for t in sub:
                 main.add(t)
         return out
@@ -152,26 +151,12 @@ class BaseViewer:
         return str(uri) in self._internal_iris
     
     def get_all_instances(self) -> List:
-        """Return all the instances in the cache, literals excluded."""
-        instances = []
-        
-        for uri_id, instance_set in self._cache.items():
-            if isinstance(uri_id, str) and uri_id.startswith("LITERAL::"):
-                continue
-            
-            instance_list = instance_set if isinstance(instance_set, set) else [instance_set]
-            instances.extend(instance_list)
-
-        return instances
+        """Return all the extracted instances (literals are not entities)."""
+        return self.artefact.instances()
 
     def get_instances_from_single_resource(self, resource_uri: str) -> Optional[set]:
-        """Return the cached instances registered under an IRI, or None when it is unknown."""
-        # Look the IRI up in the cache
-        for uri_id in self._cache.keys():
-            if str(uri_id) == resource_uri:
-                return self._cache[uri_id]
-        
-        return None
+        """Return the instances registered under an IRI, or None when it is unknown."""
+        return self.artefact.get_instance(resource_uri)
 
     def _select_by_language(self, values: List, language: Optional[str] = None) -> List:
         """Keep the values of one property in the best available language.
@@ -759,7 +744,7 @@ class BaseViewer:
 
         Returns an empty list when the instance has no provenance.
         """
-        sub = self.reader.get_provenance_subgraph(instance)
+        sub = self.artefact.provenance.for_instance(instance)
         if not any(True for _ in sub):
             return []
         sub = self._with_provenance(sub)
@@ -775,14 +760,14 @@ class BaseViewer:
         imported modules belong to the provenance, not to the export.
         """
         g = Graph()
-        for prefix, ns in self.reader._graph.namespaces():
+        for prefix, ns in self.artefact.graph.namespaces():
             g.bind(prefix, ns)
-        main = self.reader.get_main_graph()
+        main = self.artefact.main_graph()
         instances = self.get_instances_from_single_resource(resource_uri)
         if instances:
             inst_iter = instances if isinstance(instances, set) else [instances]
             for inst in inst_iter:
-                for t in self.reader.get_provenance_subgraph(inst):
+                for t in self.artefact.provenance.for_instance(inst):
                     if t in main:
                         g.add(t)
         return safe_serialize(g, fmt)
@@ -794,4 +779,4 @@ class BaseViewer:
         export. A format that fails yields an error comment instead of raising, so
         one bad format cannot break the whole export or build.
         """
-        return safe_serialize(self.reader.get_main_graph(), fmt)
+        return safe_serialize(self.artefact.main_graph(), fmt)

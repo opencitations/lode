@@ -9,7 +9,8 @@ from lode.reader.config_manager import get_configuration
 from lode.models import *
 from typing import Optional
 from rdflib import Graph, URIRef
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.artefact import Artefact, Provenance
+from lode.provenance_graph import ProvenanceGraph
 
 import logging
 logger = logging.getLogger(__name__)
@@ -103,52 +104,6 @@ class Reader:
         # 5. Documented ontology first (only when a module is active)
         if isinstance(self._graph, ProvenanceGraph):
             self._prioritize_documented_values()
-
-    
-    def get_instance(self, uri: str, instance_type=None):
-        """Return the instances registered under an IRI.
-
-        With `instance_type`, only the first instance of that type (or None);
-        otherwise the whole set. Returns None when the IRI is unknown.
-        """
-        uri_identifier = None
-        
-        for identifier in self._instance_cache.keys():
-            if str(identifier) == uri:
-                uri_identifier = identifier
-                break
-        
-        if uri_identifier is None:
-            return None
-        
-        instances = self._instance_cache[uri_identifier]
-        
-        if instance_type is None:
-            return instances
-        
-        for instance in instances:
-            if isinstance(instance, instance_type):
-                return instance
-        
-        return None
-    
-    def get_instances(self) -> dict:
-        """Group all instances by model class name; literal cache entries are skipped."""
-        grouped = {}
-        
-        for uri_identifier, instances in self._instance_cache.items():
-            if isinstance(uri_identifier, str) and uri_identifier.startswith("LITERAL::"):
-                continue
-            
-            instances_list = instances if isinstance(instances, set) else [instances]
-            
-            for instance in instances_list:
-                class_name = instance.__class__.__name__
-                if class_name not in grouped:
-                    grouped[class_name] = []
-                grouped[class_name].append(instance)
-        
-        return grouped
     
     def get_triples_for_instance(self, instance):
         """Return the RDF triples that produced a model instance (empty set if unknown)."""
@@ -163,15 +118,8 @@ class Reader:
         return {}
 
     def get_main_graph(self) -> Graph:
-        """Return the triples of the loaded artefact only, as a plain Graph view.
-
-        Imported and partially imported ontologies are left out: this is what
-        exports and content negotiation must return. Without modules it is the
-        loaded graph itself.
-        """
-        if isinstance(self._graph, ProvenanceGraph):
-            return self._graph.graph(self._ontology_iri)
-        return self._graph
+        """Return the triples of the loaded artefact only (see Artefact.main_graph)."""
+        return self.get_artefact().main_graph()
 
     def get_provenance_subgraph(self, instance):
         """Return the rdflib.Graph subgraph that provenanced `instance`."""
@@ -224,15 +172,21 @@ class Reader:
     #     else:
     #         return str(value)
         
-    def get_viewer(self):
-        """Return the viewer matching the loaded artefact type.
-
-        Raises ValueError if load_instances() has not been called yet.
+    def get_artefact(self) -> Artefact:
+        """Return what a viewer needs from this read, with no reference to the reader.
+        Entities are shared with the reader's cache, not copied. Provenance stays
+        lazy. It needs no configuration, so it also works on a reader whose graph
+        was set without a full load (the API spool relies on this).
         """
-        if not self._configuration:
-            raise ValueError("No configuration loaded. Call load_instances() first.")
-
-        return self._configuration.create_viewer(self)
+        return Artefact(
+            entities=self._instance_cache,
+            graph=self._graph,
+            ontology_iri=self._ontology_iri,
+            imported_uris=self._imported_uris,
+            warnings=self.get_warnings(),
+            provenance=Provenance(getattr(self._logic, "build_provenance_subgraph", None)),
+            read_as=self._configuration.config_name if self._configuration else None,
+        )
     
     def clear_cache(self):
         """Drop every cached instance, in the Reader and in its logic."""

@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from lode.reader import Reader
+from lode.viewer import OwlViewer, get_viewer
 
 @pytest.fixture
 def reader():
@@ -16,11 +17,6 @@ class TestReaderInitialization:
 class TestReaderBeforeLoading:
     def test_cache_empty_before_load(self, reader):
         assert len(reader._instance_cache) == 0
-    
-    def test_get_viewer_raises_before_load(self, reader):
-        with pytest.raises(ValueError):
-            reader.get_viewer()
-
 
 class TestReaderWithLoadedOntology:
     @pytest.fixture
@@ -49,9 +45,9 @@ class TestReaderWithLoadedOntology:
     def test_load_instances_populates_cache(self, loaded_reader):
         assert len(loaded_reader._instance_cache) > 0
     
-    def test_get_viewer_returns_viewer(self, loaded_reader):
-        viewer = loaded_reader.get_viewer()
-        assert viewer is not None
+    def test_get_viewer_picks_the_viewer_of_the_format(self, loaded_reader):
+        viewer = get_viewer(loaded_reader.get_artefact())
+        assert isinstance(viewer, OwlViewer)
         assert hasattr(viewer, 'get_all_instances')
 
 
@@ -113,7 +109,7 @@ class TestReaderTriplesMap:
     
     def test_get_triples_for_instance(self, reader_with_triples):
         """Verifica che possiamo ottenere triple per una specifica istanza"""
-        viewer = reader_with_triples.get_viewer()
+        viewer = get_viewer(reader_with_triples.get_artefact())
         
         # Usa il viewer per ottenere l'istanza
         instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Person")
@@ -135,7 +131,7 @@ class TestReaderTriplesMap:
     
     def test_triples_contain_expected_predicates(self, reader_with_triples):
         """Verifica che le triple contengano i predicati attesi"""
-        viewer = reader_with_triples.get_viewer()
+        viewer = get_viewer(reader_with_triples.get_artefact())
         instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Person")
         person = next(iter(instance_set))
         
@@ -152,7 +148,7 @@ class TestReaderTriplesMap:
     
     def test_triples_contain_expected_objects(self, reader_with_triples):
         """Verifica che le triple contengano gli oggetti attesi"""
-        viewer = reader_with_triples.get_viewer()
+        viewer = get_viewer(reader_with_triples.get_artefact())
         instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Person")
         person = next(iter(instance_set))
         
@@ -168,7 +164,7 @@ class TestReaderTriplesMap:
     
     def test_subclass_has_subClassOf_triple(self, reader_with_triples):
         """Verifica che Student abbia la tripla rdfs:subClassOf"""
-        viewer = reader_with_triples.get_viewer()
+        viewer = get_viewer(reader_with_triples.get_artefact())
         instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Student")
         assert instance_set is not None
         
@@ -189,7 +185,7 @@ class TestReaderTriplesMap:
     
     def test_property_has_domain_range_triples(self, reader_with_triples):
         """Verifica che la property 'knows' abbia domain e range"""
-        viewer = reader_with_triples.get_viewer()
+        viewer = get_viewer(reader_with_triples.get_artefact())
         instance_set = viewer.get_instances_from_single_resource("http://example.org/test#knows")
         assert instance_set is not None
         
@@ -215,7 +211,7 @@ class TestReaderTriplesMap:
             "http://www.w3.org/2000/01/rdf-schema#Literal",
         }
 
-        viewer = reader_with_triples.get_viewer()
+        viewer = get_viewer(reader_with_triples.get_artefact())
         triples_map = reader_with_triples._logic._triples_map
         graph = reader_with_triples._logic.graph
 

@@ -34,7 +34,7 @@ from urllib.parse import urldefrag
 from typing import Optional
 
 from lode.helpers.rdf import iri_namespace, iri_stem
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.provenance_graph import ProvenanceGraph
 
 import logging
 logger = logging.getLogger(__name__)

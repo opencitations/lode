@@ -14,7 +14,7 @@ from lode.reader import security
 from lode.exceptions import (ArtefactLoadError, ArtefactNotFoundError,
                              ArtefactUnavailableError, ArtefactValidationError)
 from lode.helpers.rdf import PARSE_FORMATS, parse_any
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.provenance_graph import ProvenanceGraph
 
 class Loader:
     """Load an RDF artefact into a graph, optionally together with its imports.
