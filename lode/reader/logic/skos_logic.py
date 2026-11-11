@@ -12,12 +12,6 @@ logger = logging.getLogger(__name__)
 class SkosLogic(BaseLogic):
     """
     SKOS logic.
-
-    Differences:
-    - Focus on Concept/ConceptScheme
-    - skos:broader/narrower relations
-    - NO default domain/range
-    - NO Restriction, Individual, CompositeClass, Datatype, Attribute
     """
     
     def _get_allowed_namespaces(self) -> set:
@@ -42,6 +36,10 @@ class SkosLogic(BaseLogic):
                 if uri not in self._instance_cache:
                     self.get_or_create(uri, py_class, populate=False)
                     created += 1
+                if 'setters' in config:
+                    for instance in self._instance_cache.get(uri, set()):
+                        # constant values only: no RDF object is resolved here
+                        self._apply_setters(instance, config['setters'], None)
         
         logger.debug("Phase 2 (SKOS types): created %d instances", created)
     
@@ -60,32 +58,24 @@ class SkosLogic(BaseLogic):
     def phase5_fallback(self):
         """Do nothing yet: the SKOS fallback is not implemented."""
         logger.debug("Phase 5 (SKOS fallback): not implemented yet")
+
     
-    # SKOS-specific handlers
-    def handle_membership(self, instance, uri, predicate, obj, value):
-        """Handle skos:member: add the cached members of a Collection."""
-        if not isinstance(instance, Collection):
-            return
-        
-        for obj_uri in self.graph.objects(uri, predicate):
-            member_obj = self._instance_cache.get(obj_uri)
-            
-            if isinstance(member_obj, set):
-                member_obj = next(iter(member_obj), None)
-            
-            if member_obj and isinstance(member_obj, (Model, Concept)):
-                instance.set_has_member(member_obj)
+    # HANDLERS FROM DECLARATIVE MAPPING
     
-    def handle_narrower(self, instance, uri, predicate, obj, value):
-        """Handle skos:narrower (the inverse of broader): link the concept to its broader concepts."""
-        if not isinstance(instance, Concept):
-            return
-        
-        for subj_uri in self.graph.subjects(predicate, uri):
-            broader_obj = self._instance_cache.get(subj_uri)
-            
-            if isinstance(broader_obj, set):
-                broader_obj = next(iter(broader_obj), None)
-            
-            if broader_obj and isinstance(broader_obj, Concept):
-                instance.set_is_sub_concept_of(broader_obj)
+    def handle_member_list(self, instance, uri, predicate, obj, value):
+        """Handle skos:memberList: add every item of the RDF list as a member, in order.
+
+        The list is expanded here because a plain setter would receive the list head, not
+        its items. A memberList is ordered by definition, so the collection is flagged as
+        ordered. Items get the same class resolution as skos:member (Resource when no phase
+        classified them); duplicates are ignored by the Collection setter.
+        """
+        if not self._is_rdf_collection(obj):
+            return False
+        for item in RDFLibCollection(self.graph, obj):
+            if isinstance(item, RDFlibLiteral):
+                continue
+            member = self.get_or_create(item, self._resolve_target_class(item, [Concept, Collection]))
+            if member:
+                instance.set_has_member(member)
+        instance.set_is_ordered(True)

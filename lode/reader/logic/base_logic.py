@@ -287,10 +287,15 @@ class BaseLogic(ABC):
     def _create_literal(self, rdflib_literal):
         """Return the model Literal for an rdflib literal, one per distinct lexical form.
 
-        The instance is cached under a LITERAL:: key; language and datatype are
-        copied over when present.
+        The instance is cached under a LITERAL:: key built from lexical form, language
+        and datatype: two literals with the same text but a different language tag
+        or datatype are different values and must not share one instance.
         """
-        literal_key = f"LITERAL::{rdflib_literal}"
+        literal_key = (
+            f"LITERAL::{rdflib_literal}"
+            f"@{rdflib_literal.language or ''}"
+            f"^^{rdflib_literal.datatype or ''}"
+        )
         if literal_key in self._instance_cache:
             return next(iter(self._instance_cache[literal_key]))
 
@@ -322,6 +327,33 @@ class BaseLogic(ABC):
                 return True
         return False
 
+    def _resolve_target_class(self, obj, candidates: list) -> type:
+        """Pick, among the candidate model classes, the one `obj` is declared as.
+
+        An instance already cached for `obj` wins (punning keeps its class); 
+        otherwise falls back to Resource.
+        """
+        cached = {type(c) for c in self._instance_cache.get(obj, ())}
+        return next((c for c in candidates if c in cached), Resource)
+
+
+    def _add_link(self, target, setter_name: str, value) -> None:
+        """Call `target.<setter_name>(value)` unless `value` is already linked.
+
+        The model setters for match relations append blindly, so when both sides of a
+        link are in the data (A broadMatch B, B narrowMatch A) the check here keeps
+        each side listed once. Targets without that setter are skipped silently: the
+        inverse is optional, e.g. for a Restriction or TruthFunction.
+        """
+        if not hasattr(target, setter_name):
+            return
+        getter = getattr(target, setter_name.replace('set_', 'get_', 1), None)
+        current = getter() if getter else None
+        if isinstance(current, (list, tuple, set)) and value in current:
+            return
+        getattr(target, setter_name)(value)
+
+
     def _apply_setters(self, instance, setters_config, obj):
         """Call the setters declared in the config on `instance`, using `obj` as the value.
 
@@ -330,6 +362,9 @@ class BaseLogic(ABC):
         punned instance of the same class if one is cached); anything else passes
         obj as is. An entry with no value calls the setter with no argument.
         Structural vocabulary URIs are never added to has_type.
+
+        A dict value is the long form: targets is the class, inverse_of the 
+        setter called on the target to register the subject back.
         """
         for setter_item in setters_config:
             if isinstance(setter_item, dict):
@@ -337,6 +372,13 @@ class BaseLogic(ABC):
                     if not hasattr(instance, setter_name):
                         continue
                     setter = getattr(instance, setter_name)
+                    # extracts declarative inverses (implicit)
+                    inverse_name = None
+                    if isinstance(value_type, dict):
+                        inverse_name = value_type.get('inverse_of')
+                        value_type = value_type['targets']
+                    if isinstance(value_type, list):
+                        value_type = self._resolve_target_class(obj, value_type)
                     if value_type == 'Literal':
                         try:
                             setter(self._create_literal(obj))
@@ -358,7 +400,12 @@ class BaseLogic(ABC):
                              if type(c) is type(instance) and isinstance(c, value_type)),
                             None
                         ) or self.get_or_create(obj, value_type)
-                        if obj_instance:
+                        if not obj_instance:
+                            continue
+                        if inverse_name:
+                            self._add_link(instance, setter_name, obj_instance)
+                            self._add_link(obj_instance, inverse_name, instance)
+                        else:
                             setter(obj_instance)
                     else:
                         setter(obj)

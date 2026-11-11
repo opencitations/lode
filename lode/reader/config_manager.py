@@ -103,11 +103,19 @@ class ConfigManager(ABC):
         """Convert a setter argument from the YAML: model class names become classes.
 
         'Literal', booleans and strings that are not model classes are kept as they are.
+        A dict is the long form {targets: <Class>, inverse_of: <setter name>}: only
+        'targets' is resolved, and it is required so a typo fails loudly at load time.
         """
         if value == 'Literal':
             return 'Literal'
         elif value is True or value is False:
             return value
+        elif isinstance(value, dict):
+            if 'targets' not in value:
+                raise ValueError(f"setter long form needs 'targets': {value}")
+            return {**value, 'targets': self._parse_value(value['targets'])}
+        elif isinstance(value, list):
+            return [self._parse_value(v) for v in value]
         elif isinstance(value, str):
             import lode.models as _models
             cls = getattr(_models, value, None)
