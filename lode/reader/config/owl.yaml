@@ -152,9 +152,7 @@ mapper:
   # All definitions belonging to reasoning are excluded
   # such as owl:bottomObjectPorperty owl:topObjectProperty, owl:bottomObjectProperty, owl:topDataProperty, owl:bottomDataProperty, owl:Thing, owl:Nothing
 
-
   # rdfs:Container, rdfs:ContainerMembershipProperty, rdfs:member
-  # skos:memberList, skos:narrower [!!], skos:inScheme [!!!], skos:narrowerTransitive, skos:semanticRelation, skos:broaderTransitive, skos:mappingRelation
   owl:ObjectProperty:
     is: class
     target_class: Relation
