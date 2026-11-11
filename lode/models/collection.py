@@ -24,6 +24,9 @@ class Collection(Resource):
         return list(self.has_member)
     
     def set_has_member(self, concept_or_collection):
-        """Add a concept or a collection to has_member."""
-        self.has_member.append(concept_or_collection)
+        """Add a concept or a collection to has_member, ignoring duplicates.
+        A skos:memberList also entails skos:member, so the same item can arrive twice.
+        """
+        if concept_or_collection not in self.has_member:
+            self.has_member.append(concept_or_collection)
     

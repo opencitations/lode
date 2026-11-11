@@ -9,14 +9,192 @@ namespaces:
 allowed_classes:
   Collection
   Literal
-  Resource,
+  Resource
   Concept
   Model
   Datatype
+  Container
+  Statement
 
 punning_priority:
   - Model
   - Concept
 
-mapper: {}
+# NOTE: skos:broaderTransitive and skos:narrowerTransitive are not mapped here as used for reasoning. 
+# Same for skos:semanticRelation and skos:mappingRelation .
+
+mapper: 
+
+  skos:Collection:
+    is: class
+    target_class: Collection
+
+  skos:Concept:
+    is: class
+    target_class: Concept
+  
+  skos:ConceptScheme:
+    is: class
+    target_class: Model
+
+  skos:OrderedCollection:
+    is: class
+    target_class: Collection
+    setters: [set_is_ordered: True]
+
+  skos:altLabel:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_alternative_label: Literal]
+
+  skos:broadMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_has_broad_match:
+          targets: Concept
+          inverse_of: set_has_narrow_match
+
+  skos:broader:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_is_sub_concept_of:
+          targets: Concept
+          inverse_of: set_is_super_concept_of
+
+  skos:narrowMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_has_narrow_match:
+          targets: Concept
+          inverse_of: set_has_broad_match
+
+  skos:narrower:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_is_super_concept_of:
+          targets: Concept
+          inverse_of: set_is_sub_concept_of
+
+  skos:changeNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_change_note: Literal]
+
+  skos:closeMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_has_close_match:
+          targets: Concept
+          inverse_of: set_has_close_match
+
+  skos:definition:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_definition: Literal]
+
+  skos:editorialNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_editorial_note: Literal]
+
+  skos:exactMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_has_exact_match:
+          targets: Concept
+          inverse_of: set_has_exact_match
+
+  skos:example:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_example: Literal]
+
+  skos:hasTopConcept:
+    is: predicate
+    target_classes: [Model]
+    setters:
+      - set_has_top_concept:
+          targets: Concept
+          inverse_of: set_is_top_concept_of
+
+  skos:topConceptOf:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_is_top_concept_of:
+          targets: Model
+          inverse_of: set_has_top_concept
+
+  skos:hiddenLabel:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_hidden_label: Literal]
+
+  skos:historyNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_history_note: Literal]
+  
+  # NEEDS TO BE CHECKED
+  skos:inScheme:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_is_included_in: Model]
+
+  skos:prefLabel:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_preferred_label: Literal]
+
+  skos:related:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_is_related_to:
+          targets: Concept
+          inverse_of: set_is_related_to
+  
+  skos:relatedMatch:
+    is: predicate
+    target_classes: [Concept]
+    setters:
+      - set_has_related_match:
+          targets: Concept
+          inverse_of: set_has_related_match
+
+  skos:member:
+    is: predicate
+    target_classes: [Concept, Collection]
+    inferred_class: Collection
+    setters:
+      - set_has_member:
+          targets: [Concept, Collection]
+
+  skos:memberList:
+    is: predicate
+    target_classes: [Collection]
+    handler: handle_member_list
+
+  skos:note:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_note: Literal]
+
+  skos:notation:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_notation: Literal]
+
+  skos:scopeNote:
+    is: predicate
+    target_classes: [Resource]
+    setters: [set_has_scope_note: Literal]
+  
+
 enricher: {}

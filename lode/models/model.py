@@ -11,7 +11,7 @@ class Model(Resource):
         self.is_backward_compatible_with = []  # 0..* 
         self.imports = []                      # 0..*
         self.is_incompatible_with = []         # 0..*
-        self.has_top_concept = None            # 0..1
+        self.has_top_concept = []              # 0..*
         self.has_prior_version = None          # 0..1
         self.has_namespaces = {}               # 1 (prefix -> URI)
 
@@ -49,11 +49,11 @@ class Model(Resource):
     
     def get_has_top_concept(self):
         """Return has_top_concept (a single concept, or None)."""
-        return self.has_top_concept
+        return list(self.has_top_concept)
     
     def set_has_top_concept(self, concept):
-        """Set has_top_concept, replacing any previous value."""
-        self.has_top_concept = concept
+        """Add a concept to has_top_concept"""
+        self.has_top_concept.append(concept)
 
     def get_has_prior_version(self):
         """Return has_prior_version (a single model, or None)."""
