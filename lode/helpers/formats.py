@@ -10,7 +10,7 @@ from lode.exceptions import ArtefactValidationError
 
 # Formats enabled in this release. Add a value here when the reader
 # and viewer for that format are stable and tested.
-ENABLED_FORMATS = {"owl"}
+ENABLED_FORMATS = {"owl", "skos"}
 
 
 class ReadAsFormat(str, Enum):
