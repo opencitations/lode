@@ -3,8 +3,10 @@
 # Partial included once per entity by viewer.html.
 card: _card_skos.html
 
-# SKOS keeps the model terms as they are.
-vocabulary: {}
+# SKOS shows its own terms for the hierarchy relations.
+vocabulary:
+  is sub concept of: broader
+  is super concept of: narrower
 
 # Display names of the entity types, keyed by the lowercase model class name.
 type_map:
@@ -15,3 +17,6 @@ type_map:
 toc:
   - [Collection, collections, Collection]
   - [Concept,    concepts,    Concept]
+
+characteristics:
+  - is_ordered
