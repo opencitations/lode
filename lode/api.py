@@ -19,11 +19,7 @@ from urllib.parse import urlencode
 import hashlib
 import logging
 import os
-import re
 import shutil
-import tempfile
-import threading
-import time
 import traceback
 from pathlib import Path
 
@@ -43,11 +39,11 @@ from lode.helpers.formats import (
 )
 from lode.helpers.html_utils import minify as _minify
 import lode.helpers.spool as spool
-from lode.reader import Reader
-from lode.reader import security
-from lode.exceptions import LODEError, ArtefactValidationError
-from lode.viewer import get_viewer 
-from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+import lode.core as core
+from lode import security
+from lode.exceptions import ArtefactValidationError, BuildCapacityError, LODEError
+from lode.helpers.site_zip import build_zip, slugify
+from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 
 # ==========================================================================
@@ -97,47 +93,6 @@ templates.env.trim_blocks = True
 templates.env.lstrip_blocks = True
 
 # ==========================================================================
-# 5. BUILD WORKSPACE — quota and concurrency for /build
-# ==========================================================================
-# Builds write hundreds of files each, so they get their own directory with an
-# explicit budget instead of filling up /tmp.
-BUILD_DIR = os.path.realpath(
-    os.getenv("LODE_BUILD_DIR", os.path.join(tempfile.gettempdir(), "lode-builds"))
-)
-os.makedirs(BUILD_DIR, exist_ok=True)
-_BUILD_TTL = 30 * 60                          # orphans (aborted downloads) age out
-_BUILD_MAX_BYTES = 2 * 1024 ** 3              # 2 GB for all pending builds
-_BUILD_SLOTS = threading.BoundedSemaphore(2)  # concurrent builds, per worker process
-_BUILD_WAIT = 5                               # seconds a request waits for a slot
-
-
-def _prune_builds() -> int:
-    """Drop orphaned build directories and return the bytes still in use.
-
-    A build is orphaned when its BackgroundTask never fired, i.e. the client
-    opened the connection and never finished reading the archive.
-    """
-    cutoff = time.time() - _BUILD_TTL
-    total = 0
-    for name in os.listdir(BUILD_DIR):
-        p = os.path.join(BUILD_DIR, name)
-        try:
-            st = os.stat(p)
-        except OSError:
-            continue
-        if st.st_mtime < cutoff:
-            shutil.rmtree(p, ignore_errors=True)
-            continue
-        for root, _, files in os.walk(p):
-            for f in files:
-                try:
-                    total += os.path.getsize(os.path.join(root, f))
-                except OSError:
-                    pass
-    return total
-
-
-# ==========================================================================
 # 6. HTML HELPERS
 # ==========================================================================
 
@@ -158,16 +113,14 @@ def _nav_qs(read_as: str, url, upload_id, lang, imported, closure, partial_impor
         
     return urlencode(p)
 
-def _render_view(request, reader, *, resource, lang, source_url, upload_id, read_as,
+def _render_view(request, artefact, *, resource, lang, source_url, upload_id, read_as,
                  imported=None, closure=None, partial_import=None):
     """Render one resource (or the whole artefact) as the minified viewer page.
 
     The body is minified after rendering, so Content-Length is recomputed:
     keeping the old value would truncate the response.
     """
-    viewer = get_viewer(reader.get_artefact())
-    data = viewer.get_view_data(resource_uri=resource, language=lang)
-    data["warnings"] = viewer.format_warnings(reader.get_warnings())
+    data = core.view_data(artefact, resource=resource, lang=lang)
     resp = templates.TemplateResponse(request, "viewer.html", {
         "source_url": source_url,
         "upload_id": upload_id,
@@ -207,10 +160,8 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
     path = spool.get_path(token)
     if use_cache and os.path.exists(path):
         # cache hit: rebuild from the saved Turtle
-        reader = Reader()
-        reader.load_instances(path, read_as, imported=imported, closure=closure,  partial_import=partial_import,
-                              warnings=warnings, source_name=url)
-        return reader
+        return core.read(path, read_as, imported=imported, closure=closure,
+                         partial_import=partial_import, warnings=warnings, source_name=url)
     if not use_cache:
         # cache=false: drop the stale copy so the fresh fetch replaces it
         try:
@@ -218,21 +169,20 @@ def _load_url(url, read_as, imported, closure, partial_import, warnings, use_cac
         except OSError:
             pass
     # cache miss (or forced refresh): fetch and process the URL
-    reader = Reader()
-    reader.load_instances(url, read_as, imported=imported, closure=closure, partial_import=partial_import,
-                          warnings=warnings)
+    artefact = core.read(url, read_as, imported=imported, closure=closure,
+                         partial_import=partial_import, warnings=warnings)
     # persist ONLY the main document: modules are re-applied on every hit.
     try:
-        main = reader.get_artefact().main_graph()
+        main = artefact.main_graph()
         with open(path, "wb") as f:
             f.write(main.serialize(format="turtle").encode("utf-8"))
     except OSError:
         pass
-    return reader
+    return artefact
 
-def _resolve_reader(read_as: str, url, upload_id, imported, closure, partial_import, warnings,
+def _resolve_artefact(read_as: str, url, upload_id, imported, closure, partial_import, warnings,
                     use_cache=True):
-    """Build a Reader from an uploaded file or from a URL.
+    """Read an artefact from an uploaded file or from a URL.
 
     Raises ArtefactValidationError when the upload has expired or when neither
     source is given. Uploads win over URLs and are never re-fetched.
@@ -243,10 +193,8 @@ def _resolve_reader(read_as: str, url, upload_id, imported, closure, partial_imp
         if not os.path.exists(path):
             raise ArtefactValidationError("Upload expired, please re-upload",
                                           context={"upload_id": upload_id})
-        reader = Reader()
-        reader.load_instances(path, read_as, imported=imported, closure=closure,  partial_import=partial_import, 
-                              warnings=warnings)
-        return reader
+        return core.read(path, read_as, imported=imported, closure=closure,
+                         partial_import=partial_import, warnings=warnings)
     if url:
         return _load_url(url, read_as, imported, closure, partial_import, warnings, use_cache=use_cache)
     raise ArtefactValidationError("Missing 'url' or 'upload_id'")
@@ -262,61 +210,19 @@ async def _read_validated_upload(file: UploadFile) -> bytes:
 
 
 # ==========================================================================
-# 8. ZIP BUILD HELPERS
+# 8. ZIP RESPONSE
 # ==========================================================================
-def _slug(name: Optional[str]) -> str:
-    """Safe directory/file stem derived from a URL or filename.
+def _zip_response(artefact, slug: str, lang: Optional[str] = None) -> FileResponse:
+    """Build the static site as a ZIP and return it as a download.
 
-    Must never yield '.' or '..': those would let make_archive(base_dir=...)
-    escape the build directory and archive its parent.
+    Blocking and disk-heavy: callers must keep it off the event loop. The build
+    directory is removed once the response has been sent. A service at capacity
+    becomes a 503 with Retry-After, so clients know when to come back.
     """
-    if not name:
-        return "ontology"
-    raw = name.rstrip("/").split("#")[0].split("/")[-1]
-    raw = re.sub(r"\.(ttl|rdf|owl|n3|nt|jsonld|xml)$", "", raw, flags=re.I)
-    raw = re.sub(r"[^A-Za-z0-9._-]", "-", raw).strip("-.")
-    if not raw or raw in {".", ".."}:
-        return "ontology"
-    return raw[:64]
-
-
-def _zip_response(reader, slug: str, lang: Optional[str] = None) -> FileResponse:
-    """Render the whole static site and return it as a ZIP download.
-
-    Blocking and disk-heavy: callers must keep it off the event loop.
-    """
-    from lode.builder import build_html  # lazy: avoids a circular import
-
-    if not _BUILD_SLOTS.acquire(timeout=_BUILD_WAIT):
-        raise HTTPException(503, "Server busy: too many concurrent builds",
-                            headers={"Retry-After": "30"})
-    workdir = None
     try:
-        if _prune_builds() > _BUILD_MAX_BYTES:
-            raise HTTPException(503, "Build storage full, retry shortly",
-                                headers={"Retry-After": "60"})
-
-        workdir = tempfile.mkdtemp(prefix="build_", dir=BUILD_DIR)
-        site_dir = Path(workdir) / slug
-        site_dir.mkdir(parents=True, exist_ok=True)
-
-        build_html(get_viewer(reader.get_artefact()), site_dir, lang=lang or "en")
-
-        zip_path = shutil.make_archive(
-            os.path.join(workdir, f"{slug}-lode"), "zip",
-            root_dir=workdir, base_dir=slug,
-        )
-        # The loose pages are redundant once archived: halve the disk peak.
-        shutil.rmtree(site_dir, ignore_errors=True)
-    except BaseException:
-        if workdir:
-            shutil.rmtree(workdir, ignore_errors=True)
-        raise
-    finally:
-        # Free the slot as soon as the build ends, not when the client is done
-        # downloading: a slow reader must not hold a build slot hostage.
-        _BUILD_SLOTS.release()
-
+        zip_path, workdir = build_zip(artefact, slug, lang)
+    except BuildCapacityError as exc:
+        raise HTTPException(503, str(exc), headers={"Retry-After": str(exc.retry_after)})
     return FileResponse(
         zip_path,
         media_type="application/zip",
@@ -429,8 +335,8 @@ def extract_get(
     is requested via the `format` query or the `Accept` header."""
     _check_format_enabled(read_as)
 
-    reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, partial_import,
-                             warnings, use_cache=cache)
+    artefact = _resolve_artefact(read_as.value, url, upload_id, imported, closure, partial_import,
+                                 warnings, use_cache=cache)
 
     # Content negotiation: triples of the loaded artefact only, quads are never negotiable
     accept = request.headers.get("accept", "text/html")
@@ -450,18 +356,17 @@ def extract_get(
                 break
 
     if serial:
+        serialized = core.export(artefact, serial["fmt"], resource)
         if resource:
-            serialized = get_viewer(reader.get_artefact()).export_resource(resource, serial["fmt"])
             filename = iri_local_name(resource) or "resource"
         else:
-            serialized = get_viewer(reader.get_artefact()).export_main(serial["fmt"])
             filename = (iri_local_name(url) if url else "") or "graph"
 
         return Response(content=serialized, media_type=serial["mime"],
                         headers={"Content-Disposition": f'inline; filename="{filename}.{serial["ext"]}"'})
     
     logger.info("=== REQUEST SUCCESS ===")
-    return _render_view(request, reader, resource=resource, lang=lang,
+    return _render_view(request, artefact, resource=resource, lang=lang,
                         source_url=url, upload_id=upload_id, read_as=read_as.value,
                         imported=imported, closure=closure, partial_import=partial_import)
 
@@ -488,12 +393,11 @@ async def extract_post(
     content = await _read_validated_upload(file)
     token = spool.save(content)
 
-    reader = Reader()
-    await run_in_threadpool(
-        reader.load_instances, spool.get_path(token), read_as.value,
+    artefact = await run_in_threadpool(
+        core.read, spool.get_path(token), read_as.value,
         imported=imported, closure=closure, partial_import=partial_import, warnings=warnings,
     )
-    return _render_view(request, reader, resource=resource, lang=lang,
+    return _render_view(request, artefact, resource=resource, lang=lang,
                         source_url=None, upload_id=token, read_as=read_as.value,
                         imported=imported, closure=closure, partial_import=partial_import)
 
@@ -516,9 +420,9 @@ def build_get(
     """Static documentation site as a ZIP. Sync on purpose: FastAPI runs
     non-async endpoints in the threadpool, keeping the event loop free."""
     _check_format_enabled(read_as)
-    reader = _resolve_reader(read_as.value, url, upload_id, imported, closure, partial_import,
-                             warnings, use_cache=cache)
-    return _zip_response(reader, _slug(url), lang)
+    artefact = _resolve_artefact(read_as.value, url, upload_id, imported, closure, partial_import,
+                                 warnings, use_cache=cache)
+    return _zip_response(artefact, slugify(url), lang)
 
 
 @app.post("/build", tags=["build"], summary="Build a static site (ZIP) from an upload")
@@ -536,12 +440,11 @@ async def build_post(
     content = await _read_validated_upload(file)
     token = spool.save(content)
 
-    reader = Reader()
-    await run_in_threadpool(
-        reader.load_instances, spool.get_path(token), read_as.value,
+    artefact = await run_in_threadpool(
+        core.read, spool.get_path(token), read_as.value,
         imported=imported, closure=closure, partial_import=partial_import, warnings=warnings,
     )
-    return await run_in_threadpool(_zip_response, reader, _slug(file.filename), lang)
+    return await run_in_threadpool(_zip_response, artefact, slugify(file.filename), lang)
 
 
 # ==========================================================================

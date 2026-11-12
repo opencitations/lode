@@ -35,13 +35,12 @@ def test_spool_and_build_env_override(tmp_path, monkeypatch):
     monkeypatch.setenv("LODE_SPOOL_DIR", str(sp))
     monkeypatch.setenv("LODE_BUILD_DIR", str(bd))
     import lode.helpers.spool as spool_mod
-    import lode.api as api
+    import lode.helpers.site_zip as zip_mod
     importlib.reload(spool_mod)
-    importlib.reload(api)
-    # spool vive ora in helpers/spool.py
+    importlib.reload(zip_mod)
     assert spool_mod.SPOOL_DIR == os.path.realpath(str(sp))
-    # build dir resta in api.py
-    assert api.BUILD_DIR == os.path.realpath(str(bd))
+    # build dir lives in helpers/site_zip.py
+    assert zip_mod.BUILD_DIR == os.path.realpath(str(bd))
 
 # --- 4. di default NON scrivono dentro il package (fs read-only in Docker) ---
 def test_writable_dirs_outside_package(monkeypatch):
@@ -49,11 +48,11 @@ def test_writable_dirs_outside_package(monkeypatch):
     monkeypatch.delenv("LODE_BUILD_DIR", raising=False)
     import lode
     import lode.helpers.spool as spool_mod
-    import lode.api as api
+    import lode.helpers.site_zip as zip_mod
     importlib.reload(spool_mod)
-    importlib.reload(api)
+    importlib.reload(zip_mod)
     pkg = Path(lode.__file__).resolve().parent
-    for d in (spool_mod.SPOOL_DIR, api.BUILD_DIR):
+    for d in (spool_mod.SPOOL_DIR, zip_mod.BUILD_DIR):
         assert pkg not in Path(d).resolve().parents, f"{d} sta dentro il package"
 
 

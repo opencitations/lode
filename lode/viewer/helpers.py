@@ -14,24 +14,10 @@ import yaml
 _CONFIG_DIR = Path(__file__).parent / "config"
 
 # ==========================================================================
-# 1. SERIALIZATION FORMATS
+# 1. SERIALIZATION
 # ==========================================================================
-
-# Export formats: triples of the loaded artefact only.
-SERIALIZATION_FORMATS = [
-    {"label": "Turtle",   "fmt": "turtle",  "mime": "text/turtle",           "ext": "ttl",    "icon": "bi-filetype-raw"},
-    {"label": "RDF/XML",   "fmt": "xml",     "mime": "application/rdf+xml",   "ext": "xml",    "icon": "bi-file-code"},
-    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
-    {"label": "N-Triples", "fmt": "nt",      "mime": "application/n-triples", "ext": "nt",     "icon": "bi-file-text"},
-]
-
-# Provenance formats: quads, the named graph of each triple is always shown.
-QUAD_SERIALIZATION_FORMATS = [
-    {"label": "TriG",      "fmt": "trig",    "mime": "application/trig",      "ext": "trig",   "icon": "bi-filetype-raw"},
-    {"label": "JSON-LD",   "fmt": "json-ld", "mime": "application/ld+json",   "ext": "jsonld", "icon": "bi-filetype-json"},
-    {"label": "N-Quads",   "fmt": "nquads",  "mime": "application/n-quads",   "ext": "nq",     "icon": "bi-file-text"},
-]
-
+# The format lists live in lode.helpers.formats: the builder and the API need
+# them too and must not import a viewer for a constant.
 
 def safe_serialize(g, fmt: str) -> str:
     """Serialize a graph, returning a comment with the error instead of raising.

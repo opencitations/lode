@@ -11,12 +11,10 @@ from lode.models import Literal, Model, Resource, Statement
 
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 
-from lode.provenance_graph import ProvenanceGraph # needed as its called for each visualised entity
+from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 
 from lode.viewer.helpers import (
-    QUAD_SERIALIZATION_FORMATS,
-    SERIALIZATION_FORMATS,
     annotation_sort_key,
     clean_name,
     is_likely_ontology,
@@ -92,7 +90,7 @@ class BaseViewer:
             models[0] if models else None,
         )
 
-    def _get_ontology_ns(self) -> str:
+    def get_ontology_ns(self) -> str:
         """Return the namespace of the documented ontology (its IRI ending in '/' or '#'), or ''.
 
         Computed once from the first Model instance and then cached.
@@ -115,26 +113,6 @@ class BaseViewer:
         """Return the export formats (triples): the same whatever modules are active."""
         return SERIALIZATION_FORMATS
 
-    def _with_provenance(self, sub):
-        """Return `sub` as quads, each triple in the named graph(s) it comes from.
-
-        With modules active the graphs are the ones of the source ontologies;
-        without, every triple goes in the graph of the loaded artefact.
-        """
-        ds = self.artefact.graph
-        out = ProvenanceGraph()
-        for prefix, ns in ds.namespaces():
-            out.bind(prefix, ns)
-        if isinstance(ds, ProvenanceGraph):
-            for s, p, o in sub:
-                for *_, c in ds.quads((s, p, o, None)):
-                    out.graph(c).add((s, p, o))
-        else:
-            main = out.graph(self.artefact.ontology_iri)
-            for t in sub:
-                main.add(t)
-        return out
-    
     def _is_internal(self, uri) -> bool:
         """Return True if the IRI belongs to a browsable entity of this documentation.
 
@@ -620,7 +598,7 @@ class BaseViewer:
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
             link = handler_dic['link']
-            ns = self._get_ontology_ns()
+            ns = self.get_ontology_ns()
             internal = self._is_internal(link)
             native = bool(link) and bool(ns) and str(link).startswith(ns)
             handler_dic['is_external'] = not internal
@@ -747,7 +725,7 @@ class BaseViewer:
         sub = self.artefact.provenance.for_instance(instance)
         if not any(True for _ in sub):
             return []
-        sub = self._with_provenance(sub)
+        sub = self.artefact.with_provenance(sub)
         return [
             {"label": f["label"], "code": safe_serialize(sub, f["fmt"])}
             for f in QUAD_SERIALIZATION_FORMATS

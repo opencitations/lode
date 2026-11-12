@@ -40,7 +40,7 @@ from rdflib.graph import DATASET_DEFAULT_GRAPH_ID
 from rdflib.namespace import OWL, RDF, RDFS
 
 import lode.helpers.spool as spool
-import lode.reader.security as security
+import lode.security as security
 from lode import api
 from lode.api import app
 from lode.exceptions import ArtefactNotFoundError
@@ -48,7 +48,7 @@ from lode.reader.loader import Loader
 from lode.provenance_graph import ProvenanceGraph
 from lode.reader.reader import Reader
 from lode.viewer import get_viewer
-from lode.viewer.base_viewer import QUAD_SERIALIZATION_FORMATS, BaseViewer
+from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS
 from lode.artefact import Artefact
 
 # ==========================================================================
@@ -403,7 +403,7 @@ def entity_provenance(ds, subject):
     sub = Graph()
     for t in ds.triples((subject, None, None)):
         sub.add(t)
-    return BaseViewer(fake_artefact(ds))._with_provenance(sub)
+    return fake_artefact(ds).with_provenance(sub)
 
 class TestEntityProvenance:
     """Formats offered, and each triple of an entity in the graph(s) it comes from."""
@@ -416,7 +416,7 @@ class TestEntityProvenance:
         g.add((M.A, RDF.type, OWL.Class))
         sub = Graph()
         sub.add((M.A, RDF.type, OWL.Class))
-        out = BaseViewer(fake_artefact(g, MAIN))._with_provenance(sub)
+        out = fake_artefact(g, MAIN).with_provenance(sub)
         assert isinstance(out, ProvenanceGraph)
         assert graphs(out) == {MAIN}
 
@@ -486,7 +486,7 @@ class TestEntityProvenance:
 # Exports and content negotiation return the triples of the loaded artefact, with or
 # without modules: imported documents show up only in the provenance of each card.
 # Uploads go through the spool (spool.save) and are requested with
-# GET /extract?upload_id=..., the same path as _resolve_reader.
+# GET /extract?upload_id=..., the same path as _resolve_artefact.
 
 TRIPLE_FORMATS = {"ttl": "turtle", "nt": "nt", "xml": "xml", "jsonld": "json-ld"}
 QUAD_EXTS = ["trig", "nq"]
@@ -681,8 +681,8 @@ class TestDownloadUrl:
         monkeypatch.setattr(security, "check_url_safe", lambda url: None)
         url = "http://ex.org/anon"
         for use_cache in (False, True):
-            reader = api._load_url(url, "owl", None, None, None, False, use_cache=use_cache)
-            assert reader._ontology_iri == URIRef(url)
+            artefact = api._load_url(url, "owl", None, None, None, False, use_cache=use_cache)
+            assert artefact.ontology_iri == URIRef(url)
 
 
 class TestSourceName:

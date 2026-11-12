@@ -43,7 +43,7 @@ def fabio_ttl(fabio_reader, tmp_path_factory):
 @pytest.fixture
 def patched_url(fabio_reader):
     """GET-url tests reuse the cached fabio reader instead of hitting the net."""
-    with patch("lode.api._load_url", return_value=fabio_reader) as m:
+    with patch("lode.api._load_url", return_value=fabio_reader.get_artefact()) as m:
         yield m
 
 # --- POST (file) -------------------------------------------------------------

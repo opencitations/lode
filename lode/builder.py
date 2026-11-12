@@ -14,9 +14,8 @@ from rdflib import URIRef
 from rdflib.namespace import split_uri
 
 # internal modules
-from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.html_utils import minify as _minify
-from lode.models.model import Model
 from lode.exceptions import ArtefactValidationError
 
 
@@ -155,7 +154,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
     _copy_static(out_dir)
     _write_warnings_report(viewer.format_warnings(viewer.artefact.warnings), out_dir)
 
-    ontology_ns = viewer._get_ontology_ns()
+    ontology_ns = viewer.get_ontology_ns()
     graph = viewer.artefact.graph
     main_graph = viewer.artefact.main_graph()
 
@@ -171,7 +170,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
     for inst in viewer.get_all_instances():
         grouped[type(inst).__name__].append(inst)
 
-    toc_config = viewer.get_toc_config() if hasattr(viewer, "get_toc_config") else []
+    toc_config = viewer.get_toc_config()
 
     # URI that will actually get a file (same criterion as the loop below)
     materialized = set()
@@ -218,7 +217,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
     template_index = env_index.get_template("viewer.html")
     template_resource = env_resource.get_template("viewer.html")
 
-    toc_config = viewer.get_toc_config() if hasattr(viewer, "get_toc_config") else []
+    toc_config = viewer.get_toc_config()
 
     # --- index.html ---
     data = viewer.get_view_data(language=lang)

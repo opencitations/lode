@@ -23,7 +23,7 @@ from rdflib import URIRef
 ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
 URIS = [e["uri"] for e in json.loads(ONTOLOGIES_PATH.read_text(encoding="utf-8"))["uris"]]
 
-from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+from lode.helpers.formats import SERIALIZATION_FORMATS
 
 _EXTS = [f["ext"] for f in SERIALIZATION_FORMATS]
 
@@ -124,7 +124,7 @@ def test_object_only_has_no_page(built):
     viewer = built["viewer"]
     res = built["out"] / "resources"
     graph = viewer.artefact.graph
-    ontology_ns = viewer._get_ontology_ns()
+    ontology_ns = viewer.get_ontology_ns()
 
     for i in viewer.get_toc_instances():
         uri = i.get_has_identifier()

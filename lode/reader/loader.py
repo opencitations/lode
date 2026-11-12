@@ -10,7 +10,7 @@ from typing import Dict, Optional
 from urllib.parse import urlparse, urljoin 
 
 import lode.reader.modules as modules
-from lode.reader import security
+from lode import security
 from lode.exceptions import (ArtefactLoadError, ArtefactNotFoundError,
                              ArtefactUnavailableError, ArtefactValidationError)
 from lode.helpers.rdf import PARSE_FORMATS, parse_any

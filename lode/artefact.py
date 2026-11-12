@@ -90,3 +90,25 @@ class Artefact:
         if isinstance(self.graph, ProvenanceGraph):
             return self.graph.graph(self.ontology_iri)
         return self.graph
+
+    def with_provenance(self, sub: Graph) -> ProvenanceGraph:
+        """Return `sub` as quads, each triple in the named graph(s) it comes from.
+
+        With modules active the graphs are the ones of the source ontologies;
+        without, every triple goes in the graph of the loaded artefact. It lives
+        here and not in a viewer because it only needs the graph: the viewer just
+        asks for the result.
+        """
+        ds = self.graph
+        out = ProvenanceGraph()
+        for prefix, ns in ds.namespaces():
+            out.bind(prefix, ns)
+        if isinstance(ds, ProvenanceGraph):
+            for s, p, o in sub:
+                for *_, c in ds.quads((s, p, o, None)):
+                    out.graph(c).add((s, p, o))
+        else:
+            main = out.graph(self.ontology_iri)
+            for t in sub:
+                main.add(t)
+        return out

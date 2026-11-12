@@ -46,3 +46,32 @@ def test_models_do_not_import_reader_or_viewer():
 def test_reader_does_not_import_viewer():
     """The reader never depends on the viewers: the factory lives in lode.viewer."""
     assert _offenders("reader", "lode.viewer") == []
+
+
+def test_helpers_do_not_import_reader_or_viewer():
+    """Helpers are shared by every layer, so they cannot depend on any of them."""
+    assert _offenders("helpers", "lode.reader") == []
+    assert _offenders("helpers", "lode.viewer") == []
+
+
+def _module_offenders(module: str, forbidden: tuple) -> list:
+    """List the imports of a single top-level module that start with a forbidden prefix."""
+    return [f"{module} imports {name}"
+            for name in _imports(LODE / module)
+            for bad in forbidden if name == bad or name.startswith(bad + ".")]
+
+
+def test_adapters_go_through_core():
+    """CLI and API are thin adapters: they reach the reader, viewers and builder only via lode.core."""
+    for module in ("cli.py", "api.py"):
+        assert _module_offenders(module, ("lode.reader", "lode.viewer", "lode.builder")) == []
+
+
+def test_builder_does_not_import_reader_or_models():
+    """The builder renders what a viewer gives it: it knows neither the reader nor the model."""
+    assert _module_offenders("builder.py", ("lode.reader", "lode.models")) == []
+
+
+def test_models_do_not_import_rdflib():
+    """The model is plain Python: RDF parsing and graphs belong to the reader."""
+    assert _offenders("models", "rdflib") == []

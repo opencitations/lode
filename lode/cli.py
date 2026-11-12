@@ -26,34 +26,27 @@ def cmd_serve(args):
 def cmd_build(args):
     """Generate the static HTML documentation for one artefact.
 
-    Reader and builder are imported lazily so that `lode serve` and `--help`
-    do not pay their import cost. Creates the output directory if missing and
+    Goes through lode.core only, imported lazily so that `lode serve` and `--help`
+    do not pay its import cost. Creates the output directory if missing and
     overwrites existing pages in it. Prints the output path on success.
     """
-    from lode.reader import Reader
-    from lode.builder import build_html
-    from lode.viewer import get_viewer
+    from lode.core import build_site, format_warnings, read
     from lode.helpers.formats import check_format_enabled, ReadAsFormat
 
     check_format_enabled(ReadAsFormat(args.read_as))
 
-    source = args.url or args.file
     out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    reader = Reader()
-    reader.load_instances(
-        source, args.read_as,
+    artefact = read(
+        args.url or args.file, args.read_as,
         imported=args.imported or None,
         closure=args.closure or None,
         partial_import=args.partial_import or None,
         warnings=args.warnings,
     )
-    viewer = get_viewer(reader.get_artefact())
-    build_html(viewer, out_dir, lang=args.lang, artefact_name=args.artefact_name)
-    
+    build_site(artefact, out_dir, lang=args.lang, artefact_name=args.artefact_name)
+
     if args.warnings:
-        warnings = viewer.format_warnings(reader.get_warnings())
+        warnings = format_warnings(artefact)
         for w in warnings:
             print(f"[{w['code']}] {w['message']}")
         if warnings:

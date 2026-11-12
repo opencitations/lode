@@ -20,7 +20,7 @@ import os
 import socket
 import pytest
 
-from lode.reader import security
+from lode import security
 from lode.reader.loader import Loader
 from lode.exceptions import (ArtefactValidationError, ArtefactLoadError,
                              ArtefactNotFoundError, ArtefactUnavailableError)
@@ -109,14 +109,14 @@ class TestCheckUrlSafe:
     def test_unresolvable_host_rejected(self, monkeypatch):
         def boom(host, port, *a, **k):
             raise socket.gaierror("name resolution failed")
-        monkeypatch.setattr("lode.reader.security.socket.getaddrinfo", boom)
+        monkeypatch.setattr("lode.security.socket.getaddrinfo", boom)
         with pytest.raises(ArtefactValidationError):
             security.check_url_safe("http://does-not-exist.invalid/x")
 
     def test_hostname_resolving_to_private_rejected(self, monkeypatch):
         # public-looking hostname that resolves to an internal IP (DNS-based SSRF)
         monkeypatch.setattr(
-            "lode.reader.security.socket.getaddrinfo",
+            "lode.security.socket.getaddrinfo",
             lambda host, port, *a, **k: [
                 (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.1.2.3", 0))
             ],
@@ -504,7 +504,7 @@ class TestSsrfHardening:
     ])
     def test_extra_internal_addresses_rejected(self, monkeypatch, ip):
         monkeypatch.setattr(
-            "lode.reader.security.socket.getaddrinfo",
+            "lode.security.socket.getaddrinfo",
             lambda host, port, *a, **k: [
                 (socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0))
             ],
@@ -546,10 +546,10 @@ class TestUrlMustBeHttp:
         "ftp://example.org/x",
         "not-a-url",
     ])
-    def test_resolve_reader_rejects_non_http_url(self, bad):
+    def test_resolve_artefact_rejects_non_http_url(self, bad):
         from lode import api
         with pytest.raises(ArtefactValidationError):
-            api._resolve_reader(read_as="owl", upload_id=None, url=bad, imported=None, closure=None,
+            api._resolve_artefact(read_as="owl", upload_id=None, url=bad, imported=None, closure=None,
                   partial_import=None, warnings=False)
 
     def test_loader_rejects_non_http_scheme(self):
@@ -564,7 +564,7 @@ class TestPeerIpRebinding:
 
     def _public_dns(self, monkeypatch):
         monkeypatch.setattr(
-            "lode.reader.security.socket.getaddrinfo",
+            "lode.security.socket.getaddrinfo",
             lambda host, port, *a, **k: [
                 (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))
             ],
