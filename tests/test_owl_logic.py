@@ -1807,4 +1807,18 @@ class TestPhase6Exclusions:
         ])
         _run_all(logic)
         assert OWL.topObjectProperty in logic._instance_cache
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 fallback
+# ---------------------------------------------------------------------------
+
+def test_phase5_untyped_iri_becomes_an_individual():
+    """In OWL an IRI no phase classified is a named individual.
+
+    EX.customPred is not mapped, so phase 1 does not classify the subject.
+    """
+    logic = _make_logic([(EX.Loose, EX.customPred, RDFLiteral("x"))])
+    _run_all(logic)
+    assert type(_instance_for_uri(logic, EX.Loose)) is Individual
     

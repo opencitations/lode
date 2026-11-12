@@ -63,30 +63,113 @@ class BaseLogic(ABC):
         """Prefixes declared in the graph (prefix -> URI)."""
         return {prefix: str(ns) for prefix, ns in self.graph.namespaces()}
 
-    @abstractmethod
+
+# ==========================================================================
+# READER PHASES
+# ==========================================================================
+
+    # Classes that exist only as blank nodes: in phase 1 an IRI is never given one of them.
+    _BNODE_ONLY_CLASSES: tuple = ()
+    # Class given in phase 5 to the IRIs no earlier phase classified. A format that
+    # types them differently overrides it (OWL: Individual); None turns the fallback off.
+    _FALLBACK_CLASS = Resource
+
     def phase1_classify_from_predicates(self):
-        """Phase 1: create instances for subjects whose predicates reveal their class."""
-        pass
+        """Phase 1: create instances for subjects whose predicates reveal their class.
 
-    @abstractmethod
+        A subject that uses a mapped predicate gets the class the YAML implies for it
+        (classify_by_predicate), even without an rdf:type. IRIs are created while
+        scanning; blank nodes are collected and created at the end. A format with
+        constructs of its own extends this method and calls super() first. A format
+        that does not classify from predicates at all overrides the whole phase
+        (SKOS does).
+        """
+        classified = {}
+
+        for pred in self._property_mapping:
+            for node in self.graph.subjects(pred, None):
+                if node in self._instance_cache:
+                    continue
+                python_class = self._strategy.classify_by_predicate(node, self.graph)
+                if not python_class:
+                    continue
+                if isinstance(node, BNode):
+                    classified.setdefault(node, python_class)
+                elif isinstance(node, URIRef) and not issubclass(python_class, self._BNODE_ONLY_CLASSES):
+                    self.get_or_create(node, python_class, populate=False)
+
+        for bnode, python_class in classified.items():
+            self.get_or_create(bnode, python_class, populate=False)
+
+
     def phase2_create_from_types(self):
-        """Phase 2: create instances from the rdf:type declarations of the graph."""
-        pass
+        """Phase 2: create instances from the rdf:type declarations of the graph.
 
-    @abstractmethod
+        Every subject typed with a type the YAML maps gets an instance of the mapped
+        class, and the triple that says so becomes part of its provenance. The static
+        setters of the mapping (constants such as set_is_ordered: True) are applied to
+        every instance of the subject, also to one created by phase 1. A format with
+        more to do for its types extends this and calls super() first.
+        """
+        type_mapping = self._strategy.get_type_mapping()
+
+        for rdf_type, config in type_mapping.items():
+            py_class = config.get('target_class')
+            if not py_class:
+                continue
+            for uri in self.graph.subjects(RDF.type, rdf_type):
+                inst = self.get_or_create(uri, py_class, populate=False)
+                if inst is not None:
+                    self._track(inst, (uri, RDF.type, rdf_type))
+                # Apply static setters (e.g. set_is_transitive: True) always,
+                # even if instance already existed in cache from phase1.
+                if 'setters' in config:
+                    for instance in self._instance_cache.get(uri, set()):
+                        self._apply_setters_immediate(instance, config['setters'])
+
+
     def phase3_populate_properties(self):
-        """Phase 3: fill every instance from its triples, through the property mapping."""
-        pass
+        """Phase 3: fill every instance from its triples, through the property mapping.
 
-    @abstractmethod
+        Every cached instance goes through populate_instance, which sends each
+        predicate to the setters or handlers declared in the YAML mapper. A format
+        overrides this only to add steps, and calls super() first.
+        """
+        for uri in list(self._instance_cache.keys()):
+            # both levels are copied: populating an instance can add new ones to the cache
+            for instance in list(self._instance_cache[uri]):
+                self.populate_instance(instance, uri)
+
     def phase4_process_group_axioms(self):
-        """Phase 4: process axioms that involve several entities at once (e.g. AllDisjointClasses)."""
-        pass
+        """Phase 4: process axioms that involve several entities at once (e.g. AllDisjointClasses).
 
-    @abstractmethod
+        Driven by the 'enricher' section of the YAML: each entry maps an rdf:type to
+        the name of a handler, which receives every subject of that type. A format
+        with no group axioms of its own can keep the default, or override it with a
+        no-op when the inherited entries (SWRL rules come from base.yaml) do not apply.
+        """
+        for axiom_type, handler_name in self._strategy.get_group_axioms().items():
+            for uri in self.graph.subjects(RDF.type, axiom_type):
+                # the handler is guaranteed to exist: _validate_handlers checks it at init
+                getattr(self, handler_name)(uri)
+
     def phase5_fallback(self):
-        """Phase 5: give a class (and the format defaults) to whatever is still unclassified."""
-        pass
+        """Phase 5: give a class (and the format defaults) to whatever is still unclassified.
+
+        Every IRI subject that no earlier phase classified becomes an instance of
+        _FALLBACK_CLASS, populated like any other. IRIs of the format's own
+        vocabularies are skipped: they are the language, not data. A format extends
+        this and calls super() first, so its own defaults reach the new instances too.
+        """
+        if self._FALLBACK_CLASS is None:
+            return
+
+        vocabularies = tuple(self._allowed_namespaces)
+        # set(): each subject once, and a stable list while instances are created
+        for subj in set(self.graph.subjects()):
+            if (isinstance(subj, URIRef) and subj not in self._instance_cache
+                    and not str(subj).startswith(vocabularies)):
+                self.get_or_create(subj, self._FALLBACK_CLASS)
 
     def phase6_create_statements(self):
         """Phase 6: reify every triple no earlier phase consumed as a Statement.
@@ -202,6 +285,22 @@ class BaseLogic(ABC):
             self._triples_map.setdefault(new, set()).update(self._triples_map.pop(old))
 
     # ========== UTILITIES ==========
+
+    def _apply_setters_immediate(self, instance, setters_config):
+        """Apply the static setter values of a mapping directly to an instance.
+
+        No RDF object is resolved: this is for the constants declared next to an
+        'is: class' entry (set_is_symmetric: True) and used in phase 2.
+        """
+        for setter_item in setters_config:
+            if isinstance(setter_item, dict):
+                for setter_name, value in setter_item.items():
+                    if hasattr(instance, setter_name):
+                        getattr(instance, setter_name)(value)
+            else:
+                if hasattr(instance, setter_item):
+                    getattr(instance, setter_item)()
+
 
     def _traverse_hierarchy(
         self,

@@ -160,17 +160,6 @@ class Reader:
             result["rdf_triples"].append(triple_dict)
         
         return result
-
-    # def _serialize_value(self, value):
-    #     """Convert a value into a JSON-friendly form, recursing into lists and sets."""
-    #     if isinstance(value, (str, int, float, bool)):
-    #         return value
-    #     elif isinstance(value, (list, set)):
-    #         return [self._serialize_value(v) for v in value]
-    #     elif hasattr(value, 'uri'):
-    #         return str(value.uri)
-    #     else:
-    #         return str(value)
         
     def get_artefact(self) -> Artefact:
         """Return what a viewer needs from this read, with no reference to the reader.
@@ -199,16 +188,14 @@ class Reader:
     def _extract_instances(self):
         """Run the extraction phases in order, delegating each one to the logic.
 
-        Phases 1-4 depend on the artefact type; fallback, statements and
+        Phases 1-5 depend on the artefact type; statements and
         namespaces are shared. Post-pipeline warning checks run only when enabled.
         """        
-        # PHASES 1-4: delegated to the specific logic
+        # BaseLogic + can be expanded by Artefact Logics
         self._logic.phase1_classify_from_predicates()
         self._logic.phase2_create_from_types()
         self._logic.phase3_populate_properties()
         self._logic.phase4_process_group_axioms()
-        
-        # PHASE 5: fallback (shared)
         self._logic.phase5_fallback()
         
         # PHASE 6: statements
@@ -229,18 +216,18 @@ class Reader:
                 for w in self._logic._warnings:
                     logger.debug("[%s] %s", w['code'], w['message'])
     
-    def _phase5_fallback(self):
-        """Fallback per risorse non categorizzate (comune)"""
+    # def _phase5_fallback(self):
+    #     """Fallback per risorse non categorizzate (comune)"""
         
-        fallback_class = self._configuration.get_fallback_class()
-        if not fallback_class:
-            logger.warning("No fallback class configured")
-            return
+    #     fallback_class = self._configuration.get_fallback_class()
+    #     if not fallback_class:
+    #         logger.warning("No fallback class configured")
+    #         return
         
-        all_subjects = set(self._graph.subjects())
-        fallback_count = 0
+    #     all_subjects = set(self._graph.subjects())
+    #     fallback_count = 0
         
-        for subj in all_subjects:
-            if subj not in self._instance_cache:
-                self._logic.get_or_create(subj, fallback_class)
-                fallback_count += 1
+    #     for subj in all_subjects:
+    #         if subj not in self._instance_cache:
+    #             self._logic.get_or_create(subj, fallback_class)
+    #             fallback_count += 1

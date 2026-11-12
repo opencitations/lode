@@ -177,7 +177,7 @@ class ConfigManager(ABC):
 
         An unknown class name in the config falls back to Statement.
         """
-        fallback = self.config.get('mapper', {}).get('fallback_class')
+        fallback = self.config.get('fallback_class')
         if fallback:
             import lode.models as _models
             return getattr(_models, fallback, Statement)

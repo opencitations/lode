@@ -24,7 +24,7 @@ from rdflib import Graph, BNode, Literal as RDFLiteral, Namespace
 from rdflib.namespace import RDF, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
-from lode.models import Concept, Collection, Model, Statement
+from lode.models import Concept, Collection, Model, Resource, Statement
 from lode.reader.config_manager import SkosConfigManager
 from lode.reader.logic.skos_logic import SkosLogic
 
@@ -568,3 +568,25 @@ class TestNamespaceFilter:
         inst = _instance_for_uri(logic, EX.A, Concept)
         triples = logic._triples_map.get(inst, set())
         assert not any(p == EX.customPred for _, p, _ in triples)
+
+
+# ===========================================================================
+# Phase 5 fallback
+# ===========================================================================
+
+def test_phase5_untyped_iri_becomes_a_populated_resource():
+    """An IRI no phase classified is kept as a Resource, with its mapped values."""
+    logic = _make_logic(_concept_graph(EX.A) + [
+        (EX.Loose, SKOS.prefLabel, RDFLiteral("loose", lang="en")),
+    ])
+    _run_all(logic)
+    inst = _instance_for_uri(logic, EX.Loose)
+    assert type(inst) is Resource
+    assert _values(inst.get_has_preferred_label()) == {"loose"}
+
+
+def test_phase5_leaves_a_classified_iri_alone():
+    """The fallback only touches IRIs that nothing else classified."""
+    logic = _make_logic(_concept_graph(EX.A))
+    _run_all(logic)
+    assert [type(i) for i in logic._instance_cache[EX.A]] == [Concept]

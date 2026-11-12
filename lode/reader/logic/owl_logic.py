@@ -23,8 +23,6 @@ class OwlLogic(BaseLogic):
     - Property type inference for properties not explicitly typed in the artefact
     """
 
-    # _get_allowed_namespaces: inherited from BaseLogic, reads the YAML config
-
     # ========== HOOK for custom OWL resolution ==========
 
     def _pre_resolve_hook(self, python_class: type, id: Node) -> type | None:
@@ -41,63 +39,50 @@ class OwlLogic(BaseLogic):
 
     # ========== READER PHASES ==========
 
+    # A Restriction exists only as a blank node, so an IRI is never given that class.
+    _BNODE_ONLY_CLASSES = (Restriction,)
+    _FALLBACK_CLASS = Individual
+
+
     def phase1_classify_from_predicates(self):
-        """Scans the RDF graph for subjects of mapped predicates.
-        - BNodes with inferred_class predicates -> classified and registered (mainly Restrictions)
-        - URIRefs with any mapped predicate but no rdf:type -> registered with
-        the inferred type from classify_by_predicate (only if unambiguous)
+        """Classify from the predicates as the base does, then apply what only OWL knows.
+
+        The base has already created the instances, blank nodes included. OWL drops
+        the anonymous property expressions that sit inside a restriction, flags the
+        malformed restrictions and classifies the nodes nested in OWL lists.
+        Phase 1 runs first, so every blank node in the cache comes from the base.
         """
+        super().phase1_classify_from_predicates()
 
-        classified = {}
+        # [ owl:inverseOf <prop> ] used as object of owl:onProperty is an anonymous
+        # property expression, not an entity of its own: it would leave a spurious
+        # cache entry, and nothing has populated or tracked it yet
+        spurious = [n for n in self._instance_cache
+                    if isinstance(n, BNode) and (None, OWL.onProperty, n) in self.graph]
+        for bnode in spurious:
+            del self._instance_cache[bnode]
 
-        for pred in self._property_mapping:
-            for uri in self.graph.subjects(pred, None):
-                if uri in self._instance_cache:
-                    continue
-                python_class = self._strategy.classify_by_predicate(uri, self.graph)
-                if not python_class:
-                    continue
-                if isinstance(uri, BNode):
-                    # [ owl:inverseOf <prop> ] used as object of owl:onProperty is an
-                    # anonymous inline property expression inside a Restriction, not a
-                    # standalone entity — skipped it to avoid spurious cache entries
-                    if (None, OWL.onProperty, uri) in self.graph:
-                        continue
-                    if uri not in classified:
-                        classified[uri] = python_class
-                elif isinstance(uri, URIRef):
-                    if not issubclass(python_class, Restriction):
-                        self.get_or_create(uri, python_class, populate=False)
+        classified = {n: type(next(iter(instances)))
+                      for n, instances in self._instance_cache.items()
+                      if isinstance(n, BNode)}
 
         owl_warnings.flag_malformed_restrictions(self, classified)
-        
+
+        first_level = set(classified)
         self._classify_nested(classified, self._strategy.get_classifier_predicates())
 
-        for uri, py_class in classified.items():
-            self.get_or_create(uri, py_class, populate=False)
+        for bnode, python_class in classified.items():
+            if bnode not in first_level:
+                self.get_or_create(bnode, python_class, populate=False)
 
     def phase2_create_from_types(self):
-        """Create instances from rdf:type declarations.
+        """Create the instances of the mapped types, then Individuals for the other types.
 
-        Subjects typed with a mapped type get the mapped class and its static
-        setters; subjects whose type is not mapped become Individuals, except for
-        structural vocabulary types.
+        The base creates the instances of the mapped types. Subjects whose type is not
+        mapped become Individuals, except for structural vocabulary types.
         """
+        super().phase2_create_from_types()
         type_mapping = self._strategy.get_type_mapping()
-
-        for rdf_type, config in type_mapping.items():
-            py_class = config.get('target_class')
-            if not py_class:
-                continue
-            for uri in self.graph.subjects(RDF.type, rdf_type):
-                inst = self.get_or_create(uri, py_class, populate=False)
-                if inst is not None:
-                    self._track(inst, (uri, RDF.type, rdf_type))
-                # Apply static setters (e.g. set_is_transitive: True) always,
-                # even if instance already existed in cache from phase1.
-                if 'setters' in config:
-                    for instance in self._instance_cache.get(uri, set()):
-                        self._apply_setters_immediate(instance, config['setters'])
 
         # Subjects with rdf:type not covered by config -> Individual
         for s, o in self.graph.subject_objects(RDF.type):
@@ -114,31 +99,12 @@ class OwlLogic(BaseLogic):
         for s, o in self.graph.subject_objects(RDF.type):
             if o not in type_mapping and not isinstance(s, BNode) and s not in self._instance_cache:
                 self.get_or_create(s, Individual, populate=True)
-
-    def phase3_populate_properties(self):
-        """Iterates over all cached instances and populates their properties
-        by dispatching each predicate-object pair through the configured
-        setters and handlers defined in the property mapping.
-        """
         
-        for uri in list(self._instance_cache.keys()):
-            for instance in list(self._instance_cache[uri]):
-                self.populate_instance(instance, uri)             
-
-    def phase4_process_group_axioms(self):
-        """Processes group axioms defined in the enricher section of the config.
-        For each axiom type, retrieves all matching subjects from the graph
-        and dispatches them to the handler specified in the config entry.
-        """
-                
-        axioms = self._strategy.get_group_axioms()
-        for axiom_type, handler_name in axioms.items():
-            for uri in self.graph.subjects(RDF.type, axiom_type):
-                # handler existence guaranteed by _validate_handlers (defined in base_logic)
-                getattr(self, handler_name)(uri)
 
     def phase5_fallback(self):
         """
+        First the base fallback (the YAML 'fallback_class', none for OWL), then the OWL steps.
+
         Classifies or reclassifies any entity whose concrete type could not be
         determined in earlier phases, in particular generic Property instances
         whose subtype (Relation, Attribute, Annotation) is not explicitly
@@ -147,6 +113,8 @@ class OwlLogic(BaseLogic):
         After reclassification, applies OWL defaults (e.g., domain, range, thing) to all instances via _enrich_or_apply_owl_defaults.
         """
         
+        super().phase5_fallback()
+
         for uri, instances in list(self._instance_cache.items()):
             for instance in list(instances):
 
@@ -682,8 +650,10 @@ class OwlLogic(BaseLogic):
         except Exception:
             logger.warning("AllDisjointProperties failed for %s", uri, exc_info=True)
 
-    # ========== HANDLER CALLED BY PHASE 3 FOR POPULATING INSTANCES ==========
-
+# ==========================================================================
+# OWL-SPECIFIC HANDLERS LOGIC FROM DECLARATIVE MAPPING
+# ==========================================================================
+    
     def handle_property_chain(self, instance, uri, predicate, obj, setter=None):
         """Handler per owl:propertyChainAxiom"""
 
