@@ -7,35 +7,37 @@ type-specific file on top and exposes the result to the logic classes.
 
 import yaml
 from pathlib import Path
-from abc import ABC, abstractmethod
 from rdflib import URIRef, Graph, Node
 from lode.models import *
+from lode.helpers.formats import CONFIGURATION_REGISTRY
 
-class ConfigManager(ABC):
+class ConfigManager:
     """Strategy driven by a single merged YAML configuration.
 
-    Subclasses only say which config file they use and how to build their
-    logic; parsing and caching of the mappings is shared here. Viewers are not
-    a concern of this layer: see lode.viewer.get_viewer.
+    One instance per artefact format: `config_name` picks the YAML file and the
+    logic class (see CONFIGURATION_REGISTRY). Adding a format needs no new
+    subclass. Viewers are not a concern of this layer: see lode.viewer.get_viewer.
     """
 
-    def __init__(self):
-        """Load and merge the YAML configuration; mappings are parsed lazily."""
+    def __init__(self, config_name: str):
+        """Load and merge the YAML configuration; mappings are parsed lazily.
+
+        `config_name` is a lowercase key of CONFIGURATION_REGISTRY ('owl', 'skos', 'rdf').
+        """
+        self.config_name = config_name
         self.config = self._load_config()
         self._type_mapping_cache = None
         self._property_mapping_cache = None
-    
-    @abstractmethod
-    def create_logic(self, graph: Graph, cache: dict):
-        """Factory method: build the logic specific to this artefact type."""
-        pass
 
-    @property
-    @abstractmethod
-    def config_name(self) -> str:
-        """Name of the type-specific config file: 'owl' | 'skos' | 'rdf'."""
-        pass
-    
+    def create_logic(self, graph: Graph, cache: dict):
+        """Build the logic class registered for this format.
+
+        Looked up by name in the logic package so the registry stays plain data.
+        """
+        # lazy import: the logic modules import this module (circular)
+        from lode.reader import logic
+        return getattr(logic, CONFIGURATION_REGISTRY[self.config_name])(graph, cache, self)
+
     def _load_config(self) -> dict:
         """Read base.yaml and the type-specific YAML, and return them deep-merged.
 
@@ -264,20 +266,13 @@ class SkosConfigManager(ConfigManager):
 
 # ========== CONFIGURATIONS REGISTRY ==========
 
-CONFIGURATION_REGISTRY = {
-    'OWL': OwlConfigManager,
-    'SKOS': SkosConfigManager,
-    'RDF': RdfConfigManager
-}
-
-
 def get_configuration(configuration_name: str) -> ConfigManager:
     """Return a new manager for the given artefact type (case-insensitive).
 
     Raises ValueError listing the available types when the name is unknown.
     """
-    key = configuration_name.upper()
+    key = configuration_name.lower()
     if key not in CONFIGURATION_REGISTRY:
-        available = ', '.join(CONFIGURATION_REGISTRY.keys())
+        available = ', '.join(sorted(CONFIGURATION_REGISTRY))
         raise ValueError(f"Unknown configuration: '{configuration_name}'. Available: {available}")
-    return CONFIGURATION_REGISTRY[key]()
+    return ConfigManager(key)

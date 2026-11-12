@@ -8,17 +8,25 @@ in both entry points.
 from enum import Enum
 from lode.exceptions import ArtefactValidationError
 
+
+# Format name -> logic class name in lode.reader.logic. Plain strings on purpose: this
+# module must not import the reader or the viewers, so every layer can read it.
+# A new format is one line here, plus its YAML mapper and its logic class.
+CONFIGURATION_REGISTRY = {
+    'owl': 'OwlLogic',
+    'rdf': 'RdfLogic',
+    'skos': 'SkosLogic',
+}
+
 # Formats enabled in this release. Add a value here when the reader
 # and viewer for that format are stable and tested.
 ENABLED_FORMATS = {"owl", "skos"}
-
 
 class ReadAsFormat(str, Enum):
     """Semantic artefact type. Note: currently only `owl` is enabled."""
     owl = "owl"
     rdf = "rdf"
     skos = "skos"
-
 
 # Export formats: triples of the loaded artefact only. Shared by the viewers,
 # the static builder and the API, so they live here and not in a viewer.

@@ -17,56 +17,56 @@ allowed_classes:
   - Atom
   - Rule
 
-mapper: 
+mapper: {}
 
-  "*":  
-    create_statement: true
-    target_classes: []
+  # "*":  
+  #   create_statement: true
+  #   target_classes: []
 
-  rdf:Property:
-    is: class 
-    target_class: Property 
+  # rdf:Property:
+  #   is: class 
+  #   target_class: Property 
 
-  rdf:Statement:
-    is: class 
-    target_class: Statement
+  # rdf:Statement:
+  #   is: class 
+  #   target_class: Statement
 
-  rdf:subject:
-    is: predicate
-    target_classes: [Statement]
-    setters: 
-      - set_has_subject: Resource
+  # rdf:subject:
+  #   is: predicate
+  #   target_classes: [Statement]
+  #   setters: 
+  #     - set_has_subject: Resource
 
-  rdf:predicate:
-    is: predicate
-    target_classes: [Statement]
-    setters: 
-      - set_has_predicate: Resource
+  # rdf:predicate:
+  #   is: predicate
+  #   target_classes: [Statement]
+  #   setters: 
+  #     - set_has_predicate: Resource
   
-  rdf:object:
-    is: predicate
-    target_classes: [Statement]
-    setters: 
-      - set_has_object: Resource
+  # rdf:object:
+  #   is: predicate
+  #   target_classes: [Statement]
+  #   setters: 
+  #     - set_has_object: Resource
 
-  rdf:Bag:
-    is: class
-    target_class: Container
-    handler: create_python_container
+  # rdf:Bag:
+  #   is: class
+  #   target_class: Container
+  #   handler: create_python_container
   
-  rdf:Alt:
-    is: class
-    target_class: Container
-    handler: create_python_container
+  # rdf:Alt:
+  #   is: class
+  #   target_class: Container
+  #   handler: create_python_container
     
-  rdf:List:
-    is: class
-    target_class: Container
-    handler: create_python_container
+  # rdf:List:
+  #   is: class
+  #   target_class: Container
+  #   handler: create_python_container
 
-  rdf:Seq:
-    is: class
-    target_class: Container
-    handler: create_python_container
+  # rdf:Seq:
+  #   is: class
+  #   target_class: Container
+  #   handler: create_python_container
 
 enricher: {}

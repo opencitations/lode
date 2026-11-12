@@ -1,4 +1,4 @@
-site_name: LODE 2.0
+site_name: LODE
 site_description: Live OWL Documentation Environment — extract and document RDF/OWL/SKOS semantic artefacts as browsable HTML.
 site_url: https://opencitations.github.io/lode/
 repo_url: https://github.com/opencitations/lode
@@ -33,6 +33,7 @@ nav:
   - Home: index.md
   - Getting started: getting_started.md
   - Architecture: architecture.md
+  - Extending LODE2: extending.md
   - Usage:
       - Web form: usage/web_form.md
       - CLI: usage/cli.md
