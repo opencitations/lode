@@ -9,6 +9,7 @@ from lode.reader.config_manager import get_configuration
 from lode.models import *
 from typing import Optional
 from rdflib import Graph, URIRef
+from lode.helpers.rdf import iri_namespace
 from lode.artefact import Artefact, Provenance
 from lode.provenance_graph import ProvenanceGraph
 
@@ -42,7 +43,9 @@ class Reader:
         self._graph = None
         self._configuration = None
         self._imported_uris = set()   # needed to get the model before imported/closure models
-        self._ontology_iri = None
+        self._artefact_base_iri = None
+        self._artefact_iri = None
+
 
     def get_warnings(self) -> list:
         """Return the warnings collected while reading, or [] when they were not requested."""
@@ -54,11 +57,11 @@ class Reader:
 
     def _prioritize_documented_values(self) -> None:
         """Reorder every multi-valued field so that values asserted by the documented
-        ontology (main named graph) come before those from imported or home graphs.
+        semantic artefact (main named graph) come before those from imported or home graphs.
 
         Needed because the graph does not preserve insertion order across named graphs.
         The sort is stable: within each group the original order is kept."""
-        main = self._graph.graph(self._ontology_iri)
+        main = self._graph.graph(self._artefact_iri)
         for uri, instances in self._instance_cache.items():
             if not isinstance(uri, URIRef):
                 continue
@@ -87,7 +90,7 @@ class Reader:
         loader = Loader(graph_path, imported=imported, closure=closure, partial_import=partial_import,
                         source_name=source_name)
         self._graph = loader.get_graph()
-        self._ontology_iri = loader.ontology_iri
+        self._artefact_iri = loader.artefact_iri
         
         # 1.5 saves the imported/closure uris to be reused in viewer so the model metadata are not overwritten 
         self._imported_uris = getattr(loader, "imported_uris", set())
@@ -101,7 +104,7 @@ class Reader:
         # 4. Run the extraction phases
         self._extract_instances()
 
-        # 5. Documented ontology first (only when a module is active)
+        # 5. Documented semantic artefact first (only when a module is active)
         if isinstance(self._graph, ProvenanceGraph):
             self._prioritize_documented_values()
     
@@ -170,7 +173,8 @@ class Reader:
         return Artefact(
             entities=self._instance_cache,
             graph=self._graph,
-            ontology_iri=self._ontology_iri,
+            artefact_iri=self._artefact_iri,
+            artefact_base_iri=URIRef(iri_namespace(self._artefact_iri)) if self._artefact_iri else None,
             imported_uris=self._imported_uris,
             warnings=self.get_warnings(),
             provenance=Provenance(getattr(self._logic, "build_provenance_subgraph", None)),

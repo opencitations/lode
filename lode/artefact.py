@@ -45,26 +45,27 @@ class Artefact:
 
     entities: dict
     graph: Graph
-    ontology_iri: Optional[URIRef] = None
+    artefact_iri: Optional[URIRef] = None
+    artefact_base_iri: Optional[URIRef] = None
     imported_uris: set = field(default_factory=set)
     warnings: list = field(default_factory=list)
     provenance: Provenance = field(default_factory=Provenance)
     read_as: Optional[str] = None
 
-    def instances(self, class_name: Optional[str] = None) -> list:
+    def instances(self, cls: Optional[type] = None) -> list:
         """Return the extracted instances, optionally only those of one model class.
 
-        `class_name` is the exact name of a model class ("Concept", "Relation"):
-        subclasses are not matched, so the result is the same grouping the viewers
-        use. Literals are not entities and are never returned. An unknown name
-        gives an empty list.
+        `cls` is a model class (Concept, Relation): its subclasses are included, as
+        with isinstance, so Resource gives every instance. Literals are not entities
+        and are never returned. Passing anything that is not a class, such as the
+        class name, raises TypeError.
         """
         found = []
         for key, group in self.entities.items():
             if isinstance(key, str) and key.startswith(_LITERAL_PREFIX):
                 continue
             for instance in (group if isinstance(group, set) else [group]):
-                if class_name is None or type(instance).__name__ == class_name:
+                if cls is None or isinstance(instance, cls):
                     found.append(instance)
         return found
 
@@ -88,7 +89,7 @@ class Artefact:
         loaded graph itself.
         """
         if isinstance(self.graph, ProvenanceGraph):
-            return self.graph.graph(self.ontology_iri)
+            return self.graph.graph(self.artefact_iri)
         return self.graph
 
     def with_provenance(self, sub: Graph) -> ProvenanceGraph:
@@ -108,7 +109,7 @@ class Artefact:
                 for *_, c in ds.quads((s, p, o, None)):
                     out.graph(c).add((s, p, o))
         else:
-            main = out.graph(self.ontology_iri)
+            main = out.graph(self.artefact_iri)
             for t in sub:
                 main.add(t)
         return out

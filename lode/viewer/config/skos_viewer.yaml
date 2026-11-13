@@ -20,3 +20,6 @@ toc:
 
 characteristics:
   - is_ordered
+
+hierarchy:
+  Concept:   get_is_sub_concept_of

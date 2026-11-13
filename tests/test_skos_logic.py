@@ -14,7 +14,7 @@ Covers:
   Namespace filter
 
 Each test builds a minimal in-memory RDF graph, constructs a SkosLogic with a
-SkosConfigManager and runs only the phases needed.
+depending on its config manager runs only the phases needed.
 
 Run with:
     uv run pytest tests/test_skos_logic.py -v
@@ -25,8 +25,8 @@ from rdflib.namespace import RDF, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import Concept, Collection, Model, Resource, Statement
-from lode.reader.config_manager import SkosConfigManager
 from lode.reader.logic.skos_logic import SkosLogic
+from lode.reader.config_manager import get_configuration
 
 EX = Namespace("http://example.org/skos#")
 
@@ -40,7 +40,7 @@ def _make_logic(triples: list, graph: Graph = None) -> SkosLogic:
     g = graph if graph is not None else Graph()
     for s, p, o in triples:
         g.add((s, p, o))
-    return SkosLogic(g, {}, SkosConfigManager())
+    return SkosLogic(g, {}, get_configuration("skos"))
 
 
 def _run_all(logic: SkosLogic):

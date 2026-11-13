@@ -21,7 +21,7 @@ class Loader:
 
     The loaded graph is a plain Graph, or a ProvenanceGraph (one named graph per
     ontology) when imported, closure or partial_import is requested. In both cases
-    `ontology_iri` names the loaded artefact.
+    `artefact_iri` names the loaded artefact.
     """
 
     def __init__(self, file_path: Optional[str] = None, imported=None, closure=None, partial_import=None,
@@ -35,7 +35,7 @@ class Loader:
         """
 
         self.graph = Graph()
-        self.ontology_iri = None
+        self.artefact_iri = None
         self._source_name = source_name
         self._imported = imported
         self._closure = closure
@@ -77,12 +77,12 @@ class Loader:
         name = self._source_name or source
         if self._imported or self._closure or self._partial_import:
             raw, self.graph = self.graph, ProvenanceGraph()
-            self.ontology_iri = self.graph.add_document(raw, name)
+            self.artefact_iri = self.graph.add_document(raw, name)
             self._apply_modules()
         else:
             # no modules: the graph stays plain, only its name is needed so that
             # the provenance of an entity can still be written as a quad
-            self.ontology_iri = ProvenanceGraph.ontology_iri(self.graph, name)
+            self.artefact_iri = ProvenanceGraph.artefact_iri(self.graph, name)
     
     # ----------------------------------------------------------
     #  MODULES MAIN HANDLER

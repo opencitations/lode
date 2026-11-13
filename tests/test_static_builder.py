@@ -124,13 +124,13 @@ def test_object_only_has_no_page(built):
     viewer = built["viewer"]
     res = built["out"] / "resources"
     graph = viewer.artefact.graph
-    ontology_ns = viewer.get_ontology_ns()
+    artefact_ns = viewer.get_artefact_ns()
 
     for i in viewer.get_toc_instances():
         uri = i.get_has_identifier()
         if not uri:
             continue
-        materialized = str(uri).startswith(ontology_ns) or viewer._has_local_triples(uri)
+        materialized = str(uri).startswith(artefact_ns) or viewer._has_local_triples(uri)
         if not materialized:
             slug = _rel_slug(uri, graph)
             assert not (res / f"{slug}.html").exists(), f"page for non-materialized: {uri}"

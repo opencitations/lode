@@ -154,7 +154,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
     _copy_static(out_dir)
     _write_warnings_report(viewer.format_warnings(viewer.artefact.warnings), out_dir)
 
-    ontology_ns = viewer.get_ontology_ns()
+    artefact_ns = viewer.get_artefact_ns()
     graph = viewer.artefact.graph
     main_graph = viewer.artefact.main_graph()
 
@@ -167,7 +167,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
         return (URIRef(str(uri)), None, None) in main_graph
 
     grouped = defaultdict(list)
-    for inst in viewer.get_all_instances():
+    for inst in viewer.artefact.instances():
         grouped[type(inst).__name__].append(inst)
 
     toc_config = viewer.get_toc_config()
@@ -179,7 +179,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
             u = inst.get_has_identifier()
             if not u:
                 continue
-            if not (u.startswith(ontology_ns) or _in_main_graph(u)):
+            if not (u.startswith(artefact_ns) or _in_main_graph(u)):
                 continue
             if _rel_slug(u, graph).rsplit("/", 1)[-1] == "":   # namespace IRI, no local
                 continue
@@ -238,7 +238,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
             uri = inst.get_has_identifier()
             if not uri:
                 continue
-            native = uri.startswith(ontology_ns)
+            native = uri.startswith(artefact_ns)
             if not (native or _in_main_graph(uri)):
                 continue
 

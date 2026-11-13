@@ -48,7 +48,7 @@ class TestReaderWithLoadedOntology:
     def test_get_viewer_picks_the_viewer_of_the_format(self, loaded_reader):
         viewer = get_viewer(loaded_reader.get_artefact())
         assert isinstance(viewer, OwlViewer)
-        assert hasattr(viewer, 'get_all_instances')
+        assert hasattr(viewer.artefact, 'instances')
 
 
 class TestReaderClearCache:
@@ -112,7 +112,7 @@ class TestReaderTriplesMap:
         viewer = get_viewer(reader_with_triples.get_artefact())
         
         # Usa il viewer per ottenere l'istanza
-        instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Person")
+        instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
         assert instance_set is not None
         
         # Prendi la prima istanza dal set
@@ -132,7 +132,7 @@ class TestReaderTriplesMap:
     def test_triples_contain_expected_predicates(self, reader_with_triples):
         """Verifica che le triple contengano i predicati attesi"""
         viewer = get_viewer(reader_with_triples.get_artefact())
-        instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Person")
+        instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
         person = next(iter(instance_set))
         
         triples_map = reader_with_triples._logic._triples_map
@@ -149,7 +149,7 @@ class TestReaderTriplesMap:
     def test_triples_contain_expected_objects(self, reader_with_triples):
         """Verifica che le triple contengano gli oggetti attesi"""
         viewer = get_viewer(reader_with_triples.get_artefact())
-        instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Person")
+        instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
         person = next(iter(instance_set))
         
         triples_map = reader_with_triples._logic._triples_map
@@ -165,7 +165,7 @@ class TestReaderTriplesMap:
     def test_subclass_has_subClassOf_triple(self, reader_with_triples):
         """Verifica che Student abbia la tripla rdfs:subClassOf"""
         viewer = get_viewer(reader_with_triples.get_artefact())
-        instance_set = viewer.get_instances_from_single_resource("http://example.org/test#Student")
+        instance_set = viewer.artefact.get_instance("http://example.org/test#Student")
         assert instance_set is not None
         
         student = next(iter(instance_set))
@@ -186,7 +186,7 @@ class TestReaderTriplesMap:
     def test_property_has_domain_range_triples(self, reader_with_triples):
         """Verifica che la property 'knows' abbia domain e range"""
         viewer = get_viewer(reader_with_triples.get_artefact())
-        instance_set = viewer.get_instances_from_single_resource("http://example.org/test#knows")
+        instance_set = viewer.artefact.get_instance("http://example.org/test#knows")
         assert instance_set is not None
         
         knows = next(iter(instance_set))
@@ -216,7 +216,7 @@ class TestReaderTriplesMap:
         graph = reader_with_triples._logic.graph
 
         orphans = []
-        for inst in viewer.get_all_instances():
+        for inst in viewer.artefact.instances():
             if triples_map.get(inst):
                 continue
             ident = inst.get_has_identifier()

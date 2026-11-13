@@ -143,7 +143,7 @@ class TestModuleInvariants:
     def test_returns_provenance_graph_named_after_main_ontology(self, main_path, flag):
         loader = Loader(main_path, **{flag: True})
         assert isinstance(loader.get_graph(), ProvenanceGraph)
-        assert loader.ontology_iri == MAIN
+        assert loader.artefact_iri == MAIN
 
     @pytest.mark.parametrize("flag", MODULES)
     def test_default_graph_stays_empty(self, main_path, flag):
@@ -225,9 +225,9 @@ class TestClosure:
         """Known and accepted: without owl:Ontology the main context is the file path."""
         p = DATA / "anon.ttl"
         loader = Loader(str(p), closure=True)
-        assert loader.ontology_iri == URIRef(p.resolve().as_uri())
+        assert loader.artefact_iri == URIRef(p.resolve().as_uri())
         assert contexts(loader.get_graph(), (URIRef("http://ex.org/anon#A"), RDF.type, OWL.Class)) \
-            == {loader.ontology_iri}
+            == {loader.artefact_iri}
 
 
 # ==========================================================================
@@ -373,7 +373,7 @@ class TestCacheRoundTrip:
     def test_reloading_main_graph_reproduces_same_quads(self, main_path, tmp_path, flag):
         fresh = Loader(main_path, **{flag: True})
         cached = tmp_path / "cached.ttl"
-        cached.write_text(fresh.get_graph().graph(fresh.ontology_iri).serialize(format="turtle"),
+        cached.write_text(fresh.get_graph().graph(fresh.artefact_iri).serialize(format="turtle"),
                           encoding="utf-8")
         again = Loader(str(cached), **{flag: True}).get_graph()
         assert graphs(again) == graphs(fresh.get_graph())
@@ -393,9 +393,9 @@ class TestCacheRoundTrip:
 # 6. PER-ENTITY PROVENANCE (viewer)
 # ==========================================================================
 
-def fake_artefact(graph, ontology_iri=None):
+def fake_artefact(graph, artefact_iri=None):
     """Minimal Artefact for BaseViewer: only the graph and no entities."""
-    return Artefact(entities={}, graph=graph, ontology_iri=ontology_iri)
+    return Artefact(entities={}, graph=graph, artefact_iri=artefact_iri)
 
 
 def entity_provenance(ds, subject):
@@ -682,7 +682,7 @@ class TestDownloadUrl:
         url = "http://ex.org/anon"
         for use_cache in (False, True):
             artefact = api._load_url(url, "owl", None, None, None, False, use_cache=use_cache)
-            assert artefact.ontology_iri == URIRef(url)
+            assert artefact.artefact_iri == URIRef(url)
 
 
 class TestSourceName:
@@ -691,7 +691,7 @@ class TestSourceName:
     def test_names_the_graph_without_declared_ontology(self, tmp_path):
         p = tmp_path / "x.ttl"
         p.write_text("<http://ex.org/a> a <http://ex.org/B> .", encoding="utf-8")
-        assert Loader(str(p), source_name="http://ex.org/x.ttl").ontology_iri == URIRef("http://ex.org/x.ttl")
+        assert Loader(str(p), source_name="http://ex.org/x.ttl").artefact_iri == URIRef("http://ex.org/x.ttl")
 
     def test_declared_ontology_wins(self, main_path):
-        assert Loader(main_path, source_name="http://ex.org/other").ontology_iri == MAIN
+        assert Loader(main_path, source_name="http://ex.org/other").artefact_iri == MAIN

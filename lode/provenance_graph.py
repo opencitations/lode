@@ -10,7 +10,7 @@ from urllib.parse import urlparse, quote
 from rdflib import Dataset, Graph, URIRef, OWL, RDF
 from rdflib.namespace import SKOS
 
-_ONTOLOGY_TYPES = (OWL.Ontology, SKOS.ConceptScheme)
+_SEMANTIC_ARTEFACTS_TYPES = (OWL.Ontology, SKOS.ConceptScheme)
 QUAD_FORMATS = frozenset({"trig", "nquads"})
 
 class ProvenanceGraph(Dataset):
@@ -32,15 +32,15 @@ class ProvenanceGraph(Dataset):
     def add_document(self, g: Graph, fallback: str) -> URIRef:
         """Copy the triples of `g` into the named graph of its ontology and return its IRI.
 
-        The graph is named by `ontology_iri`; `fallback` (usually the source URL
+        The graph is named by `artefact_iri`; `fallback` (usually the source URL
         or path) is used when the document declares no ontology.
         """
-        ctx =self.ontology_iri(g, fallback)
+        ctx =self.artefact_iri(g, fallback)
         self.graph(ctx).__iadd__(g)
         return ctx
 
     @staticmethod
-    def ontology_iri(g: Graph, fallback: str) -> URIRef:
+    def artefact_iri(g: Graph, fallback: str) -> URIRef:
         """Return the IRI that names the graph of a document.
 
         Uses the first owl:Ontology or skos:ConceptScheme subject with an IRI.
@@ -48,7 +48,7 @@ class ProvenanceGraph(Dataset):
         are, local paths as file:// URIs (a one-letter scheme is a Windows
         drive), anything else as a urn:lode:source: URN.
         """
-        for t in _ONTOLOGY_TYPES:
+        for t in _SEMANTIC_ARTEFACTS_TYPES:
             for s in g.subjects(RDF.type, t):
                 if isinstance(s, URIRef):
                     return s

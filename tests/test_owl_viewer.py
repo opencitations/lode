@@ -68,7 +68,11 @@ def _viewer(*instances, undefined=()):
         cache.setdefault(key, set()).add(inst)
         if key and key not in undefined:
             g.add((URIRef(key), RDF.type, OWL.Thing))
-    return OwlViewer(Artefact(entities=cache, graph=g))
+
+    onto = next((i for i in instances if isinstance(i, Model)), None)
+    iri = URIRef(onto.get_has_identifier()) if onto else None
+    
+    return OwlViewer(Artefact(entities=cache, graph=g, artefact_iri=iri))
 
 # rdflib BNode ids look like 'N' + 32 hex chars, or 'n<digits/hex>' for parsed
 # blank nodes. Anything matching means a raw blank node leaked into the view.

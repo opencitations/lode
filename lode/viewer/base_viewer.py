@@ -11,6 +11,7 @@ from lode.models import Literal, Model, Resource, Statement
 
 from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 
+
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 
@@ -32,6 +33,10 @@ class BaseViewer:
     only the steps that really need code.
     """
 
+    # ==========================================================================
+    # SETUP
+    # ==========================================================================
+
     # Name of config/<name>_viewer.yaml; None gives the generic flat list view.
     CONFIG_NAME: Optional[str] = None
 
@@ -39,7 +44,6 @@ class BaseViewer:
         """Bind the viewer to a Reader, share its instance cache and load its config."""
         self.artefact = artefact
         self._internal_iris = None
-        self._ontology_ns = None
         self._config = (
             load_viewer_config(self.CONFIG_NAME) if self.CONFIG_NAME
             else {"type_map": {}, "toc": [], "card": "_card_owl.html",
@@ -50,58 +54,16 @@ class BaseViewer:
         """Return the table of contents: (class name, section id, type_map key) in display order."""
         return [tuple(entry) for entry in self._config["toc"]]
 
-    def format_warnings(self, warnings: List[Dict]) -> List[Dict]:
-        """Return the reader warnings with model class names replaced by this viewer's display names.
+    # ==========================================================================
+    # 2. ARTEFACT ACCESS
+    # ==========================================================================
 
-        The reader words its messages with internal class names (Attribute, Annotation) and
-        cannot know how a format shows them; the display names live in the type_map of this
-        viewer, so the swap happens here, before the warnings reach any output. Only standalone
-        words are replaced: a class name inside an IRI (.../Concept, ...#Concept) is left alone.
-        Returns copies, the reader's own list is never modified.
+    def get_artefact_ns(self) -> str:
+        """Return the namespace of the documented semantic artefact (its IRI ending in '/' or '#'), or ''.
+
+        Read from the artefact: the Reader derives it from the artefact IRI.
         """
-        names = {key.capitalize(): entry["singular"] for key, entry in self._config["type_map"].items()}
-        if not names:
-            return [dict(w) for w in warnings]
-        pattern = re.compile(r"(?<![\w/#:-])(" + "|".join(map(re.escape, names)) + r")(?![\w/#:-])")
-        return [{**w, "message": pattern.sub(lambda m: names[m.group(1)], w["message"])}
-                for w in warnings]
-
-    def _clean_name(self, name: str) -> str:
-        """Turn an attribute or getter name into a display label, using this viewer's vocabulary."""
-        return clean_name(name, self._config["vocabulary"])
-
-    def _get_main_model(self) -> Optional[Model]:
-        """Return the Model of the documented ontology, or None when there is none.
-
-        The documented ontology is the one that names the loaded graph
-        (`reader._ontology_iri`), so the choice does not depend on the order of the
-        cache: it also holds Models for imports, version IRIs and imported
-        ontologies. Artefacts that declare no ontology IRI fall back to the first
-        Model that does not come from an import.
-        """
-        main_iri = str(self.artefact.ontology_iri) if self.artefact.ontology_iri else None
-        imported = self.artefact.imported_uris or set()
-        models = [i for i in self.get_all_instances() if isinstance(i, Model)]
-        by_iri = next((m for m in models if str(m.get_has_identifier()) == main_iri), None)
-        if by_iri is not None:
-            return by_iri
-        return next(
-            (m for m in models if str(m.get_has_identifier()) not in imported),
-            models[0] if models else None,
-        )
-
-    def get_ontology_ns(self) -> str:
-        """Return the namespace of the documented ontology (its IRI ending in '/' or '#'), or ''.
-
-        Computed once from the first Model instance and then cached.
-        """
-        if self._ontology_ns is None:
-            self._ontology_ns = ''
-            model = self._get_main_model()
-            nid = model.get_has_identifier() if model else None
-            if nid:
-                self._ontology_ns = nid if nid.endswith(('/', '#')) else nid + '/'
-        return self._ontology_ns
+        return str(self.artefact.artefact_base_iri or '')
 
     def _has_local_triples(self, uri) -> bool:
         """Return True if the graph has at least one triple whose subject is this IRI."""
@@ -109,9 +71,9 @@ class BaseViewer:
             return False
         return (URIRef(str(uri)), None, None) in self.artefact.graph
 
-    def _formats(self):
-        """Return the export formats (triples): the same whatever modules are active."""
-        return SERIALIZATION_FORMATS
+    # ==========================================================================
+    # 3. NAVIGATION RULES
+    # ==========================================================================
 
     def _is_internal(self, uri) -> bool:
         """Return True if the IRI belongs to a browsable entity of this documentation.
@@ -127,14 +89,27 @@ class BaseViewer:
                 if i.get_has_identifier()
             }
         return str(uri) in self._internal_iris
-    
-    def get_all_instances(self) -> List:
-        """Return all the extracted instances (literals are not entities)."""
-        return self.artefact.instances()
 
-    def get_instances_from_single_resource(self, resource_uri: str) -> Optional[set]:
-        """Return the instances registered under an IRI, or None when it is unknown."""
-        return self.artefact.get_instance(resource_uri)
+    def _is_toc_entity(self, instance) -> bool:
+        """Browsable (own card + clickable link) iff its type is in get_toc_config. 
+            Resources not listed in get_o_config are shown when mentioned as plain text 
+            in cards  (external-ref), just never linked."""
+        toc_keys = {key for key, _id, _title in self.get_toc_config()}
+        if type(instance).__name__ not in toc_keys:
+            return False
+        return self._has_local_triples(instance.get_has_identifier())
+
+    def get_toc_instances(self) -> List:
+        """Return the instances that get their own card and link (the browsable entities)."""
+        return [i for i in self.artefact.instances() if self._is_toc_entity(i)]
+
+    # ==========================================================================
+    # 3. LABELS AND LANGUAGES
+    # ==========================================================================
+
+    def _clean_name(self, name: str) -> str:
+        """Turn an attribute or getter name into a display label, using this viewer's vocabulary."""
+        return clean_name(name, self._config["vocabulary"])
 
     def _select_by_language(self, values: List, language: Optional[str] = None) -> List:
         """Keep the values of one property in the best available language.
@@ -179,6 +154,9 @@ class BaseViewer:
 
         return None
 
+    # ==========================================================================
+    # 3. VIEW DATA
+    # ==========================================================================    
     def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
         """Build the template data for one resource, or for the whole artefact grouped by entity type.
 
@@ -190,8 +168,8 @@ class BaseViewer:
         # If no language is provided, the default would be English
         language = language.strip() if language else "en"
 
-        all_instances = self.get_all_instances()
-        metadata_dict = self._find_and_format_metadata(all_instances, language)
+        all_instances = self.artefact.instances()
+        metadata_dict = self._find_and_format_semantic_artefact_metadata(all_instances, language)
 
         if resource_uri:
             data = self._handle_single_resource(resource_uri, language)
@@ -205,26 +183,13 @@ class BaseViewer:
         data['type_map'] = self._config["type_map"]
         data['card_template'] = self._config["card"]
         return data
-
-    def _is_toc_entity(self, instance) -> bool:
-        """Browsable (own card + clickable link) iff its type is in get_toc_config. 
-            Resources not listed in get_o_config are shown when mentioned as plain text 
-            in cards  (external-ref), just never linked."""
-        toc_keys = {key for key, _id, _title in self.get_toc_config()}
-        if type(instance).__name__ not in toc_keys:
-            return False
-        return self._has_local_triples(instance.get_has_identifier())
-    
-    def get_toc_instances(self) -> List:
-        """Return the instances that get their own card and link (the browsable entities)."""
-        return [i for i in self.get_all_instances() if self._is_toc_entity(i)]
     
     def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:
         """
         Standard logic for displaying a single resource.
         Returns the specific dictionary structure required by viewer.html
         """
-        instance_set = self.get_instances_from_single_resource(resource_uri)
+        instance_set = self.artefact.get_instance(resource_uri)
 
         if not instance_set:
             return {'error': f'Resource {resource_uri} not found'}
@@ -246,7 +211,7 @@ class BaseViewer:
         Constructs the 'Table of Contents' view.
         Adds optional 'tree' to sections whose class_key supports hierarchy.
         """
-        all_instances = self.get_all_instances()
+        all_instances = self.artefact.instances()
         sections = []
 
         for class_key, section_id, section_title in group_definitions:
@@ -279,7 +244,7 @@ class BaseViewer:
         Converts Python Models -> HTML Template Dictionary.
         Ensures consistent keys ('type', 'uri', 'label') across all viewers.
         """
-        all_instances = self.get_all_instances()
+        all_instances = self.artefact.instances()
 
         entities = []
         for instance in instances:
@@ -385,23 +350,30 @@ class BaseViewer:
         entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
         return entities
 
-    def _find_and_format_metadata(self, all_instances: List[Resource], language=None) -> Dict:
+    def _find_and_format_semantic_artefact_metadata(self, all_instances: List[Resource], language=None) -> Dict:
         """
         Searches for the Model and its Statements and formatting them
         for the template.
         """
         
-        # 1. Find the Model of the documented ontology (not the imported ones)
-        ontology_model = self._get_main_model()
+        # 1. Find the Model of the documented semantic artefact (not the imported ones):
+        # the cache also holds Models for imports and version IRIs, so pick it by IRI.
+        # A source that declares no ontology or concept scheme has none: no header.
+        main_iri = str(self.artefact.artefact_iri)
+        sem_art_model = next(
+            (m for m in self.artefact.instances(Model)
+             if str(m.get_has_identifier()) == main_iri),
+            None,
+        )
 
-        if not ontology_model:
+        if not sem_art_model:
 
             return {}
 
         # 2. Prepare Output
         data = {
-            'uri': [self._resolve_resource_value(ontology_model, language)],
-            'label': [self._resolve_resource_value(self._get_best_label(ontology_model, language))]
+            'uri': [self._resolve_resource_value(sem_art_model, language)],
+            'label': [self._resolve_resource_value(self._get_best_label(sem_art_model, language))]
         }
 
         #  3: Dynamic Extraction of Structural Data ---
@@ -415,12 +387,13 @@ class BaseViewer:
             'get_has_namespaces',
         ]
         entry = {'text': None, 'link': None}
+
         # 1. Loop through ALL attributes and methods of the Model object
-        for attr_name in dir(ontology_model):
+        for attr_name in dir(sem_art_model):
             # 2. Look specifically for getter methods
             if attr_name.startswith('get_') and attr_name not in ignore_methods:
 
-                method = getattr(ontology_model, attr_name)
+                method = getattr(sem_art_model, attr_name)
 
                 if callable(method):
                     try:
@@ -455,7 +428,7 @@ class BaseViewer:
                             data[clean_key] = extracted_values
 
         # Namespaces (dict prefix -> URI), handled explicitly: not a Resource
-        ns = ontology_model.get_has_namespaces()
+        ns = sem_art_model.get_has_namespaces()
         if ns:
             data['_namespaces'] = [
                 {'prefix': prefix or 'default namespace', 'uri': uri}
@@ -463,7 +436,7 @@ class BaseViewer:
             ]
             
         # 9. Statements
-        data.update(self._format_statement(all_instances, ontology_model, language))
+        data.update(self._format_statement(all_instances, sem_art_model, language))
 
         # uri/label first, then the order from the YAML, then alphabetical
         pinned = ['uri', 'label']
@@ -471,7 +444,19 @@ class BaseViewer:
         data = {k: data[k] for k in pinned if k in data} | {k: data[k] for k in rest}
 
         return data
-            
+
+    # ==========================================================================
+    # 3. VALUE RESOLUTION
+    # ==========================================================================    
+
+    def _resolve_special(self, obj, handler_dic: dict, language=None) -> Optional[dict]:
+        """Resolve a value only one format knows how to render, or return None.
+
+        The base knows none: a format viewer overrides this to intercept its own
+        constructs (OWL class expressions) before the generic resolution runs.
+        """
+        return None
+    
     def _resolve_chain_value(self, chain, language=None) -> dict:
         """Render an ordered property chain (a list of Relations) as a single value.
 
@@ -497,14 +482,6 @@ class BaseViewer:
             'parts': parts,
             'type': 'PropertyChain',
         }
-
-    def _resolve_special(self, obj, handler_dic: dict, language=None) -> Optional[dict]:
-        """Resolve a value only one format knows how to render, or return None.
-
-        The base knows none: a format viewer overrides this to intercept its own
-        constructs (OWL class expressions) before the generic resolution runs.
-        """
-        return None
 
     def _resolve_resource_value(self, obj, language=None) -> dict:
         """Helper: Extracts text and link from any object."""
@@ -538,8 +515,8 @@ class BaseViewer:
             if hasattr(obj, 'get_has_value') and obj.get_has_value():
 
                 is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj,
-                                                                                                               'is_deprecated',
-                                                                                                               False)
+                                                                                                                'is_deprecated',
+                                                                                                                False)
                 handler_dic['is_deprecated'] = bool(is_dep)
 
                 lit_lang = obj.get_has_language()
@@ -587,18 +564,18 @@ class BaseViewer:
             pairs = sorted(
                 [inner] + siblings,
                 key=lambda p: ((p['predicate'] or '').lower(),
-                               ((p['value'] or {}).get('text') or '').lower()),
+                                ((p['value'] or {}).get('text') or '').lower()),
             )
             handler_dic['nested'] = {'main': pairs[0], 'siblings': pairs[1:]}
             # Pick a primary text for collapsed display: the inner value's text
             handler_dic['text'] = (inner.get('value') or {}).get('text') or '[Statement]'
             return handler_dic
 
-        # --- 5. Normal Resource Handling (Concepts, Properties, Individuals) ---
+        # --- 5. Normal Resource Handling (e.g., Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
             handler_dic['link'] = obj.get_has_identifier()
             link = handler_dic['link']
-            ns = self.get_ontology_ns()
+            ns = self.get_artefact_ns()
             internal = self._is_internal(link)
             native = bool(link) and bool(ns) and str(link).startswith(ns)
             handler_dic['is_external'] = not internal
@@ -619,6 +596,30 @@ class BaseViewer:
             handler_dic['type'] = obj_type
 
         return handler_dic
+
+    def format_warnings(self, warnings: List[Dict]) -> List[Dict]:
+        """Return the reader warnings with model class names replaced by this viewer's display names.
+
+        The reader words its messages with internal class names (Attribute, Annotation) and
+        cannot know how a format shows them; the display names live in the type_map of this
+        viewer, so the swap happens here, before the warnings reach any output. Only standalone
+        words are replaced: a class name inside an IRI (.../Concept, ...#Concept) is left alone.
+        Returns copies, the reader's own list is never modified.
+        """
+        names = {key.capitalize(): entry["singular"] for key, entry in self._config["type_map"].items()}
+        if not names:
+            return [dict(w) for w in warnings]
+        pattern = re.compile(r"(?<![\w/#:-])(" + "|".join(map(re.escape, names)) + r")(?![\w/#:-])")
+        return [{**w, "message": pattern.sub(lambda m: names[m.group(1)], w["message"])}
+                for w in warnings]
+
+    # ==========================================================================
+    # RDF RELATED FEATURES = Provenance + Export RDF
+    # ==========================================================================
+            
+    def _formats(self):
+        """Return the export formats (triples): the same whatever modules are active."""
+        return SERIALIZATION_FORMATS
 
     def _format_statement(self, instances, target_instance, language=None) -> Dict:
         """
@@ -715,7 +716,9 @@ class BaseViewer:
                 tree.append(node)
         return tree
     
-    # ========== PROVENANCE: subgraph serialisation for each card ==========
+    # ==========================================================================
+    # RDF RELATED FEATURES = Provenance + Export RDF
+    # ==========================================================================
     
     def _build_provenance_subgraph(self, instance) -> List[Dict[str, str]]:
         """Serialize the triples an instance comes from, once per available format.
@@ -741,7 +744,7 @@ class BaseViewer:
         for prefix, ns in self.artefact.graph.namespaces():
             g.bind(prefix, ns)
         main = self.artefact.main_graph()
-        instances = self.get_instances_from_single_resource(resource_uri)
+        instances = self.artefact.get_instance(resource_uri)
         if instances:
             inst_iter = instances if isinstance(instances, set) else [instances]
             for inst in inst_iter:
