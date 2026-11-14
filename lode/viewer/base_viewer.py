@@ -162,53 +162,6 @@ class BaseViewer:
     # ==========================================================================
     # 3. VIEW DATA
     # ==========================================================================    
-    def get_view_data(self, resource_uri: Optional[str] = None, language: Optional[str] = None) -> Dict:
-        """Build the template data for one resource, or for the whole artefact grouped by entity type.
-
-        Main entry point called by the API and by the static builder. Both views also
-        carry the header metadata, the export formats, the display names of the types
-        and the card template. Without a table of contents (generic viewer) the
-        artefact is shown as a flat list.
-        """
-        # If no language is provided, the default would be English
-        language = language.strip() if language else "en"
-
-        all_instances = self.artefact.instances()
-        metadata_dict = self._find_and_format_semantic_artefact_metadata(all_instances, language)
-
-        if resource_uri:
-            data = self._handle_single_resource(resource_uri, language)
-        elif self._config["toc"]:
-            data = self._build_grouped_view(self.get_toc_config(), language)
-        else:
-            data = {'entities': self._format_entities(all_instances, language)}
-
-        data['metadata'] = metadata_dict
-        data['export_formats'] = self._formats()
-        data['type_map'] = self._config["type_map"]
-        return data
-    
-    def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:
-        """
-        Standard logic for displaying a single resource.
-        Returns the specific dictionary structure required by viewer.html
-        """
-        instance_set = self.artefact.get_instance(resource_uri)
-
-        if not instance_set:
-            return {'error': f'Resource {resource_uri} not found'}
-
-        instances = list(instance_set) if isinstance(instance_set, set) else [instance_set]
-        instances = [i for i in instances if self._is_toc_entity(i)]
-        if not instances:
-            return {'error': f'{resource_uri} is not a browsable entity'}
-
-        return {
-            'single_resource': True,
-            'entities': self._format_entities(instances, language),
-            'groupped_view': False,
-            'sections': None
-        }
 
     def view(self, resource_uri: Optional[str] = None, language: Optional[str] = None,
              links: Optional[Links] = None) -> ViewData:
@@ -217,24 +170,23 @@ class BaseViewer:
         `resource_uri` asks for the page of one resource; without it, the whole artefact. The
         contract is described in lode.viewer.view_data. The page of one resource has no
         navigation (`toc` is empty): it shows its card and nothing else, so a site of N
-        resources does not carry N copies of its own index.
+        resources does not carry N copies of its own index. Main entry point of the viewer:
+        the web service and the static builder both call it, each with its own `links`.
         """
-        language = language.strip() if language else "en"
+        language = language.strip() if language else "en"   # no language means English
         links = links or Links()
-        old = self.get_view_data(resource_uri=resource_uri, language=language)
-        if old.get('sections'):
-            cards = [card for section in old['sections'] for card in section['entities']]
-        else:
-            cards = old.get('entities') or []
+        entities, error = self._build_entities(resource_uri, language)
+        header = self._find_and_format_semantic_artefact_metadata(self.artefact.instances(), language)
         data = {
-            'model': to_model(old.get('metadata') or {}, old['export_formats'], self.format_warnings(self.artefact.warnings)),
+            'model': to_model(header, self._formats(), self.format_warnings(self.artefact.warnings)),
             'toc': [] if resource_uri else self._build_toc(language),
             'types': self._build_types(),
-            'entities': cards,
+            'entities': entities,
             'focus': resource_uri or None,
-            'error': old.get('error'),
+            'error': error,
         }
 
+        # The link "visualise it with LODE" is offered only for what looks like an ontology
         for values in data['model']['metadata'].values():
             for value in values:
                 if value['iri'] and is_likely_ontology(value['iri']):
@@ -242,6 +194,35 @@ class BaseViewer:
 
         resolve_links(data, links)
         return data
+
+    def _build_entities(self, resource_uri: Optional[str], language: str) -> Tuple[List[Entity], Optional[str]]:
+        """Return the cards of a page and the error, if there is one.
+
+        One resource gives its own cards (an IRI can name several entities: a class and an
+        individual, punned); the whole artefact gives every browsable entity, grouped by
+        section in the order of the table of contents. Without a table of contents (the generic
+        viewer) the artefact is shown as a flat list.
+        """
+        if resource_uri:
+            found = self.artefact.get_instance(resource_uri)
+            if not found:
+                return [], f'Resource {resource_uri} not found'
+            instances = list(found) if isinstance(found, set) else [found]
+            instances = [i for i in instances if self._is_toc_entity(i)]
+            if not instances:
+                return [], f'{resource_uri} is not a browsable entity'
+            return self._format_entities(instances, language), None
+
+        all_instances = self.artefact.instances()
+        if not self._config["toc"]:
+            return self._format_entities(all_instances, language), None
+        entities = []
+        for class_key, _section_id, _title in self.get_toc_config():
+            members = [i for i in all_instances
+                       if type(i).__name__ == class_key and self._is_toc_entity(i)]
+            entities += self._format_entities(members, language)
+        return entities, None
+
 
     def _build_types(self) -> Dict[str, TypeLabel]:
         """How each type is called and abbreviated, keyed by the name of its model class.
@@ -298,40 +279,6 @@ class BaseViewer:
         return {'iri': instance.has_identifier, 'type': type(instance).__name__.replace(" ", "_"),
                 'label': self._get_best_label(instance, language),
                 'anchor': self._anchor(instance), 'href': None, 'kind': "page"}
-
-
-    def _build_grouped_view(self, group_definitions: List[Tuple[str, str, str]], language: Optional[str] = None) -> Dict:
-        """
-        Constructs the 'Table of Contents' view.
-        Adds optional 'tree' to sections whose class_key supports hierarchy.
-        """
-        all_instances = self.artefact.instances()
-        sections = []
-
-        for class_key, section_id, section_title in group_definitions:
-            instances = [
-                inst for inst in all_instances
-                if type(inst).__name__ == class_key and self._is_toc_entity(inst)
-            ]
-
-            if instances:
-                section = {
-                    'id': section_id,
-                    'title': section_title,
-                    'entities': self._format_entities(instances, language),
-                }
-
-                parent_getter = self._config["hierarchy"].get(class_key)
-                if parent_getter:
-                    section['tree'] = self._build_hierarchy(instances, parent_getter, language)
-
-                sections.append(section)
-
-        return {
-            'grouped_view': True,
-            'sections': sections,
-            'export_formats': self._formats()
-        }
 
     def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Entity]:
         """

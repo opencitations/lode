@@ -1,8 +1,7 @@
-"""Translate what a viewer builds today into the types of the contract (lode.viewer.view_data).
+"""The two steps of a page that are the same for every viewer (types in lode.viewer.view_data).
 
-The viewers still build their data in the older shape (BaseViewer.get_view_data). These functions
-turn each piece of it into the contract, so that a template written from the contract can be shown
-real data. As the viewers move to the contract this module shrinks, and it goes away.
+`to_model` assembles the header of the artefact; `resolve_links` fills in the address of every
+link of a page once the page is complete, because only then is known which cards it holds.
 """
 from typing import List, Optional
 

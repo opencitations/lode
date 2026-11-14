@@ -221,34 +221,35 @@ class TestResolveResourceValue:
 # _handle_single_resource — non-ToC URIs are not browsable
 # ---------------------------------------------------------------------------
 
-class TestHandleSingleResource:
+# The page of one resource — non-ToC URIs are not browsable
+class TestSingleResource:
+    """The page of one resource: its cards, or the reason it has none."""
 
     def test_browsable_concept_returns_entities(self):
         v = _viewer(_entity(Concept, C, "My Class"))
-        data = v._handle_single_resource(C)
-        assert data.get("single_resource") is True
+        data = v.view(resource_uri=C)
+        assert data["error"] is None
         assert len(data["entities"]) == 1
         assert data["entities"][0]["iri"] == C
 
     def test_ontology_iri_is_not_browsable(self):
         """Opening ?resource=<ontology> must NOT dump the whole model."""
         v = _viewer(_entity(Model, ONTO))
-        data = v._handle_single_resource(ONTO)
-        assert "error" in data
-        assert "entities" not in data
+        data = v.view(resource_uri=ONTO)
+        assert data["error"]
+        assert data["entities"] == []
 
     def test_punned_ontology_drops_model_keeps_individual(self):
         v = _viewer(_entity(Model, ONTO), _entity(Individual, ONTO, "thing"))
-        data = v._handle_single_resource(ONTO)
-        assert data.get("single_resource") is True
+        data = v.view(resource_uri=ONTO)
         types = {e["type"] for e in data["entities"]}
         assert "Model" not in types
         assert "Individual" in types
 
     def test_unknown_uri_returns_error(self):
         v = _viewer(_entity(Concept, C))
-        data = v._handle_single_resource("http://ex.org/nope")
-        assert "error" in data
+        data = v.view(resource_uri="http://ex.org/nope")
+        assert data["error"]
 
 
 # ---------------------------------------------------------------------------
