@@ -1,8 +1,5 @@
 # Settings of the RDF/RDFS viewer. Read by lode.viewer.helpers.load_viewer_config.
 
-# Same card as OWL for now; point to a dedicated partial when the two diverge.
-card: _card_owl.html
-
 # Display vocabulary: internal word -> shown word. Applied to whole words of the
 # property labels (e.g. "is sub concept of" -> "is sub class of").
 vocabulary:

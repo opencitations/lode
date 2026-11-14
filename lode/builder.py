@@ -7,7 +7,6 @@ import os
 import re
 import shutil
 from pathlib import Path
-from urllib.parse import quote
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import importlib.resources
 from rdflib import URIRef
@@ -30,12 +29,12 @@ def _get_template_env(static_path: str = "static") -> Environment:
     not exist here, hence the minimal replacement registered below.
     """
     try:
-        pkg_path = importlib.resources.files("lode").joinpath("templates").joinpath("v2")
+        pkg_path = importlib.resources.files("lode").joinpath("templates")
         template_dir = str(pkg_path)
     except Exception:
         template_dir = str(pkg_path)
     except Exception:
-        template_dir = str(Path(__file__).parent / "templates" / "v2")
+        template_dir = str(Path(__file__).parent / "templates" )
     
     env = Environment(
         loader=FileSystemLoader(template_dir),
@@ -77,11 +76,6 @@ def _rel_slug(uri, graph):
     prefix, ns, local = graph.namespace_manager.compute_qname(URIRef(str(uri)), generate=True)
     prefix = _safe_segment(prefix or "default") or "default"
     return f"{prefix}/{_safe_segment(local)}"
-
-
-def _local_name(uri: str) -> str:
-    """Return the part of an IRI after '#', or its last path segment."""
-    return uri.split('#', 1)[1] if '#' in uri else uri.rstrip('/').rsplit('/', 1)[-1]
 
 
 def _check_artefact_name(name: str) -> str:
@@ -247,39 +241,6 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
             links = _StaticLinks(graph, materialized, artefact_name, focus=uri)
             data_r = _page_data(viewer, lang, links, uri)
             page.write_text(_minify(template_resource.render(**data_r)), encoding="utf-8")
-
-class _FakeRequest:
-    """Minimal stand-in for a web request, so the viewer templates render without a web app."""
-
-    def __init__(self, path: str):
-        """Build a GET request for `path` with no query parameters."""
-        self.url = _FakeURL(path)
-        self.method = "GET"
-        self.query_params = _FakeQueryParams()
-        self.is_static = True
-
-class _FakeQueryParams:
-    """Query parameters that are always empty: a static page has no query string."""
-
-    def get(self, key: str, default: str = "") -> str:
-        """Return the default for any key."""
-        return default
-
-    # Direct access such as request.query_params.read_as
-    def __getattr__(self, key: str) -> str:
-        """Return an empty string for any attribute."""
-        return ""
-
-class _FakeURL:
-    """Minimal URL object exposing only the path, as the templates need."""
-
-    def __init__(self, path: str):
-        """Store the page path."""
-        self.path = path
-
-    def __str__(self) -> str:
-        """Return the page path."""
-        return self.path
 
 class _StaticLinks(Links):
     """The addresses inside a static site, seen from the page that is being written.

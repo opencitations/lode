@@ -51,7 +51,7 @@ class BaseViewer:
         self._internal_iris = None
         self._config = (
             load_viewer_config(self.CONFIG_NAME) if self.CONFIG_NAME
-            else {"type_map": {}, "toc": [], "card": "_card_owl.html",
+            else {"type_map": {}, "toc": [],
                   "vocabulary": {}, "hierarchy": {}, "characteristics": []}
         )
 
@@ -186,7 +186,6 @@ class BaseViewer:
         data['metadata'] = metadata_dict
         data['export_formats'] = self._formats()
         data['type_map'] = self._config["type_map"]
-        data['card_template'] = self._config["card"]
         return data
     
     def _handle_single_resource(self, resource_uri: str, language: Optional[str] = None) -> Dict:

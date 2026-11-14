@@ -1,8 +1,5 @@
 # Settings of the SKOS viewer. Read by lode.viewer.helpers.load_viewer_config.
 
-# Partial included once per entity by viewer.html.
-card: _card_skos.html
-
 # SKOS shows its own terms for the hierarchy relations.
 vocabulary:
   is sub concept of: broader

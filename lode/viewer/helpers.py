@@ -153,7 +153,7 @@ def is_likely_ontology(url: str) -> bool:
 # 4. PER-FORMAT VIEWER CONFIGURATION
 # ==========================================================================
 
-_REQUIRED_CONFIG_KEYS = ("type_map", "toc", "card")
+_REQUIRED_CONFIG_KEYS = ("type_map", "toc")
 
 
 def load_viewer_config(name: str) -> dict:

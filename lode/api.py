@@ -88,7 +88,7 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 _PKG_DIR = Path(__file__).resolve().parent
 # v2 first: the page and its partials are found by bare name; error.html and index.html stay in the root.
-templates = Jinja2Templates(directory=[str(_PKG_DIR / "templates" / "v2"), str(_PKG_DIR / "templates")])
+templates = Jinja2Templates(directory=str(_PKG_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(_PKG_DIR / "static")), name="static")
 
 # Beautify produced HTML.

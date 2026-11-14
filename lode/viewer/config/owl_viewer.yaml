@@ -1,8 +1,5 @@
 # Settings of the OWL viewer. Read by lode.viewer.helpers.load_viewer_config.
 
-# Partial included once per entity by viewer.html.
-card: _card_owl.html
-
 # Display vocabulary: internal word -> shown word. Applied to whole words of the
 # property labels (e.g. "is sub concept of" -> "is sub class of").
 vocabulary:

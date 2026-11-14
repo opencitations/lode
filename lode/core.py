@@ -42,21 +42,6 @@ def read(source: str, read_as: str, *, imported: Optional[bool] = None,
 # ==========================================================================
 # 2. VIEW AND EXPORT
 # ==========================================================================
-def view_data(artefact: "Artefact", *, resource: Optional[str] = None,
-              lang: Optional[str] = None) -> dict:
-    """Return the dictionary the HTML templates render, for the whole artefact or one resource.
-
-    The reader warnings are included under "warnings", already worded with the
-    display names of the viewer. This is the data a web page needs: the page
-    itself (Jinja2, request, minification) stays in the caller.
-    """
-    # Local import: the viewers pull in the YAML configuration, not needed to read.
-    from lode.viewer import get_viewer
-
-    viewer = get_viewer(artefact)
-    data = viewer.get_view_data(resource_uri=resource, language=lang)
-    data["warnings"] = viewer.format_warnings(artefact.warnings)
-    return data
 
 def view(artefact: "Artefact", *, resource: Optional[str] = None,
          lang: Optional[str] = None, links=None) -> "ViewData":
@@ -65,7 +50,7 @@ def view(artefact: "Artefact", *, resource: Optional[str] = None,
     This is the data a page needs: the page itself (the template, the request, the minification)
     stays in the caller. `links` says where resources and exports live (see lode.viewer.links).
     """
-    from lode.viewer import get_viewer  # local import: see view_data()
+    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
 
     return get_viewer(artefact).view(resource_uri=resource, language=lang, links=links)
 
@@ -76,7 +61,7 @@ def format_warnings(artefact: "Artefact") -> list:
     Each item is a dict with "code" and "message". Empty unless the artefact was
     read with `warnings=True`.
     """
-    from lode.viewer import get_viewer  # local import: see view_data()
+    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
 
     return get_viewer(artefact).format_warnings(artefact.warnings)
 
@@ -88,7 +73,7 @@ def export(artefact: "Artefact", fmt: str, resource: Optional[str] = None) -> Un
     ones are listed in `lode.helpers.formats.SERIALIZATION_FORMATS`. Only the
     triples of the loaded artefact are returned, never those of its imports.
     """
-    from lode.viewer import get_viewer  # local import: see view_data()
+    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
 
     viewer = get_viewer(artefact)
     return viewer.export_resource(resource, fmt) if resource else viewer.export_main(fmt)
