@@ -2469,7 +2469,7 @@ def test_all_statements_have_subject_and_predicate(owl_logic):
         assert isinstance(stmt.get_has_subject(), Resource), (
             f"Statement {stmt.get_has_identifier()} subject is not a Resource: {type(stmt.get_has_subject())}"
         )
-        assert isinstance(stmt.get_has_object(), Resource), (
+        assert isinstance(stmt.get_has_object(), (Resource, Literal)), (
             f"Statement {stmt.get_has_identifier()} object is not a Resource: {type(stmt.get_has_object())}"
         )
         assert isinstance(stmt.get_has_predicate(), Property), (

@@ -1,13 +1,13 @@
 """Literal: an RDF literal with its value, language and datatype."""
 from .resource import Resource
 
-class Literal(Resource):
+class Literal():
     """An RDF literal: a lexical value with an optional language tag and datatype."""
 
     def __init__(self, **kwargs):
         """Create an empty literal: no value, language or datatype."""
 
-        super().__init__(**kwargs)
+        # super().__init__(**kwargs)
         
         # Attributes
         self.has_language = None
