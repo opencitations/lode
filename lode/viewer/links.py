@@ -11,7 +11,7 @@ class Links:
     """
 
     def resource(self, iri: str) -> Optional[str]:
-        """Return the address of the page of a resource of this documentation, or None."""
+        """Return the address of the page of a resource of this documentation, or None when it has no page here: the viewer then links to the IRI itself."""
         return None
 
     def export(self, ext: str, iri: Optional[str] = None) -> Optional[str]:

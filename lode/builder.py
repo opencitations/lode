@@ -17,7 +17,8 @@ from rdflib.namespace import split_uri
 from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.html_utils import minify as _minify
 from lode.exceptions import ArtefactValidationError
-
+from typing import Optional
+from lode.viewer.links import Links
 
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 
@@ -299,3 +300,45 @@ class _FakeURL:
     def __str__(self) -> str:
         """Return the page path."""
         return self.path
+
+class _StaticLinks(Links):
+    """The addresses inside a static site, seen from the page that is being written.
+
+    A site has two kinds of page: the index, at its root, and the page of a resource, two folders
+    deep (resources/<prefix>/<name>.html). A resource that gets no page of its own, such as one only
+    the imports describe, has no address here.
+    """
+
+    def __init__(self, graph, kept: set, artefact_name: str, focus: Optional[str] = None):
+        """`kept` holds the IRIs that get a page; `focus` is the resource this page is about, None for the index."""
+        self._graph = graph
+        self._kept = kept
+        self._name = artefact_name
+        self._focus = focus
+
+    def _up(self) -> str:
+        """The path from this page back to the root of the site."""
+        return "" if self._focus is None else "../../"
+
+    def _file(self, iri: str, ext: str) -> Optional[str]:
+        """The path of the file `ext` of a resource, or None when it has none."""
+        if str(iri) not in self._kept:
+            return None
+        rel = _rel_slug(iri, self._graph)
+        if rel.rsplit("/", 1)[-1] == "":       # a bare namespace IRI stands for the whole artefact
+            return f"{self._up()}{self._name}.{ext}"
+        return f"resources/{rel}.{ext}" if self._focus is None else f"../{rel}.{ext}"
+
+    def resource(self, iri: str) -> Optional[str]:
+        """Return the page of a resource, or None when it has none."""
+        return self._file(iri, "html")
+
+    def export(self, ext: str, iri: Optional[str] = None) -> Optional[str]:
+        """Return the file of the artefact, or of a resource, in the format with extension `ext`."""
+        if iri is None:
+            return f"{self._up()}{self._name}.{ext}"
+        return self._file(iri, ext)
+
+    def home(self) -> str:
+        """Return the page of the whole artefact."""
+        return f"{self._up()}{self._name}.html"

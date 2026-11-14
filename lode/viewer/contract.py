@@ -123,7 +123,8 @@ def resolve_links(view: ViewData, links: Links) -> None:
         elif iri in anchors:
             item["href"], item["kind"] = f"#{anchors[iri]}", "anchor"
         elif internal:
-            to_page(item, iri)
+            href = links.resource(iri)
+            item["href"], item["kind"] = (href, "page") if href else (iri, "external")
         else:
             item["href"], item["kind"] = iri, "external"
 

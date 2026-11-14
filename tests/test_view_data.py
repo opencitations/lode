@@ -313,3 +313,63 @@ def test_the_library_shortcut(viewer_and_iri):
     """lode.view gives what the viewer gives."""
     viewer, iri = viewer_and_iri
     assert lode.view(viewer.artefact, resource=iri) == viewer.view(resource_uri=iri)
+
+#### links fallbacks
+
+class _NoPages(Links):
+    """A resolver that knows no page of the documentation."""
+
+    def resource(self, iri):
+        return None
+
+
+def test_a_resource_without_a_page_is_a_link_to_the_outside(viewer_and_iri):
+    """With no address for a resource, the link goes to its IRI and counts as external."""
+    viewer, iri = viewer_and_iri
+    for link in _records(viewer.view(resource_uri=iri, links=_NoPages())):
+        assert link["kind"] != "page"
+        if link["kind"] == "external":
+            assert link["href"] == link["iri"]
+
+
+
+#### LINKS 
+
+"""The addresses the web service and the static site give to the viewer."""
+from rdflib import Graph
+
+from lode.api import _WebLinks
+from lode.builder import _StaticLinks
+
+_CAT = "http://example.org/o#Cat"
+_QS = "read_as=skos&url=http%3A%2F%2Fx"
+
+_GRAPH = Graph()
+_GRAPH.bind("ex", "http://example.org/o#")
+_KEPT = {_CAT, "http://example.org/o#"}      # a resource and a bare namespace
+
+
+def test_web_links():
+    links = _WebLinks(_QS)
+    assert links.resource(_CAT) == f"/extract?{_QS}&resource=http%3A//example.org/o%23Cat"
+    assert links.export("ttl") == f"/extract?{_QS}&format=ttl"
+    assert links.export("ttl", _CAT) == f"/extract?{_QS}&resource=http%3A//example.org/o%23Cat&format=ttl"
+    assert links.home() == f"/extract?{_QS}"
+
+
+def test_static_links_from_the_index():
+    links = _StaticLinks(_GRAPH, _KEPT, "pets")
+    assert links.resource(_CAT) == "resources/ex/Cat.html"
+    assert links.resource("http://example.org/o#Dog") is None      # it gets no page
+    assert links.resource("http://example.org/o#") == "pets.html"   # a namespace: the whole artefact
+    assert links.export("ttl") == "pets.ttl"
+    assert links.export("ttl", _CAT) == "resources/ex/Cat.ttl"
+    assert links.home() == "pets.html"
+
+
+def test_static_links_from_the_page_of_a_resource():
+    links = _StaticLinks(_GRAPH, _KEPT, "pets", focus=_CAT)
+    assert links.resource(_CAT) == "../ex/Cat.html"
+    assert links.export("ttl", _CAT) == "../ex/Cat.ttl"
+    assert links.export("ttl") == "../../pets.ttl"
+    assert links.home() == "../../pets.html"

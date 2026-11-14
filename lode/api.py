@@ -45,6 +45,8 @@ from lode.exceptions import ArtefactValidationError, BuildCapacityError, LODEErr
 from lode.helpers.site_zip import build_zip, slugify
 from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
+from urllib.parse import quote, urlencode
+from lode.viewer.links import Links
 
 # ==========================================================================
 # 2. APP SETUP
@@ -91,6 +93,27 @@ app.mount("/static", StaticFiles(directory=str(_PKG_DIR / "static")), name="stat
 # Beautify produced HTML.
 templates.env.trim_blocks = True
 templates.env.lstrip_blocks = True
+
+class _WebLinks(Links):
+    """The addresses of the web service: every page is a request to /extract that keeps the view parameters."""
+
+    def __init__(self, nav_qs: str):
+        """`nav_qs` is the query string of the current view, as _nav_qs builds it."""
+        self._qs = nav_qs
+
+    def resource(self, iri: str) -> str:
+        """Return the request for the page of a resource."""
+        return f"/extract?{self._qs}&resource={quote(iri, safe='/')}"
+
+    def export(self, ext: str, iri: Optional[str] = None) -> str:
+        """Return the request that serializes the artefact, or a resource, in the format with extension `ext`."""
+        resource = f"&resource={quote(iri, safe='/')}" if iri else ""
+        return f"/extract?{self._qs}{resource}&format={ext}"
+
+    def home(self) -> str:
+        """Return the request for the page of the whole artefact."""
+        return f"/extract?{self._qs}"
+
 
 # ==========================================================================
 # 6. HTML HELPERS
