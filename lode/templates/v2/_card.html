@@ -1,0 +1,143 @@
+{# One entity card, written from the contract only (docs/usage/viewer_contract.md).
+   Import it "with context": the badge and the values read `types` from the page.
+   `toc` gives the link back to the section of the entity, `focus` hides the back links
+   when the page shows a single resource. #}
+{% from '_value.html' import value with context %}
+
+{% macro card(e, toc, focus) %}
+{% set types_of_e = types[e.type] if e.type in types else none %}
+{% set priority = ['Is Defined By', 'Comment', 'comment'] %}
+{% set hidden = ['Identifier', 'identifier'] %}
+
+<div class="card mb-2 anchor-offset" id="{{ e.anchor }}">
+    <div class="card-header bg-white pt-2 px-1 d-flex justify-content-between align-items-center">
+        <h4 class="fw-bold mb-0">
+            <div class="d-inline-block {% if e.deprecated %}text-decoration-line-through text-muted{% endif %}">{{ e.label }}</div>
+            {% if types_of_e %}
+                <sup class="badge bg-light text-secondary {{ types_of_e.abbreviation }}" title="{{ types_of_e.singular }}">{{ types_of_e.abbreviation }}</sup>
+            {% endif %}
+            {% if e.deprecated %}
+                <span class="ms-2" style="font-size: 0.7em; letter-spacing: 1.5px; color: darkred">DEPRECATED</span>
+            {% endif %}
+        </h4>
+
+        {% if not focus %}
+        <span class="backlink">
+            back to
+            <a href="#toc">ToC</a>
+            {% set sections = toc | selectattr('type', 'equalto', e.type) | list %}
+            {% if sections %}
+                or <a href="#{{ sections[0].id }}">{{ types_of_e.singular if types_of_e else sections[0].label }} ToC</a>
+            {% endif %}
+        </span>
+        {% endif %}
+    </div>
+
+    <div class="card-body p-0">
+        <div class="description p-3">
+            <p class="mb-1"><span class="text-dark fw-bold">IRI:</span> {{ e.iri }}
+            {% if e.href and e.kind == 'page' and e.provenance and e.iri != focus %}
+                <a href="{{ e.href }}" class="ms-2" title="Go to resource documentation"><i class="bi bi-box-arrow-up-right"></i></a>
+            {% endif %}
+            </p>
+
+            {% for name in priority %}
+                {% if name in e.relations %}
+                    <div>
+                        <h6 class="text-dark fw-bold pb-0 mb-0">{{ name }}</h6>
+                        <div class="ms-2">
+                            {% for v in e.relations[name] %}{{ value(v) }}{% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% set shown = [] %}
+        {% for name in e.relations %}
+            {% if name not in priority and name not in hidden %}{% set _ = shown.append(name) %}{% endif %}
+        {% endfor %}
+        {% if shown or e.characteristics %}
+        <div class="attribute p-3 border-top border-bottom bg-light-subtle">
+            {% if e.characteristics %}
+                <div class="mb-3">
+                    <h6 class="fw-bold text-dark pb-0 mb-0">has Characteristics</h6>
+                    <div class="d-flex flex-wrap gap-4 text-secondary small">
+                        {% for name in e.characteristics %}
+                            <div class="form-check">
+                                <label class="form-check-label text-capitalize text-dark" style="opacity: 1;">{{ name }}</label>
+                                <input class="form-check-input" type="checkbox" checked disabled>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            {% for name in shown %}
+                <div class="mb-1">
+                    <h6 class="fw-bold text-dark pb-0 mb-0">{{ name }}</h6>
+                    <div class="ms-2">
+                        {% for v in e.relations[name] %}
+                            <span class="d-inline-block">{{ value(v, 1) }}{% if not loop.last and v.href %}<span class="text-dark me-1">,</span>{% endif %}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if e.statements %}
+        <div class="p-3 statement">
+            {% for name, values in e.statements.items() %}
+                <div>
+                    <h6 class="fw-bold text-dark pb-0 mb-0">{{ name }}</h6>
+                    <div class="ms-2">
+                        <div class="d-flex flex-column gap-1">
+                            {% for v in values %}<div>{{ value(v) }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if e.provenance %}
+        <div class="card-footer bg-white py-0">
+            {% set prov_id = e.anchor ~ '_prov' %}
+            <div class="accordion accordion-flush prov-accordion" id="{{ prov_id }}_acc">
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex justify-content-end" id="{{ prov_id }}_head">
+                        <button class="accordion-button collapsed py-1 px-2 small fw-bold text-uppercase text-primary w-auto" title="RDF provenance"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#{{ prov_id }}"
+                                aria-expanded="false" aria-controls="{{ prov_id }}">
+                            <span>RDF provenance</span> <i class="bi bi-code"></i>
+                        </button>
+                    </h2>
+                    <div id="{{ prov_id }}" class="accordion-collapse collapse"
+                         aria-labelledby="{{ prov_id }}_head" data-bs-parent="#{{ prov_id }}_acc">
+                        <div class="accordion-body p-2">
+                            <ul class="nav nav-tabs nav-tabs-sm justify-content-end small mb-0" role="tablist">
+                                {% for p in e.provenance %}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {% if loop.first %}active{% endif %} py-1 px-2"
+                                            data-bs-toggle="tab" data-bs-target="#{{ prov_id }}_{{ loop.index }}"
+                                            type="button" role="tab">{{ p.label }}</button>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            <div class="tab-content">
+                                {% for p in e.provenance %}
+                                <div class="tab-pane fade {% if loop.first %}show active{% endif %}"
+                                     id="{{ prov_id }}_{{ loop.index }}" role="tabpanel">
+                                    <pre class="mb-0 small"><code>{{ p.code }}</code></pre>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

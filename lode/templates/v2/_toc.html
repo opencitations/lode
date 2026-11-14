@@ -1,0 +1,127 @@
+{# The navigation, written from `toc` only (docs/usage/viewer_contract.md).
+   `sidebar` is the side panel, `contents` the table of contents at the top of the page.
+   An entity without an `href` (not published anywhere) is shown as plain text. #}
+
+{% macro _entry(item) %}
+    {% if item.href %}<a href="{{ item.href }}" title="{{ item.iri }}">{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
+{% endmacro %}
+
+{% macro sidebar(toc) %}
+{% if toc %}
+<aside id="toc-sidebar" class="toc-sidebar open" aria-label="Table of Contents">
+    <button type="button" class="toc-sidebar-toggle" aria-controls="toc-sidebar" aria-expanded="true"
+            title="Toggle Table of Contents">
+        <i class="bi bi-chevron-left toc-sidebar-toggle-icon"></i>
+    </button>
+
+    <div class="toc-sidebar-inner">
+        <div class="toc-sidebar-header">
+            <h6 class="toc-sidebar-title mb-0">Table of Contents</h6>
+        </div>
+
+        <nav class="toc-sidebar-nav">
+            {% for section in toc %}
+                <details class="toc-sidebar-section" open>
+                    <summary class="toc-sidebar-section-head">
+                        <span class="toc-sidebar-section-title">
+                            <a href="#{{ section.id }}">{{ section.label }}</a>
+                        </span>
+                        <span class="toc-sidebar-section-count">{{ section.entities|length }}</span>
+                    </summary>
+                    <ul class="toc-sidebar-list">
+                        {% for item in section.entities %}
+                            <li>{{ _entry(item) }}</li>
+                        {% endfor %}
+                    </ul>
+                </details>
+            {% endfor %}
+        </nav>
+    </div>
+</aside>
+
+<script>
+(function () {
+    const sidebar = document.getElementById('toc-sidebar');
+    if (!sidebar) return;
+    const toggle = sidebar.querySelector('.toc-sidebar-toggle');
+    const icon = sidebar.querySelector('.toc-sidebar-toggle-icon');
+
+    function apply(open) {
+        sidebar.classList.toggle('open', open);
+        sidebar.classList.toggle('closed', !open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        icon.className = open
+            ? 'bi bi-chevron-left toc-sidebar-toggle-icon'
+            : 'bi bi-chevron-right toc-sidebar-toggle-icon';
+        document.body.classList.toggle('toc-sidebar-open', open);
+        document.body.classList.toggle('toc-sidebar-closed', !open);
+    }
+
+    // Default: open. Persist user choice across pages.
+    const stored = localStorage.getItem('lode.tocSidebar');
+    apply(stored === null ? true : stored === 'open');
+
+    toggle.addEventListener('click', function () {
+        const willOpen = !sidebar.classList.contains('open');
+        apply(willOpen);
+        localStorage.setItem('lode.tocSidebar', willOpen ? 'open' : 'closed');
+    });
+
+    // Highlight currently-visible section/entity while scrolling.
+    const links = sidebar.querySelectorAll('a[href^="#"]');
+    const byId = new Map();
+    links.forEach(a => byId.set(a.getAttribute('href').slice(1), a));
+
+    const targets = [];
+    byId.forEach((_, id) => {
+        const el = document.getElementById(id);
+        if (el) targets.push(el);
+    });
+
+    if ('IntersectionObserver' in window && targets.length) {
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                const a = byId.get(e.target.id);
+                if (!a) return;
+                if (e.isIntersecting) a.classList.add('active');
+                else a.classList.remove('active');
+            });
+        }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+        targets.forEach(t => io.observe(t));
+    }
+})();
+</script>
+{% endif %}
+{% endmacro %}
+
+{% macro contents(toc, namespaces) %}
+{% if toc %}
+<div class="section-header">
+    <div class="mb-5 border-0">
+        <div class="card-body">
+            <h4 id="toc" class="card-title fw-bold mb-3">Table of Contents</h4>
+            <div class="d-flex flex-wrap gap-3">
+                <ol>
+                    {% for section in toc %}
+                        <li>
+                            <a href="#{{ section.id }}" class="text-decoration-underline px-3">
+                                {{ section.label }}
+                                <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ section.entities|length }}</span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                    {% if namespaces %}
+                        <li>
+                            <a href="#namespaces" class="text-decoration-underline px-3">
+                                Namespace Declarations
+                                <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ namespaces|length }}</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
