@@ -189,6 +189,10 @@ def test_report_written_with_warnings(tmp_path):
     out = _build_warn_ttl(tmp_path, warnings=True)
     assert "malformed_restriction" in (out / "report.txt").read_text(encoding="utf-8")
 
+def test_static_pages_do_not_show_warning_toasts(tmp_path):
+    """The warnings go to report.txt only: a published page cannot point to a server log."""
+    out = _build_warn_ttl(tmp_path, warnings=True)
+    assert "warning-toasts" not in (out / "index.html").read_text(encoding="utf-8")
 
 def test_format_warnings_uses_display_names(tmp_path):
     """Viewer swaps model class names for display names, but leaves IRIs alone."""

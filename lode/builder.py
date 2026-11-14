@@ -30,10 +30,12 @@ def _get_template_env(static_path: str = "static") -> Environment:
     not exist here, hence the minimal replacement registered below.
     """
     try:
-        pkg_path = importlib.resources.files("lode").joinpath("templates")
+        pkg_path = importlib.resources.files("lode").joinpath("templates").joinpath("v2")
         template_dir = str(pkg_path)
     except Exception:
-        template_dir = str(Path(__file__).parent / "templates")
+        template_dir = str(pkg_path)
+    except Exception:
+        template_dir = str(Path(__file__).parent / "templates" / "v2")
     
     env = Environment(
         loader=FileSystemLoader(template_dir),
@@ -136,6 +138,17 @@ def _write_warnings_report(warnings: list, out_dir: Path) -> None:
     lines = [f"[{w['code']}] {w['message']}" for w in warnings]
     _write_in(out_dir, "report.txt", "\n".join(lines) + "\n")
 
+def _page_data(viewer, lang: str, links: "_StaticLinks", resource: Optional[str] = None) -> dict:
+    """Return the contract data of one static page, without the reader warnings.
+
+    A published page cannot send the reader to a server log, and the same warnings are
+    already written to report.txt, so the page does not repeat them as toasts.
+    """
+    data = viewer.view(resource_uri=resource, language=lang, links=links)
+    data["model"]["warnings"] = []
+    return data
+
+
 def build_html(viewer, out_dir: Path, lang: str = "en",
                artefact_name: str = "index") -> None:
     """Write the whole static site for a viewer into `out_dir`.
@@ -186,46 +199,17 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
                 continue
             materialized.add(str(u))
 
-    def _keep(uri):
-        """Tell whether a resource gets its own page, and so can be linked to."""
-        return str(uri) in materialized
-
-    def resource_url_resource(uri, section=None):
-        """Link to a resource from a resource page; unpublished IRIs stay absolute."""
-        if not _keep(uri):
-            return uri
-        rel = _rel_slug(uri, graph)
-        if rel.rsplit("/", 1)[-1] == "":      # namespace IRI
-            return f"../../{artefact_name}.html"
-        return f"../{rel}.html"
-
-    def resource_url_index(uri, section=None):
-        """Link to a resource from the index page; unpublished IRIs stay absolute."""
-        if not _keep(uri):
-            return uri
-        rel = _rel_slug(uri, graph)
-        if rel.rsplit("/", 1)[-1] == "":
-            return f"{artefact_name}.html"
-        return f"resources/{rel}.html"
-
     env_index = _get_template_env(static_path="static")
     env_resource = _get_template_env(static_path="../../static")
-    
+
     for fmt, ext in _SER:
         _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))
 
-
-    template_index = env_index.get_template("viewer.html")
-    template_resource = env_resource.get_template("viewer.html")
-
-    toc_config = viewer.get_toc_config()
+    template_index = env_index.get_template("page.html")
+    template_resource = env_resource.get_template("page.html")
 
     # --- index.html ---
-    data = viewer.get_view_data(language=lang)
-    data["request"] = _FakeRequest("/")
-    data["is_static"] = True
-    data["resource_url"] = resource_url_index
-    data["export_base"] = artefact_name
+    data = _page_data(viewer, lang, _StaticLinks(graph, materialized, artefact_name))
     _write_in(out_dir, f"{artefact_name}.html", _minify(template_index.render(**data)))
 
     if not toc_config:
@@ -260,12 +244,8 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
                     out = out.decode("utf-8")
                 (res_dir / f"{rel}.{ext}").write_text(out, encoding="utf-8")
 
-            data_r = viewer.get_view_data(resource_uri=uri, language=lang)
-            data_r["request"] = _FakeRequest(f"resources/{rel}.html")
-            data_r["is_static"] = True
-            data_r["resource_url"] = resource_url_resource
-            data_r["export_base"] = _local_name(uri)
-            data_r["artefact_name"] = artefact_name
+            links = _StaticLinks(graph, materialized, artefact_name, focus=uri)
+            data_r = _page_data(viewer, lang, links, uri)
             page.write_text(_minify(template_resource.render(**data_r)), encoding="utf-8")
 
 class _FakeRequest:
