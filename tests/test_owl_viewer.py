@@ -84,15 +84,13 @@ def _looks_like_bnode(value) -> bool:
     return bool(_BNODE_RE.match(str(value).strip()))
 
 def _iter_resolved_values(data):
-    """Yield every resolved value dict in an entity view (relations + statements),
+    """Yield every Value in the cards of a view (relations + statements),
     flattening restriction parts."""
-    for section in data.get("sections", []):
-        for ent in section["entities"]:
-            buckets = list(ent.get("relations", {}).values()) + list(ent.get("statements", {}).values())
-            for values in buckets:
-                for v in (values if isinstance(values, list) else [values]):
-                    for part in (v.get("parts") or [v]):
-                        yield ent["uri"], part
+    for ent in data["entities"]:
+        for values in list(ent["relations"].values()) + list(ent["statements"].values()):
+            for v in values:
+                for part in (v["parts"] or [v]):
+                    yield ent["iri"], part
 
 
 C = "http://ex.org/MyClass"
@@ -193,7 +191,7 @@ class TestIsInternal:
 
 
 # ---------------------------------------------------------------------------
-# _resolve_resource_value — is_external flag is set correctly
+# _resolve_resource_value 
 # ---------------------------------------------------------------------------
 
 class TestResolveResourceValue:
@@ -202,21 +200,21 @@ class TestResolveResourceValue:
         v = _viewer(_entity(Concept, C, "My Class"))
         target = _entity(Concept, C, "My Class")
         d = v._resolve_resource_value(target)
-        assert d["link"] == C
-        assert d["is_external"] is False
+        assert d["iri"] == C
+        assert d["kind"] == "page"
 
     def test_external_resource_is_external(self):
         v = _viewer(_entity(Concept, C))
         target = _entity(Concept, EXT, "Proceedings Paper")
         d = v._resolve_resource_value(target)
-        assert d["link"] == EXT
-        assert d["is_external"] is True
+        assert d["iri"] == EXT
+        assert d["kind"] == "external"
 
     def test_punned_ontology_individual_is_internal(self):
         v = _viewer(_entity(Concept, C), _entity(Model, ONTO), _entity(Individual, ONTO))
         target = _entity(Individual, ONTO, "fabio")
         d = v._resolve_resource_value(target)
-        assert d["is_external"] is False
+        assert d["kind"] == "page"
 
 
 # ---------------------------------------------------------------------------
@@ -265,8 +263,8 @@ class TestGroupedView:
             _entity(Individual, I, "Indiv"),
             _entity(Model, ONTO),
         )
-        data = v.get_view_data()  # no resource_uri -> grouped
-        section_titles = {s["title"] for s in data["sections"]}
+        data = v.view()  # no resource_uri -> the whole artefact
+        section_titles = {s["type"] for s in data["toc"]}
         assert "Concept" in section_titles
         # Model has no section because it is not in get_toc_config()
         assert all("Ontolog" not in t for t in section_titles)
@@ -277,9 +275,9 @@ class TestGroupedView:
             _entity(Relation, P, "prop"),
             _entity(Model, ONTO),
         )
-        data = v.get_view_data()
+        data = v.view()
         toc_keys = {key for key, _id, _title in v.get_toc_config()}
-        for section in data["sections"]:
+        for section in data["toc"]:
             for ent in section["entities"]:
                 assert ent["type"] in toc_keys
 
@@ -335,7 +333,7 @@ class TestLanguageSelection:
             st.set_has_object(_lit(text, lang))
             stmts.append(st)
         v = _viewer(onto, title, *stmts)
-        texts = [e["text"] for e in v.get_view_data(language="en")["metadata"]["title"]]
+        texts = [e["text"] for e in v.view(language="en")["model"]["metadata"]["title"]]
         assert texts == ["Title"]
 
 
@@ -434,11 +432,10 @@ class TestCorpusInvariants:
         assert all(type(i).__name__ != "Model" for i in viewer.get_toc_instances())
 
     def test_grouped_sections_only_toc_kinds(self, viewer):
-        data = viewer.get_view_data()
+        data = viewer.view()
         toc_keys = {key for key, _id, _title in viewer.get_toc_config()}
-        for section in data.get("sections", []):
-            for ent in section["entities"]:
-                assert ent["type"] in toc_keys
+        for ent in data["entities"]:
+            assert ent["type"] in toc_keys
 
     def test_single_resource_roundtrip(self, viewer):
         """Opening any ToC entity by URI returns exactly that entity, browsable."""
@@ -447,9 +444,9 @@ class TestCorpusInvariants:
             pytest.skip("no ToC entities in this ontology")
         target = toc[0]
         uri = str(target.get_has_identifier())
-        data = viewer.get_view_data(resource_uri=uri)
-        assert "error" not in data
-        assert any(e["uri"] == uri for e in data["entities"])
+        data = viewer.view(resource_uri=uri)
+        assert data["error"] is None
+        assert any(e["iri"] == uri for e in data["entities"])
 
     def test_opening_ontology_iri_shows_no_model_facet(self, viewer):
         """Opening the ontology IRI never surfaces the Model facet (only its
@@ -459,24 +456,23 @@ class TestCorpusInvariants:
         for onto in viewer.artefact.graph.subjects(RDF.type, OWL.Ontology):
             if not isinstance(onto, URIRef):
                 continue
-            data = viewer.get_view_data(resource_uri=str(onto))
-            if "error" not in data:
+            data = viewer.view(resource_uri=str(onto))
+            if data["error"] is None:
                 assert all(e["type"] != "Model" for e in data["entities"])
             break
 
     def test_no_raw_bnode_in_entity_links(self, viewer):
         """No resolved relation/statement value points to a raw BNode id:
         unprocessed blank nodes must never become clickable links."""
-        data = viewer.get_view_data()
+        data = viewer.view()
         offenders = []
-        for section in data.get("sections", []):
-            for ent in section["entities"]:
-                for rel_name, values in ent["relations"].items():
-                    for v in (values if isinstance(values, list) else [values]):
-                        # restriction parts carry their own sub-links
-                        for part in (v.get("parts") or [v]):
-                            if _looks_like_bnode(part.get("link")):
-                                offenders.append((ent["uri"], rel_name, part.get("link")))
+        for ent in data["entities"]:
+            for rel_name, values in ent["relations"].items():
+                for v in values:
+                    # restriction parts carry their own sub-links
+                    for part in (v["parts"] or [v]):
+                        if _looks_like_bnode(part["iri"]):
+                            offenders.append((ent["iri"], rel_name, part["iri"]))
         assert not offenders, f"raw BNode ids leaked as links: {offenders[:10]}"
 
     def test_no_raw_bnode_as_entity_uri(self, viewer):
@@ -492,48 +488,47 @@ class TestCorpusInvariants:
         """No resolved value shows a raw BNode id as its visible text.
         Restrictions are allowed (their text is composed), so we check leaf
         values only — a leaf whose text equals a BNode id is a leak."""
-        data = viewer.get_view_data()
+        data = viewer.view()
         offenders = []
-        for section in data.get("sections", []):
-            for ent in section["entities"]:
-                for rel_name, values in ent["relations"].items():
-                    for v in (values if isinstance(values, list) else [values]):
-                        if v.get("parts"):
-                            continue  # composed restriction text is fine
-                        if _looks_like_bnode(v.get("text")):
-                            offenders.append((ent["uri"], rel_name, v.get("text")))
+        for ent in data["entities"]:
+            for rel_name, values in ent["relations"].items():
+                for v in values:
+                    if v["parts"]:
+                        continue  # composed restriction text is fine
+                    if _looks_like_bnode(v["text"]):
+                        offenders.append((ent["iri"], rel_name, v["text"]))
         assert not offenders, f"raw BNode ids leaked as text: {offenders[:10]}"
 
     def test_external_links_are_not_clickable(self, viewer):
         """Any value whose link is NOT a ToC entity (external URL, uncached
-        import, raw bnode) must be is_external=True, so the template renders it
+        import, raw bnode) must be kind="external", so the template renders it
         as plain text — never as an /extract?resource= link. Regression for the
         nlm.nih.gov 'see also' that wrongly reloaded the API."""
-        data = viewer.get_view_data()
+        data = viewer.view()
         offenders = []
         for ent_uri, val in _iter_resolved_values(data):
-            link = val.get("link")
+            link = val["iri"]
             if not link:
                 continue
             # ground truth: is this link a real ToC entity?
             is_toc = viewer._is_internal(link)
-            if not is_toc and not val.get("is_external", False):
+            if not is_toc and val["kind"] != "external":
                 offenders.append((ent_uri, link))
         assert not offenders, (
-            f"external/non-ToC links not marked is_external "
+            f"external/non-ToC links"
             f"(would become clickable /extract links): {offenders[:10]}"
         )
 
     def test_toc_links_stay_internal(self, viewer):
-        """Mirror invariant: a link that IS a ToC entity must be is_external=False
-        (so internal navigation still works)."""
-        data = viewer.get_view_data()
+        """Mirror invariant: a link that IS a ToC entity must not be of kind "external"
++        (so internal navigation still works)"""
+        data = viewer.view()
         offenders = []
         for ent_uri, val in _iter_resolved_values(data):
-            link = val.get("link")
+            link = val["iri"]
             if not link:
                 continue
-            if viewer._is_internal(link) and val.get("is_external", True):
+            if viewer._is_internal(link) and val["kind"] == "external":
                 offenders.append((ent_uri, link))
         assert not offenders, (
             f"ToC links wrongly marked external (lose internal navigation): {offenders[:10]}"
@@ -547,4 +542,4 @@ class TestUndefinedEntity:
     def test_mentioned_only_resolves_external(self):
         v = _viewer(_entity(Concept, C, "My Class"), undefined={C})
         d = v._resolve_resource_value(_entity(Concept, C, "My Class"))
-        assert d["is_external"] is True and d["link"] == C
+        assert d["kind"] == "external" and d["iri"] == C

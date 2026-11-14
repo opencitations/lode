@@ -16,7 +16,7 @@ from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMA
 from lode.helpers.rdf import iri_local_name
 from lode.viewer.contract import resolve_links, to_entity, to_model, to_tree_node
 from lode.helpers.links import Links
-from lode.viewer.view_data import TocEntity, TocSection, ViewData, TypeLabel
+from lode.viewer.view_data import TocEntity, TocSection, ViewData, TypeLabel, Value, new_value
 
 import lode.models as _models
 
@@ -226,13 +226,19 @@ class BaseViewer:
         else:
             cards = old.get('entities') or []
         data = {
-            'model': to_model(old.get('metadata') or {}, old['export_formats'], self.format_warnings(self.artefact.warnings), links.visualize),
+            'model': to_model(old.get('metadata') or {}, old['export_formats'], self.format_warnings(self.artefact.warnings)),
+            'toc': self._build_toc(language),
             'toc': self._build_toc(language),
             'types': self._build_types(),
             'entities': [to_entity(card) for card in cards],
             'focus': resource_uri or None,
             'error': old.get('error'),
         }
+
+        for values in data['model']['metadata'].values():
+            for value in values:
+                if value['iri'] and is_likely_ontology(value['iri']):
+                    value['visualize'] = links.visualize(value['iri'])
 
         resolve_links(data, links)
         return data
@@ -367,8 +373,8 @@ class BaseViewer:
                         if formatted_values:
                             if attr in self._FULL_IRI_ATTRS:
                                 for fv in formatted_values:
-                                    if fv.get('link'):
-                                        fv['text'] = str(fv['link'])
+                                    if fv['iri']:
+                                        fv['text'] = str(fv['iri'])
                             if clean_name not in relations:
                                 relations[clean_name] = []
                             for v in formatted_values:
@@ -467,7 +473,6 @@ class BaseViewer:
             'get_has_object',
             'get_has_namespaces',
         ]
-        entry = {'text': None, 'link': None}
 
         # 1. Loop through ALL attributes and methods of the Model object
         for attr_name in dir(sem_art_model):
@@ -496,12 +501,6 @@ class BaseViewer:
                         for val in self._select_by_language(values, language):
                             entry = self._resolve_resource_value(val, language)
                             if entry['text']:
-                                # 7. Check if the link if an visualizable ontology or not
-                                if entry.get('link'):
-                                    entry['is_visualizable'] = is_likely_ontology(entry['link'])
-                                else:
-                                    entry['is_visualizable'] = False
-
                                 extracted_values.append(entry)
 
                         # 8. Add to structural data ONLY if we found valid text
@@ -530,57 +529,44 @@ class BaseViewer:
     # 3. VALUE RESOLUTION
     # ==========================================================================    
 
-    def _resolve_special(self, obj, handler_dic: dict, language=None) -> Optional[dict]:
+    def _resolve_special(self, obj, value: Value, language=None) -> Optional[Value]:
         """Resolve a value only one format knows how to render, or return None.
 
         The base knows none: a format viewer overrides this to intercept its own
-        constructs (OWL class expressions) before the generic resolution runs.
+        constructs (OWL class expressions) before the generic resolution runs. It
+        fills in `value`, an empty Value, and returns it.
         """
         return None
     
-    def _resolve_chain_value(self, chain, language=None) -> dict:
-        """Render an ordered property chain (a list of Relations) as a single value.
+    def _resolve_chain_value(self, chain, language=None) -> Optional[Value]:
+        """Render an ordered property chain (a list of Relations) as a single Value.
 
         The clickable parts are joined by the composition operator. Returns None
         when no member has a displayable text.
         """
-        members = []
-        for m in chain:
-            md = self._resolve_resource_value(m, language)
-            if md.get('text'):
-                members.append(md)
+        members = [m for m in (self._resolve_resource_value(r, language) for r in chain) if m['text']]
         if not members:
             return None
         parts = []
-        for i, md in enumerate(members):
+        for i, member in enumerate(members):
             if i > 0:
-                parts.append({'text': ' o ', 'link': None})  # ring operator
-            parts.append(md)
-        return {
-            'text': ' o '.join(md['text'] for md in members),
-            'link': None,
-            'lan': None,
-            'parts': parts,
-            'type': 'PropertyChain',
-        }
+                parts.append(new_value(text=' o '))  # ring operator
+            parts.append(member)
+        return new_value(text=' o '.join(m['text'] for m in members), parts=parts, type='PropertyChain')
 
-    def _resolve_resource_value(self, obj, language=None) -> dict:
-        """Helper: Extracts text and link from any object."""
-        handler_dic = {
-            'text': None,
-            'link': None,
-            'lan': None,
-            'parts': None,  # This key is for restrictions
-            'type': None,
-            'is_deprecated': False,
-            'is_imported': False,
-            'is_external': False,
-        }
+    def _resolve_resource_value(self, obj, language=None) -> Value:
+        """Turn any object (resource, literal, statement, string) into a contract Value.
 
-        if not obj: return handler_dic
+        The Value carries its IRI and a `kind` ("page" inside this documentation, "external"
+        outside); the address (`href`) is filled in later, by the Links of the caller.
+        """
+        value = new_value()
+
+        if not obj:
+            return value
 
         # --- 1. FORMAT-SPECIFIC VALUES (e.g. OWL restrictions) ---
-        special = self._resolve_special(obj, handler_dic, language)
+        special = self._resolve_special(obj, value, language)
         if special is not None:
             return special
 
@@ -588,95 +574,80 @@ class BaseViewer:
 
         # --- 2. String Handling ---
         if isinstance(obj, str):
-            handler_dic['text'] = obj
-            return handler_dic
+            value['text'] = obj
+            return value
 
         # --- 3. Literal Handling ---
-        if type(obj).__name__ == 'Literal':
+        if obj_type == 'Literal':
             if hasattr(obj, 'get_has_value') and obj.get_has_value():
-
-                is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj,
-                                                                                                                'is_deprecated',
-                                                                                                                False)
-                handler_dic['is_deprecated'] = bool(is_dep)
-
-                lit_lang = obj.get_has_language()
-
-                handler_dic['text'] = obj.get_has_value()
-                handler_dic['lan'] = lit_lang
-                handler_dic['type'] = obj_type
-                return handler_dic
+                is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(
+                    obj, 'is_deprecated', False)
+                value['deprecated'] = bool(is_dep)
+                value['text'] = obj.get_has_value()
+                value['language'] = obj.get_has_language()
+                value['type'] = obj_type
+                return value
 
             raw_str = str(obj)
             if "object at" not in raw_str:
-                handler_dic['text'] = raw_str
-                handler_dic['type'] = obj_type
-                return handler_dic
+                value['text'] = raw_str
+                value['type'] = obj_type
+                return value
 
         # --- 4. Statement (nested annotation) ---
         if obj_type == 'Statement':
-            handler_dic['type'] = 'Statement'
-            handler_dic['link'] = None  # don't link to the BNode id
+            value['type'] = 'Statement'   # no IRI: never link to the id of the blank node
             inner_pred = obj.get_has_predicate()
-            inner_obj = obj.get_has_object()
-            
-            # Resolve the inner (predicate, value) pair recursively
             inner = {
                 'predicate': self._get_best_label(inner_pred, language) if inner_pred else None,
-                'value': self._resolve_resource_value(inner_obj, language) if inner_obj else None,
+                'value': self._resolve_resource_value(obj.get_has_object(), language),
             }
             # Walk Statement's own annotations (anything else in __dict__ besides
             # the reification slots), so dc:date, rdf:value siblings show up too.
             skip = {'has_subject', 'has_predicate', 'has_object',
                     'has_identifier', 'is_positive_statement'}
             siblings = []
-            for attr, value in obj.__dict__.items():
-                if attr.startswith('_') or attr in skip or not value:
+            for attr, attr_value in obj.__dict__.items():
+                if attr.startswith('_') or attr in skip or not attr_value:
                     continue
-                values = value if isinstance(value, list) else [value]
+                values = attr_value if isinstance(attr_value, list) else [attr_value]
                 for v in self._select_by_language(values, language):
                     resolved = self._resolve_resource_value(v, language)
-                    if resolved.get('text') or resolved.get('nested'):
-                        siblings.append({
-                            'predicate': self._clean_name(attr),
-                            'value': resolved,
-                        })
+                    if resolved['text'] or resolved['nested']:
+                        siblings.append({'predicate': self._clean_name(attr), 'value': resolved})
             # Reader order depends on the source file: sort by label, then by value
-            pairs = sorted(
-                [inner] + siblings,
-                key=lambda p: ((p['predicate'] or '').lower(),
-                                ((p['value'] or {}).get('text') or '').lower()),
-            )
-            handler_dic['nested'] = {'main': pairs[0], 'siblings': pairs[1:]}
-            # Pick a primary text for collapsed display: the inner value's text
-            handler_dic['text'] = (inner.get('value') or {}).get('text') or '[Statement]'
-            return handler_dic
+            pairs = sorted([inner] + siblings,
+                           key=lambda p: ((p['predicate'] or '').lower(), (p['value']['text'] or '').lower()))
+            value['nested'] = {'main': pairs[0], 'siblings': pairs[1:]}
+            # The text for a collapsed display: the one of the inner value
+            value['text'] = inner['value']['text'] or '[Statement]'
+            return value
 
         # --- 5. Normal Resource Handling (e.g., Concepts, Properties, Individuals) ---
         if hasattr(obj, 'get_has_identifier'):
-            handler_dic['link'] = obj.get_has_identifier()
-            link = handler_dic['link']
+            iri = obj.get_has_identifier()
+            value['iri'] = iri
             ns = self.get_artefact_ns()
-            internal = self._is_internal(link)
-            native = bool(link) and bool(ns) and str(link).startswith(ns)
-            handler_dic['is_external'] = not internal
-            handler_dic['is_imported'] = internal and not native
-            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(obj, 'is_deprecated',  False)
-            handler_dic['is_deprecated'] = bool(is_dep)
-
+            internal = self._is_internal(iri)
+            native = bool(iri) and bool(ns) and str(iri).startswith(ns)
+            if iri:
+                value['kind'] = "page" if internal else "external"
+            value['imported'] = internal and not native
+            is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(
+                obj, 'is_deprecated', False)
+            value['deprecated'] = bool(is_dep)
+            value['type'] = obj_type
             try:
-                handler_dic['text'] = self._get_best_label(obj, language)
-                handler_dic['type'] = obj_type
+                value['text'] = self._get_best_label(obj, language)
             except AttributeError:
-                handler_dic['text'] = handler_dic['link']
-                handler_dic['type'] = obj_type
+                value['text'] = iri
 
         # Fallbacks
-        if not handler_dic['text'] and handler_dic['link']:
-            handler_dic['text'] = handler_dic['link']
-            handler_dic['type'] = obj_type
+        if not value['text'] and value['iri']:
+            value['text'] = value['iri']
+            value['type'] = obj_type
 
-        return handler_dic
+        return value
 
     def format_warnings(self, warnings: List[Dict]) -> List[Dict]:
         """Return the reader warnings with model class names replaced by this viewer's display names.
@@ -735,7 +706,7 @@ class BaseViewer:
                 if obj_data['text'] and obj_data not in values:
                     values.append(obj_data)
             if values:
-                statements[pred_label] = sorted(values, key=lambda v: (str(v.get('nested')), v['text'].lower()))
+                statements[pred_label] = sorted(values, key=lambda v: (str(v['nested']), v['text'].lower()))
 
         return dict(sorted(statements.items(), key=lambda kv: kv[0].lower()))
 

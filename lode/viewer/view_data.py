@@ -150,3 +150,15 @@ class ViewData(TypedDict):
     entities: List[Entity]       # what the main part shows: all the cards, one, or none
     focus: Optional[str]         # the IRI that was asked for; None for the whole artefact
     error: Optional[str]         # a message when the request cannot be answered; None otherwise
+
+def new_value(**fields) -> Value:
+    """Return a Value with every key present, overridden by `fields`.
+
+    The viewers start from this and fill in what they know, so that no Value ever lacks a key
+    a template reads (a template never has to ask whether a key exists).
+    """
+    value: Value = {"text": None, "iri": None, "href": None, "kind": None, "language": None,
+                    "type": None, "deprecated": False, "imported": False, "visualize": None,
+                    "parts": [], "nested": None}
+    value.update(fields)
+    return value

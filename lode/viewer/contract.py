@@ -7,46 +7,7 @@ real data. As the viewers move to the contract this module shrinks, and it goes 
 from typing import List, Optional
 
 from lode.helpers.links import Links
-from lode.viewer.view_data import Entity, Model, Nested, NestedPair, TreeNode, Value, ViewData
-
-def _kind(link: Optional[str], external: bool) -> Optional[str]:
-    """Return the kind of a link: None without one, "external" outside this documentation, else "page".
-
-    The address (`href`) is not known here: the caller fills it in.
-    """
-    if not link:
-        return None
-    return "external" if external else "page"
-
-
-def to_value(old: dict) -> Value:
-    """Turn a value as the viewer builds it (text, link, lan, ...) into a contract Value."""
-    link = old.get("link")
-    return {
-        "text": old.get("text"),
-        "iri": link,
-        "href": None,
-        "kind": _kind(link, bool(old.get("is_external"))),
-        "language": old.get("lan"),
-        "type": old.get("type"),
-        "deprecated": bool(old.get("is_deprecated")),
-        "imported": bool(old.get("is_imported")),
-        "visualize": None,
-        "parts": [to_value(part) for part in (old.get("parts") or [])],
-        "nested": _to_nested(old.get("nested")),
-    }
-
-
-def _to_pair(old: dict) -> NestedPair:
-    """Turn one predicate and value of an annotation on an annotation."""
-    return {"predicate": old["predicate"], "value": to_value(old.get("value") or {})}
-
-
-def _to_nested(old: Optional[dict]) -> Optional[Nested]:
-    """Turn the annotations carried by a statement value; None when it has none."""
-    if not old:
-        return None
-    return {"main": _to_pair(old["main"]), "siblings": [_to_pair(p) for p in old["siblings"]]}
+from lode.viewer.view_data import Entity, Model, TreeNode, ViewData
 
 
 def to_entity(old: dict) -> Entity:
@@ -59,8 +20,24 @@ def to_entity(old: dict) -> Entity:
         "href": None,
         "kind": "external" if old["is_external"] else "page",
         "deprecated": bool(old["is_deprecated"]),
-        "relations": {name: [to_value(v) for v in values] for name, values in old["relations"].items()},
-        "statements": {name: [to_value(v) for v in values] for name, values in old["statements"].items()},
+        "relations": old["relations"],
+        "statements": old["statements"],
+        "characteristics": list(old["characteristics"]),
+        "provenance": list(old["provenance"]),
+    }
+
+def to_entity(old: dict) -> Entity:
+    """Turn a card as the viewer builds it into a contract Entity."""
+    return {
+        "iri": old["uri"],
+        "type": old["type"],
+        "label": old["label"],
+        "anchor": old["anchor_id"],
+        "href": None,
+        "kind": "external" if old["is_external"] else "page",
+        "deprecated": bool(old["is_deprecated"]),
+        "relations": old["relations"],
+        "statements": old["statements"],
         "characteristics": list(old["characteristics"]),
         "provenance": list(old["provenance"]),
     }
@@ -79,7 +56,7 @@ def to_tree_node(old: dict, type_name: str) -> TreeNode:
     }
 
 
-def to_model(metadata: dict, export_formats: list, warnings: list, visualize) -> Model:
+def to_model(metadata: dict, export_formats: list, warnings: list) -> Model:
     """Build the contract Model from the header metadata, the export formats and the warnings.
 
     `metadata` is the dictionary the viewer builds for the header: `uri` and `label` are the
@@ -91,17 +68,11 @@ def to_model(metadata: dict, export_formats: list, warnings: list, visualize) ->
     label = fields.pop("label", None)
     namespaces = fields.pop("_namespaces", [])
 
-    def header(old: dict) -> Value:
-        value = to_value(old)
-        if old.get("is_visualizable") and old.get("link"):
-            value["visualize"] = visualize(old["link"])
-        return value
-
     return {
-        "iri": uri[0]["link"] if uri else None,
+        "iri": uri[0]["iri"] if uri else None,
         "label": label[0]["text"] if label else None,
         "href": None,
-        "metadata": {name: [header(v) for v in values] for name, values in fields.items()},
+        "metadata": fields,
         "namespaces": [{"prefix": n["prefix"], "uri": n["uri"]} for n in namespaces],
         "serializations": [{"label": f["label"], "fmt": f["fmt"], "ext": f["ext"],
                             "mime": f["mime"], "href": None} for f in export_formats],

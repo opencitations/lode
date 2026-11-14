@@ -2,6 +2,8 @@
 from typing import Optional
 
 from lode.viewer.base_viewer import BaseViewer
+from lode.viewer.view_data import Value, new_value
+from typing import List, Optional
 
 
 class OwlViewer(BaseViewer):
@@ -17,8 +19,8 @@ class OwlViewer(BaseViewer):
     _RESTRICTION_TYPES = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
                           "OneOf", "Value", "DatatypeRestriction"]
 
-    def _resolve_special(self, obj, handler_dic: dict, language=None) -> Optional[dict]:
-        """Render a class expression as clickable parts; None for any other value.
+    def _resolve_special(self, obj, value: Value, language=None) -> Optional[Value]:
+        """Render a class expression as a Value made of clickable parts; None for any other value.
 
         The blank node of the expression is never linked: its parts carry the links.
         """
@@ -28,23 +30,17 @@ class OwlViewer(BaseViewer):
 
         is_dep = getattr(obj, 'get_is_deprecated')() if hasattr(obj, 'get_is_deprecated') else getattr(
             obj, 'is_deprecated', False)
-        handler_dic['is_deprecated'] = bool(is_dep)
+        parts = self._parse_restriction(obj, language)   # recursively, into clickable parts
 
-        # Recursively parse the restriction into clickable parts
-        parts = self._parse_restriction(obj, language)
+        value['deprecated'] = bool(is_dep)
+        value['parts'] = parts
+        value['text'] = "".join(p['text'] for p in parts if p['text'])
+        value['type'] = obj_type
+        return value
 
-        handler_dic['parts'] = parts
-        handler_dic['text'] = "".join([p['text'] for p in parts if p.get('text')])
-        handler_dic['link'] = None  # Forces Jinja to ignore the blank node URI
-        handler_dic['is_external'] = False
-        handler_dic['is_imported'] = False
-        handler_dic['type'] = obj_type
-        return handler_dic
-
-    def _parse_restriction(self, obj, language=None, _seen=None) -> list:
+    def _parse_restriction(self, obj, language=None, _seen=None) -> List[Value]:
         """
         Recursively unpacks nested restrictions into a list of display parts
-        (each part being a dict with 'text' and 'link').
         Guards against cyclic class expressions (possible once owl:imports
         completes cross-ontology definitions) via a visited set.
         """
@@ -58,7 +54,7 @@ class OwlViewer(BaseViewer):
             parts = []
             for i, item in enumerate(obj):
                 if i > 0:
-                    parts.append({'text': ', ', 'link': None})
+                    parts.append(new_value(text=', '))
                 parts.extend(self._parse_restriction(item, language, _seen))
             return parts
 
@@ -68,7 +64,7 @@ class OwlViewer(BaseViewer):
         if obj_type in self._RESTRICTION_TYPES:
             # cycle guard: a class expression already being expanded upstream
             if id(obj) in _seen:
-                return [{'text': '…', 'link': None}]
+                return [new_value(text='…')]
             _seen.add(id(obj))
 
             parts = []
@@ -90,10 +86,10 @@ class OwlViewer(BaseViewer):
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
                 if is_inv:
-                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='inverse of ', type='Text'))
 
                 parts.extend(self._parse_restriction(prop, language, _seen))
-                parts.append({'text': f' {quant} ', 'link': None})
+                parts.append(new_value(text=f' {quant} '))
                 parts.extend(self._parse_restriction(concept, language, _seen))
 
             elif obj_type == "Cardinality":
@@ -105,10 +101,10 @@ class OwlViewer(BaseViewer):
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
                 if is_inv:
-                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='inverse of ', type='Text'))
 
                 parts.extend(self._parse_restriction(prop, language, _seen))
-                parts.append({'text': f' {card} {card_num}',  'link': None})
+                parts.append(new_value(text=f' {card} {card_num}'))
                 parts.extend(self._parse_restriction(concept, language, _seen))
 
             elif obj_type == "TruthFunction":
@@ -119,14 +115,14 @@ class OwlViewer(BaseViewer):
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
                 if is_inv:
-                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='inverse of ', type='Text'))
 
-                parts.append({'text': '(', 'link': None})
+                parts.append(new_value(text='('))
                 for i, c in enumerate(concepts):
                     if i > 0:
-                        parts.append({'text': f' {operator} ', 'link': None})
+                        parts.append(new_value(text=f' {operator} '))
                     parts.extend(self._parse_restriction(c, language, _seen))
-                parts.append({'text': ')', 'link': None})
+                parts.append(new_value(text=')'))
 
             elif obj_type == "OneOf":
                 resources = _get(obj, 'applies_on_resource', [])
@@ -135,14 +131,14 @@ class OwlViewer(BaseViewer):
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
                 if is_inv:
-                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='inverse of ', type='Text'))
 
-                parts.append({'text': 'one of { ', 'link': None})
+                parts.append(new_value(text='one of { '))
                 for i, r in enumerate(resources):
                     if i > 0:
-                        parts.append({'text': ', ', 'link': None})
+                        parts.append(new_value(text=', '))
                     parts.extend(self._parse_restriction(r, language, _seen))
-                parts.append({'text': ' }', 'link': None})
+                parts.append(new_value(text=' }'))
 
             elif obj_type == "Value":
                 prop = _get(obj, 'applies_on_property')
@@ -151,10 +147,10 @@ class OwlViewer(BaseViewer):
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
                 if is_inv:
-                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='inverse of ', type='Text'))
 
                 parts.extend(self._parse_restriction(prop, language, _seen))
-                parts.append({'text': ' value ', 'link': None})
+                parts.append(new_value(text=' value '))
                 parts.extend(self._parse_restriction(resource, language, _seen))
 
             elif obj_type == "DatatypeRestriction":
@@ -164,25 +160,21 @@ class OwlViewer(BaseViewer):
                 # Safely check if the is_inverse flag is True
                 is_inv = obj.get_is_inverse() if hasattr(obj, 'get_is_inverse') else getattr(obj, 'is_inverse', False)
                 if is_inv:
-                    parts.append({'text': 'inverse of ', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='inverse of ', type='Text'))
 
                 parts.extend(self._parse_restriction(concept, language, _seen))
                 if facets:
-                    parts.append({'text': '[', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text='[', type='Text'))
                     for i, (constraint, value) in enumerate(facets):
                         if i > 0:
-                            parts.append({'text': ', ', 'link': None, 'type': 'Text'})
-                        parts.append({'text': f'{constraint} ', 'link': None, 'type': 'Text'})
+                            parts.append(new_value(text=', ', type='Text'))
+                        parts.append(new_value(text=f'{constraint} ', type='Text'))
                         parts.extend(self._parse_restriction(value, language, _seen))
-                    parts.append({'text': ']', 'link': None, 'type': 'Text'})
+                    parts.append(new_value(text=']', type='Text'))
 
             return parts
 
         # 3. Base Case: We hit a non-blank node (Concept, Relation, String)
         # Send it to the main resolver to extract its URI link and clean text.
         resolved = self._resolve_resource_value(obj, language)
-
-        if resolved.get('text'):
-            return [{'text': resolved['text'], 'link': resolved.get('link'), 'type': resolved.get('type'), 'is_external': resolved.get('is_external', False)}]
-
-        return []
+        return [resolved] if resolved['text'] else []
