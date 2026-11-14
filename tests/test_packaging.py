@@ -12,7 +12,7 @@ import pytest
 # --- 1. le risorse dati sono nel package (prende il bug di packaging) ---
 def test_package_data_present():
     files = ir.files("lode")
-    assert (files / "templates" / "viewer.html").is_file()
+    assert (files / "templates" / "page.html").is_file()
     assert (files / "static" / "style.css").is_file()
     assert (files / "reader" / "config" / "owl.yaml").is_file()
 

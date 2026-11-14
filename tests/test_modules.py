@@ -475,7 +475,7 @@ class TestEntityProvenance:
     """)
         reader = Reader()
         reader.load_instances(path, "owl", **{flag: True})
-        label = str(get_viewer(reader.get_artefact()).get_view_data()["metadata"]["label"])
+        label = get_viewer(reader.get_artefact()).view()["model"]["label"] or ""
         assert "Own title" in label
         assert "Foreign title" not in label
 

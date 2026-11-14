@@ -916,7 +916,6 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 .toggle-slider.url-mode  { left: 0;   width: 50%; }
 .toggle-slider.file-mode { left: 50%; width: 50%; }
 
-/* ===== SKOS entity card (templates/_card_skos.html) ===== */
 /* LODE-style entity card */
 .entity-card {
     border: 1px solid #dee2e6;

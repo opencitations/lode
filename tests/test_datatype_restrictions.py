@@ -56,11 +56,11 @@ def range_reader(tmp_path):
 def test_range_preserves_datatype_and_every_facet(range_reader, name, datatype,
                                                 expected):
     viewer = get_viewer(range_reader.get_artefact())
-    data = viewer.get_view_data(str(EX[name]))
+    data = viewer.view(resource_uri=str(EX[name]))
     rendered = data["entities"][0]["relations"]["range"][0]
 
     assert rendered["text"] == expected
-    assert rendered["parts"][0]["link"] == str(XSD[datatype])
+    assert rendered["parts"][0]["iri"] == str(XSD[datatype])
 
     restrictions = {
         instance for instances in range_reader._instance_cache.values()
