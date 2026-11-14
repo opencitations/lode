@@ -9,7 +9,9 @@
         </div>
     {% elif v.parts %}
         {# a class expression: each part is a Value, so its links stay clickable #}
-        {% for part in v.parts %}{{ value(part, depth + 1) }}{% endfor %}
+        <div class="restriction-block">
+            {% for part in v.parts %}{{ value(part, depth + 1) }}{% endfor %}
+        </div>
     {% else %}
         {% set kind = v.type.lower() if v.type else '' %}
         {% set is_md = ('str' in kind) or ('literal' in kind) %}

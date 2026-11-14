@@ -24,7 +24,7 @@ def test_templates_resolved_regardless_of_cwd(tmp_path, monkeypatch):
     importlib.reload(api)
     tdir = Path(api.templates.env.loader.searchpath[0])
     assert tdir.is_dir()
-    assert (tdir / "viewer.html").is_file()
+    assert (tdir / "page.html").is_file()
     # deve stare DENTRO il package, non relativo alla cwd
     assert Path("lode/templates").resolve() != tdir or tdir.is_absolute()
 

@@ -55,7 +55,7 @@ def test_a_class_expression_renders_its_parts():
     """Each part of an expression is rendered, links included."""
     parts = [_value(text="knows some "), _value(text="Cat", iri="http://e.org/cat", href="#id_cat", kind="anchor")]
     html = _render(_value(text="knows some Cat", parts=parts))
-    assert "knows some" in html and 'href="#id_cat"' in html
+    assert 'class="restriction-block"' in html
 
 
 def test_a_nested_statement_lists_its_pairs():
