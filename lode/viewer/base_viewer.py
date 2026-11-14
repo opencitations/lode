@@ -14,9 +14,9 @@ from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
-from lode.viewer.contract import resolve_links, to_entity, to_model, to_tree_node
+from lode.viewer.contract import resolve_links, to_model
 from lode.helpers.links import Links
-from lode.viewer.view_data import TocEntity, TocSection, ViewData, TypeLabel, Value, new_value
+from lode.viewer.view_data import Entity, TocEntity, TocSection, TreeNode, TypeLabel, Value, ViewData, new_value
 
 import lode.models as _models
 
@@ -215,8 +215,9 @@ class BaseViewer:
         """Return the data of a page as the contract between viewers and templates defines it.
 
         `resource_uri` asks for the page of one resource; without it, the whole artefact. The
-        contract is described in lode.viewer.view_data. It is built from get_view_data, which
-        stays as it is while the templates move to the contract.
+        contract is described in lode.viewer.view_data. The page of one resource has no
+        navigation (`toc` is empty): it shows its card and nothing else, so a site of N
+        resources does not carry N copies of its own index.
         """
         language = language.strip() if language else "en"
         links = links or Links()
@@ -227,10 +228,9 @@ class BaseViewer:
             cards = old.get('entities') or []
         data = {
             'model': to_model(old.get('metadata') or {}, old['export_formats'], self.format_warnings(self.artefact.warnings)),
-            'toc': self._build_toc(language),
-            'toc': self._build_toc(language),
+            'toc': [] if resource_uri else self._build_toc(language),
             'types': self._build_types(),
-            'entities': [to_entity(card) for card in cards],
+            'entities': cards,
             'focus': resource_uri or None,
             'error': old.get('error'),
         }
@@ -272,13 +272,22 @@ class BaseViewer:
             entries = sorted((self._toc_entry(i, language) for i in members),
                              key=lambda e: (e['label'] or e['iri']).lower())
             parent_getter = self._config["hierarchy"].get(class_key)
-            tree = ([to_tree_node(node, class_key)
-                     for node in self._build_hierarchy(members, parent_getter, language)]
-                    if parent_getter else [])
+            tree = self._build_hierarchy(members, parent_getter, language) if parent_getter else []
             names = self._config["type_map"].get(class_key.lower(), {})
             toc.append({'id': section_id, 'type': class_key, 'label': names.get('plural', class_key),
                         'entities': entries, 'tree': tree})
         return toc
+
+    def _anchor(self, instance) -> str:
+        """Return the HTML id of the card of an entity.
+
+        Derived from its IRI, so it is stable and safe in an attribute. The navigation, the tree
+        and the card all use it: a link from the navigation reaches the card.
+        """
+        type_name = type(instance).__name__.replace(" ", "_")
+        digest = hashlib.md5(str(instance.has_identifier).encode('utf-8')).hexdigest()
+        return f"id_{digest}_{type_name}"
+
 
     def _toc_entry(self, instance, language: str) -> TocEntity:
         """Reduce an entity to what a navigation needs: IRI, type, label and anchor.
@@ -286,11 +295,9 @@ class BaseViewer:
         The anchor has the same form as the one of its card, so a link from the navigation
         reaches the card.
         """
-        uri = instance.has_identifier
-        type_name = type(instance).__name__.replace(" ", "_")
-        digest = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
-        return {'iri': uri, 'type': type_name, 'label': self._get_best_label(instance, language),
-                'anchor': f"id_{digest}_{type_name}", 'href': None, 'kind': "page"}
+        return {'iri': instance.has_identifier, 'type': type(instance).__name__.replace(" ", "_"),
+                'label': self._get_best_label(instance, language),
+                'anchor': self._anchor(instance), 'href': None, 'kind': "page"}
 
 
     def _build_grouped_view(self, group_definitions: List[Tuple[str, str, str]], language: Optional[str] = None) -> Dict:
@@ -326,10 +333,10 @@ class BaseViewer:
             'export_formats': self._formats()
         }
 
-    def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Dict]:
+    def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Entity]:
         """
-        Converts Python Models -> HTML Template Dictionary.
-        Ensures consistent keys ('type', 'uri', 'label') across all viewers.
+        onverts Python Models -> contract Entities (the content of a card).
+        Ensures the same keys across all viewers.
         """
         all_instances = self.artefact.instances()
 
@@ -339,9 +346,6 @@ class BaseViewer:
 
             if not uri:
                 continue
-
-            #Create a safe HTML ID to facilitate on-page navigation
-            safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
 
             # Extract internal attributes (SuperClasses, etc.)
             relations = {}
@@ -403,7 +407,7 @@ class BaseViewer:
                 if key not in ordered_relations:
                     ordered_relations[key] = relations[key]
 
-            characteristics = {}
+            characteristics = []
             for attr in self._config["characteristics"]:
                 getter = f"get_{attr}"
                 # Safely get the boolean value
@@ -411,8 +415,7 @@ class BaseViewer:
 
                 # Convert 'is_asymmetric' to 'is asymmetric' for the HTML label
                 if is_true:
-                    display_name = attr.replace('_', ' ')
-                    characteristics[display_name] = True
+                    characteristics.append(attr.replace('_', ' '))
 
             # Extract Statement Entities
             statements = self._format_statement(all_instances, instance, language)
@@ -422,19 +425,20 @@ class BaseViewer:
                 instance, 'is_deprecated', False)
 
             entities.append({
+                'iri': uri,
                 'type': type_inst,
-                'uri': uri,
                 'label': self._get_best_label(instance, language),
-                'anchor_id': f"id_{safe_id}_{type_inst}",
+                'anchor': self._anchor(instance),
+                'href': None,
+                'kind': "page" if self._is_internal(uri) else "external",
+                'deprecated': bool(is_dep),
                 'relations': ordered_relations,
                 'statements': statements,
                 'characteristics': characteristics,
-                'is_deprecated': bool(is_dep),
                 'provenance': self._build_provenance_subgraph(instance),
-                'is_external': not self._is_internal(uri),
             })
 
-        entities.sort(key=lambda x: (x['label'] or x['uri']).lower())
+        entities.sort(key=lambda x: (x['label'] or x['iri']).lower())
         return entities
 
     def _find_and_format_semantic_artefact_metadata(self, all_instances: List[Resource], language=None) -> Dict:
@@ -712,13 +716,10 @@ class BaseViewer:
 
     _FULL_IRI_ATTRS = {'is_defined_by'}
     
-    def _build_hierarchy(self, instances, parent_getter_name, language=None):
+    def _build_hierarchy(self, instances, parent_getter_name, language=None) -> List[TreeNode]:
         """
-        Build a forest (list of trees) of dicts from the parent relation.
-        anchor_id uses the same format as _format_entities: id_{md5}_{ClassName}
+        Build a forest (list of trees) of TreeNodes from the parent relation.
         """
-        import hashlib
-
         by_uri = {}
         for inst in instances:
             uri = getattr(inst, 'has_identifier', None)
@@ -747,10 +748,6 @@ class BaseViewer:
                 return None
             visited = visited | {uri}
             inst = by_uri[uri]
-            label = self._get_best_label(inst, language) or uri
-            type_inst = type(inst).__name__.replace(" ", "_")
-            safe_id = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
-            anchor_id = f"id_{safe_id}_{type_inst}"
             kids = []
             for child_uri in sorted(
                 children_map.get(uri, []),
@@ -759,7 +756,8 @@ class BaseViewer:
                 child_node = node_dict(child_uri, visited)
                 if child_node:
                     kids.append(child_node)
-            return {'label': label, 'anchor_id': anchor_id, 'uri': uri, 'children': kids}
+            entry = self._toc_entry(inst, language)
+            return {**entry, 'label': entry['label'] or uri, 'children': kids}
 
         tree = []
         for uri in sorted(roots, key=lambda u: (self._get_best_label(by_uri[u], language) or u).lower()):

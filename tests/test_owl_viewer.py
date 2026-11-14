@@ -228,7 +228,7 @@ class TestHandleSingleResource:
         data = v._handle_single_resource(C)
         assert data.get("single_resource") is True
         assert len(data["entities"]) == 1
-        assert data["entities"][0]["uri"] == C
+        assert data["entities"][0]["iri"] == C
 
     def test_ontology_iri_is_not_browsable(self):
         """Opening ?resource=<ontology> must NOT dump the whole model."""

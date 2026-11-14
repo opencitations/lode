@@ -131,7 +131,7 @@ def test_the_whole_artefact_without_cards(render):
 def test_one_resource(render):
     """The current entry is marked, links tell their kind, and there is a way back."""
     html = render(ONE)
-    assert "<strong>Cat</strong>" in html
+    assert "<h2>Cat" in html
     assert 'href="resources/kitten.html"' in html
     assert 'href="http://other.org/x"' in html and 'target="_blank"' in html
     assert 'href="index.html"' in html                     # model.href: back to everything
@@ -201,25 +201,14 @@ def test_a_real_page_renders_with_the_example_template(viewer_and_iri, render):
     viewer, iri = viewer_and_iri
     assert "Cat" in render(viewer.view(resource_uri=iri))
 
+def test_the_page_of_one_resource_has_no_navigation(viewer_and_iri):
+    """A page about one resource carries only its card: the navigation belongs to the whole artefact.
 
-def _strip_links(node):
-    """The data without its `href` and `kind`: what a link says about itself, not where it goes."""
-    if isinstance(node, dict):
-        return {key: _strip_links(value) for key, value in node.items() if key not in ("href", "kind")}
-    if isinstance(node, list):
-        return [_strip_links(item) for item in node]
-    return node
-
-
-def test_the_navigation_does_not_depend_on_the_view(viewer_and_iri):
-    """The page of one resource lists the same entities, in the same order, as the whole artefact.
-
-    Where each entry goes can differ: on the whole page it is an anchor to its card, elsewhere a page.
+    Otherwise every page of a static site would list every other page.
     """
     viewer, iri = viewer_and_iri
-    assert _strip_links(viewer.view()["toc"]) == _strip_links(viewer.view(resource_uri=iri)["toc"])
-
-
+    assert viewer.view()["toc"]
+    assert viewer.view(resource_uri=iri)["toc"] == []
 
 def test_focus_and_error(viewer_and_iri):
     """`focus` is what was asked for; an unknown resource gives a message and no card."""
@@ -228,9 +217,6 @@ def test_focus_and_error(viewer_and_iri):
     assert viewer.view(resource_uri=iri)["focus"] == iri
     missing = viewer.view(resource_uri="http://example.org/nope")
     assert missing["error"] and missing["entities"] == []
-
-
-
 
 class _TestLinks(Links):
     """Addresses that say what they stand for, so a test can tell where each came from."""
@@ -285,16 +271,6 @@ def test_the_whole_artefact_links_its_cards_by_anchor(viewer_and_iri):
         for entry in section["entities"]:
             if entry["iri"] in anchors:
                 assert (entry["kind"], entry["href"]) == ("anchor", "#" + anchors[entry["iri"]])
-
-
-def test_one_resource_links_the_others_to_their_pages(viewer_and_iri):
-    """On the page of one resource the other entries go to their own pages."""
-    viewer, iri = viewer_and_iri
-    data = viewer.view(resource_uri=iri, links=_TestLinks())
-    for section in data["toc"]:
-        for entry in section["entities"]:
-            if entry["iri"] != iri:
-                assert (entry["kind"], entry["href"]) == ("page", f"page:{entry['iri']}")
 
 
 def test_the_model_and_its_exports(viewer_and_iri):

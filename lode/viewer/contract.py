@@ -7,53 +7,7 @@ real data. As the viewers move to the contract this module shrinks, and it goes 
 from typing import List, Optional
 
 from lode.helpers.links import Links
-from lode.viewer.view_data import Entity, Model, TreeNode, ViewData
-
-
-def to_entity(old: dict) -> Entity:
-    """Turn a card as the viewer builds it into a contract Entity."""
-    return {
-        "iri": old["uri"],
-        "type": old["type"],
-        "label": old["label"],
-        "anchor": old["anchor_id"],
-        "href": None,
-        "kind": "external" if old["is_external"] else "page",
-        "deprecated": bool(old["is_deprecated"]),
-        "relations": old["relations"],
-        "statements": old["statements"],
-        "characteristics": list(old["characteristics"]),
-        "provenance": list(old["provenance"]),
-    }
-
-def to_entity(old: dict) -> Entity:
-    """Turn a card as the viewer builds it into a contract Entity."""
-    return {
-        "iri": old["uri"],
-        "type": old["type"],
-        "label": old["label"],
-        "anchor": old["anchor_id"],
-        "href": None,
-        "kind": "external" if old["is_external"] else "page",
-        "deprecated": bool(old["is_deprecated"]),
-        "relations": old["relations"],
-        "statements": old["statements"],
-        "characteristics": list(old["characteristics"]),
-        "provenance": list(old["provenance"]),
-    }
-
-
-def to_tree_node(old: dict, type_name: str) -> TreeNode:
-    """Turn a node of a section hierarchy; every node of a section has the section's type."""
-    return {
-        "iri": old["uri"],
-        "type": type_name,
-        "label": old["label"],
-        "anchor": old["anchor_id"],
-        "href": None,
-        "kind": "page",
-        "children": [to_tree_node(child, type_name) for child in old["children"]],
-    }
+from lode.viewer.view_data import Model, ViewData
 
 
 def to_model(metadata: dict, export_formats: list, warnings: list) -> Model:

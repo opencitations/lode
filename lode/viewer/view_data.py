@@ -145,7 +145,7 @@ class ViewData(TypedDict):
     """What a viewer hands to a template. Every key is always present."""
 
     model: Model
-    toc: List[TocSection]        # the navigation: it feeds the sidebar and the contents list alike
+    toc: List[TocSection]        # the navigation of the whole artefact, for the sidebar and the contents list; [] on the page of one resource
     types: Dict[str, TypeLabel]  # how each type is called, by the class name that `type` carries
     entities: List[Entity]       # what the main part shows: all the cards, one, or none
     focus: Optional[str]         # the IRI that was asked for; None for the whole artefact
