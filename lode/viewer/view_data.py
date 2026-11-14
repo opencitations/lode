@@ -63,7 +63,7 @@ class Value(TypedDict):
     type: Optional[str]          # model class name: "Literal", "Concept", "PropertyChain", ...
     deprecated: bool
     imported: bool               # defined in an imported module, not in this artefact
-    visualizable: bool           # header only: the link points to an ontology LODE can show
+    visualize: Optional[str]     # header only: the address that opens LODE on this ontology; None otherwise
     parts: List["Value"]         # components of a class expression or of a property chain; [] otherwise
     nested: Optional[Nested]
 
@@ -134,12 +134,19 @@ class Model(TypedDict):
     warnings: List[ReaderWarning]        # [] unless the artefact was read asking for them
     href: Optional[str]          # the page of the whole artefact; where "back to everything" goes
 
+class TypeLabel(TypedDict):
+    """How a type is called and abbreviated."""
+
+    singular: str                # "Class"
+    plural: str                  # "Classes"
+    abbreviation: str            # "c": the short badge shown next to a name
 
 class ViewData(TypedDict):
     """What a viewer hands to a template. Every key is always present."""
 
     model: Model
     toc: List[TocSection]        # the navigation: it feeds the sidebar and the contents list alike
+    types: Dict[str, TypeLabel]  # how each type is called, by the class name that `type` carries
     entities: List[Entity]       # what the main part shows: all the cards, one, or none
     focus: Optional[str]         # the IRI that was asked for; None for the whole artefact
     error: Optional[str]         # a message when the request cannot be answered; None otherwise

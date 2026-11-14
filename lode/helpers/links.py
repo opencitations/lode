@@ -21,3 +21,11 @@ class Links:
     def home(self) -> Optional[str]:
         """Return the address of the page of the whole artefact, or None."""
         return None
+
+    def visualize(self, iri: str) -> Optional[str]:
+        """Return the address that opens the documentation of another ontology, or None.
+
+        Only the service can do it (it reads and renders on request); a static site cannot.
+        """
+        return None
+

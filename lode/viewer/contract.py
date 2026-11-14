@@ -6,7 +6,7 @@ real data. As the viewers move to the contract this module shrinks, and it goes 
 """
 from typing import List, Optional
 
-from lode.viewer.links import Links
+from lode.helpers.links import Links
 from lode.viewer.view_data import Entity, Model, Nested, NestedPair, TreeNode, Value, ViewData
 
 def _kind(link: Optional[str], external: bool) -> Optional[str]:
@@ -31,7 +31,7 @@ def to_value(old: dict) -> Value:
         "type": old.get("type"),
         "deprecated": bool(old.get("is_deprecated")),
         "imported": bool(old.get("is_imported")),
-        "visualizable": bool(old.get("is_visualizable")),
+        "visualize": None,
         "parts": [to_value(part) for part in (old.get("parts") or [])],
         "nested": _to_nested(old.get("nested")),
     }
@@ -79,7 +79,7 @@ def to_tree_node(old: dict, type_name: str) -> TreeNode:
     }
 
 
-def to_model(metadata: dict, export_formats: list, warnings: list) -> Model:
+def to_model(metadata: dict, export_formats: list, warnings: list, visualize) -> Model:
     """Build the contract Model from the header metadata, the export formats and the warnings.
 
     `metadata` is the dictionary the viewer builds for the header: `uri` and `label` are the
@@ -90,11 +90,18 @@ def to_model(metadata: dict, export_formats: list, warnings: list) -> Model:
     uri = fields.pop("uri", None)
     label = fields.pop("label", None)
     namespaces = fields.pop("_namespaces", [])
+
+    def header(old: dict) -> Value:
+        value = to_value(old)
+        if old.get("is_visualizable") and old.get("link"):
+            value["visualize"] = visualize(old["link"])
+        return value
+
     return {
         "iri": uri[0]["link"] if uri else None,
         "label": label[0]["text"] if label else None,
         "href": None,
-        "metadata": {name: [to_value(v) for v in values] for name, values in fields.items()},
+        "metadata": {name: [header(v) for v in values] for name, values in fields.items()},
         "namespaces": [{"prefix": n["prefix"], "uri": n["uri"]} for n in namespaces],
         "serializations": [{"label": f["label"], "fmt": f["fmt"], "ext": f["ext"],
                             "mime": f["mime"], "href": None} for f in export_formats],

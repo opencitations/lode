@@ -5,7 +5,7 @@ and display names. It also serializes the provenance of each entity.
 """
 import hashlib
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple 
 
 from lode.models import Literal, Model, Resource, Statement
 
@@ -15,9 +15,10 @@ from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 from lode.viewer.contract import resolve_links, to_entity, to_model, to_tree_node
-from lode.viewer.links import Links
-from lode.viewer.view_data import TocEntity, TocSection, ViewData
+from lode.helpers.links import Links
+from lode.viewer.view_data import TocEntity, TocSection, ViewData, TypeLabel
 
+import lode.models as _models
 
 from lode.viewer.helpers import (
     annotation_sort_key,
@@ -219,22 +220,36 @@ class BaseViewer:
         stays as it is while the templates move to the contract.
         """
         language = language.strip() if language else "en"
+        links = links or Links()
         old = self.get_view_data(resource_uri=resource_uri, language=language)
         if old.get('sections'):
             cards = [card for section in old['sections'] for card in section['entities']]
         else:
             cards = old.get('entities') or []
         data = {
-            'model': to_model(old.get('metadata') or {}, old['export_formats'],
-                              self.format_warnings(self.artefact.warnings)),
+            'model': to_model(old.get('metadata') or {}, old['export_formats'], self.format_warnings(self.artefact.warnings), links.visualize),
             'toc': self._build_toc(language),
+            'types': self._build_types(),
             'entities': [to_entity(card) for card in cards],
             'focus': resource_uri or None,
             'error': old.get('error'),
         }
 
-        resolve_links(data, links or Links())
+        resolve_links(data, links)
         return data
+
+    def _build_types(self) -> Dict[str, TypeLabel]:
+        """How each type is called and abbreviated, keyed by the name of its model class.
+
+        The configuration keys the names by the lower-case class name; the contract uses the exact
+        name, the one a Value, an Entity and a section carry in `type`.
+        """
+        exact = {name.lower(): name for name in _models.__all__}
+        return {exact.get(key, key.capitalize()): {'singular': entry['singular'],
+                                                   'plural': entry['plural'],
+                                                   'abbreviation': entry['abb']}
+                for key, entry in self._config["type_map"].items()}
+
 
     def _build_toc(self, language: str) -> List[TocSection]:
         """Build the navigation: every browsable entity as a short entry, grouped by section.

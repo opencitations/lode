@@ -9,14 +9,14 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from lode.viewer.view_data import ViewData
 import lode
 from lode.viewer import get_viewer
-from lode.viewer.links import Links
+from lode.helpers.links import Links
 
 _EXAMPLES = Path(__file__).resolve().parent.parent / "docs" / "examples"
 
 
 def test_top_level_keys():
     """Adding or removing a top-level key is a change of the contract, never an accident."""
-    assert set(ViewData.__annotations__) == {"model", "toc", "entities", "focus", "error"}
+    assert set(ViewData.__annotations__) == {"model", "toc", "entities", "focus", "error", "types"}
 
 """A template written from the contract alone renders the three kinds of view."""
 from pathlib import Path
@@ -50,7 +50,7 @@ def _check(hint, value, path):
 def _value(**fields):
     """A Value with every key present, the unsaid ones neutral."""
     base = {"text": None, "iri": None, "href": None, "kind": None, "language": None, "type": None,
-            "deprecated": False, "imported": False, "visualizable": False, "parts": [], "nested": None}
+            "deprecated": False, "imported": False, "visualize": None, "parts": [], "nested": None}
     return {**base, **fields}
 
 
@@ -92,14 +92,14 @@ _ANCHOR = _value(text="Animal", iri="http://example.org/animal", href="#id_anima
 _PAGE = _value(text="Kitten", iri="http://example.org/kitten", href="resources/kitten.html", kind="page", type="Concept")
 _EXTERNAL = _value(text="Elsewhere", iri="http://other.org/x", href="http://other.org/x", kind="external")
 
+_TYPES = {"Concept": {"singular": "Concept", "plural": "Concepts", "abbreviation": "c"}}
 WHOLE = {"model": _model(), "toc": _toc(), "entities": [_card({"broader": [_ANCHOR]})],
-         "focus": None, "error": None}
+         "focus": None, "error": None, "types": _TYPES}
 WHOLE_WITHOUT_CARDS = {**WHOLE, "entities": []}
 ONE = {"model": _model(), "toc": _toc(), "entities": [_card({"broader": [_PAGE, _EXTERNAL]})],
-       "focus": "http://example.org/cat", "error": None}
+       "focus": "http://example.org/cat", "error": None, "types": _TYPES}
 ERROR = {"model": _model(), "toc": _toc(), "entities": [], "focus": "http://example.org/nope",
-         "error": "Resource http://example.org/nope not found"}
-
+         "error": "Resource http://example.org/nope not found", "types": _TYPES}
 
 @pytest.fixture
 def render():
@@ -229,6 +229,9 @@ def test_focus_and_error(viewer_and_iri):
     missing = viewer.view(resource_uri="http://example.org/nope")
     assert missing["error"] and missing["entities"] == []
 
+
+
+
 class _TestLinks(Links):
     """Addresses that say what they stand for, so a test can tell where each came from."""
 
@@ -240,6 +243,9 @@ class _TestLinks(Links):
 
     def home(self):
         return "home"
+
+    def visualize(self, iri): 
+        return f"visualize:{iri}"
 
 
 def _records(node):
@@ -314,6 +320,27 @@ def test_the_library_shortcut(viewer_and_iri):
     viewer, iri = viewer_and_iri
     assert lode.view(viewer.artefact, resource=iri) == viewer.view(resource_uri=iri)
 
+def test_types_name_every_section(viewer_and_iri):
+    """Every type of the navigation can be named: the template never meets a type it cannot label."""
+    viewer, _ = viewer_and_iri
+    data = viewer.view()
+    for section in data["toc"]:
+        assert section["type"] in data["types"]
+        assert data["types"][section["type"]]["abbreviation"]
+
+
+def test_the_header_can_open_other_ontologies(viewer_and_iri):
+    """`visualize` is filled only from the resolver, and only for header values that point to an ontology."""
+    viewer, _ = viewer_and_iri
+    for values in viewer.view(links=_TestLinks())["model"]["metadata"].values():
+        for v in values:
+            assert v["visualize"] in (None, f"visualize:{v['iri']}")
+    for values in viewer.view()["model"]["metadata"].values():
+        assert all(v["visualize"] is None for v in values)
+
+
+
+
 #### links fallbacks
 
 class _NoPages(Links):
@@ -330,6 +357,8 @@ def test_a_resource_without_a_page_is_a_link_to_the_outside(viewer_and_iri):
         assert link["kind"] != "page"
         if link["kind"] == "external":
             assert link["href"] == link["iri"]
+
+
 
 
 
@@ -373,3 +402,13 @@ def test_static_links_from_the_page_of_a_resource():
     assert links.export("ttl", _CAT) == "../ex/Cat.ttl"
     assert links.export("ttl") == "../../pets.ttl"
     assert links.home() == "../../pets.html"
+
+def test_web_links_open_another_ontology():
+    links = _WebLinks(_QS, read_as="owl", lang="it")
+    assert links.visualize("http://x.org/onto") == "/extract?read_as=owl&url=http%3A%2F%2Fx.org%2Fonto&lang=it"
+    assert _WebLinks(_QS).visualize("http://x.org/onto") is None
+
+
+def test_a_static_site_cannot_open_another_ontology():
+    assert _StaticLinks(_GRAPH, _KEPT, "pets").visualize("http://x.org/onto") is None
+

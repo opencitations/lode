@@ -46,7 +46,7 @@ from lode.helpers.site_zip import build_zip, slugify
 from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 from urllib.parse import quote, urlencode
-from lode.viewer.links import Links
+from lode.helpers.links import Links
 
 # ==========================================================================
 # 2. APP SETUP
@@ -97,9 +97,18 @@ templates.env.lstrip_blocks = True
 class _WebLinks(Links):
     """The addresses of the web service: every page is a request to /extract that keeps the view parameters."""
 
-    def __init__(self, nav_qs: str):
-        """`nav_qs` is the query string of the current view, as _nav_qs builds it."""
+    def __init__(self, nav_qs: str, read_as: Optional[str] = None, lang: Optional[str] = None):
+        """`nav_qs` is the query string of the current view (see _nav_qs); `read_as` and `lang` its format and language."""
         self._qs = nav_qs
+        self._read_as = read_as
+        self._lang = lang
+
+    def visualize(self, iri: str) -> Optional[str]:
+        """Return the request that documents another ontology, read as the same format."""
+        if not self._read_as:
+            return None
+        return "/extract?" + urlencode({"read_as": self._read_as, "url": iri, "lang": self._lang or "en"})
+
 
     def resource(self, iri: str) -> str:
         """Return the request for the page of a resource."""

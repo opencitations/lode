@@ -18,7 +18,7 @@ from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.html_utils import minify as _minify
 from lode.exceptions import ArtefactValidationError
 from typing import Optional
-from lode.viewer.links import Links
+from lode.helpers.links import Links
 
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 

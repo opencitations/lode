@@ -9,6 +9,7 @@
         {{ v.text }}
     {%- endif -%}
     {%- if v.language %} <sup>{{ v.language }}</sup>{% endif -%}
+    {%- if v.type in types %} <sup>{{ types[v.type].abbreviation }}</sup>{% endif -%}
     {%- if v.deprecated %} <del>deprecated</del>{% endif -%}
     {%- if v.nested %}
         <ul>{% for pair in [v.nested.main] + v.nested.siblings %}<li>{{ pair.predicate }}: {{ value(pair.value) }}</li>{% endfor %}</ul>
@@ -66,7 +67,7 @@
 <main>
     {% for e in entities %}
         <article id="{{ e.anchor }}">
-            <h2>{{ e.label }} <small>{{ e.type }}</small>{% if e.deprecated %} (deprecated){% endif %}</h2>
+            <h2>{{ e.label }} <small>{{ types[e.type].singular if e.type in types else e.type }}</small> {% if e.deprecated %} (deprecated){% endif %}</h2>
             {% if e.characteristics %}<p>{{ e.characteristics|join(", ") }}</p>{% endif %}
             <dl>
                 {% for name, values in e.relations.items() %}
