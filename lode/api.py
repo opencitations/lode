@@ -87,7 +87,8 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 _PKG_DIR = Path(__file__).resolve().parent
-templates = Jinja2Templates(directory=str(_PKG_DIR / "templates"))
+# v2 first: the page and its partials are found by bare name; error.html and index.html stay in the root.
+templates = Jinja2Templates(directory=[str(_PKG_DIR / "templates" / "v2"), str(_PKG_DIR / "templates")])
 app.mount("/static", StaticFiles(directory=str(_PKG_DIR / "static")), name="static")
 
 # Beautify produced HTML.
@@ -149,16 +150,15 @@ def _render_view(request, artefact, *, resource, lang, source_url, upload_id, re
                  imported=None, closure=None, partial_import=None):
     """Render one resource (or the whole artefact) as the minified viewer page.
 
+    The page is rendered from the viewer contract alone: every address in it comes from
+    _WebLinks, which keeps the current source and options in the query string.
     The body is minified after rendering, so Content-Length is recomputed:
     keeping the old value would truncate the response.
     """
-    data = core.view_data(artefact, resource=resource, lang=lang)
-    resp = templates.TemplateResponse(request, "viewer.html", {
-        "source_url": source_url,
-        "upload_id": upload_id,
-        "nav_qs": _nav_qs(read_as, source_url, upload_id, lang, imported, closure, partial_import),
-        **data,
-    })
+    links = _WebLinks(_nav_qs(read_as, source_url, upload_id, lang, imported, closure, partial_import),
+                      read_as, lang)
+    data = core.view(artefact, resource=resource, lang=lang, links=links)
+    resp = templates.TemplateResponse(request, "page.html", dict(data))
     resp.body = _minify(resp.body.decode("utf-8")).encode("utf-8")
     resp.headers["content-length"] = str(len(resp.body))
     return resp

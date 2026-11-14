@@ -205,3 +205,17 @@ def test_gzip_compression(patched_url):
     print(f"\ndisco: {len(html)/1024:.0f} KB | wire: {on_wire/1024:.0f} KB | ratio: {on_wire/len(html):.1%}")
     assert resp.headers.get("content-encoding") == "gzip"
     assert on_wire < len(html) * 0.3
+
+def test_post_file_page_is_built_from_the_contract(tmp_path):
+    """The page links back to the service: exports and navigation carry the upload token."""
+    source = (
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n"
+        "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+        "<http://example.org/o> a owl:Ontology .\n"
+        '<http://example.org/o#Cat> a owl:Class ; rdfs:label "Cat"@en .\n'
+    )
+    resp = client.post("/extract", data={"read_as": "owl"},
+                       files={"file": ("o.ttl", source.encode(), "text/turtle")})
+    assert resp.status_code == 200
+    assert "Cat" in resp.text
+    assert "upload_id=" in resp.text and "format=ttl" in resp.text
