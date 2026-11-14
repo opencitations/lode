@@ -12,6 +12,6 @@ Typical use as a library:
 
     lode.build_site(artefact, "site")
 """
-from lode.core import build_site, read
+from lode.core import build_site, read, view
 
-__all__ = ["read", "build_site"]
+__all__ = ["read", "build_site", "view"]

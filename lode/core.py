@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from lode.artefact import Artefact
+    from lode.viewer.view_data import ViewData
 
 
 # ==========================================================================
@@ -56,6 +57,17 @@ def view_data(artefact: "Artefact", *, resource: Optional[str] = None,
     data = viewer.get_view_data(resource_uri=resource, language=lang)
     data["warnings"] = viewer.format_warnings(artefact.warnings)
     return data
+
+def view(artefact: "Artefact", *, resource: Optional[str] = None,
+         lang: Optional[str] = None, links=None) -> "ViewData":
+    """Return the data of a page as the viewer contract defines it, for the whole artefact or one resource.
+
+    This is the data a page needs: the page itself (the template, the request, the minification)
+    stays in the caller. `links` says where resources and exports live (see lode.viewer.links).
+    """
+    from lode.viewer import get_viewer  # local import: see view_data()
+
+    return get_viewer(artefact).view(resource_uri=resource, language=lang, links=links)
 
 
 def format_warnings(artefact: "Artefact") -> list:

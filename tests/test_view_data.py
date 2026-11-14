@@ -7,6 +7,9 @@ import pytest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from lode.viewer.view_data import ViewData
+import lode
+from lode.viewer import get_viewer
+from lode.viewer.links import Links
 
 _EXAMPLES = Path(__file__).resolve().parent.parent / "docs" / "examples"
 
@@ -145,3 +148,168 @@ def test_a_key_outside_the_contract_is_refused(render):
     with pytest.raises(AssertionError, match="keys"):
         render({**WHOLE, "sections": []})
 
+_SOURCES = {
+    "owl": ("""
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex: <http://example.org/o#> .
+<http://example.org/o> a owl:Ontology ; rdfs:label "Pets"@en .
+ex:Animal a owl:Class ; rdfs:label "Animal"@en .
+ex:Cat a owl:Class ; rdfs:label "Cat"@en ;
+    rdfs:subClassOf ex:Animal , [ a owl:Restriction ; owl:onProperty ex:eats ; owl:someValuesFrom ex:Animal ] .
+ex:eats a owl:ObjectProperty ; rdfs:label "eats"@en .
+ex:felix a owl:NamedIndividual , ex:Cat ; rdfs:label "Felix"@en .
+""", "http://example.org/o#Cat"),
+    "skos": ("""
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex: <http://example.org/s#> .
+ex:scheme a skos:ConceptScheme ; skos:prefLabel "Animals"@en .
+ex:animal a skos:Concept ; skos:prefLabel "Animal"@en ; skos:inScheme ex:scheme ; skos:topConceptOf ex:scheme .
+ex:cat a skos:Concept ; skos:prefLabel "Cat"@en ; skos:definition "A small feline"@en ;
+    skos:broader ex:animal ; skos:inScheme ex:scheme .
+ex:kitten a skos:Concept ; skos:prefLabel "Kitten"@en ; skos:broader ex:cat ; skos:inScheme ex:scheme .
+""", "http://example.org/s#cat"),
+    "rdf": ("""
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex: <http://example.org/r#> .
+ex:Animal a rdfs:Class ; rdfs:label "Animal"@en .
+ex:Cat a rdfs:Class ; rdfs:label "Cat"@en ; rdfs:subClassOf ex:Animal .
+ex:hasPet a rdf:Property ; rdfs:label "has pet"@en ; rdfs:domain ex:Cat .
+""", "http://example.org/r#Cat"),
+}
+
+
+@pytest.fixture(params=sorted(_SOURCES))
+def viewer_and_iri(request, tmp_path):
+    """A viewer over a small artefact of each format, and the IRI of one of its entities."""
+    text, iri = _SOURCES[request.param]
+    path = tmp_path / "source.ttl"
+    path.write_text(text, encoding="utf-8")
+    return get_viewer(lode.read(str(path), request.param)), iri
+
+
+def test_the_viewer_produces_the_contract(viewer_and_iri):
+    """The whole artefact and one resource both have exactly the keys the contract declares."""
+    viewer, iri = viewer_and_iri
+    _check(ViewData, viewer.view(), "ViewData")
+    _check(ViewData, viewer.view(resource_uri=iri), "ViewData")
+
+
+def test_a_real_page_renders_with_the_example_template(viewer_and_iri, render):
+    """The template written from the contract alone shows what the viewer produced."""
+    viewer, iri = viewer_and_iri
+    assert "Cat" in render(viewer.view(resource_uri=iri))
+
+
+def _strip_links(node):
+    """The data without its `href` and `kind`: what a link says about itself, not where it goes."""
+    if isinstance(node, dict):
+        return {key: _strip_links(value) for key, value in node.items() if key not in ("href", "kind")}
+    if isinstance(node, list):
+        return [_strip_links(item) for item in node]
+    return node
+
+
+def test_the_navigation_does_not_depend_on_the_view(viewer_and_iri):
+    """The page of one resource lists the same entities, in the same order, as the whole artefact.
+
+    Where each entry goes can differ: on the whole page it is an anchor to its card, elsewhere a page.
+    """
+    viewer, iri = viewer_and_iri
+    assert _strip_links(viewer.view()["toc"]) == _strip_links(viewer.view(resource_uri=iri)["toc"])
+
+
+
+def test_focus_and_error(viewer_and_iri):
+    """`focus` is what was asked for; an unknown resource gives a message and no card."""
+    viewer, iri = viewer_and_iri
+    assert viewer.view()["focus"] is None
+    assert viewer.view(resource_uri=iri)["focus"] == iri
+    missing = viewer.view(resource_uri="http://example.org/nope")
+    assert missing["error"] and missing["entities"] == []
+
+class _TestLinks(Links):
+    """Addresses that say what they stand for, so a test can tell where each came from."""
+
+    def resource(self, iri):
+        return f"page:{iri}"
+
+    def export(self, ext, iri=None):
+        return f"export:{ext}:{iri or 'all'}"
+
+    def home(self):
+        return "home"
+
+
+def _records(node):
+    """Every dictionary of the data that has both an `href` and a `kind`: a link."""
+    if isinstance(node, dict):
+        if "href" in node and "kind" in node:
+            yield node
+        for value in node.values():
+            yield from _records(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _records(item)
+
+
+def test_every_link_follows_the_rules(viewer_and_iri):
+    """Whatever the view, a link is an anchor, a page, an external address, or plain text."""
+    viewer, iri = viewer_and_iri
+    for data in (viewer.view(links=_TestLinks()), viewer.view(resource_uri=iri, links=_TestLinks())):
+        for link in _records(data):
+            if link["kind"] is None:
+                assert link["href"] is None
+            elif link["kind"] == "anchor":
+                assert link["href"].startswith("#")
+            elif link["kind"] == "page":
+                assert link["href"].startswith("page:")
+            else:
+                assert link["kind"] == "external" and link["href"] == link["iri"]
+
+
+def test_the_whole_artefact_links_its_cards_by_anchor(viewer_and_iri):
+    """An entry of the toc whose card is on the page points to that card."""
+    viewer, _ = viewer_and_iri
+    data = viewer.view(links=_TestLinks())
+    anchors = {e["iri"]: e["anchor"] for e in data["entities"]}
+    assert anchors
+    for section in data["toc"]:
+        for entry in section["entities"]:
+            if entry["iri"] in anchors:
+                assert (entry["kind"], entry["href"]) == ("anchor", "#" + anchors[entry["iri"]])
+
+
+def test_one_resource_links_the_others_to_their_pages(viewer_and_iri):
+    """On the page of one resource the other entries go to their own pages."""
+    viewer, iri = viewer_and_iri
+    data = viewer.view(resource_uri=iri, links=_TestLinks())
+    for section in data["toc"]:
+        for entry in section["entities"]:
+            if entry["iri"] != iri:
+                assert (entry["kind"], entry["href"]) == ("page", f"page:{entry['iri']}")
+
+
+def test_the_model_and_its_exports(viewer_and_iri):
+    """The model points home, and each serialization to the artefact or to the resource in focus."""
+    viewer, iri = viewer_and_iri
+    whole = viewer.view(links=_TestLinks())["model"]
+    one = viewer.view(resource_uri=iri, links=_TestLinks())["model"]
+    assert whole["href"] == "home"
+    assert all(s["href"] == f"export:{s['ext']}:all" for s in whole["serializations"])
+    assert all(s["href"] == f"export:{s['ext']}:{iri}" for s in one["serializations"])
+
+
+def test_without_links_nothing_points_to_a_page(viewer_and_iri):
+    """With no resolver a link to this documentation is plain text; external ones still work."""
+    viewer, iri = viewer_and_iri
+    for link in _records(viewer.view(resource_uri=iri)):
+        assert link["kind"] != "page"
+    assert viewer.view()["model"]["href"] is None
+
+
+def test_the_library_shortcut(viewer_and_iri):
+    """lode.view gives what the viewer gives."""
+    viewer, iri = viewer_and_iri
+    assert lode.view(viewer.artefact, resource=iri) == viewer.view(resource_uri=iri)

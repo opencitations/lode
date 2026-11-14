@@ -14,6 +14,10 @@ from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
 
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
+from lode.viewer.contract import resolve_links, to_entity, to_model, to_tree_node
+from lode.viewer.links import Links
+from lode.viewer.view_data import TocEntity, TocSection, ViewData
+
 
 from lode.viewer.helpers import (
     annotation_sort_key,
@@ -205,6 +209,69 @@ class BaseViewer:
             'groupped_view': False,
             'sections': None
         }
+
+    def view(self, resource_uri: Optional[str] = None, language: Optional[str] = None,
+             links: Optional[Links] = None) -> ViewData:
+        """Return the data of a page as the contract between viewers and templates defines it.
+
+        `resource_uri` asks for the page of one resource; without it, the whole artefact. The
+        contract is described in lode.viewer.view_data. It is built from get_view_data, which
+        stays as it is while the templates move to the contract.
+        """
+        language = language.strip() if language else "en"
+        old = self.get_view_data(resource_uri=resource_uri, language=language)
+        if old.get('sections'):
+            cards = [card for section in old['sections'] for card in section['entities']]
+        else:
+            cards = old.get('entities') or []
+        data = {
+            'model': to_model(old.get('metadata') or {}, old['export_formats'],
+                              self.format_warnings(self.artefact.warnings)),
+            'toc': self._build_toc(language),
+            'entities': [to_entity(card) for card in cards],
+            'focus': resource_uri or None,
+            'error': old.get('error'),
+        }
+
+        resolve_links(data, links or Links())
+        return data
+
+    def _build_toc(self, language: str) -> List[TocSection]:
+        """Build the navigation: every browsable entity as a short entry, grouped by section.
+
+        It does not depend on the view, so the page of one resource has the same navigation as
+        the whole artefact.
+        """
+        instances = self.artefact.instances()
+        toc = []
+        for class_key, section_id, _ in self.get_toc_config():
+            members = [i for i in instances
+                       if type(i).__name__ == class_key and self._is_toc_entity(i)]
+            if not members:
+                continue
+            entries = sorted((self._toc_entry(i, language) for i in members),
+                             key=lambda e: (e['label'] or e['iri']).lower())
+            parent_getter = self._config["hierarchy"].get(class_key)
+            tree = ([to_tree_node(node, class_key)
+                     for node in self._build_hierarchy(members, parent_getter, language)]
+                    if parent_getter else [])
+            names = self._config["type_map"].get(class_key.lower(), {})
+            toc.append({'id': section_id, 'type': class_key, 'label': names.get('plural', class_key),
+                        'entities': entries, 'tree': tree})
+        return toc
+
+    def _toc_entry(self, instance, language: str) -> TocEntity:
+        """Reduce an entity to what a navigation needs: IRI, type, label and anchor.
+
+        The anchor has the same form as the one of its card, so a link from the navigation
+        reaches the card.
+        """
+        uri = instance.has_identifier
+        type_name = type(instance).__name__.replace(" ", "_")
+        digest = hashlib.md5(str(uri).encode('utf-8')).hexdigest()
+        return {'iri': uri, 'type': type_name, 'label': self._get_best_label(instance, language),
+                'anchor': f"id_{digest}_{type_name}", 'href': None, 'kind': "page"}
+
 
     def _build_grouped_view(self, group_definitions: List[Tuple[str, str, str]], language: Optional[str] = None) -> Dict:
         """
