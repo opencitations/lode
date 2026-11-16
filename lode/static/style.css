@@ -1084,3 +1084,12 @@ body.toc-sidebar-closed { margin-left: 5rem; }
 
 .site-footer a { color: var(--lode-blue); }
 
+
+
+/* SKOS RELATED STYLES */
+
+/* SKOS sidebar: the concept taxonomy as nested lists */
+.toc-tree, .toc-tree ul { list-style: none; margin: 0; padding-left: 0; }
+.toc-tree ul { padding-left: 1rem; border-left: 1px solid rgba(128, 128, 128, 0.3); }
+.toc-tree summary { cursor: pointer; }
+

@@ -67,11 +67,6 @@ def resolve_links(view: ViewData, links: Links) -> None:
             for pair in [v["nested"]["main"], *v["nested"]["siblings"]]:
                 value(pair["value"])
 
-    def nodes(items):
-        for node in items:
-            point(node, node["iri"], True)
-            nodes(node["children"])
-
     model = view["model"]
     model["href"] = links.home()
     for serialization in model["serializations"]:
@@ -82,7 +77,6 @@ def resolve_links(view: ViewData, links: Links) -> None:
     for section in view["toc"]:
         for entry in section["entities"]:
             point(entry, entry["iri"], True)
-        nodes(section["tree"])
     for entity in view["entities"]:
         to_page(entity, entity["iri"])          # its own page, never an anchor to itself
         for values in (*entity["relations"].values(), *entity["statements"].values()):

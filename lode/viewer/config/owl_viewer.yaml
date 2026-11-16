@@ -30,10 +30,10 @@ toc:
 
 # Model class -> getter of its parents, for the hierarchy tree of a section.
 # A class that is missing has no hierarchy.
-hierarchy:
-  Concept:   get_is_sub_concept_of
-  Relation:  get_is_sub_property_of
-  Attribute: get_is_sub_property_of
+# hierarchy:
+#   Concept:   get_is_sub_concept_of
+#   Relation:  get_is_sub_property_of
+#   Attribute: get_is_sub_property_of
 
 # Boolean flags shown as characteristics of a property.
 characteristics:

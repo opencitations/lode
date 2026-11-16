@@ -2,38 +2,11 @@
    Besides model, toc, entities, focus, error and types it needs one global from the adapter,
    `url_for(name, path)`, to find the stylesheet: where the assets live depends on where the
    page is served from, so it is not data of the artefact. #}
+   
 {% from '_toc.html' import sidebar, contents %}
 {% from '_card.html' import card with context %}
 {% from '_value.html' import value with context %}
-
-{% macro metadata_block(model) %}
-<section class="metadata-block">
-    <dl class="row mb-0 lead fs-6">
-        {% for name, values in model.metadata.items() %}
-            {% if values %}
-            <dt class="text-capitalize fs-7 fw-bold">{{ name }}</dt>
-            <dd class="m-0 p-0">
-                <div class="d-flex flex-column">
-                    {% for v in values %}
-                        <div class="ms-5">
-                            {{ value(v) }}
-                            {% if v.visualize %}<a href="{{ v.visualize }}" target="_blank" class="ms-1">(visualise it with LODE)</a>{% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </dd>
-            {% endif %}
-        {% endfor %}
-        {% if model.iri %}
-        <dt class="text-capitalize fs-7 fw-bold">Other visualisation</dt>
-        <dd class="ms-5">
-            <a href="https://service.tib.eu/webvowl/#iri={{ model.iri }}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
-            <a href="{{ model.iri }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
-        </dd>
-        {% endif %}
-    </dl>
-</section>
-{% endmacro %}
+{% from '_metadata.html' import metadata_block with context %}
 
 <!DOCTYPE html>
 <html lang="en">

@@ -14,7 +14,7 @@ Endpoints:
 # 1. IMPORTS
 # ==========================================================================
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Tuple
 from urllib.parse import urlencode
 import hashlib
 import logging
@@ -87,13 +87,32 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 _PKG_DIR = Path(__file__).resolve().parent
-# v2 first: the page and its partials are found by bare name; error.html and index.html stay in the root.
-templates = Jinja2Templates(directory=str(_PKG_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(_PKG_DIR / "static")), name="static")
 
-# Beautify produced HTML.
-templates.env.trim_blocks = True
-templates.env.lstrip_blocks = True
+
+def _jinja_templates(template_dirs) -> Jinja2Templates:
+    """Build a Jinja environment over a search path of template folders; the first match wins.
+
+    The produced HTML is beautified (trim_blocks, lstrip_blocks) before it is minified.
+    """
+    built = Jinja2Templates(directory=[str(d) for d in template_dirs])
+    built.env.trim_blocks = True
+    built.env.lstrip_blocks = True
+    return built
+
+# The base templates: they also hold index.html and error.html, which no format replaces.
+templates = _jinja_templates([_PKG_DIR / "templates"])
+
+# One environment per search path (that is, per format), built on first use: compiling the
+# templates on every request would be slow. Two threads may build the same one; harmless.
+_format_templates: Dict[Tuple[str, ...], Jinja2Templates] = {}
+
+def _templates_for(template_dirs) -> Jinja2Templates:
+    """Return the Jinja environment of a search path, built on first use and then reused."""
+    key = tuple(str(d) for d in template_dirs)
+    if key not in _format_templates:
+        _format_templates[key] = _jinja_templates(template_dirs)
+    return _format_templates[key]
 
 class _WebLinks(Links):
     """The addresses of the web service: every page is a request to /extract that keeps the view parameters."""
@@ -158,7 +177,7 @@ def _render_view(request, artefact, *, resource, lang, source_url, upload_id, re
     links = _WebLinks(_nav_qs(read_as, source_url, upload_id, lang, imported, closure, partial_import),
                       read_as, lang)
     data = core.view(artefact, resource=resource, lang=lang, links=links)
-    resp = templates.TemplateResponse(request, "page.html", dict(data))
+    resp = _templates_for(core.template_dirs(artefact)).TemplateResponse(request, "page.html", dict(data))
     resp.body = _minify(resp.body.decode("utf-8")).encode("utf-8")
     resp.headers["content-length"] = str(len(resp.body))
     return resp

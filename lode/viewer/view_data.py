@@ -101,18 +101,6 @@ class TocEntity(TypedDict):
     href: Optional[str]
     kind: Optional[str]
 
-
-class TreeNode(TocEntity):
-    """One node of the hierarchy of a section."""
-
-    iri: str
-    label: Optional[str]
-    anchor: str
-    href: Optional[str]
-    kind: Optional[str]
-    children: List["TreeNode"]
-
-
 class TocSection(TypedDict):
     """The entities of one class, as a section of the table of contents."""
 
@@ -120,8 +108,6 @@ class TocSection(TypedDict):
     type: str                    # model class name
     label: str                   # display name of the group, "Classes"
     entities: List[TocEntity]
-    tree: List[TreeNode]         # the hierarchy; [] for classes that have none
-
 
 class Model(TypedDict):
     """The documented artefact: its header, and what concerns it as a whole."""

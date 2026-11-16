@@ -6,17 +6,15 @@ and display names. It also serializes the provenance of each entity.
 import hashlib
 import re
 from typing import Dict, List, Optional, Tuple 
+from pathlib import Path
+from rdflib import Graph, URIRef, Literal as RDFlibLiteral
 
 from lode.models import Literal, Model, Resource, Statement
-
-from rdflib import Graph, URIRef, BNode, Literal as RDFlibLiteral
-
-
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 from lode.viewer.contract import resolve_links, to_model
 from lode.helpers.links import Links
-from lode.viewer.view_data import Entity, TocEntity, TocSection, TreeNode, TypeLabel, Value, ViewData, new_value
+from lode.viewer.view_data import Entity, TocEntity, TocSection, TypeLabel, Value, ViewData, new_value
 
 import lode.models as _models
 
@@ -27,12 +25,13 @@ from lode.viewer.helpers import (
     safe_serialize,
 )
 
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 
 class BaseViewer:
     """Base viewer to display the instances extracted by the Reader.
 
     It orchestrates the view: everything that differs between formats (display
-    names, table of contents, hierarchy, card template, vocabulary) is read from
+    names, table of contents, card template, vocabulary) is read from
     the YAML file named by CONFIG_NAME. Subclasses set that name and override
     only the steps that really need code.
     """
@@ -51,12 +50,24 @@ class BaseViewer:
         self._config = (
             load_viewer_config(self.CONFIG_NAME) if self.CONFIG_NAME
             else {"type_map": {}, "toc": [],
-                  "vocabulary": {}, "hierarchy": {}, "characteristics": []}
+                  "vocabulary": {}, "characteristics": []}
         )
 
     def get_toc_config(self) -> List[Tuple[str, str, str]]:
         """Return the table of contents: (class name, section id, type_map key) in display order."""
         return [tuple(entry) for entry in self._config["toc"]]
+
+    def template_dirs(self) -> List[Path]:
+        """Return the folders the page templates are searched in; the first match wins.
+
+        A format keeps the templates that differ from the base ones in templates/<CONFIG_NAME>/:
+        a file with the same name there replaces the base file, and every file it does not
+        provide comes from the base. The adapters build their Jinja loader from this list, so
+        the viewer itself knows nothing about Jinja.
+        """
+        own = _TEMPLATES_DIR / self.CONFIG_NAME if self.CONFIG_NAME else None
+        return [own, _TEMPLATES_DIR] if own and own.is_dir() else [_TEMPLATES_DIR]
+
 
     # ==========================================================================
     # 2. ARTEFACT ACCESS
@@ -251,18 +262,16 @@ class BaseViewer:
                 continue
             entries = sorted((self._toc_entry(i, language) for i in members),
                              key=lambda e: (e['label'] or e['iri']).lower())
-            parent_getter = self._config["hierarchy"].get(class_key)
-            tree = self._build_hierarchy(members, parent_getter, language) if parent_getter else []
             names = self._config["type_map"].get(class_key.lower(), {})
             toc.append({'id': section_id, 'type': class_key, 'label': names.get('plural', class_key),
-                        'entities': entries, 'tree': tree})
+                        'entities': entries})
         return toc
 
     def _anchor(self, instance) -> str:
         """Return the HTML id of the card of an entity.
 
-        Derived from its IRI, so it is stable and safe in an attribute. The navigation, the tree
-        and the card all use it: a link from the navigation reaches the card.
+        Derived from its IRI, so it is stable and safe in an attribute. The navigation 
+        and the card both use it: a link from the navigation reaches the card.
         """
         type_name = type(instance).__name__.replace(" ", "_")
         digest = hashlib.md5(str(instance.has_identifier).encode('utf-8')).hexdigest()
@@ -661,56 +670,6 @@ class BaseViewer:
         return dict(sorted(statements.items(), key=lambda kv: kv[0].lower()))
 
     _FULL_IRI_ATTRS = {'is_defined_by'}
-    
-    def _build_hierarchy(self, instances, parent_getter_name, language=None) -> List[TreeNode]:
-        """
-        Build a forest (list of trees) of TreeNodes from the parent relation.
-        """
-        by_uri = {}
-        for inst in instances:
-            uri = getattr(inst, 'has_identifier', None)
-            if uri:
-                by_uri[str(uri)] = inst
-
-        children_map = {uri: [] for uri in by_uri}
-        has_internal_parent = set()
-
-        for uri, inst in by_uri.items():
-            getter = getattr(inst, parent_getter_name, None)
-            if not callable(getter):
-                continue
-            parents = getter() or []
-            for p in parents:
-                p_uri = getattr(p, 'has_identifier', None)
-                if p_uri and str(p_uri) in by_uri and str(p_uri) != uri:
-                    children_map[str(p_uri)].append(uri)
-                    has_internal_parent.add(uri)
-
-        roots = [uri for uri in by_uri if uri not in has_internal_parent]
-
-        def node_dict(uri, visited):
-            """Build the tree node of an entity with its children, stopping on cycles."""
-            if uri in visited:
-                return None
-            visited = visited | {uri}
-            inst = by_uri[uri]
-            kids = []
-            for child_uri in sorted(
-                children_map.get(uri, []),
-                key=lambda u: (self._get_best_label(by_uri[u], language) or u).lower()
-            ):
-                child_node = node_dict(child_uri, visited)
-                if child_node:
-                    kids.append(child_node)
-            entry = self._toc_entry(inst, language)
-            return {**entry, 'label': entry['label'] or uri, 'children': kids}
-
-        tree = []
-        for uri in sorted(roots, key=lambda u: (self._get_best_label(by_uri[u], language) or u).lower()):
-            node = node_dict(uri, set())
-            if node:
-                tree.append(node)
-        return tree
     
     # ==========================================================================
     # RDF RELATED FEATURES = Provenance + Export RDF

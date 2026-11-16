@@ -54,6 +54,15 @@ def view(artefact: "Artefact", *, resource: Optional[str] = None,
 
     return get_viewer(artefact).view(resource_uri=resource, language=lang, links=links)
 
+def template_dirs(artefact: "Artefact") -> list:
+    """Return the folders the page templates of this artefact are searched in, first match wins.
+
+    The base templates come last; a format may put in front the ones it replaces. The adapters
+    that render pages (web service, static builder) build their Jinja loader from this list.
+    """
+    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
+
+    return get_viewer(artefact).template_dirs()
 
 def format_warnings(artefact: "Artefact") -> list:
     """Return the reader warnings of an artefact, worded with the viewer's display names.

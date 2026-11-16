@@ -7,13 +7,13 @@ vocabulary:
 
 # Display names of the entity types, keyed by the lowercase model class name.
 type_map:
-  collection: {singular: Collection, plural: Collections, abb: col}
   concept:    {singular: Concept,    plural: Concepts,    abb: c}
-
+  collection: {singular: Collection, plural: Collections, abb: col}
+  
 # Table of contents in display order: model class name, section id, type_map key.
 toc:
-  - [Collection, collections, Collection]
   - [Concept,    concepts,    Concept]
+  - [Collection, collections, Collection]
 
 characteristics:
   - is_ordered

@@ -8,9 +8,8 @@ import re
 import shutil
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-import importlib.resources
 from rdflib import URIRef
-from rdflib.namespace import split_uri
+from typing import List
 
 # internal modules
 from lode.helpers.formats import SERIALIZATION_FORMATS
@@ -21,34 +20,28 @@ from lode.helpers.links import Links
 
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 
-def _get_template_env(static_path: str = "static") -> Environment:
+def _get_template_env(template_dirs: List[Path], static_path: str = "static") -> Environment:
     """Create the Jinja2 environment used to render the static pages.
 
-    `static_path` is the relative path from the page to the static folder, so it
-    differs between the index and the resource pages. The web app's url_for does
-    not exist here, hence the minimal replacement registered below.
+    `template_dirs` is the search path of the viewer (BaseViewer.template_dirs): a template of
+    the format replaces the base one with the same name. `static_path` is the relative path
+    from the page to the static folder, so it differs between the index and the resource
+    pages. The web app's url_for does not exist here, hence the minimal replacement below.
     """
-    try:
-        pkg_path = importlib.resources.files("lode").joinpath("templates")
-        template_dir = str(pkg_path)
-    except Exception:
-        template_dir = str(pkg_path)
-    except Exception:
-        template_dir = str(Path(__file__).parent / "templates" )
-    
     env = Environment(
-        loader=FileSystemLoader(template_dir),
+        loader=FileSystemLoader([str(d) for d in template_dirs]),
         autoescape=select_autoescape(["html"]),
     )
-    
+
     def url_for(name: str, path: str = "") -> str:
         """Resolve static files relative to the page; every other route goes to the root."""
         if name == "static":
             return f"{static_path}/{path}"
         return "/"
-    
+
     env.globals["url_for"] = url_for
     return env
+
 
 def _prefix_map(graph):
     """Map each namespace IRI of the graph to its prefix ('default' for the empty one)."""
@@ -193,8 +186,8 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
                 continue
             materialized.add(str(u))
 
-    env_index = _get_template_env(static_path="static")
-    env_resource = _get_template_env(static_path="../../static")
+    env_index = _get_template_env(viewer.template_dirs(), static_path="static")
+    env_resource = _get_template_env(viewer.template_dirs(), static_path="../../static")
 
     for fmt, ext in _SER:
         _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))

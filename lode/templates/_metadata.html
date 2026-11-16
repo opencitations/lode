@@ -1,0 +1,32 @@
+{# The metadata of the documented artefact, from `model` (docs/usage/viewer_contract.md). A format replaces this file to show them differently. #}
+
+{% from '_value.html' import value with context %}
+
+{% macro metadata_block(model) %}
+<section class="metadata-block">
+    <dl class="row mb-0 lead fs-6">
+        {% for name, values in model.metadata.items() %}
+            {% if values %}
+            <dt class="text-capitalize fs-7 fw-bold">{{ name }}</dt>
+            <dd class="m-0 p-0">
+                <div class="d-flex flex-column">
+                    {% for v in values %}
+                        <div class="ms-5">
+                            {{ value(v) }}
+                            {% if v.visualize %}<a href="{{ v.visualize }}" target="_blank" class="ms-1">(visualise it with LODE)</a>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </dd>
+            {% endif %}
+        {% endfor %}
+        {% if model.iri %}
+        <dt class="text-capitalize fs-7 fw-bold">Other visualisation</dt>
+        <dd class="ms-5">
+            <a href="https://service.tib.eu/webvowl/#iri={{ model.iri }}" class="btn btn-sm btn-outline-dark me-2" target="_blank"><i class="bi bi-share"></i> WebVOWL</a>
+            <a href="{{ model.iri }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="bi bi-file-code"></i> Source</a>
+        </dd>
+        {% endif %}
+    </dl>
+</section>
+{% endmacro %}

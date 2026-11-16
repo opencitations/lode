@@ -107,10 +107,9 @@ _REQUIRED_CONFIG_KEYS = ("type_map", "toc")
 def load_viewer_config(name: str) -> dict:
     """Read config/<name>_viewer.yaml and fill in the optional keys.
 
-    The file holds everything that differs between formats (display names, table
-    of contents, hierarchy getters, card template, display vocabulary), so the
-    viewer classes carry no per-format data. A missing file or required key
-    raises: a silent default would change the page without any trace.
+    The file holds the data that differs between formats (display names, table
+    of contents, display vocabulary), so the viewer classes carry no per-format data. 
+    A missing file or required key raises: a silent default would change the page without any trace.
     """
     path = _CONFIG_DIR / f"{name}_viewer.yaml"
     with open(path, encoding="utf-8") as f:
@@ -119,6 +118,5 @@ def load_viewer_config(name: str) -> dict:
     if missing:
         raise ValueError(f"{path.name}: missing required keys {missing}")
     config.setdefault("vocabulary", {})
-    config.setdefault("hierarchy", {})
     config.setdefault("characteristics", [])
     return config

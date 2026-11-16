@@ -21,9 +21,9 @@ toc:
   - [Container, containers, Container]
 
 # Model class -> getter of its parents, for the hierarchy tree of a section.
-hierarchy:
-  Concept:  get_is_sub_concept_of
-  Property: get_is_sub_property_of
+# hierarchy:
+#   Concept:  get_is_sub_concept_of
+#   Property: get_is_sub_property_of
 
 # Boolean flags shown as characteristics of a property.
 characteristics:
