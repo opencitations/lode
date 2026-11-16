@@ -51,6 +51,7 @@ class Artefact:
     warnings: list = field(default_factory=list)
     provenance: Provenance = field(default_factory=Provenance)
     read_as: Optional[str] = None
+    _all: Optional[list] = field(default=None, init=False, repr=False, compare=False)
 
     def instances(self, cls: Optional[type] = None) -> list:
         """Return the extracted instances, optionally only those of one model class.
@@ -58,17 +59,21 @@ class Artefact:
         `cls` is a model class (Concept, Relation): its subclasses are included, as
         with isinstance, so Resource gives every instance. Literals are not entities
         and are never returned. Passing anything that is not a class, such as the
-        class name, raises TypeError.
+        class name, raises TypeError. The full list is built once and reused, because
+        a static build asks for it on every page: `entities` must not change after the
+        artefact is built.
         """
-        found = []
-        for key, group in self.entities.items():
-            if isinstance(key, str) and key.startswith(_LITERAL_PREFIX):
-                continue
-            for instance in (group if isinstance(group, set) else [group]):
-                if cls is None or isinstance(instance, cls):
-                    found.append(instance)
-        return found
-
+        if self._all is None:
+            self._all = [
+                instance
+                for key, group in self.entities.items()
+                if not (isinstance(key, str) and key.startswith(_LITERAL_PREFIX))
+                for instance in (group if isinstance(group, set) else [group])
+            ]
+        if cls is None:
+            return list(self._all)
+        return [i for i in self._all if isinstance(i, cls)]
+    
     def get_instance(self, iri: str) -> Optional[set]:
         """Return the instances registered under an IRI, or None when it is unknown.
 
