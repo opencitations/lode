@@ -1,28 +1,29 @@
 """Every artefact format must be wired in all the places that need it.
 
 A format is declared once, in the profile registry (lode.profiles); these tests fail
-with a clear message when the enum, the enabled set, the YAML files or the paths a
-profile points to drift from it.
+with a clear message when the enabled set, the YAML files or the paths a profile points
+to drift from it, and they cover how plugin profiles are discovered.
 """
+from types import SimpleNamespace
+
 import pytest
 from rdflib import Graph
 
 from lode import profiles
-from lode.helpers.formats import ENABLED_FORMATS, ReadAsFormat
+from lode.exceptions import ArtefactValidationError
+from lode.helpers.formats import check_format_enabled
 from lode.reader.config_manager import get_configuration
 from lode.viewer.base_viewer import BaseViewer
 
 FORMATS = sorted(profiles.names())
 
 
-def test_read_as_enum_matches_registry():
-    """The API and CLI accept exactly the registered profiles."""
-    assert {f.value for f in ReadAsFormat} == set(profiles.names())
-
-
-def test_enabled_formats_are_known():
-    """A format cannot be enabled without being registered."""
-    assert ENABLED_FORMATS <= set(profiles.names())
+def test_check_format_enabled_accepts_only_enabled_profiles():
+    """An enabled profile passes; an unknown one fails with the list of valid formats."""
+    check_format_enabled("owl")
+    with pytest.raises(ArtefactValidationError) as err:
+        check_format_enabled("shacl")
+    assert err.value.context["supported"] == profiles.names(enabled_only=True)
 
 
 @pytest.mark.parametrize("fmt", FORMATS)
@@ -52,3 +53,54 @@ def test_format_config_files_exist(fmt):
 def test_format_builds_its_logic(fmt):
     """The registry entry resolves to a logic class that can be instantiated."""
     assert get_configuration(fmt).create_logic(Graph(), {}) is not None
+
+
+@pytest.fixture
+def plugins(monkeypatch):
+    """Let a test choose the entry points the registry sees; the built-ins stay registered."""
+    profiles.names()  # make sure the built-ins are loaded before the registry is patched
+    monkeypatch.setattr(profiles, "_PROFILES", dict(profiles._PROFILES))
+    monkeypatch.setattr(profiles, "_BUILTIN", ())
+    monkeypatch.setattr(profiles, "_loaded", False)
+
+    def offer(*entry_points):
+        monkeypatch.setattr(profiles, "entry_points", lambda **_group: list(entry_points))
+    return offer
+
+
+def _fake_profile(name):
+    """A profile that reuses the SKOS classes under another name."""
+    return profiles.Profile(name, "lode.profiles.skos", "lode.profiles.skos.logic:SkosLogic",
+                            "lode.profiles.skos.viewer:SkosViewer")
+
+
+def test_a_plugin_profile_is_registered(plugins):
+    """A profile offered through the entry point group joins the built-in ones."""
+    plugins(SimpleNamespace(name="fake", load=lambda: _fake_profile("fake")))
+    assert "fake" in profiles.names()
+
+
+def test_a_broken_plugin_is_skipped_and_logged(plugins, caplog):
+    """A plugin that fails to load does not break LODE: it is logged and skipped."""
+    def boom():
+        raise ImportError("nope")
+    plugins(SimpleNamespace(name="bad", load=boom))
+    assert "owl" in profiles.names()
+    assert "Profile plugin 'bad' failed to load" in caplog.text
+
+
+def test_a_plugin_cannot_replace_a_builtin(plugins, caplog):
+    """A plugin that reuses a registered name is refused; the built-in stays."""
+    original = profiles._PROFILES["owl"]
+    plugins(SimpleNamespace(name="evil", load=lambda: _fake_profile("owl")))
+    assert profiles.get("owl") is original
+    assert "redefines 'owl'" in caplog.text
+
+
+def test_a_mapper_can_name_a_class_by_path():
+    """'module:Name' in a mapper resolves to a class; a wrong path fails loudly."""
+    from lode.models import Concept
+    manager = get_configuration("owl")
+    assert manager._parse_class("lode.models:Concept") is Concept
+    with pytest.raises(KeyError):
+        manager._parse_class("lode.models:Nope")

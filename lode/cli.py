@@ -31,9 +31,9 @@ def cmd_build(args):
     overwrites existing pages in it. Prints the output path on success.
     """
     from lode.core import build_site, format_warnings, read
-    from lode.helpers.formats import check_format_enabled, ReadAsFormat
+    from lode.helpers.formats import check_format_enabled
 
-    check_format_enabled(ReadAsFormat(args.read_as))
+    from lode.helpers.formats import check_format_enabled
 
     out_dir = Path(args.out)
     artefact = read(
@@ -74,7 +74,8 @@ def main():
     src = p_build.add_mutually_exclusive_group(required=True)
     src.add_argument("--url")
     src.add_argument("--file")
-    p_build.add_argument("--read-as", required=True, choices=["owl", "skos"])
+    p_build.add_argument("--read-as", required=True,
+                         help="Artefact format: a registered profile, e.g. owl or skos")
     p_build.add_argument("--out", default="./lode_output")
     p_build.add_argument("--lang", default="en")
     p_build.add_argument("--artefact-name", default="index",

@@ -33,17 +33,14 @@ from starlette.middleware.gzip import GZipMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # Internal modules
-from lode.helpers.formats import (
-    ENABLED_FORMATS, ReadAsFormat,
-    check_format_enabled as _check_format_enabled,
-)
+from lode import profiles
+from lode.helpers.formats import SERIALIZATION_FORMATS, check_format_enabled as _check_format_enabled
 from lode.helpers.html_utils import minify as _minify
 import lode.helpers.spool as spool
 import lode.core as core
 from lode import security
 from lode.exceptions import ArtefactValidationError, BuildCapacityError, LODEError
 from lode.helpers.site_zip import build_zip, slugify
-from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 from urllib.parse import quote, urlencode
 from lode.helpers.links import Links
@@ -353,8 +350,8 @@ async def limit_upload_size(request: Request, call_next):
 async def input_web_interface(request: Request):
     """Serve the HTML input form, the entry point of the web interface."""
     return templates.TemplateResponse(request, "index.html", {
-        "formats": [format.value for format in ReadAsFormat],
-        "enabled_formats": sorted(ENABLED_FORMATS),
+        "formats": profiles.names(),
+        "enabled_formats": profiles.names(enabled_only=True),
     })
 
 
@@ -370,7 +367,7 @@ async def health_check():
 @app.get("/extract", tags=["extract"], summary="Render an artefact as HTML or RDF")
 def extract_get(
     request: Request,
-    read_as: ReadAsFormat = Query(description="Read the source as this artefact type"),
+    read_as: str = Query(description="Artefact type: the name of a registered format, e.g. 'owl' or 'skos'"),
     url: Optional[str] = Query(None, description="Public http(s) URL of the artefact"),
     upload_id: Optional[str] = Query(None, description="Token of a previously uploaded file"),
     resource: Optional[str] = Query(None, description="IRI of a single resource; omit for the whole ontology"),
@@ -386,7 +383,7 @@ def extract_get(
     is requested via the `format` query or the `Accept` header."""
     _check_format_enabled(read_as)
 
-    artefact = _resolve_artefact(read_as.value, url, upload_id, imported, closure, partial_import,
+    artefact = _resolve_artefact(read_as, url, upload_id, imported, closure, partial_import,
                                  warnings, use_cache=cache)
 
     # Content negotiation: triples of the loaded artefact only, quads are never negotiable
@@ -418,7 +415,7 @@ def extract_get(
     
     logger.info("=== REQUEST SUCCESS ===")
     return _render_view(request, artefact, resource=resource, lang=lang,
-                        source_url=url, upload_id=upload_id, read_as=read_as.value,
+                        source_url=url, upload_id=upload_id, read_as=read_as,
                         imported=imported, closure=closure, partial_import=partial_import)
 
 
@@ -426,7 +423,7 @@ def extract_get(
           summary="Render an uploaded artefact as HTML")
 async def extract_post(
     request: Request,
-    read_as: ReadAsFormat = Form(..., description="Read the uploaded file as this artefact type"),
+    read_as: str = Form(..., description="Artefact type of the uploaded file: a registered format, e.g. 'owl' or 'skos'"),
     file: UploadFile = File(..., description="The artefact file (ttl, rdf, owl…)"),
     resource: Optional[str] = Form(None, description="IRI of a single resource; omit for the whole ontology"),
     lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
@@ -438,18 +435,18 @@ async def extract_post(
     """Render an artefact from an uploaded file instead of a URL."""
     logger.info("=== FILE UPLOAD START ===")
     logger.info(f"Filename: {file.filename}")
-    logger.info(f"Format: {read_as.value}")
+    logger.info(f"Format: {read_as}")
 
     _check_format_enabled(read_as)
     content = await _read_validated_upload(file)
     token = spool.save(content)
 
     artefact = await run_in_threadpool(
-        core.read, spool.get_path(token), read_as.value,
+        core.read, spool.get_path(token), read_as,
         imported=imported, closure=closure, partial_import=partial_import, warnings=warnings,
     )
     return _render_view(request, artefact, resource=resource, lang=lang,
-                        source_url=None, upload_id=token, read_as=read_as.value,
+                        source_url=None, upload_id=token, read_as=read_as,
                         imported=imported, closure=closure, partial_import=partial_import)
 
 
@@ -458,7 +455,7 @@ async def extract_post(
 # ==========================================================================
 @app.get("/build", tags=["build"], summary="Build a static site (ZIP) from a URL")
 def build_get(
-    read_as: ReadAsFormat = Query(description="Read the source as this artefact type"),
+    read_as: str = Query(description="Artefact type: the name of a registered format, e.g. 'owl' or 'skos'"),
     url: Optional[str] = Query(None, description="Public http(s) URL of the artefact"),
     upload_id: Optional[str] = Query(None, description="Token of a previously uploaded file"),
     lang: Optional[str] = Query(None, description="Language tag for labels, e.g. 'en', 'it'"),
@@ -471,14 +468,14 @@ def build_get(
     """Static documentation site as a ZIP. Sync on purpose: FastAPI runs
     non-async endpoints in the threadpool, keeping the event loop free."""
     _check_format_enabled(read_as)
-    artefact = _resolve_artefact(read_as.value, url, upload_id, imported, closure, partial_import,
+    artefact = _resolve_artefact(read_as, url, upload_id, imported, closure, partial_import,
                                  warnings, use_cache=cache)
     return _zip_response(artefact, slugify(url), lang)
 
 
 @app.post("/build", tags=["build"], summary="Build a static site (ZIP) from an upload")
 async def build_post(
-    read_as: ReadAsFormat = Form(..., description="Read the uploaded file as this artefact type"),
+    read_as: str = Form(..., description="Artefact type of the uploaded file: a registered format, e.g. 'owl' or 'skos'"),
     file: UploadFile = File(..., description="The artefact file (ttl, rdf, owl…)"),
     lang: Optional[str] = Form(None, description="Language tag for labels, e.g. 'en', 'it'"),
     imported: Optional[bool] = Form(None, description="Also load owl:imports (depth 1)"),
@@ -492,7 +489,7 @@ async def build_post(
     token = spool.save(content)
 
     artefact = await run_in_threadpool(
-        core.read, spool.get_path(token), read_as.value,
+        core.read, spool.get_path(token), read_as,
         imported=imported, closure=closure, partial_import=partial_import, warnings=warnings,
     )
     return await run_in_threadpool(_zip_response, artefact, slugify(file.filename), lang)

@@ -86,8 +86,14 @@ class ConfigManager:
     def _parse_class(self, class_name: str):
         """Resolve a model class name from the YAML into the class itself.
 
-        Raises KeyError for an unknown name, so a typo in the config fails loudly.
+        A bare name is looked up in lode.models; "module:Name" points to a class defined by
+        a profile plugin. Raises KeyError for an unknown name, so a typo in the config fails loudly.
         """
+        if ':' in class_name:
+            try:
+                return profiles.resolve(class_name)
+            except (ImportError, AttributeError) as e:
+                raise KeyError(class_name) from e
         import lode.models as _models
         cls = getattr(_models, class_name, None)
         if cls is None:
