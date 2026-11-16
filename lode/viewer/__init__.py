@@ -2,7 +2,6 @@
 
 from .base_viewer import BaseViewer
 from .owl_viewer import OwlViewer
-from .rdf_viewer import RdfViewer
 from .skos_viewer import SkosViewer
 from lode import profiles
 

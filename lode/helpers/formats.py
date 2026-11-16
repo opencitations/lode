@@ -22,7 +22,7 @@ class ReadAsFormat(str, Enum):
     drifts from lode.profiles.
     """
     owl = "owl"
-    rdf = "rdf"
+    # rdf = "rdf"
     skos = "skos"
 
 

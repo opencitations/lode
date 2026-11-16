@@ -40,7 +40,7 @@ def test_profile_paths_resolve(fmt):
 
 def test_unknown_profile_lists_the_available_ones():
     """An unknown name fails with the list of valid names."""
-    with pytest.raises(ValueError, match="Available: owl, rdf, skos"):
+    with pytest.raises(ValueError, match="Available: owl, skos"):
         profiles.get("shacl")
 
 

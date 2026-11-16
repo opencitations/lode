@@ -74,7 +74,7 @@ def main():
     src = p_build.add_mutually_exclusive_group(required=True)
     src.add_argument("--url")
     src.add_argument("--file")
-    p_build.add_argument("--read-as", required=True, choices=["owl", "rdf", "skos"])
+    p_build.add_argument("--read-as", required=True, choices=["owl", "skos"])
     p_build.add_argument("--out", default="./lode_output")
     p_build.add_argument("--lang", default="en")
     p_build.add_argument("--artefact-name", default="index",

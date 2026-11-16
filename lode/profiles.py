@@ -77,7 +77,5 @@ _POST_CHECKS = "lode.reader.warnings.owl_warnings:run_post_checks"
 
 register(Profile("owl", "lode.reader.logic:OwlLogic",
                  "lode.viewer.owl_viewer:OwlViewer", _POST_CHECKS))
-register(Profile("rdf", "lode.reader.logic:RdfLogic",
-                 "lode.viewer.rdf_viewer:RdfViewer", _POST_CHECKS, enabled=False))
 register(Profile("skos", "lode.reader.logic:SkosLogic",
                  "lode.viewer.skos_viewer:SkosViewer", _POST_CHECKS))

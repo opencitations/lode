@@ -168,15 +168,7 @@ ex:animal a skos:Concept ; skos:prefLabel "Animal"@en ; skos:inScheme ex:scheme 
 ex:cat a skos:Concept ; skos:prefLabel "Cat"@en ; skos:definition "A small feline"@en ;
     skos:broader ex:animal ; skos:inScheme ex:scheme .
 ex:kitten a skos:Concept ; skos:prefLabel "Kitten"@en ; skos:broader ex:cat ; skos:inScheme ex:scheme .
-""", "http://example.org/s#cat"),
-    "rdf": ("""
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix ex: <http://example.org/r#> .
-ex:Animal a rdfs:Class ; rdfs:label "Animal"@en .
-ex:Cat a rdfs:Class ; rdfs:label "Cat"@en ; rdfs:subClassOf ex:Animal .
-ex:hasPet a rdf:Property ; rdfs:label "has pet"@en ; rdfs:domain ex:Cat .
-""", "http://example.org/r#Cat"),
+""", "http://example.org/s#cat")
 }
 
 

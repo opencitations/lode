@@ -237,19 +237,6 @@ class OwlConfigManager(ConfigManager):
         from lode.reader.logic import OwlLogic
         return OwlLogic(graph, cache, self)
 
-class RdfConfigManager(ConfigManager):
-    """Configuration for RDF/RDFS artefacts."""
-
-    @property
-    def config_name(self) -> str:
-        """Use rdf.yaml on top of base.yaml."""
-        return 'rdf'
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the RDF logic."""
-        from lode.reader.logic import RdfLogic
-        return RdfLogic(graph, cache, self)
-
 class SkosConfigManager(ConfigManager):
     """Configuration for SKOS artefacts."""
 
