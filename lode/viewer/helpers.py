@@ -5,7 +5,6 @@ deterministic order of the header metadata, label cleaning, URL heuristics and
 the loader of the per-format YAML configuration.
 """
 import re
-import urllib.parse
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -96,57 +95,6 @@ def clean_name(name: str, vocabulary: Optional[Dict[str, str]] = None) -> str:
         name = re.sub(rf'\b{re.escape(word)}\b', shown, name)
 
     return name
-
-
-def is_likely_ontology(url: str) -> bool:
-    """Determines if a URL likely points to an ontology based on naming patterns."""
-    if not url or not isinstance(url, str) or not url.startswith('http'):
-        return False
-
-    # 1. Clean the string
-    clean_url = url.strip().lower()
-
-    # 2. Safely parse the URL to ignore fragments (#) and queries (?) for extension checking
-    parsed = urllib.parse.urlparse(clean_url)
-    path = parsed.path.rstrip('/')
-
-    # 3. Standard Ontology File Extensions
-    ontology_exts = ['.owl', '.rdf', '.ttl', '.nt', '.n3', '.jsonld']
-    if any(path.endswith(ext) for ext in ontology_exts):
-        return True
-
-    # Match registries against the parsed hostname, not the raw string:
-    # a substring check would also match e.g. https://evil.com/w3id.org/x
-    host = parsed.hostname or ''
-
-    def _host_is(domain: str) -> bool:
-        """True if the URL host is the domain or one of its subdomains."""
-        return host == domain or host.endswith('.' + domain)
-
-    # 4. Common Ontology Registries & Permanent URLs
-    ontology_domains = [
-        'w3id.org',
-        'purl.org',
-        'xmlns.com'  # Often used for FOAF
-    ]
-    if any(_host_is(domain) for domain in ontology_domains):
-        return True
-
-    # 5. Core W3C Namespaces
-    w3c_core = ['/1999/02/22-rdf-syntax-ns', '/2000/01/rdf-schema', '/2002/07/owl']
-    if _host_is('w3.org') and any(ns in path for ns in w3c_core):
-        return True
-
-    # 6. Broad Keywords & Famous Standard Acronyms
-    # Looking for these anywhere in the URL string
-    path_keywords = [
-        'ontology', 'vocab', 'schema', # General terms
-        'skos', 'foaf', 'crm', 'cidoc' # Famous standards
-    ]
-    if any(keyword in clean_url for keyword in path_keywords):
-        return True
-
-    return False
 
 
 # ==========================================================================

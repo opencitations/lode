@@ -23,7 +23,6 @@ import lode.models as _models
 from lode.viewer.helpers import (
     annotation_sort_key,
     clean_name,
-    is_likely_ontology,
     load_viewer_config,
     safe_serialize,
 )
@@ -186,11 +185,11 @@ class BaseViewer:
             'error': error,
         }
 
-        # The link "visualise it with LODE" is offered only for what looks like an ontology
-        for values in data['model']['metadata'].values():
-            for value in values:
-                if value['iri'] and is_likely_ontology(value['iri']):
-                    value['visualize'] = links.visualize(value['iri'])
+        # "Visualise it with LODE" is offered for the imported ontologies only: an import
+        # is an ontology by definition, any other IRI (creator, licence...) is not
+        for value in data['model']['metadata'].get(self._clean_name('get_imports'), []):
+            if value['iri']:
+                value['visualize'] = links.visualize(value['iri'])
 
         resolve_links(data, links)
         return data
