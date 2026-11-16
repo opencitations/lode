@@ -730,13 +730,15 @@ class BaseViewer:
             for f in QUAD_SERIALIZATION_FORMATS
         ]
     
-    def export_resource(self, resource_uri: str, fmt: str = "turtle") -> str:
-        """Serialize the subgraph of a single resource (the union of its punned instances).
+    def _resource_graph(self, resource_uri: str) -> Graph:
+        """Build the subgraph of a single resource (the union of its punned instances).
 
-        Only triples of the loaded artefact are exported; the ones that come from
-        imported modules belong to the provenance, not to the export.
+        Only triples of the loaded artefact are kept; the ones that come from imported
+        modules belong to the provenance, not to the export. The graph starts without
+        the default rdflib prefixes: the artefact graph already carries them, and
+        binding them twice is the most expensive part of an export.
         """
-        g = Graph()
+        g = Graph(bind_namespaces="none")
         for prefix, ns in self.artefact.graph.namespaces():
             g.bind(prefix, ns)
         main = self.artefact.main_graph()
@@ -747,7 +749,21 @@ class BaseViewer:
                 for t in self.artefact.provenance.for_instance(inst):
                     if t in main:
                         g.add(t)
-        return safe_serialize(g, fmt)
+        return g
+
+    def export_resource(self, resource_uri: str, fmt: str = "turtle") -> str:
+        """Serialize the subgraph of a single resource in one format."""
+        return safe_serialize(self._resource_graph(resource_uri), fmt)
+
+    def export_resource_all(self, resource_uri: str, formats: List[str]) -> Dict[str, str]:
+        """Serialize the subgraph of a single resource in several formats.
+
+        The subgraph is built once and reused: a static build asks for every format of
+        every resource, and building it per format multiplied the cost by the number
+        of formats.
+        """
+        g = self._resource_graph(resource_uri)
+        return {fmt: safe_serialize(g, fmt) for fmt in formats}
 
     def export_main(self, fmt: str = "turtle") -> str:
         """Serialize the main graph, i.e. the triples of the loaded artefact only.

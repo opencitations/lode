@@ -232,8 +232,9 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
                 continue
             page.parent.mkdir(parents=True, exist_ok=True)
 
+            outputs = viewer.export_resource_all(uri, [fmt for fmt, _ in _SER])
             for fmt, ext in _SER:
-                out = viewer.export_resource(uri, fmt)
+                out = outputs[fmt]
                 if isinstance(out, bytes):
                     out = out.decode("utf-8")
                 (res_dir / f"{rel}.{ext}").write_text(out, encoding="utf-8")
