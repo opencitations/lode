@@ -9,6 +9,7 @@ from lode.reader.config_manager import get_configuration
 from lode.models import *
 from typing import Optional
 from rdflib import Graph, URIRef
+from lode import profiles
 from lode.helpers.rdf import iri_namespace
 from lode.artefact import Artefact, Provenance
 from lode.provenance_graph import ProvenanceGraph
@@ -210,8 +211,9 @@ class Reader:
 
         # Post-pipeline warning checks
         if self._warnings_enabled:
-            from lode.reader.warnings import owl_warnings
-            owl_warnings.run_post_checks(self._logic)
+            post_checks = profiles.get(self._configuration.config_name).post_checks
+            if post_checks:
+                profiles.resolve(post_checks)(self._logic)
 
             if self._logic._warnings:
                 logger.warning("%d reader warnings", len(self._logic._warnings))

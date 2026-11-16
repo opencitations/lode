@@ -1,32 +1,31 @@
 # lode/helpers/formats.py
-"""Semantic artefact format registry.
+"""Semantic artefact formats and the export formats shared by every layer.
 
-Single source of truth for which formats exist and which are enabled.
-Imported by both api.py and cli.py so the gate is enforced identically
-in both entry points.
+The artefact formats (ReadAsFormat) and the enabled ones (ENABLED_FORMATS) are derived
+from the profile registry in lode.profiles, where a format is declared. Imported by both
+api.py and cli.py so the gate is enforced identically in both entry points.
 """
 from enum import Enum
+from lode import profiles
 from lode.exceptions import ArtefactValidationError
 
 
-# Format name -> logic class name in lode.reader.logic. Plain strings on purpose: this
-# module must not import the reader or the viewers, so every layer can read it.
-# A new format is one line here, plus its YAML mapper and its logic class.
-CONFIGURATION_REGISTRY = {
-    'owl': 'OwlLogic',
-    'rdf': 'RdfLogic',
-    'skos': 'SkosLogic',
-}
-
-# Formats enabled in this release. Add a value here when the reader
-# and viewer for that format are stable and tested.
-ENABLED_FORMATS = {"owl", "skos"}
+# Both values derive from the profile registry (lode.profiles), the one place where a
+# format is declared. `enabled` there decides what the API and the CLI accept.
+ENABLED_FORMATS = set(profiles.names(enabled_only=True))
 
 class ReadAsFormat(str, Enum):
-    """Semantic artefact type. Note: currently only `owl` is enabled."""
+    """Semantic artefact type: one member per registered profile.
+
+    Written out as a class, not built from the registry, so type checkers and the
+    OpenAPI schema see real members. tests/test_formats_registry.py fails when it
+    drifts from lode.profiles.
+    """
     owl = "owl"
     rdf = "rdf"
     skos = "skos"
+
+
 
 # Export formats: triples of the loaded artefact only. Shared by the viewers,
 # the static builder and the API, so they live here and not in a viewer.
@@ -55,3 +54,4 @@ def check_format_enabled(read_as: "ReadAsFormat") -> None:
                 "supported": sorted(ENABLED_FORMATS),
             },
         )
+

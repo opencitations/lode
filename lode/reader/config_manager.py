@@ -9,7 +9,7 @@ import yaml
 from pathlib import Path
 from rdflib import URIRef, Graph, Node
 from lode.models import *
-from lode.helpers.formats import CONFIGURATION_REGISTRY
+from lode import profiles
 
 class ConfigManager:
     """Strategy driven by a single merged YAML configuration.
@@ -32,11 +32,10 @@ class ConfigManager:
     def create_logic(self, graph: Graph, cache: dict):
         """Build the logic class registered for this format.
 
-        Looked up by name in the logic package so the registry stays plain data.
+        Resolved from the profile only now, because the logic modules import this module
+        (a top-level import would be circular).
         """
-        # lazy import: the logic modules import this module (circular)
-        from lode.reader import logic
-        return getattr(logic, CONFIGURATION_REGISTRY[self.config_name])(graph, cache, self)
+        return profiles.resolve(profiles.get(self.config_name).logic)(graph, cache, self)
 
     def _load_config(self) -> dict:
         """Read base.yaml and the type-specific YAML, and return them deep-merged.
@@ -271,8 +270,5 @@ def get_configuration(configuration_name: str) -> ConfigManager:
 
     Raises ValueError listing the available types when the name is unknown.
     """
-    key = configuration_name.lower()
-    if key not in CONFIGURATION_REGISTRY:
-        available = ', '.join(sorted(CONFIGURATION_REGISTRY))
-        raise ValueError(f"Unknown configuration: '{configuration_name}'. Available: {available}")
-    return ConfigManager(key)
+    return ConfigManager(profiles.get(configuration_name.lower()).name)
+
