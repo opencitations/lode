@@ -1,6 +1,10 @@
 {# Renders one contract Value: a literal, a link, a class expression or a nested statement.
-   Import it "with context": the badge reads `types` from the page. #}
-{% macro value(v, depth=0) %}
+   Import it "with context": the badge reads `types` from the page.
+   `in_expr` is set for the parts of a class expression: the words that are not links
+   ("some", "or", the parentheses) get the `logic` class. The output of each part is
+   trimmed and the badge is glued to its label, so the page shows "thing^c" and "(a or b)"
+   without stray spaces. #}
+{% macro value(v, depth=0, in_expr=false) %}
     {% if v.nested %}
         <div class="nested-statement ms-2" style="border-left: 2px solid #ddd; padding-left: 0.5rem; margin-top: 0.25rem; margin-bottom: 0.5rem;">
             {% for pair in [v.nested.main] + v.nested.siblings %}
@@ -10,7 +14,7 @@
     {% elif v.parts %}
         {# a class expression: each part is a Value, so its links stay clickable #}
         <div class="restriction-block">
-            {% for part in v.parts %}{{ value(part, depth + 1) }}{% endfor %}
+            {%- for part in v.parts -%}{{ value(part, depth + 1, true) | trim }}{%- endfor -%}
         </div>
     {% else %}
         {% set kind = v.type.lower() if v.type else '' %}
@@ -23,17 +27,13 @@
                {% if v.kind == 'external' %}target="_blank" rel="noopener" class="external-ref {{ dep_class }}"
                {% else %}class="{{ dep_class }}"{% endif %}
                title="{{ v.iri }}{{ dep_title }}">{{ v.text or v.iri }}</a>
-            {% if v.type in types %}
+            {%- if v.type in types -%}
                 <sup class="badge text-secondary {{ types[v.type].abbreviation }}" title="{{ types[v.type].singular }}">{{ types[v.type].abbreviation }}</sup>
-            {% endif %}
+            {%- endif -%}
         {% else %}
             {# inline inside a nested statement so "name: value" stays on one line #}
             {% set tag = 'span' if depth else 'div' %}
-            <{{ tag }}>
-                <{{ tag }} class="markdown-with-badge {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}"
-                {% if is_md %}data-md="{{ v.text | e }}"{% endif %}>{{ v.text }}</{{ tag }}>
-                {% if is_md and v.language %}<sup class="badge text-secondary lan">{{ v.language }}</sup>{% endif %}
-            </{{ tag }}>
+            <{{ tag }}><{{ tag }} class="markdown-with-badge{{ ' logic' if in_expr }} {{ dep_class }} {% if is_md %}render-markdown inline-markdown{% endif %}" {% if is_md %}data-md="{{ v.text | e }}"{% endif %}>{{ v.text }}</{{ tag }}>{% if is_md and v.language %}<sup class="badge text-secondary lan">{{ v.language }}</sup>{% endif %}</{{ tag }}>
         {% endif %}
     {% endif %}
 {% endmacro %}

@@ -56,7 +56,8 @@
 <nav>
     {% for section in toc %}
         <h2 id="{{ section.id }}">{{ section.label }} ({{ section.entities|length }})</h2>
-        {% if section.tree %}
+        {#- `tree` is not in the contract: a profile may add it (SKOS does), so test that it exists. -#}
+        {% if section.tree is defined and section.tree %}
             {{ branch(section.tree) }}
         {% else %}
             <ul>{% for e in section.entities %}<li>{{ entry(e) }}</li>{% endfor %}</ul>

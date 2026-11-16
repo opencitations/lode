@@ -38,6 +38,7 @@ nav:
       - Web form: usage/web_form.md
       - CLI: usage/cli.md
       - Python API: usage/python_api.md
+      - Viewer contract: usage/viewer_contract.md
       - Docker: usage/docker.md
   - API reference:
       - Endpoints: api/endpoints.md

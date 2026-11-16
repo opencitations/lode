@@ -19,7 +19,7 @@ Render an artefact as HTML or RDF.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `read_as` | enum | yes | `owl` \| `rdf` \| `skos` - Currently only `owl` is available|
+| `read_as` | string | yes | The name of an enabled format: `owl` or `skos`. Formats added by plugins are accepted too. An unknown name returns an error page (HTTP 400) |
 | `url` | string | one of | Public http(s) URL |
 | `upload_id` | string | one of | Token from a previous upload |
 | `resource` | string | no | IRI of a single resource |

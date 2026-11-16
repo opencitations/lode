@@ -77,7 +77,11 @@
                     <h6 class="fw-bold text-dark pb-0 mb-0">{{ name }}</h6>
                     <div class="ms-2">
                         {% for v in e.relations[name] %}
-                            <span class="d-inline-block">{{ value(v, 1) }}{% if not loop.last and v.href %}<span class="text-dark me-1">,</span>{% endif %}</span>
+                            {% if v.parts or v.nested %}
+                                <div>{{ value(v, 1) }}</div>
+                            {% else %}
+                                <span class="d-inline-block">{{ value(v, 1) }}{% if not loop.last and v.href %}<span class="text-dark me-1">,</span>{% endif %}</span>
+                            {% endif %}
                         {% endfor %}
                     </div>
                 </div>

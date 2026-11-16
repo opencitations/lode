@@ -23,27 +23,31 @@ from pathlib import Path
 from typing import Union, get_args, get_origin, get_type_hints, is_typeddict
 
 
-def _check(hint, value, path):
-    """Fail if `value` does not fit the type `hint`: a TypedDict has exactly its keys.
+def _check(hint, value, path, top=True):
+    """Fail if `value` does not fit the type `hint`: a TypedDict has every key it declares.
 
-    The check goes down into lists and dictionaries, so a key that the contract does not
-    declare, or one that is missing, is found wherever it sits.
+    The top level is exact: a key the contract does not declare is refused there. Below it a
+    profile may add data (SKOS adds `tree` to the sections of the navigation), so only a
+    missing key fails. The check goes down into lists and dictionaries, so a missing key is
+    found wherever it sits.
     """
     if is_typeddict(hint):
         fields = get_type_hints(hint)
-        assert set(value) == set(fields), f"{path}: keys {sorted(value)}, expected {sorted(fields)}"
+        missing = set(fields) - set(value)
+        extra = set(value) - set(fields) if top else set()
+        assert not missing and not extra, f"{path}: keys {sorted(value)}, expected {sorted(fields)}"
         for key, sub in fields.items():
-            _check(sub, value[key], f"{path}.{key}")
+            _check(sub, value[key], f"{path}.{key}", top=False)
         return
     origin, args = get_origin(hint), get_args(hint)
     if origin is list:
         for i, item in enumerate(value):
-            _check(args[0], item, f"{path}[{i}]")
+            _check(args[0], item, f"{path}[{i}]", top=False)
     elif origin is dict:
         for key, item in value.items():
-            _check(args[1], item, f"{path}[{key!r}]")
+            _check(args[1], item, f"{path}[{key!r}]", top=False)
     elif origin is Union and type(None) in args and value is not None:
-        _check(next(a for a in args if a is not type(None)), value, path)
+        _check(next(a for a in args if a is not type(None)), value, path, top=False)
 
 
 # --- the examples: a vocabulary Animal <- Cat <- Kitten ---------------------------------
@@ -103,7 +107,7 @@ ERROR = {"model": _model(), "toc": _toc(), "entities": [], "focus": "http://exam
 
 @pytest.fixture
 def render():
-    """Render the example template: any key outside the contract is an error."""
+    """Render the example template: any key outside the top level of the contract is an error."""
     env = Environment(loader=FileSystemLoader(str(_EXAMPLES)), undefined=StrictUndefined, autoescape=True)
 
     def run(data):
@@ -182,7 +186,10 @@ def viewer_and_iri(request, tmp_path):
 
 
 def test_the_viewer_produces_the_contract(viewer_and_iri):
-    """The whole artefact and one resource both have exactly the keys the contract declares."""
+    """The whole artefact and one resource both have every key the contract declares.
+
+    The top level has exactly those keys; a profile may add data inside it.
+    """
     viewer, iri = viewer_and_iri
     _check(ViewData, viewer.view(), "ViewData")
     _check(ViewData, viewer.view(resource_uri=iri), "ViewData")

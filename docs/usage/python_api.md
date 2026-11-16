@@ -50,7 +50,7 @@ artefact = lode.read(source, read_as, *, imported=False, closure=False,
 | Argument | Meaning |
 |----------|---------|
 | `source` | A local path or a public http(s) URL. URLs go through the same safety checks as the web service. |
-| `read_as` | `"owl"`, `"skos"` or `"rdf"`. |
+| `read_as` | `"owl"` or `"skos"`, or the name of a format added by a plugin. |
 | `imported`, `closure`, `partial_import` | Switches that load the `owl:imports` of the artefact: at depth 1, the full closure, or only the imported entities that are actually used. |
 | `warnings` | Collect reader warnings in `artefact.warnings`. The current checks are OWL-specific: leave it off for SKOS. |
 
@@ -115,7 +115,7 @@ from lode.viewer import get_viewer
 viewer = get_viewer(artefact)
 ttl = viewer.export_main("turtle")          # the loaded artefact only
 one = viewer.export_resource("http://example.org/cat", "turtle")
-data = viewer.get_view_data(language="en")  # dictionary for the HTML templates
+data = viewer.view(language="en")           # dictionary for the HTML templates
 ```
 
 `export_*` accept `turtle`, `xml`, `nt` and `jsonld`.
@@ -127,7 +127,7 @@ above, the getters of the model classes in `lode.models`,
 `lode.viewer.get_viewer`, `export_main` and `export_resource`.
 
 Not covered by any stability promise: names starting with an underscore, and
-the shape of the dictionary returned by `get_view_data`, which follows the
+the shape of the dictionary returned by `view` (see the [viewer contract](viewer_contract.md)), which follows the
 needs of the templates.
 
 `lode.read` is a thin wrapper around `lode.reader.Reader`, which stays
@@ -136,5 +136,6 @@ available for advanced use: `reader.load_instances(...)` followed by
 
 !!! note
     The CLI and the web service accept only the formats enabled in the current
-    release. The library itself does not enforce that: `rdf` can be read but is
-    not yet supported.
+    release. The library itself does not enforce that: a profile registered with
+    `enabled=False` can still be read, which is how a format is tried while it is
+    developed.

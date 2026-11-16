@@ -24,6 +24,7 @@ the one below it.
 | Model | `lode.models` | Plain Python classes for entities: `Concept`, `Collection`, `Relation`, and so on. It knows neither who fills it nor who shows it. |
 | Artefact | `lode.artefact` | The hand-over between the reader and everything that consumes its result. |
 | Viewer | `lode.viewer` | Turns model instances into the dictionaries the HTML templates render, and into RDF serializations. |
+| Profiles | `lode.profiles` | One package per artefact format (OWL, SKOS, ...): its mapper, logic class, viewer and templates. The registry in `lode.profiles` is the only place that knows which formats exist. |
 | Adapters | `lode.cli`, `lode.api`, `lode.builder` | Thin entry points that wire the layers together. They contain no extraction logic. |
 | Facade | `lode` | Two functions for library users: `lode.read` returns an Artefact, `lode.build_site` writes a site from one. |
 
@@ -46,15 +47,28 @@ inspected.
 - The viewer does not import the reader.
 - The model imports neither the reader nor the viewer.
 - The reader does not import the viewer.
+- The core (reader, viewer, model, helpers) reaches a profile only through the
+  registry in `lode.profiles`. It never imports a profile package.
+- A profile does not import another profile.
 
 `tests/test_architecture.py` checks these rules on the source files, so a
 violation fails the test suite.
 
+## Profiles
+
+An artefact format is a profile: the package `lode/profiles/<format>/`, with its
+mapper (`reader.yaml`), logic class, viewer class, viewer settings and optional
+templates. Its `__init__.py` registers a `Profile`, and everything that depends on the
+format asks the registry: `lode.read` for the reader, `lode.viewer.get_viewer` for the
+viewer, the CLI and the API for the formats they accept. LODE ships `owl` and `skos`,
+and other packages can add formats through the `lode.profiles` entry point group.
+See [Extending LODE](extending.md).
+
 ## Reading
 
 The mapping from RDF constructs to model classes is declared in YAML, not in
-Python: `lode/reader/config/base.yaml` plus one file per format. A format
-specific logic class implements the phases that differ; SKOS, for example, has
+Python: `lode/reader/config/base.yaml` plus the `reader.yaml` of each profile. A
+format specific logic class implements the phases that differ; SKOS, for example, has
 no group axioms.
 
 1. Classify blank nodes from the predicates they carry (OWL only).
@@ -67,16 +81,12 @@ no group axioms.
 
 ## Viewing
 
-`lode.viewer.get_viewer(artefact)` selects the viewer from `artefact.read_as`.
-What each format shows (table of contents, display names, card template) is
-declared in `lode/viewer/config/<format>_viewer.yaml`.
+`lode.viewer.get_viewer(artefact)` selects the viewer from `artefact.read_as`, by
+asking the registry for the viewer class of that profile. What each format shows (table of
+contents, display names, card template) is declared in the `viewer.yaml` and the
+`templates/` folder of its profile.
 
 ## Adding a format
 
-1. Add a mapper `lode/reader/config/<format>.yaml`.
-2. Add a `ConfigManager` subclass and register it in `CONFIGURATION_REGISTRY`.
-3. Add a logic class, a subclass of `BaseLogic`.
-4. Add a viewer subclass with its `<format>_viewer.yaml`, and register it in
-   `lode.viewer`.
-5. Add the format to `ReadAsFormat` and, when ready, to `ENABLED_FORMATS`, so
-   that the CLI and the API accept it.
+Add a profile package. [Extending LODE](extending.md) walks through it, from the
+mapper to the viewer, and shows how to ship the profile as a separate package.
