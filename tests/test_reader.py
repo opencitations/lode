@@ -1,7 +1,8 @@
 import pytest
 from pathlib import Path
 from lode.reader import Reader
-from lode.viewer import OwlViewer, get_viewer
+from lode.profiles.owl.viewer import OwlViewer
+from lode.viewer import get_viewer
 
 @pytest.fixture
 def reader():

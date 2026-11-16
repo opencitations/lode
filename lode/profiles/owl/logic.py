@@ -6,7 +6,7 @@ from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import *
 from lode.reader.logic.base_logic import BaseLogic
-from lode.reader.warnings import owl_warnings
+from lode.profiles.owl import checks
 
 import logging
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class OwlLogic(BaseLogic):
                     return type(existing)
         return None
 
-    # ========== READER PHASES ==========
+
 
     # A Restriction exists only as a blank node, so an IRI is never given that class.
     _BNODE_ONLY_CLASSES = (Restriction,)
@@ -66,7 +66,7 @@ class OwlLogic(BaseLogic):
                       for n, instances in self._instance_cache.items()
                       if isinstance(n, BNode)}
 
-        owl_warnings.flag_malformed_restrictions(self, classified)
+        checks.flag_malformed_restrictions(self, classified)
 
         first_level = set(classified)
         self._classify_nested(classified, self._strategy.get_classifier_predicates())
@@ -791,11 +791,11 @@ class OwlLogic(BaseLogic):
             return None
 
         if len(items) == 0:
-            owl_warnings.empty_truth_function(self, instance, obj, operator)
+            checks.empty_truth_function(self, instance, obj, operator)
             return None
 
         if len(items) == 1:
-            owl_warnings.singleton_truth_function(self, instance, obj, operator)
+            checks.singleton_truth_function(self, instance, obj, operator)
             single_concept = self.get_or_create(items[0], Concept)
             if type(instance) is TruthFunction:
                 instance.set_has_logical_operator(operator)

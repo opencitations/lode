@@ -75,3 +75,22 @@ def test_builder_does_not_import_reader_or_models():
 def test_models_do_not_import_rdflib():
     """The model is plain Python: RDF parsing and graphs belong to the reader."""
     assert _offenders("models", "rdflib") == []
+
+def test_engine_does_not_import_a_profile_package():
+    """The engine reaches profiles only through the registry (lode.profiles), never a profile."""
+    bad = [f"{p.relative_to(LODE)} imports {n}"
+           for pkg in ("reader", "viewer", "models", "helpers")
+           for p in (LODE / pkg).rglob("*.py")
+           for n in _imports(p) if n.startswith("lode.profiles.")]
+    assert bad == []
+
+
+def test_profiles_do_not_import_each_other():
+    """A profile depends on the engine and the models, never on another profile."""
+    root = LODE / "profiles"
+    bad = []
+    for p in root.glob("*/*.py"):
+        own = p.relative_to(root).parts[0]
+        bad += [f"{p.relative_to(LODE)} imports {n}" for n in _imports(p)
+                if n.startswith("lode.profiles.") and n.split(".")[2] != own]
+    assert bad == []

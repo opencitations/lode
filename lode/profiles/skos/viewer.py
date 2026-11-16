@@ -27,7 +27,7 @@ class SkosTocSection(TocSection):
 class SkosViewer(BaseViewer):
     """SKOS viewer.
 
-    Display names, table of contents and card come from config/skos_viewer.yaml.
+    Display names, table of contents and card come from the viewer.yaml of this profile.
     Entities are formatted by BaseViewer, so SKOS produces the same data structure
     as OWL and the card (a separate template) reads the same keys.
     """
@@ -38,9 +38,9 @@ class SkosViewer(BaseViewer):
              links: Optional[Links] = None) -> ViewData:
         """SKOS viewer.
 
-        Display names and table of contents come from config/skos_viewer.yaml. Entities are
+        Display names and table of contents come from viewer.yaml. Entities are
         formatted by BaseViewer, so SKOS produces the same data structure as OWL. It adds the
-        taxonomy of the concepts, which its own sidebar (templates/skos/_toc.html) draws.
+        taxonomy of the concepts, which its own sidebar (templates/_toc.html of this profile) draws.
         """
 
         data = super().view(resource_uri, language, links)

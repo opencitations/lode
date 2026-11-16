@@ -7,7 +7,7 @@ from typing import List, Optional
 
 
 class OwlViewer(BaseViewer):
-    """OWL viewer: display names, table of contents and card come from config/owl_viewer.yaml.
+    """OWL viewer: display names, table of contents and card come from the viewer.yaml of this profile.
 
     It adds the rendering of class expressions (restrictions, cardinalities,
     boolean combinations), which only OWL has.

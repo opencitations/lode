@@ -35,7 +35,7 @@ from lode.models import (
     Restriction, Resource, DatatypeRestriction
 )
 from lode.reader.config_manager import get_configuration
-from lode.reader.logic.owl_logic import OwlLogic
+from lode.profiles.owl.logic import OwlLogic
 
 # ---------------------------------------------------------------------------
 # Helpers

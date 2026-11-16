@@ -10,6 +10,7 @@ from pathlib import Path
 from rdflib import Graph, URIRef, Literal as RDFlibLiteral
 
 from lode.models import Literal, Model, Resource, Statement
+from lode import profiles
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 from lode.viewer.contract import resolve_links, to_model
@@ -40,7 +41,7 @@ class BaseViewer:
     # SETUP
     # ==========================================================================
 
-    # Name of config/<name>_viewer.yaml; None gives the generic flat list view.
+    # Name of the profile whose viewer.yaml is loaded; None gives the generic flat list view.
     CONFIG_NAME: Optional[str] = None
 
     def __init__(self, artefact):
@@ -65,7 +66,7 @@ class BaseViewer:
         provide comes from the base. The adapters build their Jinja loader from this list, so
         the viewer itself knows nothing about Jinja.
         """
-        own = _TEMPLATES_DIR / self.CONFIG_NAME if self.CONFIG_NAME else None
+        own = profiles.get(self.CONFIG_NAME).path() / "templates" if self.CONFIG_NAME else None
         return [own, _TEMPLATES_DIR] if own and own.is_dir() else [_TEMPLATES_DIR]
 
 

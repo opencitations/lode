@@ -1,4 +1,4 @@
-# owl_warnings.py
+# OWL checks.py
 """OWL warning checks. All functions take `logic` as first arg and push via logic.add_warning()."""
 
 from rdflib import URIRef, BNode

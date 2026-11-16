@@ -28,7 +28,8 @@ from lode.models import (
     Concept, Relation, Attribute, Annotation, Individual,
     Model, Statement, Literal, Quantifier
 )
-from lode.viewer import OwlViewer, get_viewer
+from lode.profiles.owl.viewer import OwlViewer
+from lode.viewer import get_viewer
 import re
 
 

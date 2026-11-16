@@ -7,10 +7,12 @@ the loader of the per-format YAML configuration.
 import re
 from pathlib import Path
 from typing import Dict, Optional, Tuple
-
 import yaml
 
+from lode import profiles
+
 _CONFIG_DIR = Path(__file__).parent / "config"
+
 
 # ==========================================================================
 # 1. SERIALIZATION
@@ -105,13 +107,14 @@ _REQUIRED_CONFIG_KEYS = ("type_map", "toc")
 
 
 def load_viewer_config(name: str) -> dict:
-    """Read config/<name>_viewer.yaml and fill in the optional keys.
+    """Read viewer.yaml from the folder of the profile `name` and fill in the optional keys.
+
 
     The file holds the data that differs between formats (display names, table
     of contents, display vocabulary), so the viewer classes carry no per-format data. 
     A missing file or required key raises: a silent default would change the page without any trace.
     """
-    path = _CONFIG_DIR / f"{name}_viewer.yaml"
+    path = profiles.get(name).path() / "viewer.yaml"
     with open(path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
     missing = [k for k in _REQUIRED_CONFIG_KEYS if k not in config]

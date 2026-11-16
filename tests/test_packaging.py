@@ -14,7 +14,9 @@ def test_package_data_present():
     files = ir.files("lode")
     assert (files / "templates" / "page.html").is_file()
     assert (files / "static" / "style.css").is_file()
-    assert (files / "reader" / "config" / "owl.yaml").is_file()
+    assert (files / "reader" / "config" / "base.yaml").is_file()
+    assert (files / "profiles" / "owl" / "reader.yaml").is_file()
+    assert (files / "profiles" / "skos" / "templates" / "_toc.html").is_file()
 
 
 # --- 2. i template si risolvono a prescindere dalla cwd (prende il path cwd-relative) ---

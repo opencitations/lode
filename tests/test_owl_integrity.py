@@ -7,7 +7,7 @@ from pathlib import Path
 from rdflib.namespace import RDF, RDFS, OWL, XSD
 from rdflib import URIRef, BNode
 import os
-from lode.reader.warnings import owl_warnings
+from lode.profiles.owl import checks as owl_warnings
 
 from lode.models import (
     Property, Relation, Attribute, Annotation, Resource,

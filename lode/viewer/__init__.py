@@ -1,9 +1,7 @@
 """Viewer layer: renders the model as view data for the HTML templates."""
 
-from .base_viewer import BaseViewer
-from .owl_viewer import OwlViewer
-from .skos_viewer import SkosViewer
 from lode import profiles
+from .base_viewer import BaseViewer
 
 
 def get_viewer(artefact):
@@ -12,7 +10,7 @@ def get_viewer(artefact):
     The profile comes from `artefact.read_as`. An unknown or missing format falls
     back to the generic BaseViewer.
     """
-    name = (artefact.read_as or '').lower()
-    if name not in profiles.PROFILES:
+    profile = profiles.find((artefact.read_as or '').lower())
+    if profile is None:
         return BaseViewer(artefact)
-    return profiles.resolve(profiles.get(name).viewer)(artefact)
+    return profiles.resolve(profile.viewer)(artefact)

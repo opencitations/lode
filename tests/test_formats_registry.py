@@ -4,8 +4,6 @@ A format is declared once, in the profile registry (lode.profiles); these tests 
 with a clear message when the enum, the enabled set, the YAML files or the paths a
 profile points to drift from it.
 """
-from pathlib import Path
-
 import pytest
 from rdflib import Graph
 
@@ -14,18 +12,17 @@ from lode.helpers.formats import ENABLED_FORMATS, ReadAsFormat
 from lode.reader.config_manager import get_configuration
 from lode.viewer.base_viewer import BaseViewer
 
-LODE = Path(__file__).resolve().parent.parent / "lode"
-FORMATS = sorted(profiles.PROFILES)
+FORMATS = sorted(profiles.names())
 
 
 def test_read_as_enum_matches_registry():
     """The API and CLI accept exactly the registered profiles."""
-    assert {f.value for f in ReadAsFormat} == set(profiles.PROFILES)
+    assert {f.value for f in ReadAsFormat} == set(profiles.names())
 
 
 def test_enabled_formats_are_known():
     """A format cannot be enabled without being registered."""
-    assert ENABLED_FORMATS <= set(profiles.PROFILES)
+    assert ENABLED_FORMATS <= set(profiles.names())
 
 
 @pytest.mark.parametrize("fmt", FORMATS)
@@ -47,8 +44,8 @@ def test_unknown_profile_lists_the_available_ones():
 @pytest.mark.parametrize("fmt", FORMATS)
 def test_format_config_files_exist(fmt):
     """Each format ships its mapper and its viewer config."""
-    assert (LODE / "reader" / "config" / f"{fmt}.yaml").is_file()
-    assert (LODE / "viewer" / "config" / f"{fmt}_viewer.yaml").is_file()
+    assert (profiles.get(fmt).path() / "reader.yaml").is_file()
+    assert (profiles.get(fmt).path() / "viewer.yaml").is_file()
 
 
 @pytest.mark.parametrize("fmt", FORMATS)

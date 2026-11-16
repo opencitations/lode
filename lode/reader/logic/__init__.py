@@ -1,13 +1,9 @@
 """
-Logic package - For parsing specific Semantic Artefacts logics
+Logic package - the base logic shared by every artefact format (formats live in lode.profiles)
 """
 
 from lode.reader.logic.base_logic import BaseLogic
-from lode.reader.logic.owl_logic import OwlLogic
-from lode.reader.logic.skos_logic import SkosLogic
 
 __all__ = [
     'BaseLogic',
-    'OwlLogic',
-    'SkosLogic',
 ]

@@ -15,14 +15,14 @@ class ConfigManager:
     """Strategy driven by a single merged YAML configuration.
 
     One instance per artefact format: `config_name` picks the YAML file and the
-    logic class (see CONFIGURATION_REGISTRY). Adding a format needs no new
+    logic class (see lode.profiles). Adding a format needs no new
     subclass. Viewers are not a concern of this layer: see lode.viewer.get_viewer.
     """
 
     def __init__(self, config_name: str):
         """Load and merge the YAML configuration; mappings are parsed lazily.
 
-        `config_name` is a lowercase key of CONFIGURATION_REGISTRY ('owl', 'skos', 'rdf').
+        `config_name` is the name of a registered profile ('owl', 'skos'); see lode.profiles.
         """
         self.config_name = config_name
         self.config = self._load_config()
@@ -38,17 +38,15 @@ class ConfigManager:
         return profiles.resolve(profiles.get(self.config_name).logic)(graph, cache, self)
 
     def _load_config(self) -> dict:
-        """Read base.yaml and the type-specific YAML, and return them deep-merged.
-
-        Files are looked up next to this module so the config ships inside the wheel.
+        """base.yaml sits next to this module, the type-specific file in the folder of the
+        profile; both are package data, so they ship inside the wheel.
         """
-        config_dir = Path(__file__).parent / 'config'
-        
-        with open(config_dir / 'base.yaml') as f:
+        with open(Path(__file__).parent / 'config' / 'base.yaml') as f:
             base = yaml.safe_load(f)
-        
-        with open(config_dir / f'{self.config_name}.yaml') as f:
+
+        with open(profiles.get(self.config_name).path() / 'reader.yaml') as f:
             specific = yaml.safe_load(f)
+
         
         return self._deep_merge(base, specific)
     
@@ -220,35 +218,6 @@ class ConfigManager:
         """Return the classes in the order that decides which one wins on a punned IRI."""
         names = self.config.get('punning_priority', [])
         return [self._parse_class(n) for n in names]
-    
-    
-# ========== CONCRETE MANAGERS ==========
-
-class OwlConfigManager(ConfigManager):
-    """Configuration for OWL artefacts."""
-    
-    @property
-    def config_name(self) -> str:
-        """Use owl.yaml on top of base.yaml."""
-        return 'owl'
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the OWL logic."""
-        from lode.reader.logic import OwlLogic
-        return OwlLogic(graph, cache, self)
-
-class SkosConfigManager(ConfigManager):
-    """Configuration for SKOS artefacts."""
-
-    @property
-    def config_name(self) -> str:
-        """Use skos.yaml on top of base.yaml."""
-        return 'skos'
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the SKOS logic."""
-        from lode.reader.logic import SkosLogic
-        return SkosLogic(graph, cache, self)
 
 # ========== CONFIGURATIONS REGISTRY ==========
 

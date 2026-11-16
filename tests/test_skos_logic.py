@@ -25,7 +25,7 @@ from rdflib.namespace import RDF, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import Concept, Collection, Model, Resource, Statement
-from lode.reader.logic.skos_logic import SkosLogic
+from lode.profiles.skos.logic import SkosLogic
 from lode.reader.config_manager import get_configuration
 
 EX = Namespace("http://example.org/skos#")
