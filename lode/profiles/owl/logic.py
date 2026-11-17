@@ -69,7 +69,7 @@ class OwlLogic(BaseLogic):
         checks.flag_malformed_restrictions(self, classified)
 
         first_level = set(classified)
-        self._classify_nested(classified, self._strategy.get_classifier_predicates())
+        self._classify_nested(classified, self._configuration.get_classifier_predicates())
 
         for bnode, python_class in classified.items():
             if bnode not in first_level:
@@ -82,7 +82,7 @@ class OwlLogic(BaseLogic):
         mapped become Individuals, except for structural vocabulary types.
         """
         super().phase2_create_from_types()
-        type_mapping = self._strategy.get_type_mapping()
+        type_mapping = self._configuration.get_type_mapping()
 
         # Subjects with rdf:type not covered by config -> Individual
         for s, o in self.graph.subject_objects(RDF.type):
@@ -566,7 +566,7 @@ class OwlLogic(BaseLogic):
                         collection = RDFLibCollection(self.graph, obj)
                         for item in collection:
                             if isinstance(item, BNode) and item not in classified:
-                                py_class = self._strategy.classify_by_predicate(item, self.graph)
+                                py_class = self._configuration.classify_by_predicate(item, self.graph)
                                 if py_class:
                                     classified[item] = py_class
                     except:

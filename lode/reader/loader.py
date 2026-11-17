@@ -230,10 +230,6 @@ class Loader:
             return "nt"
         return None
 
-    def get_graph(self) -> Graph:
-        """Return the loaded graph (a ProvenanceGraph when modules were applied)."""
-        return self.graph
-    
     def _fetch_following_redirects(self, url: str, headers: dict, max_redirects: int = security.MAX_REDIRECTS):
         """Follow URLs redirects manually, validating each hop via security.check_url_safe. Returns final response.
 

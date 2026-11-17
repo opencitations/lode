@@ -2,7 +2,8 @@
 
 Stateless utilities with no knowledge of the LODE pipeline (no models, no reader
 phases, no network): they take IRIs or rdflib graphs and return plain values.
-Pipeline types built on top of them (e.g. ProvenanceGraph) live with the reader.
+Pipeline types built on top of them (e.g. ProvenanceGraph) live in lode.provenance_graph,
+shared by the reader and the artefact.
 """
 from pathlib import Path
 from typing import Optional

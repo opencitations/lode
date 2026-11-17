@@ -25,30 +25,32 @@ class BaseLogic(ABC):
     subclasses implement the phases that differ between formats.
     """
 
-    def __init__(self, graph: Graph, instance_cache: dict, strategy):
+    def __init__(self, graph: Graph, instance_cache: dict, configuration):
         """Bind the logic to a graph, a shared instance cache and a config manager.
 
         Fails fast if the config names a handler this logic does not implement.
         """
         self.graph = graph
         self._instance_cache = instance_cache
-        self._strategy = strategy
-        self._property_mapping = strategy.get_property_mapping()
+        self._configuration = configuration
+        self._property_mapping = configuration.get_property_mapping()
         self._allowed_classes = self._get_allowed_classes()
         self._triples_map = {}
         # Namespaces now driven by config YAML (key: 'namespaces')
         self._allowed_namespaces = self._get_allowed_namespaces()
         # Validate all handlers declared in config exist on this instance
         self._validate_handlers()
-        self._warnings = []
+        # The reader warnings found while extracting: read by the reader and by the checks
+        # of the profile, never by the viewers (they get them through the artefact).
+        self.warnings = []
 
     def add_warning(self, code, subject, message):
         """Record a reader warning with a machine-readable code, its subject and a message."""
-        self._warnings.append({'code': code, 'subject': str(subject), 'message': message})
+        self.warnings.append({'code': code, 'subject': str(subject), 'message': message})
 
     def _get_allowed_classes(self) -> set:
         """Resolve the 'allowed_classes' names of the config into the model classes."""
-        class_names = self._strategy.config.get('allowed_classes', [])
+        class_names = self._configuration.config.get('allowed_classes', [])
         import lode.models as _models
         return {getattr(_models, name) for name in class_names if getattr(_models, name, None) is not None}
 
@@ -57,7 +59,7 @@ class BaseLogic(ABC):
         Reads namespaces from config YAML key 'namespaces'.
         Subclasses do NOT need to override this anymore.
         """
-        return set(self._strategy.config.get('namespaces', []))
+        return set(self._configuration.config.get('namespaces', []))
     
     def get_namespaces(self) -> dict:
         """Prefixes declared in the graph (prefix -> URI)."""
@@ -90,7 +92,7 @@ class BaseLogic(ABC):
             for node in self.graph.subjects(pred, None):
                 if node in self._instance_cache:
                     continue
-                python_class = self._strategy.classify_by_predicate(node, self.graph)
+                python_class = self._configuration.classify_by_predicate(node, self.graph)
                 if not python_class:
                     continue
                 if isinstance(node, BNode):
@@ -111,7 +113,7 @@ class BaseLogic(ABC):
         every instance of the subject, also to one created by phase 1. A format with
         more to do for its types extends this and calls super() first.
         """
-        type_mapping = self._strategy.get_type_mapping()
+        type_mapping = self._configuration.get_type_mapping()
 
         for rdf_type, config in type_mapping.items():
             py_class = config.get('target_class')
@@ -148,7 +150,7 @@ class BaseLogic(ABC):
         with no group axioms of its own can keep the default, or override it with a
         no-op when the inherited entries (SWRL rules come from base.yaml) do not apply.
         """
-        for axiom_type, handler_name in self._strategy.get_group_axioms().items():
+        for axiom_type, handler_name in self._configuration.get_group_axioms().items():
             for uri in self.graph.subjects(RDF.type, axiom_type):
                 # the handler is guaranteed to exist: _validate_handlers checks it at init
                 getattr(self, handler_name)(uri)
@@ -202,7 +204,7 @@ class BaseLogic(ABC):
         """
         errors = []
 
-        for uri_str, cfg in self._strategy.config.get('mapper', {}).items():
+        for uri_str, cfg in self._configuration.config.get('mapper', {}).items():
             handler_name = cfg.get('handler')
             if handler_name and not hasattr(self, handler_name):
                 errors.append(
@@ -210,7 +212,7 @@ class BaseLogic(ABC):
                     f"not found on {type(self).__name__}"
                 )
 
-        for uri_str, handler_name in self._strategy.config.get('enricher', {}).items():
+        for uri_str, handler_name in self._configuration.config.get('enricher', {}).items():
             if isinstance(handler_name, str) and not hasattr(self, handler_name):
                 errors.append(
                     f"enricher['{uri_str}']='{handler_name}' "
@@ -670,7 +672,7 @@ class BaseLogic(ABC):
                 self._handle_collection_object(instance, predicate, obj)
                 handled = True
 
-            if handled and not (predicate == RDF.type and obj in self._strategy.get_type_mapping()):
+            if handled and not (predicate == RDF.type and obj in self._configuration.get_type_mapping()):
                 self._track(instance, (uri, predicate, obj))
 
     # ========== HELPERS ==========
@@ -780,7 +782,7 @@ class BaseLogic(ABC):
             return False
         # if it declares an rdf:type that we know how to map, leave it alone
         for t in self.graph.objects(node, RDF.type):
-            if t in self._strategy.get_type_mapping():
+            if t in self._configuration.get_type_mapping():
                 return False
         return True
 
@@ -852,7 +854,7 @@ class BaseLogic(ABC):
             return None
         if len(cached) == 1:
             return next(iter(cached))
-        priority = self._strategy.get_punning_priority()
+        priority = self._configuration.get_punning_priority()
         for cls in priority:
             for inst in cached:
                 if type(inst) is cls:
@@ -982,7 +984,7 @@ class BaseLogic(ABC):
         - direct triples from _triples_map[instance]
         - BNode-transitive closure on object positions
         - reified Statements with `instance` as has_subject
-        - strategy-specific axioms (hook: _add_axiom_provenance)
+        - format-specific axioms (hook: _add_axiom_provenance)
         """
         from rdflib import Graph, BNode
         from lode.models import Statement
@@ -1013,7 +1015,7 @@ class BaseLogic(ABC):
                     if isinstance(o, BNode) and o not in seen:
                         self._expand_bnode_into(o, sub, seen)
 
-        # 4. strategy-specific axioms (hook)
+        # 4. format-specific axioms (hook)
         self._add_axiom_provenance(instance, sub)
 
         return sub
@@ -1033,6 +1035,6 @@ class BaseLogic(ABC):
                     stack.append(o)
 
     def _add_axiom_provenance(self, instance, sub):
-        """Hook for subclasses. Default: no strategy-specific axioms."""
+        """Hook for subclasses. Default: no format-specific axioms."""
         pass
     

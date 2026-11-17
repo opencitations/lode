@@ -97,7 +97,7 @@ def main_path():
 
 
 def load(main_path, flag):
-    return Loader(main_path, **{flag: True}).get_graph()
+    return Loader(main_path, **{flag: True}).graph
 
 
 def doc(name) -> Graph:
@@ -135,14 +135,14 @@ class TestModuleInvariants:
     """Whatever the module: named graphs only, main graph untouched, nothing unnamed."""
 
     def test_no_modules_plain_graph_no_fetch(self, main_path, offline_fetch):
-        g = Loader(main_path).get_graph()
+        g = Loader(main_path).graph
         assert type(g) is Graph
         assert offline_fetch == []
 
     @pytest.mark.parametrize("flag", MODULES)
     def test_returns_provenance_graph_named_after_main_ontology(self, main_path, flag):
         loader = Loader(main_path, **{flag: True})
-        assert isinstance(loader.get_graph(), ProvenanceGraph)
+        assert isinstance(loader.graph, ProvenanceGraph)
         assert loader.artefact_iri == MAIN
 
     @pytest.mark.parametrize("flag", MODULES)
@@ -226,7 +226,7 @@ class TestClosure:
         p = DATA / "anon.ttl"
         loader = Loader(str(p), closure=True)
         assert loader.artefact_iri == URIRef(p.resolve().as_uri())
-        assert contexts(loader.get_graph(), (URIRef("http://ex.org/anon#A"), RDF.type, OWL.Class)) \
+        assert contexts(loader.graph, (URIRef("http://ex.org/anon#A"), RDF.type, OWL.Class)) \
             == {loader.artefact_iri}
 
 
@@ -324,7 +324,7 @@ class TestPartialImport:
 <http://ex.org/voc/a> rdfs:comment "a described by m2" ; rdfs:isDefinedBy <http://ex.org/voc/a> .
 <http://ex.org/voc/b> rdfs:comment "b described by m2" ; rdfs:isDefinedBy <http://ex.org/voc/b> .
 """)
-        ds = Loader(path, partial_import=True).get_graph()
+        ds = Loader(path, partial_import=True).graph
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/voc/")]) == 1
         assert (URIRef("http://ex.org/voc/b"), RDFS.label, Literal("b")) in ds
 
@@ -349,14 +349,14 @@ class TestPartialImport:
 <http://ex.org/m4#X> rdfs:seeAlso <http://ex.org/home#T> .
 <http://ex.org/home#T> rdfs:comment "T described by m4" .
 """)
-        ds = Loader(path, partial_import=True).get_graph()
+        ds = Loader(path, partial_import=True).graph
         assert not [u for u in offline_fetch if u.startswith("http://ex.org/home")]
         assert (H.T, RDF.type, OWL.Class) not in ds
 
     def test_partial_import_runs_on_top_of_imported(self, main_path):
         """With both flags the formal import comes first, then the homes of the
         isDefinedBy terms are added."""
-        ds = Loader(main_path, imported=True, partial_import=True).get_graph()
+        ds = Loader(main_path, imported=True, partial_import=True).graph
         assert graphs(ds) == {MAIN, IMP, HOME, VER}
 
 
@@ -371,19 +371,19 @@ class TestCacheRoundTrip:
     def test_reloading_main_graph_reproduces_same_quads(self, main_path, tmp_path, flag):
         fresh = Loader(main_path, **{flag: True})
         cached = tmp_path / "cached.ttl"
-        cached.write_text(fresh.get_graph().graph(fresh.artefact_iri).serialize(format="turtle"),
+        cached.write_text(fresh.graph.graph(fresh.artefact_iri).serialize(format="turtle"),
                           encoding="utf-8")
-        again = Loader(str(cached), **{flag: True}).get_graph()
-        assert graphs(again) == graphs(fresh.get_graph())
+        again = Loader(str(cached), **{flag: True}).graph
+        assert graphs(again) == graphs(fresh.graph)
         for c in graphs(again):
-            assert isomorphic(again.graph(c), fresh.get_graph().graph(c)), c
+            assert isomorphic(again.graph(c), fresh.graph.graph(c)), c
 
     def test_caching_the_union_breaks_provenance(self, main_path, tmp_path):
         """Regression guard: caching the union would put imported triples in the main graph."""
         fresh = load(main_path, "imported")
         cached = tmp_path / "union.ttl"
         cached.write_text(fresh.serialize(format="turtle"), encoding="utf-8")
-        again = Loader(str(cached), imported=True).get_graph()
+        again = Loader(str(cached), imported=True).graph
         assert MAIN in contexts(again, (I.I, RDF.type, OWL.Class))
 
 

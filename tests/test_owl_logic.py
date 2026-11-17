@@ -14,7 +14,7 @@ Covers:
                domain/range inheritance, rdfs:Literal default for Attribute
 
 Each test is self-contained: builds a minimal in-memory RDF graph, constructs
-an OwlLogic instance with an OwlConfigManager strategy, and runs only the
+an OwlLogic instance with a ConfigManager, and runs only the
 phases needed to exercise the target behaviour.
 
 Run with:
@@ -34,7 +34,8 @@ from lode.models import (
     TruthFunction, Quantifier, Cardinality, OneOf, Value,
     Restriction, Resource, DatatypeRestriction
 )
-from lode.reader.config_manager import get_configuration
+from lode import profiles
+from lode.reader.config_manager import ConfigManager
 from lode.profiles.owl.logic import OwlLogic
 
 # ---------------------------------------------------------------------------
@@ -50,8 +51,8 @@ def _make_logic(triples: list) -> OwlLogic:
     for s, p, o in triples:
         g.add((s, p, o))
     cache = {}
-    strategy = get_configuration("owl")
-    return OwlLogic(g, cache, strategy)
+    configuration = ConfigManager(profiles.get("owl"))
+    return OwlLogic(g, cache, configuration)
 
 
 def _run_all(logic: OwlLogic):
@@ -645,7 +646,7 @@ class TestPhase3:
         g.add((EX.p2, RDF.type, OWL.ObjectProperty))
         g.add((EX.myRel, OWL.propertyChainAxiom, head))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         inst = _instance_for_uri(logic, EX.myRel, Relation)
         chain = inst.get_has_property_chain()
@@ -778,7 +779,7 @@ class TestPhase3:
         g.add((bnode, OWL.withRestrictions, head))
         g.add((facet_node, XSD.minInclusive, RDFLiteral("0.0", datatype=XSD.double)))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         inst = _instance_for_uri(logic, bnode, DatatypeRestriction)
         val = inst.get_has_restriction_value()
@@ -805,7 +806,7 @@ class TestPhase4:
         g.add((EX.B, RDF.type, OWL.Class))
         g.add((EX.C, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         a = _instance_for_uri(logic, EX.A, Concept)
         b = _instance_for_uri(logic, EX.B, Concept)
@@ -824,7 +825,7 @@ class TestPhase4:
         g.add((EX.i1, RDF.type, OWL.NamedIndividual))
         g.add((EX.i2, RDF.type, OWL.NamedIndividual))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         i1 = _instance_for_uri(logic, EX.i1, Individual)
         i2 = _instance_for_uri(logic, EX.i2, Individual)
@@ -841,7 +842,7 @@ class TestPhase4:
         g.add((EX.p1, RDF.type, OWL.ObjectProperty))
         g.add((EX.p2, RDF.type, OWL.ObjectProperty))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         p1 = _instance_for_uri(logic, EX.p1, Relation)
         p2 = _instance_for_uri(logic, EX.p2, Relation)
@@ -1445,7 +1446,7 @@ class TestIntegration:
         g.add((EX.A, RDF.type, OWL.Class))
         g.add((EX.B, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
 
         tf = _instance_for_uri(logic, bnode, TruthFunction)
@@ -1471,7 +1472,7 @@ class TestIntegration:
         g.add((EX.A, RDF.type, OWL.Class))
         g.add((EX.B, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         tf = _instance_for_uri(logic, bnode, TruthFunction)
         if tf is None:
@@ -1511,7 +1512,7 @@ class TestIntegration:
         g.add((EX.ind1, RDF.type, OWL.NamedIndividual))
         g.add((EX.ind2, RDF.type, OWL.NamedIndividual))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         one_of = _instance_for_uri(logic, bnode, OneOf)
         assert one_of is not None
@@ -1559,7 +1560,7 @@ class TestIntegration:
         g.add((EX.B, RDF.type, OWL.Class))
         g.add((EX.C, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, get_configuration("owl"))
+        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         outer_tf = _instance_for_uri(logic, outer, TruthFunction)
         if outer_tf is None:
@@ -1724,7 +1725,7 @@ class TestPhase6Exclusions:
         g.add((node, OWL.members, head))
         g.add((EX.A, RDF.type, OWL.Class))
         g.add((EX.B, RDF.type, OWL.Class))
-        logic = OwlLogic(g, {}, get_configuration("owl"))
+        logic = OwlLogic(g, {}, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         stmts = _instances_of(logic, Statement)
         pred_ids = [
@@ -1746,7 +1747,7 @@ class TestPhase6Exclusions:
         g.add((node, OWL.distinctMembers, head))
         g.add((EX.i1, RDF.type, OWL.NamedIndividual))
         g.add((EX.i2, RDF.type, OWL.NamedIndividual))
-        logic = OwlLogic(g, {}, get_configuration("owl"))
+        logic = OwlLogic(g, {}, ConfigManager(profiles.get("owl")))
         _run_all(logic)
         stmts = _instances_of(logic, Statement)
         pred_ids = [

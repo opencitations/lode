@@ -71,7 +71,7 @@ def _load_formal_import(graph: ProvenanceGraph, source: str, depth: int,
         logger.warning("Formal import failed for %s: %s", source, e)
         return
 
-    imported_graph = imported_loader.get_graph()
+    imported_graph = imported_loader.graph
     logger.info("Formal import: %d triples from %s", len(imported_graph), source)
     # Context = ontology IRI declared in the document (fallback: source)
     graph.add_document(imported_graph, source)
@@ -92,7 +92,7 @@ def _load_informal_import(source: str, target: ProvenanceGraph, visited: set, fa
         return
     from lode.reader.loader import Loader  # local import: loader imports modules
     try:
-        g = Loader(source).get_graph()
+        g = Loader(source).graph
     except Exception as e:
         failed.add(source)
         logger.warning("Informal import failed for %s: %s: %s", source, type(e).__name__, e)

@@ -33,7 +33,7 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     """
     loader = Loader(source, imported=imported, closure=closure,
                     partial_import=partial_import, source_name=source_name)
-    artefact.graph = loader.get_graph()
+    artefact.graph = loader.graph
     artefact.artefact_iri = loader.artefact_iri
     artefact.imported_uris = loader.imported_uris
     artefact.entities = {}
@@ -43,7 +43,7 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     _extract_instances(logic, artefact.profile, warnings)
 
     artefact.logic = logic
-    artefact.warnings = logic._warnings if warnings else []
+    artefact.warnings = logic.warnings if warnings else []
     artefact.provenance = logic.build_provenance_subgraph
     # Documented semantic artefact first (only when a module is active)
     if isinstance(artefact.graph, ProvenanceGraph):
@@ -70,11 +70,11 @@ def _extract_instances(logic, profile, warnings_enabled: bool) -> None:
     if warnings_enabled:
         profile.run_post_checks(logic)
 
-        if logic._warnings:
-            logger.warning("%d reader warnings", len(logic._warnings))
+        if logic.warnings:
+            logger.warning("%d reader warnings", len(logic.warnings))
             # details only at DEBUG: the viewer words them with display names
             # for popups, report and CLI, so raw model names would be confusing
-            for w in logic._warnings:
+            for w in logic.warnings:
                 logger.debug("[%s] %s", w['code'], w['message'])
 
 

@@ -26,7 +26,8 @@ from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import Concept, Collection, Model, Resource, Statement
 from lode.profiles.skos.logic import SkosLogic
-from lode.reader.config_manager import get_configuration
+from lode import profiles
+from lode.reader.config_manager import ConfigManager
 
 EX = Namespace("http://example.org/skos#")
 
@@ -40,7 +41,7 @@ def _make_logic(triples: list, graph: Graph = None) -> SkosLogic:
     g = graph if graph is not None else Graph()
     for s, p, o in triples:
         g.add((s, p, o))
-    return SkosLogic(g, {}, get_configuration("skos"))
+    return SkosLogic(g, {}, ConfigManager(profiles.get("skos")))
 
 
 def _run_all(logic: SkosLogic):

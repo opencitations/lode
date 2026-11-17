@@ -14,7 +14,7 @@ import lode
 from lode import profiles
 from lode.artefact import Artefact
 from lode.exceptions import ArtefactValidationError
-from lode.reader.config_manager import get_configuration
+from lode.reader.config_manager import ConfigManager
 from lode.viewer.base_viewer import BaseViewer
 
 FORMATS = sorted(profiles.names())
@@ -55,7 +55,7 @@ def test_format_config_files_exist(fmt):
 @pytest.mark.parametrize("fmt", FORMATS)
 def test_format_builds_its_logic(fmt):
     """The registry entry resolves to a logic class that can be instantiated."""
-    assert profiles.get(fmt).make_logic(Graph(), {}, get_configuration(fmt)) is not None
+    assert profiles.get(fmt).make_logic(Graph(), {}, ConfigManager(profiles.get(fmt))) is not None
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def test_a_plugin_cannot_replace_a_builtin(plugins, caplog):
 def test_a_mapper_can_name_a_class_by_path():
     """'module:Name' in a mapper resolves to a class; a wrong path fails loudly."""
     from lode.models import Concept
-    manager = get_configuration("owl")
+    manager = ConfigManager(profiles.get("owl"))
     assert manager._parse_class("lode.models:Concept") is Concept
     with pytest.raises(KeyError):
         manager._parse_class("lode.models:Nope")

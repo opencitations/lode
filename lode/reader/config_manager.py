@@ -215,12 +215,3 @@ class ConfigManager:
         names = self.config.get('punning_priority', [])
         return [self._parse_class(n) for n in names]
 
-# ========== CONFIGURATIONS REGISTRY ==========
-
-def get_configuration(configuration_name: str) -> ConfigManager:
-    """Return a new manager for the given artefact type (case-insensitive).
-
-    Raises ValueError listing the available types when the name is unknown.
-    """
-    return ConfigManager(profiles.get(configuration_name))
-

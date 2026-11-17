@@ -13,7 +13,7 @@ from lode.models import (
 # for integrity tests
 def has_warning(logic, code: str, subject=None) -> bool:
     """Check if a warning with given code (and optional subject) was raised."""
-    for w in logic._warnings:
+    for w in logic.warnings:
         if w['code'] != code:
             continue
         if subject is None or w['subject'] == str(subject):

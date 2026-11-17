@@ -50,7 +50,7 @@ def owl_logic(request):
     yield logic
     logic._instance_cache.clear()
     logic._triples_map.clear()
-    logic._warnings.clear()
+    logic.warnings.clear()
 
 
 #############################################################################################
@@ -2484,7 +2484,7 @@ def test_non_mapped_predicates_become_statements(owl_logic):
     from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 
     structural_ns = {str(RDF), str(RDFS), str(OWL), str(SKOS), str(XSD)}
-    mapped_predicates = {str(uri) for uri in owl_logic._strategy.get_property_mapping().keys()}
+    mapped_predicates = {str(uri) for uri in owl_logic._configuration.get_property_mapping().keys()}
 
     # Collect predicate identifiers actually used in statements
     statement_predicates = {
@@ -2513,7 +2513,7 @@ def test_statements_do_not_reuse_mapped_predicates(owl_logic):
     """
     from rdflib.namespace import RDF
 
-    config = owl_logic._strategy
+    config = owl_logic._configuration
     excluded = set()
 
     for uri, cfg in config.get_property_mapping().items():
