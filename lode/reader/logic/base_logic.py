@@ -985,13 +985,16 @@ class BaseLogic(ABC):
         - BNode-transitive closure on object positions
         - reified Statements with `instance` as has_subject
         - format-specific axioms (hook: _add_axiom_provenance)
+
+        No prefix is bound on the subgraph: callers only iterate its triples, and
+        Artefact.with_provenance binds the artefact prefixes on the graph it serializes.
+        Binding them here cost one bind per prefix per entity, the largest share of
+        the provenance time in a static build.
         """
         from rdflib import Graph, BNode
         from lode.models import Statement
 
-        sub = Graph()
-        for prefix, ns in self.graph.namespaces():
-            sub.bind(prefix, ns, override=True, replace=True)
+        sub = Graph(bind_namespaces="none")
 
         # 1. direct triples
         source_triples = self._triples_map.get(instance, set())
