@@ -173,8 +173,8 @@ def _render_view(request, artefact, *, resource, lang, source_url, upload_id, re
     """
     links = _WebLinks(_nav_qs(read_as, source_url, upload_id, lang, imported, closure, partial_import),
                       read_as, lang)
-    data = core.view(artefact, resource=resource, lang=lang, links=links)
-    resp = _templates_for(core.template_dirs(artefact)).TemplateResponse(request, "page.html", dict(data))
+    data = artefact.viewer.view(resource_uri=resource, language=lang, links=links)
+    resp = _templates_for(artefact.viewer.template_dirs()).TemplateResponse(request, "page.html", dict(data))
     resp.body = _minify(resp.body.decode("utf-8")).encode("utf-8")
     resp.headers["content-length"] = str(len(resp.body))
     return resp

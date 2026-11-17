@@ -97,6 +97,7 @@ class Artefact:
         self.provenance = _no_provenance
         self.logic = None
         self._all = None
+        self._viewer = None
 
     @property
     def read_as(self) -> Optional[str]:
@@ -107,6 +108,21 @@ class Artefact:
     def artefact_base_iri(self) -> Optional[URIRef]:
         """Return the namespace of the artefact IRI, derived on demand, or None without an IRI."""
         return URIRef(iri_namespace(self.artefact_iri)) if self.artefact_iri else None
+
+    @property
+    def viewer(self):
+        """Return the viewer of this artefact's format, created on first use and then reused.
+
+        Its profile gives it its configuration, so the page data, the exports and the
+        templates all come from here; an artefact without a profile gets the generic viewer.
+        """
+        if self._viewer is None:
+            # Local import: the viewers pull in the YAML configuration, which reading does
+            # not need. The viewer package imports nothing from this module, so no cycle.
+            from lode.viewer import get_viewer
+
+            self._viewer = get_viewer(self)
+        return self._viewer
 
     def instances(self, cls: Optional[type] = None) -> list:
         """Return the extracted instances, optionally only those of one model class.

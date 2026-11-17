@@ -2,6 +2,7 @@
 import pytest
 
 import lode
+from lode import profiles
 from lode.exceptions import ArtefactValidationError
 from lode.models import Concept
 from lode.profiles.skos.artefact import SkosVocabulary
@@ -45,3 +46,16 @@ def test_build_site_writes_the_site(vocabulary, tmp_path):
 def test_unknown_format_is_rejected(vocabulary):
     with pytest.raises(ArtefactValidationError):
         lode.read(str(vocabulary), "nonsense")
+
+
+def test_format_classes_come_from_the_package_root():
+    from lode import OwlOntology, SkosVocabulary as FromRoot
+
+    assert OwlOntology is profiles.get("owl").artefact_class()
+    assert FromRoot is SkosVocabulary
+
+
+def test_unknown_names_of_the_package_root_are_attribute_errors():
+    with pytest.raises(AttributeError):
+        lode.NotAFormat
+    assert not hasattr(lode, "__wrapped__")

@@ -58,3 +58,8 @@ def test_artefact_itself_cannot_read():
     """The class chooses the format: Artefact has none, so it refuses before reading."""
     with pytest.raises(TypeError):
         Artefact("never-read.ttl")
+
+def test_viewer_is_built_once_and_is_generic_without_a_profile():
+    artefact, *_ = _artefact()
+    assert artefact.viewer is artefact.viewer
+    assert type(artefact.viewer).__name__ == "BaseViewer"

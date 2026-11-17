@@ -290,10 +290,10 @@ def test_without_links_nothing_points_to_a_page(viewer_and_iri):
     assert viewer.view()["model"]["href"] is None
 
 
-def test_the_library_shortcut(viewer_and_iri):
-    """lode.view gives what the viewer gives."""
+def test_the_artefact_gives_its_viewer(viewer_and_iri):
+    """artefact.viewer builds the same data as a viewer made by hand."""
     viewer, iri = viewer_and_iri
-    assert lode.view(viewer.artefact, resource=iri) == viewer.view(resource_uri=iri)
+    assert viewer.artefact.viewer.view(resource_uri=iri) == viewer.view(resource_uri=iri)
 
 def test_types_name_every_section(viewer_and_iri):
     """Every type of the navigation can be named: the template never meets a type it cannot label."""

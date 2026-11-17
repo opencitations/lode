@@ -1,8 +1,9 @@
-"""Core entry points of the library: read an artefact, show it, export it, build its site.
+"""Core entry points of the library for callers that name the format with a string.
 
-CLI, web service and Python users all go through these functions: none of them
-touches the Reader, the viewers or the builder directly. The code lives here and
-not in `lode/__init__.py` so that the package root only lists the public names.
+The CLI and the web service go through these functions: none of them touches the Reader,
+the viewers or the builder directly. Library users read with the class of the format
+(OwlOntology, SkosVocabulary) and reach the viewer through `artefact.viewer`. The code lives
+here and not in `lode/__init__.py` so that the package root only lists the public names.
 """
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
@@ -11,7 +12,6 @@ from lode import profiles
 
 if TYPE_CHECKING:
     from lode.artefact import Artefact
-    from lode.viewer.view_data import ViewData
 
 
 # ==========================================================================
@@ -43,41 +43,8 @@ def read(source: str, read_as: str, *, imported: Optional[bool] = None,
 
 
 # ==========================================================================
-# 2. VIEW AND EXPORT
+# 2. EXPORT
 # ==========================================================================
-
-def view(artefact: "Artefact", *, resource: Optional[str] = None,
-         lang: Optional[str] = None, links=None) -> "ViewData":
-    """Return the data of a page as the viewer contract defines it, for the whole artefact or one resource.
-
-    This is the data a page needs: the page itself (the template, the request, the minification)
-    stays in the caller. `links` says where resources and exports live (see lode.viewer.links).
-    """
-    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
-
-    return get_viewer(artefact).view(resource_uri=resource, language=lang, links=links)
-
-def template_dirs(artefact: "Artefact") -> list:
-    """Return the folders the page templates of this artefact are searched in, first match wins.
-
-    The base templates come last; a format may put in front the ones it replaces. The adapters
-    that render pages (web service, static builder) build their Jinja loader from this list.
-    """
-    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
-
-    return get_viewer(artefact).template_dirs()
-
-def format_warnings(artefact: "Artefact") -> list:
-    """Return the reader warnings of an artefact, worded with the viewer's display names.
-
-    Each item is a dict with "code" and "message". Empty unless the artefact was
-    read with `warnings=True`.
-    """
-    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
-
-    return get_viewer(artefact).format_warnings(artefact.warnings)
-
-
 def export(artefact: "Artefact", fmt: str, resource: Optional[str] = None) -> Union[str, bytes]:
     """Serialize the triples of the artefact, or of one resource, in an rdflib format.
 
@@ -85,9 +52,7 @@ def export(artefact: "Artefact", fmt: str, resource: Optional[str] = None) -> Un
     ones are listed in `lode.helpers.formats.SERIALIZATION_FORMATS`. Only the
     triples of the loaded artefact are returned, never those of its imports.
     """
-    from lode.viewer import get_viewer  # local import: the viewers pull in the YAML configuration, not needed to read
-
-    viewer = get_viewer(artefact)
+    viewer = artefact.viewer
     return viewer.export_resource(resource, fmt) if resource else viewer.export_main(fmt)
 
 
@@ -98,12 +63,11 @@ def build_site(artefact: "Artefact", out_dir: Union[str, Path], *, lang: str = "
                artefact_name: str = "index") -> None:
     """Write the static documentation site of an artefact into `out_dir`.
 
-    The viewer is chosen from `artefact.read_as`. Blocking and disk-heavy: existing
+    The viewer is the one of `artefact.profile`. Blocking and disk-heavy: existing
     files in `out_dir` with the same names are overwritten. `artefact_name` is the
     file stem of the root page and its serializations.
     """
-    # Local imports for the same reason as in read(): the builder pulls in jinja2.
+    # Local import for the same reason as in read(): the builder pulls in jinja2.
     from lode.builder import build_html
-    from lode.viewer import get_viewer
 
-    build_html(get_viewer(artefact), Path(out_dir), lang=lang, artefact_name=artefact_name)
+    build_html(artefact.viewer, Path(out_dir), lang=lang, artefact_name=artefact_name)

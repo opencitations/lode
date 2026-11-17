@@ -30,7 +30,7 @@ def cmd_build(args):
     do not pay its import cost. Creates the output directory if missing and
     overwrites existing pages in it. Prints the output path on success.
     """
-    from lode.core import build_site, format_warnings, read
+    from lode.core import build_site, read
 
     out_dir = Path(args.out)
     artefact = read(
@@ -43,7 +43,7 @@ def cmd_build(args):
     build_site(artefact, out_dir, lang=args.lang, artefact_name=args.artefact_name)
 
     if args.warnings:
-        warnings = format_warnings(artefact)
+        warnings = artefact.viewer.format_warnings(artefact.warnings)
         for w in warnings:
             print(f"[{w['code']}] {w['message']}")
         if warnings:

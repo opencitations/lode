@@ -158,22 +158,48 @@ def get_enabled(name: Optional[str]) -> Profile:
     return profile
 
 
+def _artefact_classes() -> List[tuple]:
+    """Return (profile, Artefact class) for every profile whose class can be imported.
+
+    A plugin whose class cannot be imported is logged and skipped: it must not stop the
+    others from reading.
+    """
+    found = []
+    for profile in _PROFILES.values():
+        try:
+            found.append((profile, profile.artefact_class()))
+        except (ImportError, AttributeError):
+            logger.warning("Profile '%s': artefact class '%s' cannot be imported",
+                           profile.name, profile.artefact, exc_info=True)
+    return found
+
+
 def of(cls: type) -> Optional[Profile]:
     """Return the profile whose Artefact subclass is `cls` or one of its bases, or None.
 
     Walks the MRO, so a user's subclass of OwlOntology is still read as OWL. Built-ins are
-    registered first, so they win when a plugin points to the same class. A plugin whose
-    class cannot be imported is logged and skipped: it must not stop the others from reading.
+    registered first, so they win when a plugin points to the same class.
     """
     _ensure_loaded()
+    classes = _artefact_classes()
     for klass in cls.__mro__:
-        for profile in _PROFILES.values():
-            try:
-                if profile.artefact_class() is klass:
-                    return profile
-            except (ImportError, AttributeError):
-                logger.warning("Profile '%s': artefact class '%s' cannot be imported",
-                               profile.name, profile.artefact, exc_info=True)
+        for profile, artefact in classes:
+            if artefact is klass:
+                return profile
+    return None
+
+
+def artefact_class_named(name: str) -> Optional[type]:
+    """Return the Artefact subclass called `name` among the registered profiles, or None.
+
+    Backs `from lode import OwlOntology`: the package root imports no profile, it asks here
+    on first use, and the classes of plugins are found too. Disabled profiles are included:
+    `enabled` gates the formats named by a string, not the classes a program imports.
+    """
+    _ensure_loaded()
+    for _, artefact in _artefact_classes():
+        if artefact.__name__ == name:
+            return artefact
     return None
 
 
