@@ -6,9 +6,9 @@ Covers:
   - security.check_size       (MAX_BYTES limit)
   - security.check_is_text    (UTF-8 + no NUL byte)
   - security.check_extension  (RDF extension whitelist)
-  - Loader._fetch_following_redirects (manual redirects, per-hop validation)
-  - Loader._load_from_local_file       (parse + ArtefactLoadError)
-  - Loader.load                        (empty-graph guard)
+  - loader._fetch_following_redirects (manual redirects, per-hop validation)
+  - loader._load_from_local_file       (parse + ArtefactLoadError)
+  - loader.load_document               (empty-graph guard)
 
 Network and DNS are mocked, so the suite runs offline.
 
@@ -21,7 +21,8 @@ import socket
 import pytest
 
 from lode import security
-from lode.reader.loader import Loader
+from lode.reader.loader import (_fetch_following_redirects, _load_from_local_file,
+                                _load_from_url_with_content_negotiation, load_document)
 from lode.exceptions import (ArtefactValidationError, ArtefactLoadError,
                              ArtefactNotFoundError, ArtefactUnavailableError)
 
@@ -29,7 +30,7 @@ from lode.exceptions import (ArtefactValidationError, ArtefactLoadError,
 #  Helpers / fakes
 # ----------------------------------------------------------------------
 class _PeerRaw:
-    """Mimics urllib3 response internals so Loader._peer_ip can read the IP."""
+    """Mimics urllib3 response internals so loader._peer_ip can read the IP."""
     def __init__(self, ip):
         sock = type("Sock", (), {"getpeername": staticmethod(lambda: (ip, 443))})()
         self._connection = type("Conn", (), {"sock": sock})()
@@ -43,7 +44,7 @@ class FakeResponse:
         self.url = url
         self._body = body
         self.closed = False
-        # Only set when a test needs Loader._verify_peer_ip to see a peer IP.
+        # Only set when a test needs loader._verify_peer_ip to see a peer IP.
         self.raw = _PeerRaw(peer_ip) if peer_ip else None
 
     def iter_content(self, chunk_size):
@@ -179,19 +180,16 @@ class TestCheckExtension:
 
 
 # ----------------------------------------------------------------------
-#  Loader._fetch_following_redirects
+#  loader._fetch_following_redirects
 # ----------------------------------------------------------------------
 class TestFetchFollowingRedirects:
-
-    def _loader(self):
-        return Loader()  # bare instance, no file loaded
 
     def test_direct_200_returns_response(self, monkeypatch):
         resp = FakeResponse(status_code=200)
         fake = make_fake_get([resp])
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
-        out = self._loader()._fetch_following_redirects(
+        out = _fetch_following_redirects(
             "http://93.184.216.34/onto.ttl", headers={})
         assert out is resp
         assert len(fake.calls) == 1
@@ -202,7 +200,7 @@ class TestFetchFollowingRedirects:
         fake = make_fake_get([r1, r2])
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
-        out = self._loader()._fetch_following_redirects(
+        out = _fetch_following_redirects(
             "http://93.184.216.34/onto.ttl", headers={})
         assert out is r2
         assert fake.calls == ["http://93.184.216.34/onto.ttl", "http://8.8.8.8/final.ttl"]
@@ -215,7 +213,7 @@ class TestFetchFollowingRedirects:
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
         with pytest.raises(ArtefactValidationError):
-            self._loader()._fetch_following_redirects(
+            _fetch_following_redirects(
                 "http://93.184.216.34/onto.ttl", headers={})
         assert r1.closed is True
         assert len(fake.calls) == 1  # second hop never fetched
@@ -226,7 +224,7 @@ class TestFetchFollowingRedirects:
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
         with pytest.raises(ArtefactLoadError):
-            self._loader()._fetch_following_redirects(
+            _fetch_following_redirects(
                 "http://93.184.216.34/onto.ttl", headers={})
 
     def test_too_many_redirects_raises(self, monkeypatch):
@@ -238,7 +236,7 @@ class TestFetchFollowingRedirects:
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
         with pytest.raises(ArtefactLoadError):
-            self._loader()._fetch_following_redirects(
+            _fetch_following_redirects(
                 "http://93.184.216.34/onto.ttl", headers={}, max_redirects=5)
         assert len(fake.calls) == 5  # capped
 
@@ -248,7 +246,7 @@ class TestFetchFollowingRedirects:
         fake = make_fake_get([r1, r2])
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
-        out = self._loader()._fetch_following_redirects(
+        out = _fetch_following_redirects(
             "http://93.184.216.34/dir/onto.ttl", headers={})
         assert out is r2
         assert fake.calls[1] == "http://93.184.216.34/dir/other.ttl"
@@ -256,7 +254,7 @@ class TestFetchFollowingRedirects:
     def test_default_limit_comes_from_config(self):
         import inspect
         default = inspect.signature(
-            Loader._fetch_following_redirects
+            _fetch_following_redirects
         ).parameters["max_redirects"].default
         assert default == security.MAX_REDIRECTS
 
@@ -270,14 +268,14 @@ class TestFetchFollowingRedirects:
         fake = make_fake_get(chain)
         monkeypatch.setattr("lode.reader.loader.requests.get", fake)
 
-        out = self._loader()._fetch_following_redirects(
+        out = _fetch_following_redirects(
             "http://93.184.216.34/onto.ttl", headers={}, max_redirects=10)
         assert out.status_code == 200
         assert len(fake.calls) == 9  # 8 redirects + final
 
 
 # ----------------------------------------------------------------------
-#  Loader._load_from_local_file
+#  loader._load_from_local_file
 # ----------------------------------------------------------------------
 TURTLE_OK = """@prefix ex: <http://example.org/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -289,16 +287,13 @@ class TestLoadLocalFile:
     def test_valid_turtle_parses(self, tmp_path):
         f = tmp_path / "ok.ttl"
         f.write_text(TURTLE_OK, encoding="utf-8")
-        loader = Loader()
-        loader._load_from_local_file(str(f))
-        assert len(loader.graph) > 0
+        assert len(_load_from_local_file(str(f))) > 0
 
     def test_garbage_raises(self, tmp_path):
         f = tmp_path / "junk.ttl"
         f.write_text("this is definitely not RDF >>> ???", encoding="utf-8")
-        loader = Loader()
         with pytest.raises(ArtefactLoadError):
-            loader._load_from_local_file(str(f))
+            _load_from_local_file(str(f))
 
 # magic bytes di formati binari reali
 PNG  = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
@@ -350,13 +345,13 @@ class TestDisguisedNonRdf:
         # Ma non e' RDF -> nessun parser lo accetta -> ArtefactLoadError.
         # Il codice Python NON viene mai eseguito, solo scartato.
         with pytest.raises(ArtefactLoadError):
-            Loader()._load_from_local_file(str(f))
+            _load_from_local_file(str(f))
 
     def test_empty_file_rejected_as_empty_graph(self, tmp_path):
         f = tmp_path / "empty.rdf"
         f.write_bytes(b"")
         with pytest.raises(ArtefactLoadError):
-            Loader().load(str(f))
+            load_document(str(f))
 
 
 class TestUrlSizeGuards:
@@ -367,17 +362,17 @@ class TestUrlSizeGuards:
         resp = FakeResponse(status_code=200, headers={}, body=b"x" * 64)
         monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
         with pytest.raises(ArtefactValidationError):
-            Loader()._load_from_url_with_content_negotiation("http://93.184.216.34/big.ttl")
+            _load_from_url_with_content_negotiation("http://93.184.216.34/big.ttl")
 
     def test_declared_content_length_rejected(self, monkeypatch):
         monkeypatch.setattr(security, "MAX_BYTES", 16)
         resp = FakeResponse(status_code=200, headers={"Content-Length": "1000"}, body=b"x")
         monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
         with pytest.raises(ArtefactValidationError):
-            Loader()._load_from_url_with_content_negotiation("http://8.8.8.8/big.ttl")
+            _load_from_url_with_content_negotiation("http://8.8.8.8/big.ttl")
 
 # ----------------------------------------------------------------------
-#  Loader.load - empty graph guard
+#  loader.load_document - empty graph guard
 # ----------------------------------------------------------------------
 class TestEmptyGraphGuard:
 
@@ -385,9 +380,8 @@ class TestEmptyGraphGuard:
         # syntactically valid turtle with zero triples (only a prefix declaration)
         f = tmp_path / "empty.ttl"
         f.write_text("@prefix ex: <http://example.org/> .\n", encoding="utf-8")
-        loader = Loader()
         with pytest.raises(ArtefactLoadError):
-            loader.load(str(f))
+            load_document(str(f))
 
 
 # ----------------------------------------------------------------------
@@ -554,11 +548,11 @@ class TestUrlMustBeHttp:
 
     def test_loader_rejects_non_http_scheme(self):
         with pytest.raises(ArtefactValidationError):
-            Loader().load("file:///etc/passwd")
+            load_document("file:///etc/passwd")
 
 
 # ----------------------------------------------------------------------
-#  Loader._verify_peer_ip  (DNS-rebinding: validate the real connected IP)
+#  loader._verify_peer_ip  (DNS-rebinding: validate the real connected IP)
 # ----------------------------------------------------------------------
 class TestPeerIpRebinding:
 
@@ -577,14 +571,14 @@ class TestPeerIpRebinding:
         resp = FakeResponse(status_code=200, peer_ip="169.254.169.254")
         monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
         with pytest.raises(ArtefactValidationError):
-            Loader()._fetch_following_redirects("http://sneaky.example.org/o.ttl", headers={})
+            _fetch_following_redirects("http://sneaky.example.org/o.ttl", headers={})
         assert resp.closed is True
 
     def test_peer_public_ip_allowed(self, monkeypatch):
         self._public_dns(monkeypatch)
         resp = FakeResponse(status_code=200, peer_ip="93.184.216.34")
         monkeypatch.setattr("lode.reader.loader.requests.get", make_fake_get([resp]))
-        out = Loader()._fetch_following_redirects("http://ok.example.org/o.ttl", headers={})
+        out = _fetch_following_redirects("http://ok.example.org/o.ttl", headers={})
         assert out is resp
 
 
@@ -654,7 +648,7 @@ class TestUserAgent:
             return FakeResponse(status_code=200)
 
         monkeypatch.setattr("lode.reader.loader.requests.get", fake_get)
-        Loader()._fetch_following_redirects(
+        _fetch_following_redirects(
             "http://93.184.216.34/onto.ttl",
             headers={"User-Agent": security.USER_AGENT})
 
@@ -670,7 +664,7 @@ class TestRemoteStatusClassification:
     def _load(self, monkeypatch, status):
         monkeypatch.setattr("lode.reader.loader.requests.get",
                             make_fake_get([FakeResponse(status_code=status)]))
-        Loader()._load_from_url_with_content_negotiation("http://93.184.216.34/onto.ttl")
+        _load_from_url_with_content_negotiation("http://93.184.216.34/onto.ttl")
 
     @pytest.mark.parametrize("status", [500, 502, 503])
     def test_server_error_is_unavailable(self, monkeypatch, status):

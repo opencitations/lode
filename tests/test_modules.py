@@ -23,7 +23,7 @@ Fixtures
 --------
 Documents live in tests/data/provenance/ (one .ttl per ontology, each with a header
 comment on its role) and are served at http://ex.org/<file name> by `offline_fetch`
-(autouse), which replaces the Loader's HTTP method: everything runs offline.
+(autouse), which replaces the loader's HTTP function: everything runs offline.
 
 The ProvenanceGraph container itself and the RDF helpers are tested in
 test_rdf_helpers.py.
@@ -44,7 +44,7 @@ import lode.security as security
 from lode import api
 from lode.api import app
 from lode.exceptions import ArtefactNotFoundError
-from lode.reader.loader import Loader
+from lode.reader.pipeline import load_graph
 from lode.provenance_graph import ProvenanceGraph
 from lode.viewer import get_viewer
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS
@@ -79,14 +79,14 @@ def offline_fetch(monkeypatch):
     Returns the list of fetched URLs, in order."""
     calls = []
 
-    def fake(self, url):
+    def fake(url):
         calls.append(url)
         key = urldefrag(url)[0].rstrip("/")
         if key not in DOCS:
             raise ArtefactNotFoundError("not found", context={"url": url})
-        self.graph = Graph().parse(data=DOCS[key], format="turtle")
+        return Graph().parse(data=DOCS[key], format="turtle")
 
-    monkeypatch.setattr(Loader, "_load_from_url_with_content_negotiation", fake)
+    monkeypatch.setattr("lode.reader.loader._load_from_url_with_content_negotiation", fake)
     return calls
 
 
@@ -97,7 +97,7 @@ def main_path():
 
 
 def load(main_path, flag):
-    return Loader(main_path, **{flag: True}).graph
+    return load_graph(main_path, **{flag: True})[0]
 
 
 def doc(name) -> Graph:
@@ -135,15 +135,15 @@ class TestModuleInvariants:
     """Whatever the module: named graphs only, main graph untouched, nothing unnamed."""
 
     def test_no_modules_plain_graph_no_fetch(self, main_path, offline_fetch):
-        g = Loader(main_path).graph
+        g = load_graph(main_path)[0]
         assert type(g) is Graph
         assert offline_fetch == []
 
     @pytest.mark.parametrize("flag", MODULES)
     def test_returns_provenance_graph_named_after_main_ontology(self, main_path, flag):
-        loader = Loader(main_path, **{flag: True})
-        assert isinstance(loader.graph, ProvenanceGraph)
-        assert loader.artefact_iri == MAIN
+        graph, artefact_iri, _ = load_graph(main_path, **{flag: True})
+        assert isinstance(graph, ProvenanceGraph)
+        assert artefact_iri == MAIN
 
     @pytest.mark.parametrize("flag", MODULES)
     def test_default_graph_stays_empty(self, main_path, flag):
@@ -224,10 +224,10 @@ class TestClosure:
     def test_local_file_without_ontology_uses_file_uri(self):
         """Known and accepted: without owl:Ontology the main context is the file path."""
         p = DATA / "anon.ttl"
-        loader = Loader(str(p), closure=True)
-        assert loader.artefact_iri == URIRef(p.resolve().as_uri())
-        assert contexts(loader.graph, (URIRef("http://ex.org/anon#A"), RDF.type, OWL.Class)) \
-            == {loader.artefact_iri}
+        graph, artefact_iri, _ = load_graph(str(p), closure=True)
+        assert artefact_iri == URIRef(p.resolve().as_uri())
+        assert contexts(graph, (URIRef("http://ex.org/anon#A"), RDF.type, OWL.Class)) \
+            == {artefact_iri}
 
 
 # ==========================================================================
@@ -324,7 +324,7 @@ class TestPartialImport:
 <http://ex.org/voc/a> rdfs:comment "a described by m2" ; rdfs:isDefinedBy <http://ex.org/voc/a> .
 <http://ex.org/voc/b> rdfs:comment "b described by m2" ; rdfs:isDefinedBy <http://ex.org/voc/b> .
 """)
-        ds = Loader(path, partial_import=True).graph
+        ds = load_graph(path, partial_import=True)[0]
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/voc/")]) == 1
         assert (URIRef("http://ex.org/voc/b"), RDFS.label, Literal("b")) in ds
 
@@ -337,7 +337,7 @@ class TestPartialImport:
 <http://ex.org/dead/b> rdfs:comment "b" ; rdfs:isDefinedBy <http://ex.org/dead/b> .
 <http://ex.org/dead/c> rdfs:comment "c" ; rdfs:isDefinedBy <http://ex.org/dead/c> .
 """)
-        Loader(path, partial_import=True)
+        load_graph(path, partial_import=True)
         assert len([u for u in offline_fetch if u.startswith("http://ex.org/dead/")]) == 1
 
     # -- isDefinedBy gate -------------------------------------------------
@@ -349,14 +349,14 @@ class TestPartialImport:
 <http://ex.org/m4#X> rdfs:seeAlso <http://ex.org/home#T> .
 <http://ex.org/home#T> rdfs:comment "T described by m4" .
 """)
-        ds = Loader(path, partial_import=True).graph
+        ds = load_graph(path, partial_import=True)[0]
         assert not [u for u in offline_fetch if u.startswith("http://ex.org/home")]
         assert (H.T, RDF.type, OWL.Class) not in ds
 
     def test_partial_import_runs_on_top_of_imported(self, main_path):
         """With both flags the formal import comes first, then the homes of the
         isDefinedBy terms are added."""
-        ds = Loader(main_path, imported=True, partial_import=True).graph
+        ds = load_graph(main_path, imported=True, partial_import=True)[0]
         assert graphs(ds) == {MAIN, IMP, HOME, VER}
 
 
@@ -369,21 +369,21 @@ class TestCacheRoundTrip:
 
     @pytest.mark.parametrize("flag", MODULES)
     def test_reloading_main_graph_reproduces_same_quads(self, main_path, tmp_path, flag):
-        fresh = Loader(main_path, **{flag: True})
+        fresh, fresh_iri, _ = load_graph(main_path, **{flag: True})
         cached = tmp_path / "cached.ttl"
-        cached.write_text(fresh.graph.graph(fresh.artefact_iri).serialize(format="turtle"),
+        cached.write_text(fresh.graph(fresh_iri).serialize(format="turtle"),
                           encoding="utf-8")
-        again = Loader(str(cached), **{flag: True}).graph
-        assert graphs(again) == graphs(fresh.graph)
+        again = load_graph(str(cached), **{flag: True})[0]
+        assert graphs(again) == graphs(fresh)
         for c in graphs(again):
-            assert isomorphic(again.graph(c), fresh.graph.graph(c)), c
+            assert isomorphic(again.graph(c), fresh.graph(c)), c
 
     def test_caching_the_union_breaks_provenance(self, main_path, tmp_path):
         """Regression guard: caching the union would put imported triples in the main graph."""
         fresh = load(main_path, "imported")
         cached = tmp_path / "union.ttl"
         cached.write_text(fresh.serialize(format="turtle"), encoding="utf-8")
-        again = Loader(str(cached), imported=True).graph
+        again = load_graph(str(cached), imported=True)[0]
         assert MAIN in contexts(again, (I.I, RDF.type, OWL.Class))
 
 
@@ -686,7 +686,7 @@ class TestSourceName:
     def test_names_the_graph_without_declared_ontology(self, tmp_path):
         p = tmp_path / "x.ttl"
         p.write_text("<http://ex.org/a> a <http://ex.org/B> .", encoding="utf-8")
-        assert Loader(str(p), source_name="http://ex.org/x.ttl").artefact_iri == URIRef("http://ex.org/x.ttl")
+        assert load_graph(str(p), source_name="http://ex.org/x.ttl")[1] == URIRef("http://ex.org/x.ttl")
 
     def test_declared_ontology_wins(self, main_path):
-        assert Loader(main_path, source_name="http://ex.org/other").artefact_iri == MAIN
+        assert load_graph(main_path, source_name="http://ex.org/other")[1] == MAIN

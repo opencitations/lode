@@ -1,9 +1,10 @@
 """Reader: runs the extraction pipeline and writes what it extracts on an Artefact.
 
-The Reader sits between the Loader (parsing) and the viewers: it takes the configuration and
-the logic of the artefact's format, runs the logic phases and hands the result over by filling
-the Artefact it is given, so CLI, API and viewers never depend on parsing details. It keeps no
-state and imports nothing from lode.artefact: it only sets the attributes the Artefact declares.
+The Reader sits between the document loader and the viewers: it loads the graph, takes the
+configuration and the logic of the artefact's format, runs the logic phases and hands the
+result over by filling the Artefact it is given, so CLI, API and viewers never depend on
+parsing details. It keeps no state and imports nothing from lode.artefact: it only sets the
+attributes the Artefact declares.
 """
 import logging
 from typing import Optional
@@ -11,8 +12,9 @@ from typing import Optional
 from rdflib import URIRef
 
 from lode.provenance_graph import ProvenanceGraph
+from lode.reader import modules
 from lode.reader.config_manager import ConfigManager
-from lode.reader.loader import Loader
+from lode.reader.loader import load_document
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +29,16 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     The format comes from `artefact.profile`. Sets graph, artefact_iri, imported_uris,
     entities, logic, warnings and provenance on `artefact` and returns nothing: the
     Artefact is the only place where the result lives. `imported`, `closure` and
-    `partial_import` are forwarded to the Loader; `warnings` turns on the reader warnings;
+    `partial_import` are forwarded to `load_graph`; `warnings` turns on the reader warnings;
     `source_name` names the artefact when `source` is only a local copy of it. Blocking:
     it may fetch remote documents.
     """
-    loader = Loader(source, imported=imported, closure=closure,
-                    partial_import=partial_import, source_name=source_name)
-    artefact.graph = loader.graph
-    artefact.artefact_iri = loader.artefact_iri
-    artefact.imported_uris = loader.imported_uris
+    graph, artefact_iri, imported_uris = load_graph(
+        source, imported=imported, closure=closure,
+        partial_import=partial_import, source_name=source_name)
+    artefact.graph = graph
+    artefact.artefact_iri = artefact_iri
+    artefact.imported_uris = imported_uris
     artefact.entities = {}
 
     configuration = ConfigManager(artefact.profile)
@@ -51,7 +54,36 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
 
 
 # ==========================================================================
-# 2. EXTRACTION
+# 2. LOADING
+# ==========================================================================
+def load_graph(source: str, *, imported=None, closure=None, partial_import=None,
+               source_name: Optional[str] = None):
+    """Load the graph of an artefact: its document, named, with the requested modules applied.
+
+    Returns (graph, artefact_iri, imported_uris). The graph is a plain Graph, or a
+    ProvenanceGraph (one named graph per source document) when `imported`, `closure` or
+    `partial_import` is requested; in both cases `artefact_iri` names the loaded artefact.
+    `source_name` names the artefact when `source` is only a local copy of it (for example
+    a cached download): it names the graph if the ontology declares no IRI. `imported_uris`
+    holds the IRIs of the imported documents, so that the viewer can keep the metadata of
+    the original model.
+    """
+    graph = load_document(source)
+    name = source_name or source
+    if not (imported or closure or partial_import):
+        # No modules: the graph stays plain, only its name is needed so that the
+        # provenance of an entity can still be written as a quad.
+        return graph, ProvenanceGraph.artefact_iri(graph, name), set()
+
+    raw, graph = graph, ProvenanceGraph()
+    artefact_iri = graph.add_document(raw, name)
+    graph, imported_uris = modules.apply(graph, imported=imported, closure=closure,
+                                         partial_import=partial_import)
+    return graph, artefact_iri, imported_uris
+
+
+# ==========================================================================
+# 3. EXTRACTION
 # ==========================================================================
 def _extract_instances(logic, profile, warnings_enabled: bool) -> None:
     """Run the extraction phases in order, delegating each one to the logic.
