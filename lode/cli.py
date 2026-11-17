@@ -31,9 +31,6 @@ def cmd_build(args):
     overwrites existing pages in it. Prints the output path on success.
     """
     from lode.core import build_site, format_warnings, read
-    from lode.helpers.formats import check_format_enabled
-
-    from lode.helpers.formats import check_format_enabled
 
     out_dir = Path(args.out)
     artefact = read(

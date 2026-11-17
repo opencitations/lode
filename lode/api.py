@@ -34,7 +34,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # Internal modules
 from lode import profiles
-from lode.helpers.formats import SERIALIZATION_FORMATS, check_format_enabled as _check_format_enabled
+from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.html_utils import minify as _minify
 import lode.helpers.spool as spool
 import lode.core as core
@@ -381,8 +381,6 @@ def extract_get(
 ):
     """Render an artefact. Returns HTML by default, or RDF when a serialization
     is requested via the `format` query or the `Accept` header."""
-    _check_format_enabled(read_as)
-
     artefact = _resolve_artefact(read_as, url, upload_id, imported, closure, partial_import,
                                  warnings, use_cache=cache)
 
@@ -437,7 +435,6 @@ async def extract_post(
     logger.info(f"Filename: {file.filename}")
     logger.info(f"Format: {read_as}")
 
-    _check_format_enabled(read_as)
     content = await _read_validated_upload(file)
     token = spool.save(content)
 
@@ -467,7 +464,6 @@ def build_get(
 ):
     """Static documentation site as a ZIP. Sync on purpose: FastAPI runs
     non-async endpoints in the threadpool, keeping the event loop free."""
-    _check_format_enabled(read_as)
     artefact = _resolve_artefact(read_as, url, upload_id, imported, closure, partial_import,
                                  warnings, use_cache=cache)
     return _zip_response(artefact, slugify(url), lang)
@@ -484,7 +480,6 @@ async def build_post(
     warnings: bool = Form(False, description="Collect and show reader warnings"),
 ):
     """Build the static site from an uploaded file instead of a URL."""
-    _check_format_enabled(read_as)
     content = await _read_validated_upload(file)
     token = spool.save(content)
 

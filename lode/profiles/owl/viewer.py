@@ -13,8 +13,6 @@ class OwlViewer(BaseViewer):
     boolean combinations), which only OWL has.
     """
 
-    CONFIG_NAME = "owl"
-
     # Model classes that are anonymous class expressions, shown inline as clickable parts.
     _RESTRICTION_TYPES = ["Restriction", "PropertyConceptRestriction", "Quantifier", "Cardinality", "TruthFunction",
                           "OneOf", "Value", "DatatypeRestriction"]

@@ -10,32 +10,22 @@ from pathlib import Path
 from rdflib import URIRef, Graph, Node
 from lode.models import *
 from lode import profiles
+from lode.profiles import Profile
 
 class ConfigManager:
     """Strategy driven by a single merged YAML configuration.
 
-    One instance per artefact format: `config_name` picks the YAML file and the
-    logic class (see lode.profiles). Adding a format needs no new
-    subclass. Viewers are not a concern of this layer: see lode.viewer.get_viewer.
+    One instance per artefact format: its `profile` gives the YAML file (see
+    lode.profiles), and the profile builds the logic with this manager. Adding a format
+    needs no new subclass. Viewers are not a concern of this layer: see lode.viewer.get_viewer.
     """
 
-    def __init__(self, config_name: str):
-        """Load and merge the YAML configuration; mappings are parsed lazily.
-
-        `config_name` is the name of a registered profile ('owl', 'skos'); see lode.profiles.
-        """
-        self.config_name = config_name
+    def __init__(self, profile: Profile):
+        """Load and merge the YAML configuration of `profile`; mappings are parsed lazily."""
+        self.profile = profile
         self.config = self._load_config()
         self._type_mapping_cache = None
         self._property_mapping_cache = None
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the logic class registered for this format.
-
-        Resolved from the profile only now, because the logic modules import this module
-        (a top-level import would be circular).
-        """
-        return profiles.resolve(profiles.get(self.config_name).logic)(graph, cache, self)
 
     def _load_config(self) -> dict:
         """base.yaml sits next to this module, the type-specific file in the folder of the
@@ -44,7 +34,7 @@ class ConfigManager:
         with open(Path(__file__).parent / 'config' / 'base.yaml') as f:
             base = yaml.safe_load(f)
 
-        with open(profiles.get(self.config_name).path() / 'reader.yaml') as f:
+        with open(self.profile.path() / 'reader.yaml') as f:
             specific = yaml.safe_load(f)
 
         
@@ -232,5 +222,5 @@ def get_configuration(configuration_name: str) -> ConfigManager:
 
     Raises ValueError listing the available types when the name is unknown.
     """
-    return ConfigManager(profiles.get(configuration_name).name)
+    return ConfigManager(profiles.get(configuration_name))
 

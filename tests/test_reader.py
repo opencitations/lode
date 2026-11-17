@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from lode.artefact import Artefact
+from lode.profiles.owl.artefact import OwlOntology
 from lode.profiles.owl.viewer import OwlViewer
 from lode.viewer import get_viewer
 
@@ -25,7 +26,7 @@ class TestArtefactWithLoadedOntology:
         owl_file = tmp_path / "test.owl"
         owl_file.write_text(owl_content)
 
-        return Artefact(str(owl_file), read_as='OWL')
+        return OwlOntology(str(owl_file))
 
     def test_reading_populates_entities(self, artefact):
         assert len(artefact.entities) > 0
@@ -41,6 +42,8 @@ class TestArtefactWithLoadedOntology:
         assert artefact.logic is not None and artefact.warnings == []
         assert str(artefact.artefact_base_iri).startswith("http://example.org/")
         assert callable(artefact.provenance)
+        assert isinstance(artefact, OwlOntology)
+        assert set(Artefact.__annotations__) <= set(vars(artefact))
 
 
 class TestReaderTriplesMap:
@@ -75,7 +78,7 @@ class TestReaderTriplesMap:
         owl_file = tmp_path / "test_triples.owl"
         owl_file.write_text(owl_content)
 
-        return Artefact(str(owl_file), read_as='OWL')
+        return OwlOntology(str(owl_file))
 
     def test_triples_map_exists(self, artefact):
         """Verifica che triples_map sia stata creata"""

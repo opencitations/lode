@@ -32,8 +32,6 @@ class SkosViewer(BaseViewer):
     as OWL and the card (a separate template) reads the same keys.
     """
 
-    CONFIG_NAME = "skos"
-
     def view(self, resource_uri: Optional[str] = None, language: Optional[str] = None,
              links: Optional[Links] = None) -> ViewData:
         """SKOS viewer.

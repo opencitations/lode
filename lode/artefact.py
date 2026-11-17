@@ -4,7 +4,7 @@ The Artefact is the hand-over between the reader and everything else: `lode.read
 writes its fields once, and the viewers, the static builder and the API read only from it.
 This keeps the Reader/Model/Viewer layers independent.
 """
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from rdflib import Graph, URIRef
 
@@ -31,24 +31,40 @@ class Artefact:
     copy, and consumers must treat it as read-only; `logic` is the logic of the format after
     extraction, kept for inspection and never used by the viewers; `provenance` is a callable
     that returns the subgraph an entity was built from, computed only when asked for because
-    most entities are never inspected.
+    most entities are never inspected. The annotations below are the contract with the
+    reader, which writes these fields by name.
     """
 
-    def __init__(self, source: str, *, read_as: str, imported: Optional[bool] = None,
+    profile: Optional[Profile]
+    entities: dict
+    graph: Graph
+    artefact_iri: Optional[URIRef]
+    imported_uris: set
+    warnings: list
+    provenance: Callable[[Any], Graph]
+    logic: Optional[Any]
+
+    def __init__(self, source: str, *, imported: Optional[bool] = None,
                  closure: Optional[bool] = None, partial_import: Optional[bool] = None,
                  warnings: bool = False, source_name: Optional[str] = None):
-        """Read `source` as the format `read_as` and keep what the extraction produces.
+        """Read `source` with the format of this class and keep what the extraction produces.
 
-        `source` is a local path or a public http(s) URL. An unknown format raises ValueError
-        listing the available ones; the name is matched ignoring case. The other arguments
-        are those of `lode.reader.read_into`. Blocking: it may fetch remote documents.
+        Called on a format class (OwlOntology, SkosVocabulary or a plugin's own), never on
+        Artefact itself: the class is how the format is chosen, and a caller that only has
+        the name of a format uses lode.read(source, read_as). `source` is a local path or a
+        public http(s) URL; the other arguments are those of `lode.reader.read_into`.
+        Blocking: it may fetch remote documents.
         """
+        profile = profiles.of(type(self))
+        if profile is None:
+            raise TypeError(f"{type(self).__name__} has no format: read with a format class "
+                            "such as OwlOntology, or with lode.read(source, read_as)")
         # Local import on purpose: the reader pulls in the models and the logic of every
         # format, which `import lode` and the viewers do not need. It imports nothing from
         # this module, so there is no cycle.
         from lode.reader import read_into
 
-        self._blank(profiles.get(read_as))
+        self._blank(profile)
         read_into(self, source, imported=imported, closure=closure,
                   partial_import=partial_import, warnings=warnings, source_name=source_name)
 
@@ -59,10 +75,10 @@ class Artefact:
         """Build an artefact from data already in memory, without reading anything.
 
         For tests and for callers that have the graph and the entities by other means; the
-        fields not given stay empty.
+        fields not given stay empty. Without `profile`, a format class gets its own.
         """
         artefact = cls.__new__(cls)
-        artefact._blank(profile)
+        artefact._blank(profile if profile is not None else profiles.of(cls))
         artefact.entities = entities
         artefact.graph = graph
         artefact.artefact_iri = artefact_iri

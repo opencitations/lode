@@ -2,8 +2,9 @@
 import pytest
 
 import lode
-from lode.artefact import Artefact
+from lode.exceptions import ArtefactValidationError
 from lode.models import Concept
+from lode.profiles.skos.artefact import SkosVocabulary
 
 SKOS = """
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -24,7 +25,7 @@ def vocabulary(tmp_path):
 
 def test_read_returns_an_artefact(vocabulary):
     artefact = lode.read(str(vocabulary), "skos")
-    assert isinstance(artefact, Artefact)
+    assert isinstance(artefact, SkosVocabulary)
     assert artefact.read_as == "skos"
 
 
@@ -42,5 +43,5 @@ def test_build_site_writes_the_site(vocabulary, tmp_path):
 
 
 def test_unknown_format_is_rejected(vocabulary):
-    with pytest.raises(ValueError):
+    with pytest.raises(ArtefactValidationError):
         lode.read(str(vocabulary), "nonsense")

@@ -14,6 +14,8 @@ from importlib.metadata import entry_points
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from lode.exceptions import ArtefactValidationError
+
 logger = logging.getLogger(__name__)
 
 # ==========================================================================
@@ -25,15 +27,19 @@ class Profile:
     """Everything LODE needs to read and show one artefact format.
 
     `package` is the profile's own package: reader.yaml, viewer.yaml and templates/ live
-    there. `logic` and `viewer` are "module:Name" paths, `post_checks` an optional path to
-    a function that takes the logic after extraction. `enabled` gates the format in the
-    API and the CLI.
+    there. `logic`, `viewer` and `artefact` are "module:Name" paths to the logic class, the
+    viewer class and the Artefact subclass of the format; `post_checks` is an optional path
+    to a function that takes the logic after extraction. A module that starts with a dot is
+    relative to `package` (".logic:OwlLogic"), so a profile never repeats its own package
+    name. `enabled` gates the format where it is named by a string (lode.read, hence the
+    API and the CLI).
     """
 
     name: str
     package: str
     logic: str
     viewer: str
+    artefact: str
     post_checks: Optional[str] = None
     enabled: bool = True
 
@@ -44,6 +50,27 @@ class Profile:
         the package is installed from the wheel.
         """
         return Path(import_module(self.package).__file__).parent
+
+    def artefact_class(self) -> type:
+        """Return the Artefact subclass of this format, imported on use."""
+        return resolve(self.artefact, self.package)
+
+    def make_logic(self, graph: Any, cache: dict, configuration: Any) -> Any:
+        """Build the logic of this format on `graph`, filling `cache`.
+
+        The class is imported now and not at registration, so this module stays free of
+        reader imports; the reader asks the profile and never resolves the path itself.
+        """
+        return resolve(self.logic, self.package)(graph, cache, configuration)
+
+    def make_viewer(self, artefact: Any) -> Any:
+        """Build the viewer of this format for `artefact` (imported on use, like the logic)."""
+        return resolve(self.viewer, self.package)(artefact)
+
+    def run_post_checks(self, logic: Any) -> None:
+        """Run the post-extraction checks of this format on `logic`; no-op without any."""
+        if self.post_checks:
+            resolve(self.post_checks, self.package)(logic)
 
 
 # ==========================================================================
@@ -107,7 +134,6 @@ def find(name: Optional[str]) -> Optional[Profile]:
     return _PROFILES.get((name or "").lower())
 
 
-
 def get(name: str) -> Profile:
     """Return the profile called `name`; raise ValueError listing the available ones."""
     profile = find(name)
@@ -116,17 +142,53 @@ def get(name: str) -> Profile:
     return profile
 
 
+def get_enabled(name: Optional[str]) -> Profile:
+    """Return the enabled profile called `name`, ignoring case.
+
+    The gate of every caller that names a format with a string (lode.read, hence the API
+    and the CLI). An unknown name and a disabled one get the same error, with the list of
+    valid formats. Asked every time, not cached, because plugins register on first use.
+    """
+    profile = find(name)
+    if profile is None or not profile.enabled:
+        raise ArtefactValidationError(
+            f"Format '{name}' is not available",
+            context={"requested": name, "supported": names(enabled_only=True)},
+        )
+    return profile
+
+
+def of(cls: type) -> Optional[Profile]:
+    """Return the profile whose Artefact subclass is `cls` or one of its bases, or None.
+
+    Walks the MRO, so a user's subclass of OwlOntology is still read as OWL. Built-ins are
+    registered first, so they win when a plugin points to the same class. A plugin whose
+    class cannot be imported is logged and skipped: it must not stop the others from reading.
+    """
+    _ensure_loaded()
+    for klass in cls.__mro__:
+        for profile in _PROFILES.values():
+            try:
+                if profile.artefact_class() is klass:
+                    return profile
+            except (ImportError, AttributeError):
+                logger.warning("Profile '%s': artefact class '%s' cannot be imported",
+                               profile.name, profile.artefact, exc_info=True)
+    return None
+
+
 def names(enabled_only: bool = False) -> List[str]:
     """Return the sorted profile names, optionally only the enabled ones."""
     _ensure_loaded()
     return sorted(p.name for p in _PROFILES.values() if p.enabled or not enabled_only)
 
 
-def resolve(path: str) -> Any:
+def resolve(path: str, package: Optional[str] = None) -> Any:
     """Import and return the object a "module:Name" path points to.
 
-    Done at call time, not at registration, to keep this module free of reader and
-    viewer imports (and of circular imports).
+    A module that starts with a dot is relative to `package`; without a package a relative
+    path raises TypeError, so a typo fails loudly. Done at call time, not at registration,
+    to keep this module free of reader and viewer imports (and of circular imports).
     """
     module, _, attr = path.partition(":")
-    return getattr(import_module(module), attr)
+    return getattr(import_module(module, package), attr)

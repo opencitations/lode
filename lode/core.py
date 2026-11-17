@@ -7,6 +7,8 @@ not in `lode/__init__.py` so that the package root only lists the public names.
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
+from lode import profiles
+
 if TYPE_CHECKING:
     from lode.artefact import Artefact
     from lode.viewer.view_data import ViewData
@@ -18,22 +20,26 @@ if TYPE_CHECKING:
 def read(source: str, read_as: str, *, imported: Optional[bool] = None,
          closure: Optional[bool] = None, partial_import: Optional[bool] = None,
          warnings: bool = False, source_name: Optional[str] = None) -> "Artefact":
-    """Read a semantic artefact and return it as an Artefact.
+    """Read a semantic artefact whose format is given by name, and return it.
 
-    `source` is a local path or a public http(s) URL; `read_as` is "owl", "skos"
-    or "rdf". `imported`, `closure` and `partial_import` load the `owl:imports` of
+    For callers that hold the format as a string, such as the CLI and the web service:
+    this is the only place where `read_as` becomes a class. It names an enabled profile,
+    matched ignoring case, and the result is that profile's Artefact subclass
+    (OwlOntology, SkosVocabulary...); an unknown or disabled format raises
+    ArtefactValidationError listing the valid ones. `source` is a local path or a public
+    http(s) URL. `imported`, `closure` and `partial_import` load the `owl:imports` of
     the artefact (depth 1, full closure, only the entities in use). `warnings`
     collects the reader warnings in `artefact.warnings`; the current checks are
     OWL-specific. `source_name` names the artefact when `source` is only a local
     copy of it (for example a cached download). Blocking: it may fetch remote
     documents.
     """
-    # Local import on purpose: `import lode` must stay cheap for the CLI and for
-    # `lode --help`, which should not pay for rdflib and the reader.
-    from lode.artefact import Artefact
-
-    return Artefact(source, read_as=read_as, imported=imported, closure=closure,
-                    partial_import=partial_import, warnings=warnings, source_name=source_name)
+    # The profile registry is cheap to import; the class it returns brings in rdflib
+    # and the reader only now, so `import lode` and `lode --help` stay fast.
+    profile = profiles.get_enabled(read_as)
+    return profile.artefact_class()(source, imported=imported, closure=closure,
+                                    partial_import=partial_import, warnings=warnings,
+                                    source_name=source_name)
 
 
 # ==========================================================================

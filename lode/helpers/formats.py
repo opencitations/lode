@@ -1,26 +1,9 @@
 # lode/helpers/formats.py
-"""Semantic artefact formats and the export formats shared by every layer.
+"""The export formats shared by every layer.
 
-The artefact formats are derived from the profile registry in lode.profiles, 
-where a format is declared. Imported by both api.py and cli.py so 
-the gate is enforced identically in both entry points.
+The artefact formats live in the profile registry (lode.profiles), which also gates them:
+see lode.profiles.get_enabled.
 """
-from lode import profiles
-from lode.exceptions import ArtefactValidationError
-
-def check_format_enabled(read_as: str) -> None:
-    """Raise ArtefactValidationError unless `read_as` names an enabled profile.
-
-    The single gate of the CLI and the API. Asked every time, not cached, because plugins
-    register on first use. An unknown name and a disabled one get the same error, with the
-    list of valid formats.
-    """
-    enabled = profiles.names(enabled_only=True)
-    if read_as not in enabled:
-        raise ArtefactValidationError(
-            f"Format '{read_as}' is not available",
-            context={"requested": read_as, "supported": enabled},
-        )
 
 # Export formats: triples of the loaded artefact only. Shared by the viewers,
 # the static builder and the API, so they live here and not in a viewer.

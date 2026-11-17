@@ -49,6 +49,7 @@ from lode.provenance_graph import ProvenanceGraph
 from lode.viewer import get_viewer
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS
 from lode.artefact import Artefact
+from lode.profiles.owl.artefact import OwlOntology
 
 # ==========================================================================
 # FIXTURES
@@ -283,7 +284,7 @@ class TestPartialImport:
 
     def test_documented_values_come_first(self, main_path):
         """The Reader puts main's label of home#T before home's."""
-        artefact = Artefact(main_path, read_as="owl", partial_import=True)
+        artefact = OwlOntology(main_path, partial_import=True)
         for inst in artefact.entities[H.T]:
             labels = [l.get_has_value() for l in inst.get_has_label()]
             if labels:
@@ -418,7 +419,7 @@ class TestEntityProvenance:
         assert graphs(out) == {MAIN}
 
     def test_card_provenance_names_the_graph_without_modules(self, main_path):
-        artefact = Artefact(main_path, read_as="owl")
+        artefact = OwlOntology(main_path)
         viewer = get_viewer(artefact)
         codes =[f["code"] for inst in artefact.entities[H.T]
                  for f in viewer._build_provenance_subgraph(inst) if f["label"] == "TriG"]
@@ -469,7 +470,7 @@ class TestEntityProvenance:
     <http://ex.org/own> a owl:Ontology ; rdfs:label "Own title" ; owl:imports <{foreign_doc}> .
     <http://ex.org/own#O> a owl:Class .
     """)
-        artefact = Artefact(path, read_as="owl", **{flag: True})
+        artefact = OwlOntology(path, **{flag: True})
         label = get_viewer(artefact).view()["model"]["label"] or ""
         assert "Own title" in label
         assert "Foreign title" not in label
@@ -574,7 +575,7 @@ class TestExportIsLoadedArtefactOnly:
 
     def test_documented_values_come_first(self, main_path):
         """The Reader puts main's label of home#T before home's."""
-        artefact = Artefact(main_path, read_as="owl", partial_import=True)
+        artefact = OwlOntology(main_path, partial_import=True)
         for inst in artefact.entities[H.T]:
             labels = [l.get_has_value() for l in inst.get_has_label()]
             if labels:

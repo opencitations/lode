@@ -37,9 +37,9 @@ def skos_logic(request):
 
     warnings=False on purpose: the reader warnings are OWL-only.
     """
-    from lode.artefact import Artefact
+    from lode.profiles.skos.artefact import SkosVocabulary
     try:
-        artefact = Artefact(request.param, read_as="skos", warnings=False)
+        artefact = SkosVocabulary(request.param, warnings=False)
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
     logic = artefact.logic

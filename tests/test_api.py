@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from lode.api import app
-from lode.artefact import Artefact
+from lode.profiles.owl.artefact import OwlOntology
 
 # raise_server_exceptions=False -> custom exception handlers render error.html
 client = TestClient(app, raise_server_exceptions=False)
@@ -29,7 +29,7 @@ FABIO_NS = "http://purl.org/spar/fabio/"
 @pytest.fixture(scope="session")
 def fabio_artefact():
     """Load fabio once (network). Swap FABIO_URL for a local file to go offline."""
-    return Artefact(FABIO_URL, read_as="owl")
+    return OwlOntology(FABIO_URL)
 
 
 @pytest.fixture(scope="session")

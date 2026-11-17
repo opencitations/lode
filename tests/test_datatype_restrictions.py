@@ -8,7 +8,7 @@ from rdflib.namespace import XSD
 
 from lode.builder import build_html
 from lode.models import Datatype, DatatypeRestriction
-from lode.artefact import Artefact
+from lode.profiles.owl.artefact import OwlOntology
 from lode.viewer import get_viewer
 
 
@@ -45,7 +45,7 @@ def range_artefact(tmp_path):
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         <http://example.org/ranges> a owl:Ontology .
     """ + declarations, encoding="utf-8")
-    return Artefact(str(path), read_as="owl")
+    return OwlOntology(str(path))
 
 
 @pytest.mark.parametrize("name,datatype,expected",

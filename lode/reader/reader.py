@@ -10,9 +10,8 @@ from typing import Optional
 
 from rdflib import URIRef
 
-from lode import profiles
 from lode.provenance_graph import ProvenanceGraph
-from lode.reader.config_manager import get_configuration
+from lode.reader.config_manager import ConfigManager
 from lode.reader.loader import Loader
 
 logger = logging.getLogger(__name__)
@@ -39,8 +38,8 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     artefact.imported_uris = loader.imported_uris
     artefact.entities = {}
 
-    configuration = get_configuration(artefact.profile.name)
-    logic = configuration.create_logic(artefact.graph, artefact.entities)
+    configuration = ConfigManager(artefact.profile)
+    logic = artefact.profile.make_logic(artefact.graph, artefact.entities, configuration)
     _extract_instances(logic, artefact.profile, warnings)
 
     artefact.logic = logic
@@ -69,8 +68,7 @@ def _extract_instances(logic, profile, warnings_enabled: bool) -> None:
     logic.populate_namespaces()
 
     if warnings_enabled:
-        if profile.post_checks:
-            profiles.resolve(profile.post_checks)(logic)
+        profile.run_post_checks(logic)
 
         if logic._warnings:
             logger.warning("%d reader warnings", len(logic._warnings))

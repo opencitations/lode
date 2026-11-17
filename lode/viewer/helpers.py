@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 import yaml
 
-from lode import profiles
+from lode.profiles import Profile
 
 _CONFIG_DIR = Path(__file__).parent / "config"
 
@@ -106,15 +106,15 @@ def clean_name(name: str, vocabulary: Optional[Dict[str, str]] = None) -> str:
 _REQUIRED_CONFIG_KEYS = ("type_map", "toc")
 
 
-def load_viewer_config(name: str) -> dict:
-    """Read viewer.yaml from the folder of the profile `name` and fill in the optional keys.
+def load_viewer_config(profile: Profile) -> dict:
+    """Read viewer.yaml from the folder of `profile` and fill in the optional keys.
 
 
     The file holds the data that differs between formats (display names, table
     of contents, display vocabulary), so the viewer classes carry no per-format data. 
     A missing file or required key raises: a silent default would change the page without any trace.
     """
-    path = profiles.get(name).path() / "viewer.yaml"
+    path = profile.path() / "viewer.yaml"
     with open(path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
     missing = [k for k in _REQUIRED_CONFIG_KEYS if k not in config]

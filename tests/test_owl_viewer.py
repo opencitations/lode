@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 from rdflib import Graph, URIRef, RDF, OWL, Literal
 
-from lode.artefact import Artefact
+from lode.profiles.owl.artefact import OwlOntology
 
 from lode.models import (
     Concept, Relation, Attribute, Annotation, Individual,
@@ -73,7 +73,7 @@ def _viewer(*instances, undefined=()):
     onto = next((i for i in instances if isinstance(i, Model)), None)
     iri = URIRef(onto.get_has_identifier()) if onto else None
     
-    return OwlViewer(Artefact.from_parts(entities=cache, graph=g, artefact_iri=iri))
+    return OwlViewer(OwlOntology.from_parts(entities=cache, graph=g, artefact_iri=iri))
 
 # rdflib BNode ids look like 'N' + 32 hex chars, or 'n<digits/hex>' for parsed
 # blank nodes. Anything matching means a raw blank node leaked into the view.
@@ -365,7 +365,7 @@ def _render_index(tmp_path, ttl):
 
     src = tmp_path / "onto.ttl"
     src.write_text(ttl, encoding="utf-8")
-    artefact = Artefact(str(src), read_as="owl")
+    artefact = OwlOntology(str(src))
     out = tmp_path / "site"
     build_html(get_viewer(artefact), out)
     return (out / "index.html").read_text(encoding="utf-8")
@@ -415,7 +415,7 @@ def _load_uris():
 @pytest.fixture(scope="module", params=_load_uris())
 def viewer(request):
     try:
-        artefact = Artefact(request.param, read_as="owl")
+        artefact = OwlOntology(request.param)
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
     yield get_viewer(artefact)

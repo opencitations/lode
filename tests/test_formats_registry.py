@@ -4,25 +4,27 @@ A format is declared once, in the profile registry (lode.profiles); these tests 
 with a clear message when the enabled set, the YAML files or the paths a profile points
 to drift from it, and they cover how plugin profiles are discovered.
 """
+import dataclasses
 from types import SimpleNamespace
 
 import pytest
 from rdflib import Graph
 
+import lode
 from lode import profiles
+from lode.artefact import Artefact
 from lode.exceptions import ArtefactValidationError
-from lode.helpers.formats import check_format_enabled
 from lode.reader.config_manager import get_configuration
 from lode.viewer.base_viewer import BaseViewer
 
 FORMATS = sorted(profiles.names())
 
 
-def test_check_format_enabled_accepts_only_enabled_profiles():
-    """An enabled profile passes; an unknown one fails with the list of valid formats."""
-    check_format_enabled("owl")
+def test_get_enabled_accepts_only_enabled_profiles_in_any_case():
+    """An enabled profile passes in any case; an unknown one fails with the list of valid formats."""
+    assert profiles.get_enabled("OWL") is profiles.get("owl")
     with pytest.raises(ArtefactValidationError) as err:
-        check_format_enabled("shacl")
+        profiles.get_enabled("shacl")
     assert err.value.context["supported"] == profiles.names(enabled_only=True)
 
 
@@ -30,10 +32,11 @@ def test_check_format_enabled_accepts_only_enabled_profiles():
 def test_profile_paths_resolve(fmt):
     """Logic, viewer and post-checks of every profile point to real objects."""
     p = profiles.get(fmt)
-    assert profiles.resolve(p.logic)
-    assert issubclass(profiles.resolve(p.viewer), BaseViewer)
+    assert profiles.resolve(p.logic, p.package)
+    assert issubclass(profiles.resolve(p.viewer, p.package), BaseViewer)
+    assert issubclass(p.artefact_class(), Artefact)
     if p.post_checks:
-        assert callable(profiles.resolve(p.post_checks))
+        assert callable(profiles.resolve(p.post_checks, p.package))
 
 
 def test_unknown_profile_lists_the_available_ones():
@@ -52,7 +55,7 @@ def test_format_config_files_exist(fmt):
 @pytest.mark.parametrize("fmt", FORMATS)
 def test_format_builds_its_logic(fmt):
     """The registry entry resolves to a logic class that can be instantiated."""
-    assert get_configuration(fmt).create_logic(Graph(), {}) is not None
+    assert profiles.get(fmt).make_logic(Graph(), {}, get_configuration(fmt)) is not None
 
 
 @pytest.fixture
@@ -71,7 +74,8 @@ def plugins(monkeypatch):
 def _fake_profile(name):
     """A profile that reuses the SKOS classes under another name."""
     return profiles.Profile(name, "lode.profiles.skos", "lode.profiles.skos.logic:SkosLogic",
-                            "lode.profiles.skos.viewer:SkosViewer")
+                            "lode.profiles.skos.viewer:SkosViewer",
+                            "lode.profiles.skos.artefact:SkosVocabulary")
 
 
 def test_a_plugin_profile_is_registered(plugins):
@@ -104,3 +108,23 @@ def test_a_mapper_can_name_a_class_by_path():
     assert manager._parse_class("lode.models:Concept") is Concept
     with pytest.raises(KeyError):
         manager._parse_class("lode.models:Nope")
+
+
+def test_a_disabled_profile_is_refused_by_read(monkeypatch, tmp_path):
+    """lode.read is the gate of the adapters: a disabled format never reaches the reader."""
+    owl = profiles.get("owl")
+    monkeypatch.setitem(profiles._PROFILES, "owl", dataclasses.replace(owl, enabled=False))
+    with pytest.raises(ArtefactValidationError):
+        lode.read(str(tmp_path / "never-read.ttl"), "owl")
+
+
+def test_of_finds_the_profile_of_a_class_and_of_its_subclasses():
+    """A format class has its profile; a user's subclass inherits it; Artefact has none."""
+    from lode.profiles.owl.artefact import OwlOntology
+
+    class MyOntology(OwlOntology):
+        """A user's own subclass."""
+
+    assert profiles.of(OwlOntology) is profiles.get("owl")
+    assert profiles.of(MyOntology) is profiles.get("owl")
+    assert profiles.of(Artefact) is None

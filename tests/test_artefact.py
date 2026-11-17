@@ -53,3 +53,8 @@ def test_from_parts_leaves_the_rest_empty():
     assert artefact.warnings == [] and artefact.imported_uris == set()
     assert artefact.artefact_base_iri is None
     assert len(artefact.provenance(object())) == 0
+
+def test_artefact_itself_cannot_read():
+    """The class chooses the format: Artefact has none, so it refuses before reading."""
+    with pytest.raises(TypeError):
+        Artefact("never-read.ttl")

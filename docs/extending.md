@@ -29,7 +29,8 @@ name (`skos`, for example).
 | `reader.yaml` | The mapper: which RDF constructs become which model classes. |
 | `logic.py` | Implements what the mapper cannot express. |
 | `viewer.yaml` | What the viewer shows: display names, table of contents, vocabulary. |
-| `viewer.py` | The viewer class. It can be as small as one line that names the YAML. |
+| `viewer.py` | The viewer class. It can be an empty subclass of `BaseViewer` when the YAML says everything. |
+| `artefact.py` | The `Artefact` subclass users read the format with (`OwlOntology`, `SkosVocabulary`). It carries no code. |
 | `templates/` | Optional. Templates that replace the base ones, matched by file name. |
 
 The name of the folder is the name of the format. It is also the value of `read_as`.
@@ -156,8 +157,9 @@ from lode.profiles import Profile, register
 register(Profile(
     name="skos",
     package=__name__,
-    logic="lode.profiles.skos.logic:SkosLogic",
-    viewer="lode.profiles.skos.viewer:SkosViewer",
+    logic=".logic:SkosLogic",
+    viewer=".viewer:SkosViewer",
+    artefact=".artefact:SkosVocabulary",
 ))
 ```
 
@@ -165,8 +167,9 @@ register(Profile(
 |-------|---------|
 | `name` | The name of the format, and the value of `read_as`. |
 | `package` | The package that holds `reader.yaml`, `viewer.yaml` and `templates/`. Use `__name__`. |
-| `logic` | The logic class, as `module:Name`. |
-| `viewer` | The viewer class, as `module:Name`. |
+| `logic` | The logic class, as `module:Name`. A module that starts with a dot is relative to `package`. |
+| `viewer` | The viewer class, as `module:Name`, with the same rule. |
+| `artefact` | The `Artefact` subclass of the format, as `module:Name`, with the same rule. |
 | `post_checks` | Optional `module:function`, called with the logic after extraction. OWL uses it for its warnings. |
 | `enabled` | `True` by default. |
 
@@ -289,15 +292,27 @@ a silent default would change the page without a trace.
 
 ### The viewer class
 
-Subclass `BaseViewer` and name the profile in `CONFIG_NAME`. That is the whole class
-when the YAML says everything:
+Subclass `BaseViewer`. The profile comes from the artefact being shown, so the class
+does not name it, and it is the whole class when the YAML says everything:
 
 ```python
 class MyViewer(BaseViewer):
     """Viewer of the <format> profile: everything it shows comes from viewer.yaml."""
-
-    CONFIG_NAME = "<format>"
 ```
+
+### The artefact class
+
+Subclass `Artefact`. The profile names the class, and the registry finds the profile
+from the class, so the class carries nothing else:
+
+```python
+class MyFormat(Artefact):
+    """A <format> artefact: read one with MyFormat(source)."""
+```
+
+Users choose the format by choosing the class: `MyFormat("file.ttl")`. A caller that only
+has the name of the format, such as the CLI or the web service, uses
+`lode.read(source, "<format>")`, which returns an instance of this class.
 
 Override `view()` only to add data. `SkosViewer` calls the base method and adds the
 taxonomy of the concepts to every section of the navigation. The data the viewer returns
@@ -331,6 +346,7 @@ PROFILE = Profile(
     package=__name__,
     logic="lode_shacl.logic:ShaclLogic",
     viewer="lode_shacl.viewer:ShaclViewer",
+    artefact="lode_shacl.artefact:ShaclRules",
 )
 ```
 

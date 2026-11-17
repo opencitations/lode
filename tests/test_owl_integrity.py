@@ -41,9 +41,9 @@ def skip_if_warning(logic, code, subject=None):
 @pytest.fixture(scope="module", params=_load_uris())
 def owl_logic(request):
     uri = request.param
-    from lode.artefact import Artefact
+    from lode.profiles.owl.artefact import OwlOntology
     try:
-        artefact = Artefact(uri, read_as="owl", warnings=True)
+        artefact = OwlOntology(uri, warnings=True)
     except Exception as e:
         pytest.skip(f"Could not load {uri}: {e}")
     logic = artefact.logic

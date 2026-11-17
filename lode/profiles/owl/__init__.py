@@ -4,7 +4,8 @@ from lode.profiles import Profile, register
 register(Profile(
     name="owl",
     package=__name__,
-    logic="lode.profiles.owl.logic:OwlLogic",
-    viewer="lode.profiles.owl.viewer:OwlViewer",
-    post_checks="lode.profiles.owl.checks:run_post_checks",
+    logic=".logic:OwlLogic",
+    viewer=".viewer:OwlViewer",
+    artefact=".artefact:OwlOntology",
+    post_checks=".checks:run_post_checks",
 ))

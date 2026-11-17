@@ -10,7 +10,6 @@ from pathlib import Path
 from rdflib import Graph, URIRef, Literal as RDFlibLiteral
 
 from lode.models import Literal, Model, Resource, Statement
-from lode import profiles
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
 from lode.helpers.rdf import iri_local_name
 from lode.viewer.contract import resolve_links, to_model
@@ -33,23 +32,23 @@ class BaseViewer:
 
     It orchestrates the view: everything that differs between formats (display
     names, table of contents, card template, vocabulary) is read from
-    the YAML file named by CONFIG_NAME. Subclasses set that name and override
-    only the steps that really need code.
+    the viewer.yaml of the artefact's profile. Subclasses override only the
+    steps that really need code.
     """
 
     # ==========================================================================
     # SETUP
     # ==========================================================================
 
-    # Name of the profile whose viewer.yaml is loaded; None gives the generic flat list view.
-    CONFIG_NAME: Optional[str] = None
-
     def __init__(self, artefact):
-        """Bind the viewer to a Reader, share its instance cache and load its config."""
+        """Bind the viewer to an artefact and load the viewer config of its profile.
+
+        An artefact without a profile gets the generic flat list view.
+        """
         self.artefact = artefact
         self._internal_iris = None
         self._config = (
-            load_viewer_config(self.CONFIG_NAME) if self.CONFIG_NAME
+            load_viewer_config(artefact.profile) if artefact.profile
             else {"type_map": {}, "toc": [],
                   "vocabulary": {}, "characteristics": []}
         )
@@ -61,12 +60,13 @@ class BaseViewer:
     def template_dirs(self) -> List[Path]:
         """Return the folders the page templates are searched in; the first match wins.
 
-        A format keeps the templates that differ from the base ones in templates/<CONFIG_NAME>/:
+        A format keeps the templates that differ from the base ones in the templates/ folder of its profile:
         a file with the same name there replaces the base file, and every file it does not
         provide comes from the base. The adapters build their Jinja loader from this list, so
         the viewer itself knows nothing about Jinja.
         """
-        own = profiles.get(self.CONFIG_NAME).path() / "templates" if self.CONFIG_NAME else None
+        profile = self.artefact.profile
+        own = profile.path() / "templates" if profile else None
         return [own, _TEMPLATES_DIR] if own and own.is_dir() else [_TEMPLATES_DIR]
 
 
