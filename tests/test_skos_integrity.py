@@ -37,13 +37,12 @@ def skos_logic(request):
 
     warnings=False on purpose: the reader warnings are OWL-only.
     """
-    from lode.reader import Reader
-    reader = Reader()
+    from lode.artefact import Artefact
     try:
-        reader.load_instances(request.param, "skos", warnings=False)
+        artefact = Artefact(request.param, read_as="skos", warnings=False)
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
-    logic = reader._logic
+    logic = artefact.logic
     yield logic
     logic._instance_cache.clear()
     logic._triples_map.clear()

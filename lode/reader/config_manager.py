@@ -232,5 +232,5 @@ def get_configuration(configuration_name: str) -> ConfigManager:
 
     Raises ValueError listing the available types when the name is unknown.
     """
-    return ConfigManager(profiles.get(configuration_name.lower()).name)
+    return ConfigManager(profiles.get(configuration_name).name)
 

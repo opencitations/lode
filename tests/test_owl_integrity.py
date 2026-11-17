@@ -41,13 +41,12 @@ def skip_if_warning(logic, code, subject=None):
 @pytest.fixture(scope="module", params=_load_uris())
 def owl_logic(request):
     uri = request.param
-    from lode.reader import Reader
-    reader = Reader()
+    from lode.artefact import Artefact
     try:
-        reader.load_instances(uri, "owl", warnings=True)
+        artefact = Artefact(uri, read_as="owl", warnings=True)
     except Exception as e:
         pytest.skip(f"Could not load {uri}: {e}")
-    logic = reader._logic
+    logic = artefact.logic
     yield logic
     logic._instance_cache.clear()
     logic._triples_map.clear()

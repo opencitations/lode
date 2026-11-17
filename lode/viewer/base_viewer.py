@@ -681,7 +681,7 @@ class BaseViewer:
 
         Returns an empty list when the instance has no provenance.
         """
-        sub = self.artefact.provenance.for_instance(instance)
+        sub = self.artefact.provenance(instance)
         if not any(True for _ in sub):
             return []
         sub = self.artefact.with_provenance(sub)
@@ -706,7 +706,7 @@ class BaseViewer:
         if instances:
             inst_iter = instances if isinstance(instances, set) else [instances]
             for inst in inst_iter:
-                for t in self.artefact.provenance.for_instance(inst):
+                for t in self.artefact.provenance(inst):
                     if t in main:
                         g.add(t)
         return g

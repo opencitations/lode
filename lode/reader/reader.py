@@ -1,21 +1,84 @@
-"""Generic orchestrator that turns a loaded RDF graph into model instances.
+"""Reader: runs the extraction pipeline and writes what it extracts on an Artefact.
 
-The Reader sits between the Loader (parsing) and the Viewer (rendering): it
-picks the configuration for the artefact type and runs the logic phases, so
-CLI, API and viewers never depend on parsing details.
+The Reader sits between the Loader (parsing) and the viewers: it takes the configuration and
+the logic of the artefact's format, runs the logic phases and hands the result over by filling
+the Artefact it is given, so CLI, API and viewers never depend on parsing details. It keeps no
+state and imports nothing from lode.artefact: it only sets the attributes the Artefact declares.
 """
-from lode.reader.loader import Loader
-from lode.reader.config_manager import get_configuration
-from lode.models import *
-from typing import Optional
-from rdflib import Graph, URIRef
-from lode import profiles
-from lode.helpers.rdf import iri_namespace
-from lode.artefact import Artefact, Provenance
-from lode.provenance_graph import ProvenanceGraph
-
 import logging
+from typing import Optional
+
+from rdflib import URIRef
+
+from lode import profiles
+from lode.provenance_graph import ProvenanceGraph
+from lode.reader.config_manager import get_configuration
+from lode.reader.loader import Loader
+
 logger = logging.getLogger(__name__)
+
+
+# ==========================================================================
+# 1. ENTRY POINT
+# ==========================================================================
+def read_into(artefact, source: str, *, imported=None, closure=None, partial_import=None,
+              warnings: bool = False, source_name: Optional[str] = None) -> None:
+    """Load `source` and fill `artefact` with what the extraction pipeline produces.
+
+    The format comes from `artefact.profile`. Sets graph, artefact_iri, imported_uris,
+    entities, logic, warnings and provenance on `artefact` and returns nothing: the
+    Artefact is the only place where the result lives. `imported`, `closure` and
+    `partial_import` are forwarded to the Loader; `warnings` turns on the reader warnings;
+    `source_name` names the artefact when `source` is only a local copy of it. Blocking:
+    it may fetch remote documents.
+    """
+    loader = Loader(source, imported=imported, closure=closure,
+                    partial_import=partial_import, source_name=source_name)
+    artefact.graph = loader.get_graph()
+    artefact.artefact_iri = loader.artefact_iri
+    artefact.imported_uris = loader.imported_uris
+    artefact.entities = {}
+
+    configuration = get_configuration(artefact.profile.name)
+    logic = configuration.create_logic(artefact.graph, artefact.entities)
+    _extract_instances(logic, artefact.profile, warnings)
+
+    artefact.logic = logic
+    artefact.warnings = logic._warnings if warnings else []
+    artefact.provenance = logic.build_provenance_subgraph
+    # Documented semantic artefact first (only when a module is active)
+    if isinstance(artefact.graph, ProvenanceGraph):
+        _prioritize_documented_values(artefact)
+
+
+# ==========================================================================
+# 2. EXTRACTION
+# ==========================================================================
+def _extract_instances(logic, profile, warnings_enabled: bool) -> None:
+    """Run the extraction phases in order, delegating each one to the logic.
+
+    Phases 1-5 depend on the artefact type; statements and namespaces are shared.
+    The post-extraction checks of the profile run only when warnings are enabled.
+    """
+    logic.phase1_classify_from_predicates()
+    logic.phase2_create_from_types()
+    logic.phase3_populate_properties()
+    logic.phase4_process_group_axioms()
+    logic.phase5_fallback()
+    logic.phase6_create_statements()
+    logic.populate_namespaces()
+
+    if warnings_enabled:
+        if profile.post_checks:
+            profiles.resolve(profile.post_checks)(logic)
+
+        if logic._warnings:
+            logger.warning("%d reader warnings", len(logic._warnings))
+            # details only at DEBUG: the viewer words them with display names
+            # for popups, report and CLI, so raw model names would be confusing
+            for w in logic._warnings:
+                logger.debug("[%s] %s", w['code'], w['message'])
+
 
 def _value_key(value) -> str:
     """Comparable form of a model value: lexical form for literals, IRI otherwise."""
@@ -27,213 +90,22 @@ def _value_key(value) -> str:
         return str(get_id())
     return str(value)
 
-class Reader:
+
+def _prioritize_documented_values(artefact) -> None:
+    """Reorder every multi-valued field so that values asserted by the documented
+    semantic artefact (main named graph) come before those from imported or home graphs.
+
+    Needed because the graph does not preserve insertion order across named graphs.
+    The sort is stable: within each group the original order is kept.
     """
-    Generic RDF Reader/Orchestrator.
-    
-    Responsibilities:
-    - Calls the loader to parse input RDF (via rdflib)
-    - Orchestrates Python model population phases
-    - Delegates specific logics for extraction and population to other modules
-    """
-    
-    def __init__(self):
-        """Create an empty Reader; call load_instances() to populate it."""
-        self._instance_cache = {}
-        self._logic = None  # specialised logic (OWL, SKOS, RDF/RDFS)
-        self._graph = None
-        self._configuration = None
-        self._imported_uris = set()   # needed to get the model before imported/closure models
-        self._artefact_base_iri = None
-        self._artefact_iri = None
-
-
-    def get_warnings(self) -> list:
-        """Return the warnings collected while reading, or [] when they were not requested."""
-        if not getattr(self, '_warnings_enabled', False):
-            return []
-        if self._logic and hasattr(self._logic, '_warnings'):
-            return self._logic._warnings
-        return []
-
-    def _prioritize_documented_values(self) -> None:
-        """Reorder every multi-valued field so that values asserted by the documented
-        semantic artefact (main named graph) come before those from imported or home graphs.
-
-        Needed because the graph does not preserve insertion order across named graphs.
-        The sort is stable: within each group the original order is kept."""
-        main = self._graph.graph(self._artefact_iri)
-        for uri, instances in self._instance_cache.items():
-            if not isinstance(uri, URIRef):
-                continue
-            local = {str(o) for o in main.objects(uri, None)}
-            
-            if not local:
-                continue
-            for instance in instances:
-                for value in vars(instance).values():
-                    if isinstance(value, list) and len(value) > 1:
-                        value.sort(key=lambda v: _value_key(v) not in local)
-
-
-    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, partial_import=None,
-                       warnings=False, source_name: Optional[str] = None):
-        """Load an artefact and extract its model instances.
-
-        `read_as` selects the configuration (owl, rdf, skos). Imports, closure and
-        partial_import are forwarded to the Loader; `warnings` turns on the reader
-        warnings. `source_name` names the artefact when `graph_path` is only a local
-        copy of it. Blocking: it may fetch remote documents.
-        """
-        self._warnings_enabled = warnings
-
-        # 1. Generic parsing
-        loader = Loader(graph_path, imported=imported, closure=closure, partial_import=partial_import,
-                        source_name=source_name)
-        self._graph = loader.get_graph()
-        self._artefact_iri = loader.artefact_iri
-        
-        # 1.5 saves the imported/closure uris to be reused in viewer so the model metadata are not overwritten 
-        self._imported_uris = getattr(loader, "imported_uris", set())
-
-        # 2. Select the configuration for the artefact type
-        self._configuration = get_configuration(read_as)
-        
-        # 3. Create the specialised logic
-        self._logic = self._configuration.create_logic(self._graph, self._instance_cache)
-
-        # 4. Run the extraction phases
-        self._extract_instances()
-
-        # 5. Documented semantic artefact first (only when a module is active)
-        if isinstance(self._graph, ProvenanceGraph):
-            self._prioritize_documented_values()
-    
-    def get_triples_for_instance(self, instance):
-        """Return the RDF triples that produced a model instance (empty set if unknown)."""
-        if self._logic and hasattr(self._logic, '_triples_map'):
-            return self._logic._triples_map.get(instance, set())
-        return set()
-
-    def get_all_triples_map(self) -> dict:
-        """Return the full instance -> triples map (empty dict if no logic is loaded)."""
-        if self._logic and hasattr(self._logic, '_triples_map'):
-            return self._logic._triples_map
-        return {}
-
-    def get_main_graph(self) -> Graph:
-        """Return the triples of the loaded artefact only (see Artefact.main_graph)."""
-        return self.get_artefact().main_graph()
-
-    def get_provenance_subgraph(self, instance):
-        """Return the rdflib.Graph subgraph that provenanced `instance`."""
-        if self._logic and hasattr(self._logic, 'build_provenance_subgraph'):
-            return self._logic.build_provenance_subgraph(instance)
-        return Graph()
-    
-     
-    # function reused by the api to push instances
-    def to_dict(self, instance) -> dict:
-        """Serialize a model instance into a JSON-friendly dict, including its RDF triples.
-
-        Empty values are left out of "properties"; every value is converted to a string.
-        """
-        result = {
-            "instance": str(instance),
-            "type": type(instance).__name__,
-            "uri": str(instance.has_identifier) if instance.has_identifier else None,
-            "properties": {},
-            "rdf_triples": []
-        }
-        
-        # Serialize the instance properties
-        for attr_name in instance.__dict__.keys():
-            value = getattr(instance, attr_name)
-            # removes empty values from the properties
-            if value is not None and not (isinstance(value, (list, set)) and not value):
-                result["properties"][attr_name] = str(value)
-        
-        # Add the associated RDF triples
-        triples = self.get_triples_for_instance(instance)
-        for s, p, o in triples:
-            triple_dict = {
-                "subject": str(s),
-                "predicate": str(p),
-                "object": str(o)
-            }
-            result["rdf_triples"].append(triple_dict)
-        
-        return result
-        
-    def get_artefact(self) -> Artefact:
-        """Return what a viewer needs from this read, with no reference to the reader.
-        Entities are shared with the reader's cache, not copied. Provenance stays
-        lazy. It needs no configuration, so it also works on a reader whose graph
-        was set without a full load (the API spool relies on this).
-        """
-        return Artefact(
-            entities=self._instance_cache,
-            graph=self._graph,
-            artefact_iri=self._artefact_iri,
-            artefact_base_iri=URIRef(iri_namespace(self._artefact_iri)) if self._artefact_iri else None,
-            imported_uris=self._imported_uris,
-            warnings=self.get_warnings(),
-            provenance=Provenance(getattr(self._logic, "build_provenance_subgraph", None)),
-            read_as=self._configuration.config_name if self._configuration else None,
-        )
-    
-    def clear_cache(self):
-        """Drop every cached instance, in the Reader and in its logic."""
-        self._instance_cache.clear()
-        if self._logic:
-            self._logic.clear_cache()
-    
-    # ==================== EXTRACTION (ORCHESTRATION) ====================
-    
-    def _extract_instances(self):
-        """Run the extraction phases in order, delegating each one to the logic.
-
-        Phases 1-5 depend on the artefact type; statements and
-        namespaces are shared. Post-pipeline warning checks run only when enabled.
-        """        
-        # BaseLogic + can be expanded by Artefact Logics
-        self._logic.phase1_classify_from_predicates()
-        self._logic.phase2_create_from_types()
-        self._logic.phase3_populate_properties()
-        self._logic.phase4_process_group_axioms()
-        self._logic.phase5_fallback()
-        
-        # PHASE 6: statements
-        self._logic.phase6_create_statements()
-
-        # FASE 7: Namespaces 
-        self._logic.populate_namespaces()
-
-        # Post-pipeline warning checks
-        if self._warnings_enabled:
-            post_checks = profiles.get(self._configuration.config_name).post_checks
-            if post_checks:
-                profiles.resolve(post_checks)(self._logic)
-
-            if self._logic._warnings:
-                logger.warning("%d reader warnings", len(self._logic._warnings))
-                # details only at DEBUG: the viewer words them with display names
-                # for popups, report and CLI, so raw model names would be confusing
-                for w in self._logic._warnings:
-                    logger.debug("[%s] %s", w['code'], w['message'])
-    
-    # def _phase5_fallback(self):
-    #     """Fallback per risorse non categorizzate (comune)"""
-        
-    #     fallback_class = self._configuration.get_fallback_class()
-    #     if not fallback_class:
-    #         logger.warning("No fallback class configured")
-    #         return
-        
-    #     all_subjects = set(self._graph.subjects())
-    #     fallback_count = 0
-        
-    #     for subj in all_subjects:
-    #         if subj not in self._instance_cache:
-    #             self._logic.get_or_create(subj, fallback_class)
-    #             fallback_count += 1
+    main = artefact.graph.graph(artefact.artefact_iri)
+    for uri, instances in artefact.entities.items():
+        if not isinstance(uri, URIRef):
+            continue
+        local = {str(o) for o in main.objects(uri, None)}
+        if not local:
+            continue
+        for instance in instances:
+            for value in vars(instance).values():
+                if isinstance(value, list) and len(value) > 1:
+                    value.sort(key=lambda v: _value_key(v) not in local)

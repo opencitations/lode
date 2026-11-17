@@ -46,7 +46,6 @@ from lode.api import app
 from lode.exceptions import ArtefactNotFoundError
 from lode.reader.loader import Loader
 from lode.provenance_graph import ProvenanceGraph
-from lode.reader.reader import Reader
 from lode.viewer import get_viewer
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS
 from lode.artefact import Artefact
@@ -284,10 +283,8 @@ class TestPartialImport:
 
     def test_documented_values_come_first(self, main_path):
         """The Reader puts main's label of home#T before home's."""
-        from lode.reader.reader import Reader
-        reader = Reader()
-        reader.load_instances(graph_path=main_path, read_as="owl", partial_import=True)
-        for inst in reader._instance_cache[H.T]:
+        artefact = Artefact(main_path, read_as="owl", partial_import=True)
+        for inst in artefact.entities[H.T]:
             labels = [l.get_has_value() for l in inst.get_has_label()]
             if labels:
                 assert labels[0] == "T from main", labels
@@ -395,7 +392,7 @@ class TestCacheRoundTrip:
 
 def fake_artefact(graph, artefact_iri=None):
     """Minimal Artefact for BaseViewer: only the graph and no entities."""
-    return Artefact(entities={}, graph=graph, artefact_iri=artefact_iri)
+    return Artefact.from_parts(entities={}, graph=graph, artefact_iri=artefact_iri)
 
 
 def entity_provenance(ds, subject):
@@ -421,10 +418,9 @@ class TestEntityProvenance:
         assert graphs(out) == {MAIN}
 
     def test_card_provenance_names_the_graph_without_modules(self, main_path):
-        reader = Reader()
-        reader.load_instances(main_path, "owl")
-        viewer = get_viewer(reader.get_artefact())
-        codes =[f["code"] for inst in reader._instance_cache[H.T]
+        artefact = Artefact(main_path, read_as="owl")
+        viewer = get_viewer(artefact)
+        codes =[f["code"] for inst in artefact.entities[H.T]
                  for f in viewer._build_provenance_subgraph(inst) if f["label"] == "TriG"]
         assert codes and all(f"<{MAIN}>" in c for c in codes)
 
@@ -473,9 +469,8 @@ class TestEntityProvenance:
     <http://ex.org/own> a owl:Ontology ; rdfs:label "Own title" ; owl:imports <{foreign_doc}> .
     <http://ex.org/own#O> a owl:Class .
     """)
-        reader = Reader()
-        reader.load_instances(path, "owl", **{flag: True})
-        label = get_viewer(reader.get_artefact()).view()["model"]["label"] or ""
+        artefact = Artefact(path, read_as="owl", **{flag: True})
+        label = get_viewer(artefact).view()["model"]["label"] or ""
         assert "Own title" in label
         assert "Foreign title" not in label
 
@@ -579,9 +574,8 @@ class TestExportIsLoadedArtefactOnly:
 
     def test_documented_values_come_first(self, main_path):
         """The Reader puts main's label of home#T before home's."""
-        reader = Reader()
-        reader.load_instances(graph_path=main_path, read_as="owl", partial_import=True)
-        for inst in reader._instance_cache[H.T]:
+        artefact = Artefact(main_path, read_as="owl", partial_import=True)
+        for inst in artefact.entities[H.T]:
             labels = [l.get_has_value() for l in inst.get_has_label()]
             if labels:
                 assert labels[0] == "T from main", labels

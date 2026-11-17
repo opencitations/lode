@@ -73,7 +73,7 @@ def _viewer(*instances, undefined=()):
     onto = next((i for i in instances if isinstance(i, Model)), None)
     iri = URIRef(onto.get_has_identifier()) if onto else None
     
-    return OwlViewer(Artefact(entities=cache, graph=g, artefact_iri=iri))
+    return OwlViewer(Artefact.from_parts(entities=cache, graph=g, artefact_iri=iri))
 
 # rdflib BNode ids look like 'N' + 32 hex chars, or 'n<digits/hex>' for parsed
 # blank nodes. Anything matching means a raw blank node leaked into the view.
@@ -362,14 +362,12 @@ _PERSON_B = '[ a foaf:Person ; foaf:name "Bob Example" ; rdfs:seeAlso <https://o
 def _render_index(tmp_path, ttl):
     """Load `ttl` through the Reader and return the HTML of the static index page."""
     from lode.builder import build_html
-    from lode.reader import Reader
 
     src = tmp_path / "onto.ttl"
     src.write_text(ttl, encoding="utf-8")
-    reader = Reader()
-    reader.load_instances(str(src), read_as="owl")
+    artefact = Artefact(str(src), read_as="owl")
     out = tmp_path / "site"
-    build_html(get_viewer(reader.get_artefact()), out)
+    build_html(get_viewer(artefact), out)
     return (out / "index.html").read_text(encoding="utf-8")
 
 
@@ -416,15 +414,13 @@ def _load_uris():
 
 @pytest.fixture(scope="module", params=_load_uris())
 def viewer(request):
-    from lode.reader import Reader
-    reader = Reader()
     try:
-        reader.load_instances(request.param, "owl")
+        artefact = Artefact(request.param, read_as="owl")
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
-    v = get_viewer(reader.get_artefact())
-    yield v
-    reader.clear_cache()
+    yield get_viewer(artefact)
+    artefact.entities.clear()
+    artefact.logic.clear_cache()
 
 
 class TestCorpusInvariants:

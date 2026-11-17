@@ -8,7 +8,7 @@ from rdflib.namespace import XSD
 
 from lode.builder import build_html
 from lode.models import Datatype, DatatypeRestriction
-from lode.reader import Reader
+from lode.artefact import Artefact
 from lode.viewer import get_viewer
 
 
@@ -31,7 +31,7 @@ CASES = [
 
 
 @pytest.fixture
-def range_reader(tmp_path):
+def range_artefact(tmp_path):
     declarations = "\n".join(
         f"ex:{name} a owl:DatatypeProperty ; rdfs:range [ a rdfs:Datatype ; "
         f"owl:onDatatype xsd:{datatype} ; owl:withRestrictions ( {facets} ) ] ."
@@ -45,17 +45,15 @@ def range_reader(tmp_path):
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         <http://example.org/ranges> a owl:Ontology .
     """ + declarations, encoding="utf-8")
-    reader = Reader()
-    reader.load_instances(str(path), "owl")
-    return reader
+    return Artefact(str(path), read_as="owl")
 
 
 @pytest.mark.parametrize("name,datatype,expected",
                          [(name, datatype, expected) for name, datatype, _, expected in CASES],
                          ids=[case[0] for case in CASES])
-def test_range_preserves_datatype_and_every_facet(range_reader, name, datatype,
+def test_range_preserves_datatype_and_every_facet(range_artefact, name, datatype,
                                                 expected):
-    viewer = get_viewer(range_reader.get_artefact())
+    viewer = get_viewer(range_artefact)
     data = viewer.view(resource_uri=str(EX[name]))
     rendered = data["entities"][0]["relations"]["range"][0]
 
@@ -63,7 +61,7 @@ def test_range_preserves_datatype_and_every_facet(range_reader, name, datatype,
     assert rendered["parts"][0]["iri"] == str(XSD[datatype])
 
     restrictions = {
-        instance for instances in range_reader._instance_cache.values()
+        instance for instances in range_artefact.entities.values()
         for instance in instances if isinstance(instance, DatatypeRestriction)
     }
     assert len(restrictions) == len(CASES)
@@ -97,9 +95,9 @@ class _RestrictionText(HTMLParser):
             self.blocks[-1] += text
 
 
-def test_static_index_and_resource_pages_show_complete_ranges(range_reader, tmp_path):
+def test_static_index_and_resource_pages_show_complete_ranges(range_artefact, tmp_path):
     out = tmp_path / "site"
-    build_html(get_viewer(range_reader.get_artefact()), out)
+    build_html(get_viewer(range_artefact), out)
 
     def compact(text):
         return "".join(text.split())
@@ -111,4 +109,4 @@ def test_static_index_and_resource_pages_show_complete_ranges(range_reader, tmp_
         assert compact(expected) in [compact(block) for block in index.blocks]
         assert compact(expected) in [compact(block) for block in resource.blocks]
 
-    assert isomorphic(Graph().parse(out / "index.ttl"), range_reader.get_main_graph())
+    assert isomorphic(Graph().parse(out / "index.ttl"), range_artefact.main_graph())

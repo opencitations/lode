@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from rdflib import Graph
 
-from lode.reader import Reader
+from lode.artefact import Artefact
 from lode.exceptions import ArtefactValidationError
 from lode.builder import build_html, _rel_slug, _prefix_map, _write_in
 from lode.viewer import get_viewer
@@ -29,9 +29,7 @@ _EXTS = [f["ext"] for f in SERIALIZATION_FORMATS]
 
 
 def _load(uri):
-    r = Reader()
-    r.load_instances(uri, "owl")
-    return get_viewer(r.get_artefact()), r
+    return get_viewer(Artefact(uri, read_as="owl"))
 
 
 @pytest.fixture(scope="module", params=URIS, ids=lambda u: u.rstrip("/").split("/")[-1])
@@ -39,12 +37,12 @@ def built(request, tmp_path_factory):
     """Load one ontology and build it into a temp dir. Reused by all tests."""
     uri = request.param
     try:
-        viewer, reader = _load(uri)
+        viewer = _load(uri)
     except Exception as e:
         pytest.skip(f"load failed for {uri}: {e}")
     out = tmp_path_factory.mktemp("docs")
     build_html(viewer, out)
-    return {"uri": uri, "viewer": viewer, "reader": reader, "out": out}
+    return {"uri": uri, "viewer": viewer, "out": out}
 
 
 # --- build structure ---
@@ -177,10 +175,9 @@ def _build_warn_ttl(tmp_path, warnings):
     """Load the malformed-restriction ontology and build it into tmp_path/out."""
     src = tmp_path / "w.ttl"
     src.write_text(_WARN_TTL, encoding="utf-8")
-    reader = Reader()
-    reader.load_instances(str(src), "owl", warnings=warnings)
+    artefact = Artefact(str(src), read_as="owl", warnings=warnings)
     out = tmp_path / "out"
-    build_html(get_viewer(reader.get_artefact()), out)
+    build_html(get_viewer(artefact), out)
     return out
 
 
@@ -205,9 +202,8 @@ def test_format_warnings_uses_display_names(tmp_path):
 :p a owl:ObjectProperty ; rdfs:subPropertyOf :q .
 :q a owl:DatatypeProperty .
 """, encoding="utf-8")
-    reader = Reader()
-    reader.load_instances(str(src), "owl", warnings=True)
-    msg = get_viewer(reader.get_artefact()).format_warnings(reader.get_warnings())[0]["message"]
+    artefact = Artefact(str(src), read_as="owl", warnings=True)
+    msg = get_viewer(artefact).format_warnings(artefact.warnings)[0]["message"]
     assert "Object Property http://ex.org/Attribute/p" in msg
     assert "Data Property http://ex.org/Attribute/q" in msg
 

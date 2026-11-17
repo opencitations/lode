@@ -30,13 +30,10 @@ def read(source: str, read_as: str, *, imported: Optional[bool] = None,
     """
     # Local import on purpose: `import lode` must stay cheap for the CLI and for
     # `lode --help`, which should not pay for rdflib and the reader.
-    from lode.reader import Reader
+    from lode.artefact import Artefact
 
-    reader = Reader()
-    reader.load_instances(source, read_as, imported=imported, closure=closure,
-                          partial_import=partial_import, warnings=warnings,
-                          source_name=source_name)
-    return reader.get_artefact()
+    return Artefact(source, read_as=read_as, imported=imported, closure=closure,
+                    partial_import=partial_import, warnings=warnings, source_name=source_name)
 
 
 # ==========================================================================

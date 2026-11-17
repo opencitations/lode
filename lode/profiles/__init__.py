@@ -97,10 +97,15 @@ def register(profile: Profile) -> None:
     _PROFILES[profile.name] = profile
 
 
-def find(name: str) -> Optional[Profile]:
-    """Return the profile called `name`, or None when there is none."""
+def find(name: Optional[str]) -> Optional[Profile]:
+    """Return the profile called `name`, ignoring case, or None when there is none.
+
+    The only place where a format name is normalised: the reader, the viewer and the
+    artefact all ask here, so 'OWL' and 'owl' can never be treated differently.
+    """
     _ensure_loaded()
-    return _PROFILES.get(name)
+    return _PROFILES.get((name or "").lower())
+
 
 
 def get(name: str) -> Profile:

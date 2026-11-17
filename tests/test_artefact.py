@@ -18,7 +18,7 @@ def _artefact():
         URIRef("http://ex.org/b"): {collection},
         "LITERAL::x@^^": {literal},
     }
-    return Artefact(entities=entities, graph=Graph()), concept, collection, punned
+    return Artefact.from_parts(entities=entities, graph=Graph()), concept, collection, punned
 
 def test_instances_lists_entities_and_skips_literals():
     artefact, *_ = _artefact()
@@ -46,3 +46,10 @@ def test_get_instance_returns_the_punned_set():
 def test_get_instance_unknown_iri_is_none():
     artefact, *_ = _artefact()
     assert artefact.get_instance("http://ex.org/missing") is None
+
+def test_from_parts_leaves_the_rest_empty():
+    artefact = Artefact.from_parts(entities={}, graph=Graph())
+    assert artefact.profile is None and artefact.read_as is None
+    assert artefact.warnings == [] and artefact.imported_uris == set()
+    assert artefact.artefact_base_iri is None
+    assert len(artefact.provenance(object())) == 0

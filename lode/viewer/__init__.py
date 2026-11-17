@@ -10,7 +10,7 @@ def get_viewer(artefact):
     The profile comes from `artefact.read_as`. An unknown or missing format falls
     back to the generic BaseViewer.
     """
-    profile = profiles.find((artefact.read_as or '').lower())
+    profile = profiles.find(artefact.read_as)
     if profile is None:
         return BaseViewer(artefact)
     return profiles.resolve(profile.viewer)(artefact)

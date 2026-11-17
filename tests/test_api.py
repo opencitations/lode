@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from lode.api import app
-from lode.reader import Reader
+from lode.artefact import Artefact
 
 # raise_server_exceptions=False -> custom exception handlers render error.html
 client = TestClient(app, raise_server_exceptions=False)
@@ -27,23 +27,21 @@ FABIO_NS = "http://purl.org/spar/fabio/"
 
 # --- Fixtures ----------------------------------------------------------------
 @pytest.fixture(scope="session")
-def fabio_reader():
+def fabio_artefact():
     """Load fabio once (network). Swap FABIO_URL for a local file to go offline."""
-    r = Reader()
-    r.load_instances(FABIO_URL, "owl")
-    return r
+    return Artefact(FABIO_URL, read_as="owl")
 
 
 @pytest.fixture(scope="session")
-def fabio_ttl(fabio_reader, tmp_path_factory):
+def fabio_ttl(fabio_artefact, tmp_path_factory):
     p = tmp_path_factory.mktemp("fix") / "fabio.ttl"
-    p.write_text(fabio_reader._graph.serialize(format="turtle"), encoding="utf-8")
+    p.write_text(fabio_artefact.graph.serialize(format="turtle"), encoding="utf-8")
     return p
 
 @pytest.fixture
-def patched_url(fabio_reader):
-    """GET-url tests reuse the cached fabio reader instead of hitting the net."""
-    with patch("lode.api._load_url", return_value=fabio_reader.get_artefact()) as m:
+def patched_url(fabio_artefact):
+    """GET-url tests reuse the cached fabio artefact instead of hitting the net."""
+    with patch("lode.api._load_url", return_value=fabio_artefact) as m:
         yield m
 
 # --- POST (file) -------------------------------------------------------------
@@ -165,10 +163,10 @@ def test_url_spool_cache_and_bypass(tmp_path, monkeypatch):
     monkeypatch.setattr(spool_mod, "SPOOL_DIR", os.path.realpath(str(tmp_path)))
 
     seen = []
-    def fake_load(self, graph_path, read_as, **kw):
-        seen.append(graph_path)
-        self._graph = Graph()
-    monkeypatch.setattr(Reader, "load_instances", fake_load)
+    def fake_read(artefact, source, **kw):
+        seen.append(source)
+        artefact.graph = Graph()
+    monkeypatch.setattr("lode.reader.read_into", fake_read)
 
     api._load_url("http://x/o", read_as="owl", imported=None, closure=None, partial_import=None, warnings=False)                     # miss  -> URL
     api._load_url("http://x/o", read_as="owl", imported=None, closure=None, partial_import=None, warnings=False)                     # hit   -> spool file

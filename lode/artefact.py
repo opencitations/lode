@@ -1,14 +1,16 @@
-"""Artefact: the hand-over between the Reader and the viewers.
+"""Artefact: a semantic artefact read from a source, with everything extracted from it.
 
-The Reader builds an Artefact once the extraction is done; viewers, the static
-builder and the API read only from it, never from the Reader or its logic. This
-keeps the Reader/Model/Viewer layers independent.
+The Artefact is the hand-over between the reader and everything else: `lode.reader.read_into`
+writes its fields once, and the viewers, the static builder and the API read only from it.
+This keeps the Reader/Model/Viewer layers independent.
 """
-from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Optional
 
 from rdflib import Graph, URIRef
 
+from lode import profiles
+from lode.helpers.rdf import iri_namespace
+from lode.profiles import Profile
 from lode.provenance_graph import ProvenanceGraph
 
 # Prefix of the literal entries in the reader's instance cache. Literals are values,
@@ -16,42 +18,79 @@ from lode.provenance_graph import ProvenanceGraph
 _LITERAL_PREFIX = "LITERAL::"
 
 
-class Provenance:
-    """Gives, on demand, the RDF triples an entity was built from.
-
-    The subgraph is computed only when asked for: a documentation can hold
-    thousands of entities and most of them are never inspected, so nothing is
-    precomputed.
-    """
-
-    def __init__(self, build: Optional[Callable[[Any], Graph]] = None):
-        """Wrap the callable that builds the subgraph; None means no provenance."""
-        self._build = build
-
-    def for_instance(self, instance) -> Graph:
-        """Return the subgraph that produced `instance`, empty when unknown."""
-        return self._build(instance) if self._build else Graph()
+def _no_provenance(instance) -> Graph:
+    """Return an empty subgraph: the provenance of an artefact built without a reader."""
+    return Graph()
 
 
-@dataclass
 class Artefact:
     """A semantic artefact after extraction: its entities, its RDF graph and its provenance.
 
-    `entities` is the Reader's instance cache shared by reference, not a copy:
-    consumers must treat it as read-only. `read_as` names the format the artefact
-    was read as ("owl", "skos", "rdf"): the viewer layer uses it to pick the right
-    viewer, so that the reader never has to know the viewers. None means unknown.
+    `profile` is the format it was read as (None for an artefact built by hand). The reader
+    sets the rest: `entities` is the instance cache shared by reference with `logic`, not a
+    copy, and consumers must treat it as read-only; `logic` is the logic of the format after
+    extraction, kept for inspection and never used by the viewers; `provenance` is a callable
+    that returns the subgraph an entity was built from, computed only when asked for because
+    most entities are never inspected.
     """
 
-    entities: dict
-    graph: Graph
-    artefact_iri: Optional[URIRef] = None
-    artefact_base_iri: Optional[URIRef] = None
-    imported_uris: set = field(default_factory=set)
-    warnings: list = field(default_factory=list)
-    provenance: Provenance = field(default_factory=Provenance)
-    read_as: Optional[str] = None
-    _all: Optional[list] = field(default=None, init=False, repr=False, compare=False)
+    def __init__(self, source: str, *, read_as: str, imported: Optional[bool] = None,
+                 closure: Optional[bool] = None, partial_import: Optional[bool] = None,
+                 warnings: bool = False, source_name: Optional[str] = None):
+        """Read `source` as the format `read_as` and keep what the extraction produces.
+
+        `source` is a local path or a public http(s) URL. An unknown format raises ValueError
+        listing the available ones; the name is matched ignoring case. The other arguments
+        are those of `lode.reader.read_into`. Blocking: it may fetch remote documents.
+        """
+        # Local import on purpose: the reader pulls in the models and the logic of every
+        # format, which `import lode` and the viewers do not need. It imports nothing from
+        # this module, so there is no cycle.
+        from lode.reader import read_into
+
+        self._blank(profiles.get(read_as))
+        read_into(self, source, imported=imported, closure=closure,
+                  partial_import=partial_import, warnings=warnings, source_name=source_name)
+
+    @classmethod
+    def from_parts(cls, entities: dict, graph: Graph, artefact_iri: Optional[URIRef] = None,
+                   imported_uris: Optional[set] = None, warnings: Optional[list] = None,
+                   profile: Optional[Profile] = None) -> "Artefact":
+        """Build an artefact from data already in memory, without reading anything.
+
+        For tests and for callers that have the graph and the entities by other means; the
+        fields not given stay empty.
+        """
+        artefact = cls.__new__(cls)
+        artefact._blank(profile)
+        artefact.entities = entities
+        artefact.graph = graph
+        artefact.artefact_iri = artefact_iri
+        artefact.imported_uris = imported_uris if imported_uris is not None else set()
+        artefact.warnings = warnings if warnings is not None else []
+        return artefact
+
+    def _blank(self, profile: Optional[Profile]) -> None:
+        """Give every field its empty value, so that the reader only has to overwrite them."""
+        self.profile = profile
+        self.entities = {}
+        self.graph = Graph()
+        self.artefact_iri = None
+        self.imported_uris = set()
+        self.warnings = []
+        self.provenance = _no_provenance
+        self.logic = None
+        self._all = None
+
+    @property
+    def read_as(self) -> Optional[str]:
+        """Return the name of the format the artefact was read as, or None when unknown."""
+        return self.profile.name if self.profile else None
+
+    @property
+    def artefact_base_iri(self) -> Optional[URIRef]:
+        """Return the namespace of the artefact IRI, derived on demand, or None without an IRI."""
+        return URIRef(iri_namespace(self.artefact_iri)) if self.artefact_iri else None
 
     def instances(self, cls: Optional[type] = None) -> list:
         """Return the extracted instances, optionally only those of one model class.
@@ -73,7 +112,7 @@ class Artefact:
         if cls is None:
             return list(self._all)
         return [i for i in self._all if isinstance(i, cls)]
-    
+
     def get_instance(self, iri: str) -> Optional[set]:
         """Return the instances registered under an IRI, or None when it is unknown.
 
