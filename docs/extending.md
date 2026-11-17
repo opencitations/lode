@@ -41,19 +41,18 @@ does not exist or lacks one of its YAML files.
 
 ### Step 1. Write the mapper
 
-The mapper is `reader.yaml`, a YAML file with five top-level keys:
+The mapper is `reader.yaml`, a YAML file with four top-level keys:
 
 | Key | Meaning |
 |-----|---------|
 | `namespaces` | Predicates outside these namespaces are not mapped. Their triples are kept as `Statement` instances. |
-| `allowed_classes` | The model classes this format may create. |
 | `punning_priority` | Which class wins when one IRI has several types. |
 | `mapper` | One entry per RDF class or predicate. |
 | `enricher` | Handlers for group axioms (OWL). Use `{}` when there are none. |
 
 The file is merged on top of `lode/reader/config/base.yaml`. Dictionaries are merged key
 by key, so a format inherits `rdfs:label`, `rdfs:comment` and the other shared entries.
-Any other value, lists included, is replaced: `allowed_classes` in
+Any other value, lists included, is replaced: `namespaces` in
 `lode/profiles/skos/reader.yaml` replaces the one in `base.yaml`.
 
 A `mapper` entry takes one of the following shapes, all taken from that file.

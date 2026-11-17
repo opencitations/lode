@@ -167,17 +167,6 @@ class ConfigManager:
             for uri, handler in self.config.get('enricher', {}).items()
         }
     
-    def get_fallback_class(self) -> type | None:
-        """Return the class given to resources no mapping recognised, or None if unset.
-
-        An unknown class name in the config falls back to Statement.
-        """
-        fallback = self.config.get('fallback_class')
-        if fallback:
-            import lode.models as _models
-            return getattr(_models, fallback, Statement)
-        return None
-        
     # ========== HELPER METHODS ==========
     
     def get_classifier_predicates(self) -> set[URIRef]:
@@ -199,8 +188,11 @@ class ConfigManager:
             """
             fallback = None
             inferred = None
+            # one pass over the node's own predicates instead of one graph lookup per
+            # mapped predicate; the loop below still follows the mapping order
+            present = set(graph.predicates(uri))
             for predicate, cfg in self.get_property_mapping().items():
-                if (uri, predicate, None) in graph:
+                if predicate in present:
                     if 'inferred_class' in cfg:
                         candidate = cfg['inferred_class']
                         if inferred is None or issubclass(candidate, inferred):

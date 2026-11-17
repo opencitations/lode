@@ -3,11 +3,11 @@
 BaseLogic turns the triples of a graph into model instances in phases. What is
 specific to OWL, RDF or SKOS lives in the subclasses and in the YAML mapper.
 """
-from abc import ABC, abstractmethod
+from abc import ABC
+from collections import deque
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
 from rdflib.collection import Collection as RDFLibCollection
-from rdflib import Namespace
 SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
 
 from lode.models import *
@@ -34,8 +34,9 @@ class BaseLogic(ABC):
         self._instance_cache = instance_cache
         self._configuration = configuration
         self._property_mapping = configuration.get_property_mapping()
-        self._allowed_classes = self._get_allowed_classes()
         self._triples_map = {}
+        # Statement triples grouped by subject, built on the first provenance request
+        self._statements_by_subject = None
         # Namespaces now driven by config YAML (key: 'namespaces')
         self._allowed_namespaces = self._get_allowed_namespaces()
         # Validate all handlers declared in config exist on this instance
@@ -48,12 +49,6 @@ class BaseLogic(ABC):
         """Record a reader warning with a machine-readable code, its subject and a message."""
         self.warnings.append({'code': code, 'subject': str(subject), 'message': message})
 
-    def _get_allowed_classes(self) -> set:
-        """Resolve the 'allowed_classes' names of the config into the model classes."""
-        class_names = self._configuration.config.get('allowed_classes', [])
-        import lode.models as _models
-        return {getattr(_models, name) for name in class_names if getattr(_models, name, None) is not None}
-
     def _get_allowed_namespaces(self) -> set:
         """
         Reads namespaces from config YAML key 'namespaces'.
@@ -61,10 +56,6 @@ class BaseLogic(ABC):
         """
         return set(self._configuration.config.get('namespaces', []))
     
-    def get_namespaces(self) -> dict:
-        """Prefixes declared in the graph (prefix -> URI)."""
-        return {prefix: str(ns) for prefix, ns in self.graph.namespaces()}
-
 
 # ==========================================================================
 # READER PHASES
@@ -87,11 +78,14 @@ class BaseLogic(ABC):
         (SKOS does).
         """
         classified = {}
+        # a node uses several mapped predicates: classify it once, not once per predicate
+        tried = set()
 
         for pred in self._property_mapping:
             for node in self.graph.subjects(pred, None):
-                if node in self._instance_cache:
+                if node in self._instance_cache or node in tried:
                     continue
+                tried.add(node)
                 python_class = self._configuration.classify_by_predicate(node, self.graph)
                 if not python_class:
                     continue
@@ -180,8 +174,6 @@ class BaseLogic(ABC):
         are skipped; triples already tracked by an instance are not duplicated.
         """
         for subj, pred, obj in self.graph:
-            # if pred in self._property_mapping:
-            #     continue
             if pred in [RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members]:
                 continue
             if isinstance(subj, URIRef):
@@ -225,40 +217,6 @@ class BaseLogic(ABC):
                 + "\n".join(f"  - {e}" for e in errors)
             )
 
-    # ========== ALLOWED CLASS RESOLUTION ==========
-
-    def _resolve_allowed_class(self, python_class: type, id: Node = None) -> type:
-        """
-        Resolves a Python class to one allowed by the current format, by walking
-        the MRO until a class present in _allowed_classes is found.
-        Before the MRO walk, calls _pre_resolve_hook to allow subclasses to
-        short-circuit resolution with custom logic (e.g. reusing an existing
-        cached type instead of silently downcasting).
-        Falls back to Resource if nothing is found.
-        """
-        if python_class in self._allowed_classes:
-            return python_class
-
-        # Hook for custom pre-MRO logic (e.g. OWL: check the cache)
-        resolved = self._pre_resolve_hook(python_class, id)
-        if resolved:
-            return resolved
-
-        for parent_class in python_class.__mro__[1:]:
-            if parent_class in self._allowed_classes:
-                return parent_class
-
-        logger.warning("%s fell back to Resource", python_class.__name__)
-        return Resource
-
-    def _pre_resolve_hook(self, python_class: type, id: Node) -> type | None:
-        """
-        Optional hook for custom pre-MRO logic.
-        Subclasses can override it without touching _resolve_allowed_class.
-        Returns None to delegate to the base behaviour.
-        """
-        return None
-    
     # ========== Namespaces resolution ==========
     
     def populate_namespaces(self):
@@ -274,12 +232,6 @@ class BaseLogic(ABC):
     def _track(self, instance, *triples):
         """Attribute one or more triples to the provenance of `instance`."""
         self._triples_map.setdefault(instance, set()).update(triples)
-
-    def _untrack(self, instance, *triples):
-        """Remove triples from the provenance of `instance`."""
-        bucket = self._triples_map.get(instance)
-        if bucket:
-            bucket.difference_update(triples)
 
     def _move_tracking(self, old, new):
         """Move the provenance from `old` to `new` when an instance is promoted or replaced."""
@@ -336,11 +288,12 @@ class BaseLogic(ABC):
         Returns the first non-None value from collect, or None if visit_all is used.
         """
         visited = set()
-        queue = [start]
+        queue = deque([start])
         result = None
+        children = None     # reverse index, built once per call and only for "down"
 
         while queue:
-            current = queue.pop(0)
+            current = queue.popleft()
             if id(current) in visited:
                 continue
             visited.add(id(current))
@@ -364,26 +317,23 @@ class BaseLogic(ABC):
                         queue.extend(nexts)
 
             if direction in ("down", "both"):
-                for instances_set in self._instance_cache.values():
-                    for inst in instances_set:
-                        if inst is current or id(inst) in visited:
-                            continue
-                        getter = getattr(inst, next_getter, None)
-                        if getter:
-                            parents = getter() or []
-                            if not isinstance(parents, list):
-                                parents = [parents]
-                            if any(p is current for p in parents):
-                                queue.append(inst)
+                if children is None:
+                    # one scan of the cache instead of one per visited node
+                    children = {}
+                    for instances_set in self._instance_cache.values():
+                        for inst in instances_set:
+                            getter = getattr(inst, next_getter, None)
+                            if getter:
+                                parents = getter() or []
+                                if not isinstance(parents, list):
+                                    parents = [parents]
+                                for p in {id(p): p for p in parents}.values():
+                                    children.setdefault(id(p), []).append(inst)
+                for inst in children.get(id(current), ()):
+                    if inst is not current and id(inst) not in visited:
+                        queue.append(inst)
 
         return None
-
-    # def is_in_range_or_domain_of_property(self, property_getter, property_getter_inverse, property_instance):
-
-    #     if isinstance(object, (Concept, Individual, Datatype)):
-    #         obj_inst = property_instance.property_getter()
-    #         obj_inst.property_getter_inverse()
-
 
     def _create_literal(self, rdflib_literal):
         """Return the model Literal for an rdflib literal, one per distinct lexical form.
@@ -541,10 +491,6 @@ class BaseLogic(ABC):
             logger.warning("Collection handling failed on %s (predicate %s)",
                            instance, predicate, exc_info=True)
 
-    def clear_cache(self):
-        """Empty the shared instance cache."""
-        self._instance_cache.clear()
-
     # ========== LOGIC CORE ==========
 
     def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
@@ -572,12 +518,6 @@ class BaseLogic(ABC):
                 elif str(id).startswith(str(XSD)) and str(id) != str(XSD):
                     if (id, RDF.type, None) not in self.graph:
                         python_class = Datatype  # XSD: only if explicitly declared as something else
-
-            # if isinstance(id, URIRef):
-            #     uri_str = str(id)
-            #     for ns in self._allowed_namespaces:
-            #         if uri_str.startswith(ns) and id not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
-            #             return None
 
             # Individual punning: do not override existing non-Individual types
             if python_class == Individual and id in self._instance_cache:
@@ -636,8 +576,6 @@ class BaseLogic(ABC):
         elif isinstance(uri, BNode):
             instance.has_identifier = str(uri)
 
-        # is_subordinate = self._is_punning_subordinate(instance, uri)
-
         for predicate, obj in self.graph.predicate_objects(uri):
             if iri_namespace(str(predicate)) not in self._allowed_namespaces:
                 continue
@@ -647,8 +585,6 @@ class BaseLogic(ABC):
 
             if config is not None:
                 target_classes = config.get('target_classes', [])
-                #if is_subordinate and target_classes and type(instance) not in target_classes:
-                #    continue
                 if target_classes and not self._instance_matches_target(instance, target_classes):
                     continue
 
@@ -992,7 +928,6 @@ class BaseLogic(ABC):
         the provenance time in a static build.
         """
         from rdflib import Graph, BNode
-        from lode.models import Statement
 
         sub = Graph(bind_namespaces="none")
 
@@ -1008,20 +943,34 @@ class BaseLogic(ABC):
                 self._expand_bnode_into(o, sub, seen)
 
         # 3. reified Statements pointing at instance
-        for other_inst, other_triples in self._triples_map.items():
-            if not isinstance(other_inst, Statement):
-                continue
-            if other_inst.get_has_subject() is instance:
-                for t in other_triples:
-                    sub.add(t)
-                    _, _, o = t
-                    if isinstance(o, BNode) and o not in seen:
-                        self._expand_bnode_into(o, sub, seen)
+        for other_triples in self._get_statements_by_subject().get(id(instance), ()):
+            for t in other_triples:
+                sub.add(t)
+                _, _, o = t
+                if isinstance(o, BNode) and o not in seen:
+                    self._expand_bnode_into(o, sub, seen)
 
         # 4. format-specific axioms (hook)
         self._add_axiom_provenance(instance, sub)
 
         return sub
+
+    def _get_statements_by_subject(self) -> dict:
+        """Group the triples of every reified Statement by the id of its subject instance.
+
+        Built once, on the first provenance request, so each request is a lookup instead of
+        a scan of the whole triples map (quadratic in a static build). The map is complete
+        by then: provenance is only asked for after the extraction phases.
+        """
+        if self._statements_by_subject is None:
+            index = {}
+            for inst, triples in self._triples_map.items():
+                if isinstance(inst, Statement):
+                    subject = inst.get_has_subject()
+                    if subject is not None:
+                        index.setdefault(id(subject), []).append(triples)
+            self._statements_by_subject = index
+        return self._statements_by_subject
 
     def _expand_bnode_into(self, bn, sub, seen):
         """Add `bn` and its BNode-transitive closure to `sub`."""

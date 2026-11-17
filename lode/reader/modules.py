@@ -137,7 +137,6 @@ def apply_closure(graph: ProvenanceGraph):
 def _namespace(term) -> str:
     """Namespace of an IRI, without the trailing separator:
     'http://ex.org/onto#T' -> 'http://ex.org/onto', 'http://ex.org/voc/t' -> 'http://ex.org/voc'."""
-    s = str(term)
     return iri_stem(iri_namespace(term))
 
 

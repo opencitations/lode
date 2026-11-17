@@ -419,8 +419,8 @@ def viewer(request):
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
     yield get_viewer(artefact)
+    # entities is the logic's instance cache: clearing it frees both
     artefact.entities.clear()
-    artefact.logic.clear_cache()
 
 
 class TestCorpusInvariants:

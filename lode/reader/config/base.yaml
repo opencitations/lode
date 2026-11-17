@@ -6,15 +6,6 @@ namespaces:
   - "http://www.w3.org/2001/XMLSchema#"
   - "http://www.w3.org/2003/11/swrl#"
 
-allowed_classes:
-  - Statement
-  - Property
-  - Container
-  - Datatype
-  - Literal
-  - Resource
-  - Concept
-
 # ======================
 # MAPPER
 # ======================

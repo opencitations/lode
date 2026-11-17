@@ -23,26 +23,9 @@ class OwlLogic(BaseLogic):
     - Property type inference for properties not explicitly typed in the artefact
     """
 
-    # ========== HOOK for custom OWL resolution ==========
-
-    def _pre_resolve_hook(self, python_class: type, id: Node) -> type | None:
-        """
-        OWL override: if the URI is already cached with a non-Individual type,
-        return that type to prevent silent downcasting during MRO resolution.
-        Returns None to fall through to the default MRO walk.
-        """
-        if id and id in self._instance_cache:
-            for existing in self._instance_cache[id]:
-                if type(existing) is not Individual:
-                    return type(existing)
-        return None
-
-
-
     # A Restriction exists only as a blank node, so an IRI is never given that class.
     _BNODE_ONLY_CLASSES = (Restriction,)
     _FALLBACK_CLASS = Individual
-
 
     def phase1_classify_from_predicates(self):
         """Classify from the predicates as the base does, then apply what only OWL knows.
@@ -103,7 +86,7 @@ class OwlLogic(BaseLogic):
 
     def phase5_fallback(self):
         """
-        First the base fallback (the YAML 'fallback_class', none for OWL), then the OWL steps.
+        First the base fallback (none for OWL: _FALLBACK_CLASS is Individual), then the OWL steps.
 
         Classifies or reclassifies any entity whose concrete type could not be
         determined in earlier phases, in particular generic Property instances

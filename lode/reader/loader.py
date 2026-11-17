@@ -106,11 +106,13 @@ def _load_from_url_with_content_negotiation(url: str) -> Graph:
             security.check_size(int(declared))
 
         # SECURITY: stop if file > 10MB even without Content-Length
-        raw = b""
+        # bytearray: `bytes += chunk` copies the whole buffer each time (quadratic)
+        buffer = bytearray()
         for chunk in response.iter_content(8192): # 8kb at the time in iteration
-            raw += chunk
-            if len(raw) > security.MAX_BYTES:
-                security.check_size(len(raw))
+            buffer += chunk
+            if len(buffer) > security.MAX_BYTES:
+                security.check_size(len(buffer))
+        raw = bytes(buffer)
 
         # SECURITY: checks the file is text not binary
         security.check_is_text(raw)
@@ -120,8 +122,6 @@ def _load_from_url_with_content_negotiation(url: str) -> Graph:
 
         # SECURITY: block XXE / entity-expansion on remote artefacts and owl:imports
         security.check_safe_xml(content)
-
-        content_type = response.headers.get("Content-Type", "").lower()
 
         # Format guessed from HTTP Content-Type (content negotiation handler)
         graph = parse_any(content, preferred=_guess_format_from_content_type(content_type))
