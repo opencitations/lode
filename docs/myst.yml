@@ -1,0 +1,26 @@
+version: 1
+project:
+  title: LODE
+  description: Live OWL Documentation Environment
+  github: https://github.com/opencitations/lode
+  toc:
+    - file: index.md
+    - file: getting_started.md
+    - title: Usage
+      children:
+        - file: usage/web_form.md
+        - file: usage/cli.md
+        - file: usage/python_api.md
+        - file: examples/python_api.ipynb
+        - file: usage/viewer_contract.md
+        - file: usage/docker.md
+    - title: API reference
+      children:
+        - file: api/endpoints.md
+    - file: architecture.md
+    - title: Extending LODE
+      children:
+        - file: extending.md
+        - file: examples/extending.ipynb
+site:
+  template: book-theme

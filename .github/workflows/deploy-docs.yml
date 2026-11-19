@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
-      - 'mkdocs.yml'
   workflow_run:
     workflows: ["Run tests"]
     types: [completed]
@@ -48,13 +47,22 @@ jobs:
         with:
           python-version: "3.13"
 
-      - run: pip install mkdocs-material "mkdocs<2"
+      - run: pip install "jupyter-book>=2"
 
-      - run: mkdocs build --strict
+      # BASE_URL: the site lives under /lode/ on GitHub Pages
+      - run: jupyter book build --html
+        working-directory: docs
+        env:
+          BASE_URL: /lode
+
+      # Jupyter Book does not copy files outside the toc: add the coverage report by hand
+      - name: Add coverage report
+        if: github.event_name == 'workflow_run'
+        run: cp -r docs/coverage docs/_build/html/coverage
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: docs/_build/html
 
   deploy:
     needs: build

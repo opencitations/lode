@@ -134,8 +134,9 @@ needs of the templates.
 available for advanced use: `reader.load_instances(...)` followed by
 `reader.get_artefact()` gives the same result.
 
-!!! note
-    The CLI and the web service accept only the formats enabled in the current
-    release. The library itself does not enforce that: a profile registered with
-    `enabled=False` can still be read, which is how a format is tried while it is
-    developed.
+:::{note}
+The CLI and the web service accept only the formats enabled in the current
+release. The library itself does not enforce that: a profile registered with
+`enabled=False` can still be read, which is how a format is tried while it is
+developed.
+:::

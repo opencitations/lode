@@ -2,8 +2,12 @@
 
 Live OWL Documentation Environment — extract and document semantic artefacts as browsable, interlinked HTML. Maintained by [OpenCitations](https://opencitations.net).
 
-[Get started](getting_started.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/opencitations/lode){ .md-button }
+```{button} Get started
+:url: getting_started.md
+```
+```{button} View on GitHub
+:url: https://github.com/opencitations/lode
+```
 
 ## Features
 
