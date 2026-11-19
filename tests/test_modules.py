@@ -422,7 +422,7 @@ class TestEntityProvenance:
         artefact = OwlOntology(main_path)
         viewer = get_viewer(artefact)
         codes =[f["code"] for inst in artefact.entities[H.T]
-                 for f in viewer._build_provenance_subgraph(inst) if f["label"] == "TriG"]
+                 for f in viewer._serialize_provenance(inst) if f["label"] == "TriG"]
         assert codes and all(f"<{MAIN}>" in c for c in codes)
 
     def test_partial_import_term_spans_main_and_home(self, main_path):

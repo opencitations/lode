@@ -7,7 +7,7 @@ import hashlib
 import re
 from typing import Dict, List, Optional, Tuple 
 from pathlib import Path
-from rdflib import Graph, URIRef, Literal as RDFlibLiteral
+from rdflib import Graph, URIRef
 
 from lode.models import Literal, Model, Resource, Statement
 from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMATS
@@ -391,7 +391,7 @@ class BaseViewer:
                 'relations': ordered_relations,
                 'statements': statements,
                 'characteristics': characteristics,
-                'provenance': self._build_provenance_subgraph(instance),
+                'provenance': self._serialize_provenance(instance),
             })
 
         entities.sort(key=lambda x: (x['label'] or x['iri']).lower())
@@ -676,7 +676,7 @@ class BaseViewer:
     # RDF RELATED FEATURES = Provenance + Export RDF
     # ==========================================================================
     
-    def _build_provenance_subgraph(self, instance) -> List[Dict[str, str]]:
+    def _serialize_provenance(self, instance) -> List[Dict[str, str]]:
         """Serialize the triples an instance comes from, once per available format.
 
         Returns an empty list when the instance has no provenance.
