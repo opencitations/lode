@@ -560,10 +560,91 @@ mapper:
   #   setters: [set_is_defined_by: Individual] # involves in punning
 
 
+  # ========== SWRL ==========
+
+  swrl:Variable:
+    is: class
+    target_class: Variable
+
+  swrl:Imp:
+    is: class
+    target_class: Rule
+
+  swrl:ClassAtom:
+    is: class
+    target_class: Atom
+
+  swrl:IndividualPropertyAtom:
+    is: class
+    target_class: Atom
+
+  swrl:DatavaluedPropertyAtom:
+    is: class
+    target_class: Atom
+
+  swrl:SameIndividualAtom:
+    is: class
+    target_class: Atom
+
+  swrl:DifferentIndividualsAtom:
+    is: class
+    target_class: Atom
+
+  swrl:BuiltinAtom:
+    is: class
+    target_class: Atom
+
+  swrl:DataRangeAtom:
+    is: class
+    target_class: Atom
+  
+  swrl:arguments:
+    is: predicate
+    target_classes: [Atom]
+
+  swrl:argument1:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_argument1: Resource]
+
+  swrl:argument2:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_argument2: Resource]
+
+  swrl:classPredicate:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Concept]
+
+  swrl:propertyPredicate:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Property]
+
+  swrl:builtin:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Annotation]
+
+  swrl:dataRange:
+    is: predicate
+    target_classes: [Atom]
+    setters: [set_has_predicate: Datatype]
+
+  swrl:body:
+    is: predicate
+    target_classes: [Rule]
+
+  swrl:head:
+    is: predicate
+    target_classes: [Rule]
+
 # ======================
 # ENRICHER
 # ======================
 enricher:
+  swrl:Imp: handle_swrl_imp
   owl:AllDisjointClasses: process_all_disjoint_classes
   owl:AllDifferent: process_all_different
   owl:AllDisjointProperties: process_all_disjoint_properties

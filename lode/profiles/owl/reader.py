@@ -1,10 +1,13 @@
 """Reader for OWL artefacts."""
 
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
-from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
 from rdflib.collection import Collection as RDFLibCollection
 
+SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
+
 from lode.models import *
+from lode.helpers.rdf import iri_local_name
 from lode.reader.reader import Reader
 from lode.profiles.owl import checks
 
@@ -1022,6 +1025,117 @@ class OwlReader(Reader):
             return dom
         return self.get_or_create(node, fallback_class)
     
+    # ========== SWRL ==========
+
+    def handle_swrl_imp(self, uri):
+        """Build a Rule from a swrl:Imp, with its body atoms as antecedent and head atoms as consequent."""
+        # Force promotion to Rule if cached as something else
+        if uri in self._instance_cache:
+            existing = next(iter(self._instance_cache[uri]))
+            if not isinstance(existing, Rule):
+                rule = Rule()
+                rule.__dict__.update(existing.__dict__)
+                self._instance_cache[uri].discard(existing)
+                self._instance_cache[uri].add(rule)
+                self._move_tracking(existing, rule)
+            else:
+                rule = existing
+        else:
+            rule = self.get_or_create(uri, Rule)
+        
+        if not rule:
+            return
+        
+        body_node = self.graph.value(uri, SWRL_NS.body)
+        if body_node:
+            try:
+                for atom_node in RDFLibCollection(self.graph, body_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_antecedent(atom)
+            except Exception:
+                logger.warning("SWRL body parsing failed for rule %s", uri, exc_info=True)
+
+        head_node = self.graph.value(uri, SWRL_NS.head)
+        if head_node:
+            try:
+                for atom_node in RDFLibCollection(self.graph, head_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_consequent(atom)
+            except Exception:
+                logger.warning("SWRL head parsing failed for rule %s", uri, exc_info=True)
+
+    def _parse_swrl_atom(self, atom_node):
+        """Build an Atom from a SWRL atom node: its predicate (by atom kind) and its arguments."""
+        atom = self.get_or_create(atom_node, Atom)
+        if not atom:
+            return None
+
+        # classPredicate (ClassAtom)
+        class_pred = self.graph.value(atom_node, SWRL_NS.classPredicate)
+        if class_pred:
+            atom.set_has_predicate(self.get_or_create(class_pred, Concept))
+
+        # propertyPredicate (IndividualPropertyAtom, DatavaluedPropertyAtom)
+        prop_pred = self.graph.value(atom_node, SWRL_NS.propertyPredicate)
+        if prop_pred:
+            atom_type_uri = self.graph.value(atom_node, RDF.type)
+            local = iri_local_name(atom_type_uri) if atom_type_uri else ''
+            if local == 'DatavaluedPropertyAtom':
+                atom.set_has_predicate(self.get_or_create(prop_pred, Attribute))
+            else:
+                atom.set_has_predicate(self.get_or_create(prop_pred, Relation))
+
+        # builtin (BuiltinAtom)
+        builtin = self.graph.value(atom_node, SWRL_NS.builtin)
+        if builtin:
+            atom.set_has_predicate(self.get_or_create(builtin, Resource))
+
+        # SameIndividualsAtom / DifferentIndividualsAtom — no predicate in RDF
+        atom_type_uri = self.graph.value(atom_node, RDF.type)
+        if atom_type_uri:
+            local = iri_local_name(atom_type_uri)
+            if local == 'SameIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
+            elif local == 'DifferentIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.differentFrom, Relation))
+
+        # dataRange (DataRangeAtom)
+        data_range = self.graph.value(atom_node, SWRL_NS.dataRange)
+        if data_range and atom.get_has_predicate() is None:
+            atom.set_has_predicate(self.get_or_create(data_range, Datatype))
+
+        # argument1 / argument2 (most atom types)
+        arg1 = self.graph.value(atom_node, SWRL_NS.argument1)
+        if arg1:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg1))
+
+        arg2 = self.graph.value(atom_node, SWRL_NS.argument2)
+        if arg2:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg2))
+
+        # arguments (BuiltinAtom — RDF list)
+        args_node = self.graph.value(atom_node, SWRL_NS.arguments)
+        if args_node:
+            try:
+                for arg in RDFLibCollection(self.graph, args_node):
+                    atom.set_has_arguments(self._resolve_swrl_arg(arg))
+            except Exception:
+                logger.warning("SWRL builtin arguments failed for atom %s",
+                               atom_node, exc_info=True)
+
+        return atom
+
+    def _resolve_swrl_arg(self, node):
+        """Resolve a SWRL argument: a Literal, a Variable or, by default, an Individual."""
+        if isinstance(node, RDFlibLiteral):
+            return self._create_literal(node)
+        if (node, RDF.type, SWRL_NS.Variable) in self.graph:
+            return self.get_or_create(node, Variable)
+        return self.get_or_create(node, Individual)
+    
+
     # ========== PROVENANCE OWL-SPECIFIC ==========
 
     _PROVENANCE_AXIOM_TYPES = (
