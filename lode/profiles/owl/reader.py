@@ -1,21 +1,21 @@
-"""Extraction logic for OWL artefacts."""
+"""Reader for OWL artefacts."""
 
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import *
-from lode.reader.logic.base_logic import BaseLogic
+from lode.reader.reader import Reader
 from lode.profiles.owl import checks
 
 import logging
 logger = logging.getLogger(__name__)
 
-class OwlLogic(BaseLogic):
+class OwlReader(Reader):
     """
-    OWL-specific parsing logic.
+    OWL-specific reader.
 
-    Extends BaseLogic with:
+    Extends Reader with:
     - Phase 1 BNode classification for OWL restrictions and truth functions
     - OWL defaults for domain, range (owl:Thing) and Individual type
     - Handlers for property characteristics, cardinality, truth functions,
@@ -634,7 +634,7 @@ class OwlLogic(BaseLogic):
             logger.warning("AllDisjointProperties failed for %s", uri, exc_info=True)
 
 # ==========================================================================
-# OWL-SPECIFIC HANDLERS LOGIC FROM DECLARATIVE MAPPING
+# OWL-SPECIFIC HANDLERS READ FROM DECLARATIVE MAPPING
 # ==========================================================================
     
     def handle_property_chain(self, instance, uri, predicate, obj, setter=None):

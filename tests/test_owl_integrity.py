@@ -26,16 +26,16 @@ def _load_uris():
         data = json.load(f)
     return [entry["uri"] for entry in data["uris"]]
 
-def _instances_of(logic, cls):
+def _instances_of(reader, cls):
     result = []
-    for instances in logic._instance_cache.values():
+    for instances in reader._instance_cache.values():
         for inst in instances:
             if type(inst) is cls:
                 result.append(inst)
     return result
 
-def skip_if_warning(logic, code, subject=None):
-    if owl_warnings.has_warning(logic, code, subject):
+def skip_if_warning(reader, code, subject=None):
+    if owl_warnings.has_warning(reader, code, subject):
         pytest.skip(f"SKIP: {code}" + (f" with {subject}" if subject else ""))
 
 @pytest.fixture(scope="module", params=_load_uris())
@@ -46,11 +46,11 @@ def owl_logic(request):
         artefact = OwlOntology(uri, warnings=True)
     except Exception as e:
         pytest.skip(f"Could not load {uri}: {e}")
-    logic = artefact.logic
-    yield logic
-    logic._instance_cache.clear()
-    logic._triples_map.clear()
-    logic.warnings.clear()
+    reader = artefact.reader
+    yield reader
+    reader._instance_cache.clear()
+    reader._triples_map.clear()
+    reader.warnings.clear()
 
 
 #############################################################################################

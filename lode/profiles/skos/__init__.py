@@ -4,7 +4,7 @@ from lode.profiles import Profile, register
 register(Profile(
     name="skos",
     package=__name__,
-    logic=".logic:SkosLogic",
+    reader=".reader:SkosReader",
     viewer=".viewer:SkosViewer",
     artefact=".artefact:SkosVocabulary",
 ))

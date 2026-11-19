@@ -39,7 +39,7 @@ class TestArtefactWithLoadedOntology:
     def test_reading_fills_every_field_of_the_artefact(self, artefact):
         assert artefact.profile.name == "owl" and artefact.read_as == "owl"
         assert len(artefact.graph) > 0 and artefact.artefact_iri is not None
-        assert artefact.logic is not None and artefact.warnings == []
+        assert artefact.reader is not None and artefact.warnings == []
         assert str(artefact.artefact_base_iri).startswith("http://example.org/")
         assert callable(artefact.provenance)
         assert isinstance(artefact, OwlOntology)
@@ -82,13 +82,13 @@ class TestReaderTriplesMap:
 
     def test_triples_map_exists(self, artefact):
         """Verifica che triples_map sia stata creata"""
-        assert hasattr(artefact.logic, '_triples_map')
-        triples_map = artefact.logic._triples_map
+        assert hasattr(artefact.reader, '_triples_map')
+        triples_map = artefact.reader._triples_map
         assert isinstance(triples_map, dict)
 
     def test_triples_map_has_entries(self, artefact):
         """Verifica che ci siano entry nella triples_map"""
-        triples_map = artefact.logic._triples_map
+        triples_map = artefact.reader._triples_map
         assert len(triples_map) > 0
 
     def test_get_triples_for_instance(self, artefact):
@@ -102,8 +102,8 @@ class TestReaderTriplesMap:
         # Prendi la prima istanza dal set
         person = next(iter(instance_set))
 
-        # Ottieni le sue triple tramite la logic dell'artefact
-        triples_map = artefact.logic._triples_map
+        # Ottieni le sue triple tramite la reader dell'artefact
+        triples_map = artefact.reader._triples_map
         triples = triples_map.get(person, set())
 
         assert isinstance(triples, set)
@@ -119,7 +119,7 @@ class TestReaderTriplesMap:
         instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
         person = next(iter(instance_set))
 
-        triples_map = artefact.logic._triples_map
+        triples_map = artefact.reader._triples_map
         triples = triples_map.get(person, set())
 
         predicates = {str(p) for s, p, o in triples}
@@ -136,7 +136,7 @@ class TestReaderTriplesMap:
         instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
         person = next(iter(instance_set))
 
-        triples_map = artefact.logic._triples_map
+        triples_map = artefact.reader._triples_map
         triples = triples_map.get(person, set())
 
         objects = {str(o) for s, p, o in triples}
@@ -154,7 +154,7 @@ class TestReaderTriplesMap:
 
         student = next(iter(instance_set))
 
-        triples_map = artefact.logic._triples_map
+        triples_map = artefact.reader._triples_map
         triples = triples_map.get(student, set())
 
         print(f"\n=== TRIPLES PER STUDENT ===")
@@ -175,7 +175,7 @@ class TestReaderTriplesMap:
 
         knows = next(iter(instance_set))
 
-        triples_map = artefact.logic._triples_map
+        triples_map = artefact.reader._triples_map
         triples = triples_map.get(knows, set())
 
         print(f"\n=== TRIPLES PER KNOWS PROPERTY ===")
@@ -196,8 +196,8 @@ class TestReaderTriplesMap:
         }
 
         viewer = get_viewer(artefact)
-        triples_map = artefact.logic._triples_map
-        graph = artefact.logic.graph
+        triples_map = artefact.reader._triples_map
+        graph = artefact.reader.graph
 
         orphans = []
         for inst in viewer.artefact.instances():
@@ -216,7 +216,7 @@ class TestReaderTriplesMap:
 
     def test_triples_map_keys_are_instances(self, artefact):
         """Verifica che le chiavi della triples_map siano istanze Python"""
-        triples_map = artefact.logic._triples_map
+        triples_map = artefact.reader._triples_map
 
         print(f"\n=== CHIAVI DELLA TRIPLES_MAP ===")
         for key in list(triples_map.keys())[:5]:  # Mostra solo le prime 5

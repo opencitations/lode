@@ -1,8 +1,8 @@
-"""Configuration managers: bind each artefact type to its YAML mapper and logic.
+"""Configuration managers: bind each artefact type to its YAML mapper and reader.
 
 The mapping from RDF/OWL/SKOS constructs to the model lives in the YAML files
 under reader/config, not in Python: a manager loads base.yaml, merges the
-type-specific file on top and exposes the result to the logic classes.
+type-specific file on top and exposes the result to the reader classes.
 """
 
 import yaml
@@ -16,7 +16,7 @@ class ConfigManager:
     """Strategy driven by a single merged YAML configuration.
 
     One instance per artefact format: its `profile` gives the YAML file (see
-    lode.profiles), and the profile builds the logic with this manager. Adding a format
+    lode.profiles), and the profile builds the reader with this manager. Adding a format
     needs no new subclass. Viewers are not a concern of this layer: see lode.viewer.get_viewer.
     """
 

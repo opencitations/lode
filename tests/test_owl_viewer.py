@@ -419,7 +419,7 @@ def viewer(request):
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
     yield get_viewer(artefact)
-    # entities is the logic's instance cache: clearing it frees both
+    # entities is the reader's instance cache: clearing it frees both
     artefact.entities.clear()
 
 

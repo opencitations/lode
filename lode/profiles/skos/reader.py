@@ -1,17 +1,17 @@
-"""Extraction logic for SKOS artefacts."""
+"""Reader for SKOS artefacts."""
 from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
 from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD
 from rdflib.collection import Collection as RDFLibCollection
 
 from lode.models import *
-from lode.reader.logic.base_logic import BaseLogic
+from lode.reader.reader import Reader
 
 import logging
 logger = logging.getLogger(__name__)
 
-class SkosLogic(BaseLogic):
+class SkosReader(Reader):
     """
-    SKOS logic.
+    SKOS reader.
     """
     
     def phase1_classify_from_predicates(self):
@@ -19,7 +19,7 @@ class SkosLogic(BaseLogic):
         logger.debug("Phase 1 (SKOS classification): skipped, SKOS uses only rdf:type which is handled in phase 2")
 
 # ==========================================================================
-# SKOS-SPECIFIC HANDLERS LOGIC FROM DECLARATIVE MAPPING
+# SKOS-SPECIFIC HANDLERS READ FROM DECLARATIVE MAPPING
 # ==========================================================================
     
     def handle_member_list(self, instance, uri, predicate, obj, value):

@@ -2,7 +2,7 @@
 
 A profile is a package (lode/profiles/<name>/) holding everything one format needs: its
 reader mapper (reader.yaml), its viewer config (viewer.yaml), optional templates, and the
-logic and viewer classes. Its __init__ registers a Profile. Classes are given as
+reader and viewer classes. Its __init__ registers a Profile. Classes are given as
 "module:Name" strings and resolved on use, so this module imports neither the reader nor
 the viewers and every layer can read it.
 """
@@ -27,17 +27,17 @@ class Profile:
     """Everything LODE needs to read and show one artefact format.
 
     `package` is the profile's own package: reader.yaml, viewer.yaml and templates/ live
-    there. `logic`, `viewer` and `artefact` are "module:Name" paths to the logic class, the
+    there. `reader`, `viewer` and `artefact` are "module:Name" paths to the reader class, the
     viewer class and the Artefact subclass of the format; `post_checks` is an optional path
-    to a function that takes the logic after extraction. A module that starts with a dot is
-    relative to `package` (".logic:OwlLogic"), so a profile never repeats its own package
+    to a function that takes the reader after extraction. A module that starts with a dot is
+    relative to `package` (".reader:OwlReader"), so a profile never repeats its own package
     name. `enabled` gates the format where it is named by a string (lode.read, hence the
     API and the CLI).
     """
 
     name: str
     package: str
-    logic: str
+    reader: str
     viewer: str
     artefact: str
     post_checks: Optional[str] = None
@@ -55,22 +55,22 @@ class Profile:
         """Return the Artefact subclass of this format, imported on use."""
         return resolve(self.artefact, self.package)
 
-    def make_logic(self, graph: Any, cache: dict, configuration: Any) -> Any:
-        """Build the logic of this format on `graph`, filling `cache`.
+    def make_reader(self, graph: Any, cache: dict, configuration: Any) -> Any:
+        """Build the reader of this format on `graph`, filling `cache`.
 
         The class is imported now and not at registration, so this module stays free of
         reader imports; the reader asks the profile and never resolves the path itself.
         """
-        return resolve(self.logic, self.package)(graph, cache, configuration)
+        return resolve(self.reader, self.package)(graph, cache, configuration)
 
     def make_viewer(self, artefact: Any) -> Any:
-        """Build the viewer of this format for `artefact` (imported on use, like the logic)."""
+        """Build the viewer of this format for `artefact` (imported on use, like the reader)."""
         return resolve(self.viewer, self.package)(artefact)
 
-    def run_post_checks(self, logic: Any) -> None:
-        """Run the post-extraction checks of this format on `logic`; no-op without any."""
+    def run_post_checks(self, reader: Any) -> None:
+        """Run the post-extraction checks of this format on `reader`; no-op without any."""
         if self.post_checks:
-            resolve(self.post_checks, self.package)(logic)
+            resolve(self.post_checks, self.package)(reader)
 
 
 # ==========================================================================

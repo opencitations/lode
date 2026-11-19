@@ -30,9 +30,9 @@ def test_get_enabled_accepts_only_enabled_profiles_in_any_case():
 
 @pytest.mark.parametrize("fmt", FORMATS)
 def test_profile_paths_resolve(fmt):
-    """Logic, viewer and post-checks of every profile point to real objects."""
+    """Reader, viewer and post-checks of every profile point to real objects."""
     p = profiles.get(fmt)
-    assert profiles.resolve(p.logic, p.package)
+    assert profiles.resolve(p.reader, p.package)
     assert issubclass(profiles.resolve(p.viewer, p.package), BaseViewer)
     assert issubclass(p.artefact_class(), Artefact)
     if p.post_checks:
@@ -54,8 +54,8 @@ def test_format_config_files_exist(fmt):
 
 @pytest.mark.parametrize("fmt", FORMATS)
 def test_format_builds_its_logic(fmt):
-    """The registry entry resolves to a logic class that can be instantiated."""
-    assert profiles.get(fmt).make_logic(Graph(), {}, ConfigManager(profiles.get(fmt))) is not None
+    """The registry entry resolves to a reader class that can be instantiated."""
+    assert profiles.get(fmt).make_reader(Graph(), {}, ConfigManager(profiles.get(fmt))) is not None
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def plugins(monkeypatch):
 
 def _fake_profile(name):
     """A profile that reuses the SKOS classes under another name."""
-    return profiles.Profile(name, "lode.profiles.skos", "lode.profiles.skos.logic:SkosLogic",
+    return profiles.Profile(name, "lode.profiles.skos", "lode.profiles.skos.reader:SkosReader",
                             "lode.profiles.skos.viewer:SkosViewer",
                             "lode.profiles.skos.artefact:SkosVocabulary")
 

@@ -2,7 +2,7 @@
 # Reference: https://www.w3.org/TR/skos-reference/
 #
 # Checks, on real SKOS vocabularies, that the graph and the model built by
-# SkosLogic agree. It is not a SKOS validator: vocabularies that already break
+# SkosReader agree. It is not a SKOS validator: vocabularies that already break
 # the spec are skipped (guards), so a failure points at LODE and not at the data.
 #
 # Run a single vocabulary with:
@@ -33,7 +33,7 @@ def _load_uris():
 
 @pytest.fixture(scope="module", params=_load_uris())
 def skos_logic(request):
-    """Load one vocabulary as SKOS and yield its logic; skip when it cannot be loaded.
+    """Load one vocabulary as SKOS and yield its reader; skip when it cannot be loaded.
 
     warnings=False on purpose: the reader warnings are OWL-only.
     """
@@ -42,20 +42,20 @@ def skos_logic(request):
         artefact = SkosVocabulary(request.param, warnings=False)
     except Exception as e:
         pytest.skip(f"Could not load {request.param}: {e}")
-    logic = artefact.logic
-    yield logic
-    logic._instance_cache.clear()
-    logic._triples_map.clear()
+    reader = artefact.reader
+    yield reader
+    reader._instance_cache.clear()
+    reader._triples_map.clear()
 
 
-def _inst(logic, uri, cls):
+def _inst(reader, uri, cls):
     """Return the cached instance of `uri` that is a `cls`, or None."""
-    return next((i for i in logic._instance_cache.get(uri, set()) if isinstance(i, cls)), None)
+    return next((i for i in reader._instance_cache.get(uri, set()) if isinstance(i, cls)), None)
 
 
-def _uri_triples(logic, predicate):
+def _uri_triples(reader, predicate):
     """Yield (s, o) for triples with `predicate` where both ends are URIRefs."""
-    for s, _, o in logic.graph.triples((None, predicate, None)):
+    for s, _, o in reader.graph.triples((None, predicate, None)):
         if isinstance(s, URIRef) and isinstance(o, URIRef):
             yield s, o
 

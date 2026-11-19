@@ -1,7 +1,7 @@
 """Reader: runs the extraction pipeline and writes what it extracts on an Artefact.
 
 The Reader sits between the document loader and the viewers: it loads the graph, takes the
-configuration and the logic of the artefact's format, runs the logic phases and hands the
+configuration and the reader of the artefact's format, runs the reader phases and hands the
 result over by filling the Artefact it is given, so CLI, API and viewers never depend on
 parsing details. It keeps no state and imports nothing from lode.artefact: it only sets the
 attributes the Artefact declares.
@@ -27,7 +27,7 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     """Load `source` and fill `artefact` with what the extraction pipeline produces.
 
     The format comes from `artefact.profile`. Sets graph, artefact_iri, imported_uris,
-    entities, logic, warnings and provenance on `artefact` and returns nothing: the
+    entities, reader, warnings and provenance on `artefact` and returns nothing: the
     Artefact is the only place where the result lives. `imported`, `closure` and
     `partial_import` are forwarded to `load_graph`; `warnings` turns on the reader warnings;
     `source_name` names the artefact when `source` is only a local copy of it. Blocking:
@@ -42,12 +42,12 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     artefact.entities = {}
 
     configuration = ConfigManager(artefact.profile)
-    logic = artefact.profile.make_logic(artefact.graph, artefact.entities, configuration)
-    _extract_instances(logic, artefact.profile, warnings)
+    reader = artefact.profile.make_reader(artefact.graph, artefact.entities, configuration)
+    _extract_instances(reader, artefact.profile, warnings)
 
-    artefact.logic = logic
-    artefact.warnings = logic.warnings if warnings else []
-    artefact.provenance = logic.build_provenance_subgraph
+    artefact.reader = reader
+    artefact.warnings = reader.warnings if warnings else []
+    artefact.provenance = reader.build_provenance_subgraph
     # Documented semantic artefact first (only when a module is active)
     if isinstance(artefact.graph, ProvenanceGraph):
         _prioritize_documented_values(artefact)
@@ -85,28 +85,28 @@ def load_graph(source: str, *, imported=None, closure=None, partial_import=None,
 # ==========================================================================
 # 3. EXTRACTION
 # ==========================================================================
-def _extract_instances(logic, profile, warnings_enabled: bool) -> None:
-    """Run the extraction phases in order, delegating each one to the logic.
+def _extract_instances(reader, profile, warnings_enabled: bool) -> None:
+    """Run the extraction phases in order, delegating each one to the reader.
 
     Phases 1-5 depend on the artefact type; statements and namespaces are shared.
     The post-extraction checks of the profile run only when warnings are enabled.
     """
-    logic.phase1_classify_from_predicates()
-    logic.phase2_create_from_types()
-    logic.phase3_populate_properties()
-    logic.phase4_process_group_axioms()
-    logic.phase5_fallback()
-    logic.phase6_create_statements()
-    logic.populate_namespaces()
+    reader.phase1_classify_from_predicates()
+    reader.phase2_create_from_types()
+    reader.phase3_populate_properties()
+    reader.phase4_process_group_axioms()
+    reader.phase5_fallback()
+    reader.phase6_create_statements()
+    reader.populate_namespaces()
 
     if warnings_enabled:
-        profile.run_post_checks(logic)
+        profile.run_post_checks(reader)
 
-        if logic.warnings:
-            logger.warning("%d reader warnings", len(logic.warnings))
+        if reader.warnings:
+            logger.warning("%d reader warnings", len(reader.warnings))
             # details only at DEBUG: the viewer words them with display names
             # for popups, report and CLI, so raw model names would be confusing
-            for w in logic.warnings:
+            for w in reader.warnings:
                 logger.debug("[%s] %s", w['code'], w['message'])
 
 

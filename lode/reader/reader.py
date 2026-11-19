@@ -1,6 +1,6 @@
-"""Format-independent core of the extraction logic.
+"""Format-independent core of the reader.
 
-BaseLogic turns the triples of a graph into model instances in phases. What is
+Reader turns the triples of a graph into model instances in phases. What is
 specific to OWL, RDF or SKOS lives in the subclasses and in the YAML mapper.
 """
 from abc import ABC
@@ -16,9 +16,9 @@ from lode.helpers.rdf import iri_local_name, iri_namespace
 import logging
 logger = logging.getLogger(__name__)
 
-class BaseLogic(ABC):
+class Reader(ABC):
     """
-    Common base logic for RDF parsing.
+    Common base reader for RDF parsing.
 
     Owns the instance cache, the triples-to-instance provenance map and the
     generic machinery (get_or_create, populate_instance, SWRL, statements);
@@ -26,9 +26,9 @@ class BaseLogic(ABC):
     """
 
     def __init__(self, graph: Graph, instance_cache: dict, configuration):
-        """Bind the logic to a graph, a shared instance cache and a config manager.
+        """Bind the reader to a graph, a shared instance cache and a config manager.
 
-        Fails fast if the config names a handler this logic does not implement.
+        Fails fast if the config names a handler this reader does not implement.
         """
         self.graph = graph
         self._instance_cache = instance_cache
@@ -186,12 +186,12 @@ class BaseLogic(ABC):
                 continue
             self._create_statement_for_triple(subj, pred, obj)
 
-    # ========== CONFIG -> LOGIC VALIDATION ==========
+    # ========== CONFIG -> READER VALIDATION ==========
 
     def _validate_handlers(self):
         """
         Fail-fast: check that every handler declared in the config
-        exists as a method on this Logic instance.
+        exists as a method on this Reader instance.
         Raises AttributeError immediately, before any parsing.
         """
         errors = []
@@ -213,7 +213,7 @@ class BaseLogic(ABC):
 
         if errors:
             raise AttributeError(
-                f"Config/Logic contract violations in {type(self).__name__}:\n"
+                f"Config/Reader contract violations in {type(self).__name__}:\n"
                 + "\n".join(f"  - {e}" for e in errors)
             )
 
@@ -491,7 +491,7 @@ class BaseLogic(ABC):
             logger.warning("Collection handling failed on %s (predicate %s)",
                            instance, predicate, exc_info=True)
 
-    # ========== LOGIC CORE ==========
+    # ========== READER CORE ==========
 
     def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
         """Return the model instance for a node, creating (and populating) it when needed.

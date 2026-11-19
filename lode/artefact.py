@@ -27,8 +27,8 @@ class Artefact:
     """A semantic artefact after extraction: its entities, its RDF graph and its provenance.
 
     `profile` is the format it was read as (None for an artefact built by hand). The reader
-    sets the rest: `entities` is the instance cache shared by reference with `logic`, not a
-    copy, and consumers must treat it as read-only; `logic` is the logic of the format after
+    sets the rest: `entities` is the instance cache shared by reference with `reader`, not a
+    copy, and consumers must treat it as read-only; `reader` is the reader of the format after
     extraction, kept for inspection and never used by the viewers; `provenance` is a callable
     that returns the subgraph an entity was built from, computed only when asked for because
     most entities are never inspected. The annotations below are the contract with the
@@ -42,7 +42,7 @@ class Artefact:
     imported_uris: set
     warnings: list
     provenance: Callable[[Any], Graph]
-    logic: Optional[Any]
+    reader: Optional[Any]
 
     def __init__(self, source: str, *, imported: Optional[bool] = None,
                  closure: Optional[bool] = None, partial_import: Optional[bool] = None,
@@ -59,7 +59,7 @@ class Artefact:
         if profile is None:
             raise TypeError(f"{type(self).__name__} has no format: read with a format class "
                             "such as OwlOntology, or with lode.read(source, read_as)")
-        # Local import on purpose: the reader pulls in the models and the logic of every
+        # Local import on purpose: the reader pulls in the models and the reader of every
         # format, which `import lode` and the viewers do not need. It imports nothing from
         # this module, so there is no cycle.
         from lode.reader import read_into
@@ -95,7 +95,7 @@ class Artefact:
         self.imported_uris = set()
         self.warnings = []
         self.provenance = _no_provenance
-        self.logic = None
+        self.reader = None
         self._all = None
         self._viewer = None
 

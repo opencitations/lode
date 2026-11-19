@@ -1,6 +1,6 @@
 """
-test_owl_logic.py
-Systematic unit tests for OwlLogic.
+test_owl_reader.py
+Systematic unit tests for OwlReader.
 
 Covers:
   Phase 1  - BNode classification via inferred_class predicates
@@ -14,11 +14,11 @@ Covers:
                domain/range inheritance, rdfs:Literal default for Attribute
 
 Each test is self-contained: builds a minimal in-memory RDF graph, constructs
-an OwlLogic instance with a ConfigManager, and runs only the
+an OwlReader instance with a ConfigManager, and runs only the
 phases needed to exercise the target behaviour.
 
 Run with:
-    pytest test_owl_logic.py -v
+    pytest test_owl_reader.py -v
 """
 
 import pytest
@@ -36,7 +36,7 @@ from lode.models import (
 )
 from lode import profiles
 from lode.reader.config_manager import ConfigManager
-from lode.profiles.owl.logic import OwlLogic
+from lode.profiles.owl.reader import OwlReader
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -45,37 +45,37 @@ from lode.profiles.owl.logic import OwlLogic
 EX = Namespace("http://example.org/test#")
 
 
-def _make_logic(triples: list) -> OwlLogic:
-    """Build a minimal OwlLogic from a list of (s, p, o) tuples."""
+def _make_reader(triples: list) -> OwlReader:
+    """Build a minimal OwlReader from a list of (s, p, o) tuples."""
     g = Graph()
     for s, p, o in triples:
         g.add((s, p, o))
     cache = {}
     configuration = ConfigManager(profiles.get("owl"))
-    return OwlLogic(g, cache, configuration)
+    return OwlReader(g, cache, configuration)
 
 
-def _run_all(logic: OwlLogic):
+def _run_all(reader: OwlReader):
     """Run all phases in order."""
-    logic.phase1_classify_from_predicates()
-    logic.phase2_create_from_types()
-    logic.phase3_populate_properties()
-    logic.phase4_process_group_axioms()
-    logic.phase5_fallback()
-    logic.phase6_create_statements()
+    reader.phase1_classify_from_predicates()
+    reader.phase2_create_from_types()
+    reader.phase3_populate_properties()
+    reader.phase4_process_group_axioms()
+    reader.phase5_fallback()
+    reader.phase6_create_statements()
 
-def _instances_of(logic: OwlLogic, cls):
+def _instances_of(reader: OwlReader, cls):
     """Return all cached instances of a given class (exact type match)."""
     result = []
-    for instances in logic._instance_cache.values():
+    for instances in reader._instance_cache.values():
         for i in instances:
             if type(i) is cls:
                 result.append(i)
     return result
 
-def _instance_for_uri(logic: OwlLogic, uri, cls=None):
+def _instance_for_uri(reader: OwlReader, uri, cls=None):
     """Return the cached instance for uri, optionally filtered by class."""
-    instances = logic._instance_cache.get(uri, set())
+    instances = reader._instance_cache.get(uri, set())
     for i in instances:
         if cls is None or isinstance(i, cls):
             return i
@@ -98,71 +98,71 @@ class TestPhase1:
     def test_bnode_classified_as_quantifier_via_some_values_from(self):
         """A BNode bearing owl:someValuesFrom must be classified as Quantifier."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.someValuesFrom, EX.SomeConcept),
         ])
-        logic.phase1_classify_from_predicates()
-        assert bnode in logic._instance_cache
-        inst = next(iter(logic._instance_cache[bnode]))
+        reader.phase1_classify_from_predicates()
+        assert bnode in reader._instance_cache
+        inst = next(iter(reader._instance_cache[bnode]))
         assert isinstance(inst, Quantifier)
 
     def test_bnode_classified_as_quantifier_via_all_values_from(self):
         """A BNode bearing owl:allValuesFrom must be classified as Quantifier."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.allValuesFrom, EX.SomeConcept),
         ])
-        logic.phase1_classify_from_predicates()
-        inst = next(iter(logic._instance_cache[bnode]))
+        reader.phase1_classify_from_predicates()
+        inst = next(iter(reader._instance_cache[bnode]))
         assert isinstance(inst, Quantifier)
 
     def test_bnode_classified_as_cardinality_via_min_cardinality(self):
         """A BNode bearing owl:minCardinality must be classified as Cardinality."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.minCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
         ])
-        logic.phase1_classify_from_predicates()
-        inst = next(iter(logic._instance_cache[bnode]))
+        reader.phase1_classify_from_predicates()
+        inst = next(iter(reader._instance_cache[bnode]))
         assert isinstance(inst, Cardinality)
 
     def test_bnode_classified_as_truth_function_via_intersection_of(self):
         """A BNode bearing owl:intersectionOf must be classified as TruthFunction."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.intersectionOf, BNode()),
         ])
-        logic.phase1_classify_from_predicates()
-        inst = next(iter(logic._instance_cache[bnode]))
+        reader.phase1_classify_from_predicates()
+        inst = next(iter(reader._instance_cache[bnode]))
         assert isinstance(inst, TruthFunction)
 
     def test_uriref_classified_in_phase1(self):
         """Phase 1 must only classify BNodes; URIRefs carrying the same predicates
         should not be touched."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, OWL.disjointWith, BNode()),
         ])
-        logic.phase1_classify_from_predicates()
-        assert EX.MyClass in logic._instance_cache
+        reader.phase1_classify_from_predicates()
+        assert EX.MyClass in reader._instance_cache
 
     def test_bnode_classified_as_one_of(self):
         """A BNode bearing owl:oneOf must be classified as OneOf."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.oneOf, BNode()),
         ])
-        logic.phase1_classify_from_predicates()
-        inst = next(iter(logic._instance_cache[bnode]))
+        reader.phase1_classify_from_predicates()
+        inst = next(iter(reader._instance_cache[bnode]))
         assert isinstance(inst, OneOf)
 
     def test_bnode_classified_as_value_via_has_value(self):
         """A BNode bearing owl:hasValue must be classified as Value."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.hasValue, EX.SomeIndividual),
         ])
-        logic.phase1_classify_from_predicates()
-        inst = next(iter(logic._instance_cache[bnode]))
+        reader.phase1_classify_from_predicates()
+        inst = next(iter(reader._instance_cache[bnode]))
         assert isinstance(inst, Value)
 
 
@@ -174,264 +174,264 @@ class TestPhase2:
 
     def test_owl_class_creates_concept(self):
         """A URI typed as owl:Class must produce a Concept instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.MyClass, Concept)
         assert inst is not None
 
     def test_owl_object_property_creates_relation(self):
         """A URI typed as owl:ObjectProperty must produce a Relation instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myProp, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myProp, Relation)
         assert inst is not None
 
     def test_owl_datatype_property_creates_attribute(self):
         """A URI typed as owl:DatatypeProperty must produce an Attribute instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myAttr, RDF.type, OWL.DatatypeProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myAttr, Attribute)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myAttr, Attribute)
         assert inst is not None
 
     def test_owl_annotation_property_creates_annotation(self):
         """A URI typed as owl:AnnotationProperty must produce an Annotation instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myAnnot, RDF.type, OWL.AnnotationProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myAnnot, Annotation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myAnnot, Annotation)
         assert inst is not None
 
     def test_owl_named_individual_creates_individual(self):
         """A URI typed as owl:NamedIndividual must produce an Individual instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myInd, RDF.type, OWL.NamedIndividual),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myInd, Individual)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myInd, Individual)
         assert inst is not None
 
     def test_owl_ontology_creates_model(self):
         """A URI typed as owl:Ontology must produce a Model instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myOntology, RDF.type, OWL.Ontology),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myOntology, Model)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myOntology, Model)
         assert inst is not None
 
     def test_symmetric_property_setter_applied(self):
         """owl:SymmetricProperty typed entity must have is_symmetric=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.SymmetricProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_symmetric() is True
 
     def test_transitive_property_setter_applied(self):
         """owl:TransitiveProperty typed entity must have is_transitive=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.TransitiveProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_transitive() is True
 
     def test_asymmetric_property_setter_applied(self):
         """owl:AsymmetricProperty must produce a Relation with is_asymmetric=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.AsymmetricProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_asymmetric() is True
 
     def test_irreflexive_property_setter_applied(self):
         """owl:IrreflexiveProperty must produce a Relation with is_irreflexive=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.IrreflexiveProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_irreflexive() is True
 
     def test_reflexive_property_setter_applied(self):
         """owl:ReflexiveProperty must produce a Relation with is_reflexive=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ReflexiveProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_reflexive() is True
 
     def test_inverse_functional_property_setter_applied(self):
         """owl:InverseFunctionalProperty must produce a Relation with is_inverse_functional=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.InverseFunctionalProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_inverse_functional() is True
 
     def test_functional_property_setter_applied(self):
         """owl:FunctionalProperty must produce a Property with is_functional=True.
         Target class is Property (not Relation) per config — subtype resolved in phase 5."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.FunctionalProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myProp, Property)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myProp, Property)
         assert inst is not None
         assert inst.get_is_functional() is True
 
     def test_functional_object_property_is_functional(self):
         """A property typed as both owl:ObjectProperty and owl:FunctionalProperty
         must be a Relation with is_functional=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
             (EX.myRel, RDF.type, OWL.FunctionalProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_functional() is True
 
     def test_negative_property_assertion_is_positive_statement_false(self):
         """owl:NegativePropertyAssertion must produce a Statement with is_positive_statement=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myStmt, RDF.type, OWL.NegativePropertyAssertion),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myStmt, Statement)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myStmt, Statement)
         assert inst is not None
         assert inst.get_is_positive_statement() is False
 
     def test_deprecated_class_setter_applied(self):
         """owl:DeprecatedClass must produce a Concept with is_deprecated=True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myClass, RDF.type, OWL.DeprecatedClass),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myClass, Concept)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myClass, Concept)
         assert inst is not None
         assert inst.get_is_deprecated() is True
 
     def test_multiple_static_setters_on_same_property(self):
         """A Relation typed as both owl:SymmetricProperty and owl:TransitiveProperty
         must have both flags set to True."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.SymmetricProperty),
             (EX.myRel, RDF.type, OWL.TransitiveProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_symmetric() is True
         assert inst.get_is_transitive() is True
 
     def test_unknown_rdf_type_creates_individual(self):
         """A subject typed with an rdf:type not in the config must become Individual."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myThing, RDF.type, EX.UnknownClass),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myThing, Individual)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myThing, Individual)
         assert inst is not None
 
     def test_no_duplicate_on_repeated_call(self):
         """Calling phase2 twice must not add a second instance for the same URI."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
         ])
-        logic.phase2_create_from_types()
-        logic.phase2_create_from_types()
-        assert len(logic._instance_cache.get(EX.MyClass, set())) == 1
+        reader.phase2_create_from_types()
+        reader.phase2_create_from_types()
+        assert len(reader._instance_cache.get(EX.MyClass, set())) == 1
 
     def test_relation_is_symmetric_defaults_false(self):
         """A Relation not typed as owl:SymmetricProperty must have is_symmetric=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst is not None
         assert inst.get_is_symmetric() is False
  
     def test_relation_is_transitive_defaults_false(self):
         """A Relation not typed as owl:TransitiveProperty must have is_transitive=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst.get_is_transitive() is False
  
     def test_relation_is_asymmetric_defaults_false(self):
         """A Relation not typed as owl:AsymmetricProperty must have is_asymmetric=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst.get_is_asymmetric() is False
  
     def test_relation_is_irreflexive_defaults_false(self):
         """A Relation not typed as owl:IrreflexiveProperty must have is_irreflexive=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst.get_is_irreflexive() is False
  
     def test_relation_is_reflexive_defaults_false(self):
         """A Relation not typed as owl:ReflexiveProperty must have is_reflexive=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst.get_is_reflexive() is False
  
     def test_relation_is_inverse_functional_defaults_false(self):
         """A Relation not typed as owl:InverseFunctionalProperty must have
         is_inverse_functional=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst.get_is_inverse_functional() is False
  
     def test_property_is_functional_defaults_false(self):
         """A Property not typed as owl:FunctionalProperty must have is_functional=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         assert inst.get_is_functional() is False
  
     def test_resource_is_deprecated_defaults_false(self):
         """A Concept not bearing owl:deprecated must have is_deprecated=False."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myClass, RDF.type, OWL.Class),
         ])
-        logic.phase2_create_from_types()
-        inst = _instance_for_uri(logic, EX.myClass, Concept)
+        reader.phase2_create_from_types()
+        inst = _instance_for_uri(reader, EX.myClass, Concept)
         assert inst.get_is_deprecated() is False
 
 
@@ -443,12 +443,12 @@ class TestPhase3:
 
     def test_rdfs_label_populated(self):
         """rdfs:label must be stored as a Literal on the target instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
             (EX.MyClass, RDFS.label, RDFLiteral("My Class", lang="en")),
         ])
-        _run_all(logic)
-        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        _run_all(reader)
+        inst = _instance_for_uri(reader, EX.MyClass, Concept)
         assert inst is not None
         labels = inst.get_has_label()
         assert len(labels) >= 1
@@ -458,14 +458,14 @@ class TestPhase3:
         """    def test_rdfs_subclass_of_populated(self):
         rdfs:subClassOf must wire is_sub_concept_of on the child and
         is_super_concept_of on the parent."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.Child, RDF.type, OWL.Class),
             (EX.Parent, RDF.type, OWL.Class),
             (EX.Child, RDFS.subClassOf, EX.Parent),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.Child, Concept)
-        parent = _instance_for_uri(logic, EX.Parent, Concept)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.Child, Concept)
+        parent = _instance_for_uri(reader, EX.Parent, Concept)
         assert parent in child.get_is_sub_concept_of()
         assert child in parent.get_is_super_concept_of()
         assert child.get_is_super_concept_of() == []
@@ -473,14 +473,14 @@ class TestPhase3:
     def test_super_concept_of_multiple_children_and_parents(self):
         """is_super_concept_of must collect all children; multiple inheritance
         must wire the child into every parent."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.A, RDFS.subClassOf, EX.P1),
             (EX.B, RDFS.subClassOf, EX.P1),
             (EX.A, RDFS.subClassOf, EX.P2),
         ])
-        _run_all(logic)
-        p1 = _instance_for_uri(logic, EX.P1, Concept)
-        p2 = _instance_for_uri(logic, EX.P2, Concept)
+        _run_all(reader)
+        p1 = _instance_for_uri(reader, EX.P1, Concept)
+        p2 = _instance_for_uri(reader, EX.P2, Concept)
         ids_p1 = {c.get_has_identifier() for c in p1.get_is_super_concept_of()}
         ids_p2 = {c.get_has_identifier() for c in p2.get_is_super_concept_of()}
         assert ids_p1 == {str(EX.A), str(EX.B)}
@@ -488,24 +488,24 @@ class TestPhase3:
 
     def test_super_concept_of_no_duplicates(self):
         """A repeated rdfs:subClassOf triple must not duplicate the inverse."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.Child, RDF.type, OWL.Class),
             (EX.Parent, RDF.type, OWL.Class),
             (EX.Child, RDFS.subClassOf, EX.Parent),
         ])
         # simulate double processing of the same triple
-        logic.phase1_classify_from_predicates()
-        logic.phase2_create_from_types()
-        logic.phase3_populate_properties()
-        logic.phase3_populate_properties()
-        parent = _instance_for_uri(logic, EX.Parent, Concept)
+        reader.phase1_classify_from_predicates()
+        reader.phase2_create_from_types()
+        reader.phase3_populate_properties()
+        reader.phase3_populate_properties()
+        parent = _instance_for_uri(reader, EX.Parent, Concept)
         assert len(parent.get_is_super_concept_of()) == 1
 
     def test_super_concept_of_wired_on_restriction(self):
         """Restrictions are class expressions: they receive is_super_concept_of
         like named classes (legal in OWL, not rendered as standalone entities)."""
         restriction = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.Child, RDF.type, OWL.Class),
             (restriction, RDF.type, OWL.Restriction),
             (restriction, OWL.onProperty, EX.myProp),
@@ -513,23 +513,23 @@ class TestPhase3:
             (restriction, OWL.someValuesFrom, EX.SomeClass),
             (EX.Child, RDFS.subClassOf, restriction),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.Child, Concept)
-        restr = next(iter(logic._instance_cache.get(restriction, set())), None)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.Child, Concept)
+        restr = next(iter(reader._instance_cache.get(restriction, set())), None)
         assert restr in child.get_is_sub_concept_of()
         assert child in restr.get_is_super_concept_of()
 
     def test_rdfs_sub_property_of_populated(self):
         """rdfs:subPropertyOf must wire is_sub_property_of on the child and
         is_super_property_of on the parent."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.childProp, RDF.type, OWL.ObjectProperty),
             (EX.parentProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.childProp, Relation)
-        parent = _instance_for_uri(logic, EX.parentProp, Relation)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.childProp, Relation)
+        parent = _instance_for_uri(reader, EX.parentProp, Relation)
         assert parent in child.get_is_sub_property_of()
         assert child in parent.get_is_super_property_of()
         assert child.get_is_super_property_of() == []
@@ -537,101 +537,101 @@ class TestPhase3:
     def test_super_property_of_survives_reclassification(self):
         """Untyped child of Property is reclassified (e.g., Object property) in phase5: parent must reference the
         instance currently in cache, once."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.parentProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.childProp, Relation)
-        parent = _instance_for_uri(logic, EX.parentProp, Relation)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.childProp, Relation)
+        parent = _instance_for_uri(reader, EX.parentProp, Relation)
         assert parent.get_is_super_property_of() == [child]
 
     def test_owl_deprecated_predicate_applied(self):
         """owl:deprecated true on a resource must set is_deprecated=True on the instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myClass, RDF.type, OWL.Class),
             (EX.myClass, OWL.deprecated, RDFLiteral(True, datatype=XSD.boolean)),
         ])
-        logic.phase1_classify_from_predicates() # classifies as Resource
-        logic.phase2_create_from_types() # classifies EX.myClass as Concept
-        logic.phase3_populate_properties() # adds and populate is_deprecated to the class
-        inst = _instance_for_uri(logic, EX.myClass, Concept)
+        reader.phase1_classify_from_predicates() # classifies as Resource
+        reader.phase2_create_from_types() # classifies EX.myClass as Concept
+        reader.phase3_populate_properties() # adds and populate is_deprecated to the class
+        inst = _instance_for_uri(reader, EX.myClass, Concept)
         assert inst is not None
         assert inst.get_is_deprecated() is True
 
     def test_rdfs_domain_populated(self):
         """rdfs:domain must be stored on the Property."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.ObjectProperty),
             (EX.DomainClass, RDF.type, OWL.Class),
             (EX.myProp, RDFS.domain, EX.DomainClass),
         ])
-        _run_all(logic)
-        prop = _instance_for_uri(logic, EX.myProp, Relation)
+        _run_all(reader)
+        prop = _instance_for_uri(reader, EX.myProp, Relation)
         domains = prop.get_has_domain()
         assert any(d.get_has_identifier() == str(EX.DomainClass) for d in domains)
 
     def test_rdfs_range_populated(self):
         """rdfs:range must be stored on the Property."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.ObjectProperty),
             (EX.RangeClass, RDF.type, OWL.Class),
             (EX.myProp, RDFS.range, EX.RangeClass),
         ])
-        _run_all(logic)
-        prop = _instance_for_uri(logic, EX.myProp, Relation)
+        _run_all(reader)
+        prop = _instance_for_uri(reader, EX.myProp, Relation)
         ranges = prop.get_has_range()
         assert any(r.get_has_identifier() == str(EX.RangeClass) for r in ranges)
 
     def test_owl_inverse_of_wired_bidirectionally(self):
         """owl:inverseOf must wire is_inverse_of on both Relations."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.hasPart, RDF.type, OWL.ObjectProperty),
             (EX.isPartOf, RDF.type, OWL.ObjectProperty),
             (EX.hasPart, OWL.inverseOf, EX.isPartOf),
         ])
-        _run_all(logic)
-        has_part = _instance_for_uri(logic, EX.hasPart, Relation)
-        is_part_of = _instance_for_uri(logic, EX.isPartOf, Relation)
+        _run_all(reader)
+        has_part = _instance_for_uri(reader, EX.hasPart, Relation)
+        is_part_of = _instance_for_uri(reader, EX.isPartOf, Relation)
         assert has_part is not None
         assert is_part_of in has_part.get_is_inverse_of()
         assert has_part in is_part_of.get_is_inverse_of()
 
     def test_owl_equivalent_class_populated(self):
         """owl:equivalentClass must wire is_equivalent_to on the Concept."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.A, RDF.type, OWL.Class),
             (EX.B, RDF.type, OWL.Class),
             (EX.A, OWL.equivalentClass, EX.B),
         ])
-        _run_all(logic)
-        a = _instance_for_uri(logic, EX.A, Concept)
-        b = _instance_for_uri(logic, EX.B, Concept)
+        _run_all(reader)
+        a = _instance_for_uri(reader, EX.A, Concept)
+        b = _instance_for_uri(reader, EX.B, Concept)
         assert b in a.get_is_equivalent_to()
 
     def test_owl_disjoint_with_populated(self):
         """owl:disjointWith must wire is_disjoint_with on the Concept."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.A, RDF.type, OWL.Class),
             (EX.B, RDF.type, OWL.Class),
             (EX.A, OWL.disjointWith, EX.B),
         ])
-        _run_all(logic)
-        a = _instance_for_uri(logic, EX.A, Concept)
-        b = _instance_for_uri(logic, EX.B, Concept)
+        _run_all(reader)
+        a = _instance_for_uri(reader, EX.A, Concept)
+        b = _instance_for_uri(reader, EX.B, Concept)
         assert b in a.get_is_disjoint_with()
 
     def test_on_property_wired_to_restriction(self):
         """owl:onProperty must set applies_on_property on the Restriction."""
         restriction = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (restriction, RDF.type, OWL.Restriction),
             (restriction, OWL.onProperty, EX.myProp),
             (EX.myProp, RDF.type, OWL.ObjectProperty),
             (restriction, OWL.someValuesFrom, EX.SomeClass),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(restriction, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(restriction, set())), None)
         assert inst is not None
         prop = inst.get_applies_on_property()
         assert prop is not None
@@ -646,9 +646,9 @@ class TestPhase3:
         g.add((EX.p2, RDF.type, OWL.ObjectProperty))
         g.add((EX.myRel, OWL.propertyChainAxiom, head))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
         chain = inst.get_has_property_chain()
         assert all(isinstance(sub, list) for sub in chain)
         ids = [c.get_has_identifier() for sub in chain for c in sub]
@@ -658,11 +658,11 @@ class TestPhase3:
     def test_cardinality_exactly_handler(self):
         """owl:cardinality must set type=exactly, cardinality value, and applies_on_concept=owl:Thing."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.cardinality, RDFLiteral(2, datatype=XSD.nonNegativeInteger)),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "exactly"
         assert inst.get_has_cardinality() == 2
@@ -673,11 +673,11 @@ class TestPhase3:
     def test_cardinality_min_handler(self):
         """owl:minCardinality must set type=min, cardinality value, and applies_on_concept=owl:Thing."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.minCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "min"
         assert inst.get_has_cardinality() == 1
@@ -685,11 +685,11 @@ class TestPhase3:
     def test_cardinality_max_handler(self):
         """owl:maxCardinality must set type=max and cardinality value."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.maxCardinality, RDFLiteral(5, datatype=XSD.nonNegativeInteger)),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "max"
         assert inst.get_has_cardinality() == 5
@@ -697,13 +697,13 @@ class TestPhase3:
     def test_qualified_cardinality_exactly_setter(self):
         """owl:qualifiedCardinality must set type=exactly and applies_on_concept to the filler."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.qualifiedCardinality, RDFLiteral(3, datatype=XSD.nonNegativeInteger)),
             (bnode, OWL.onClass, EX.FillerClass),
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "exactly"
         concept = inst.get_applies_on_concept()
@@ -713,26 +713,26 @@ class TestPhase3:
     def test_qualified_cardinality_min_setter(self):
         """owl:minQualifiedCardinality must set type=min."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.minQualifiedCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
             (bnode, OWL.onClass, EX.FillerClass),
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "min"
 
     def test_qualified_cardinality_max_setter(self):
         """owl:maxQualifiedCardinality must set type=max."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.maxQualifiedCardinality, RDFLiteral(4, datatype=XSD.nonNegativeInteger)),
             (bnode, OWL.onClass, EX.FillerClass),
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "max"
 
@@ -740,12 +740,12 @@ class TestPhase3:
         """owl:onDataRange on a qualified Cardinality BNode must set
         applies_on_concept to the XSD Datatype, not owl:Thing (as defaulted)."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.qualifiedCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
             (bnode, OWL.onDataRange, XSD.string),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         concepts = inst.get_applies_on_concept()
         concepts = concepts if isinstance(concepts, list) else [concepts]
@@ -756,15 +756,15 @@ class TestPhase3:
     def test_namespace_filter_skips_non_mapped_predicates(self):
         """Predicates outside OWL/RDFS/RDF namespaces must not populate the instance
         and must not appear in _triples_map."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myClass, RDF.type, OWL.Class),
             (EX.myClass, EX.customPred, RDFLiteral("value")),
         ])
-        logic.phase1_classify_from_predicates()
-        logic.phase2_create_from_types()
-        logic.phase3_populate_properties()
-        inst = _instance_for_uri(logic, EX.myClass, Concept)
-        triples = logic._triples_map.get(inst, set())
+        reader.phase1_classify_from_predicates()
+        reader.phase2_create_from_types()
+        reader.phase3_populate_properties()
+        inst = _instance_for_uri(reader, EX.myClass, Concept)
+        triples = reader._triples_map.get(inst, set())
         assert not any(p == EX.customPred for _, p, _ in triples)
 
     def test_datatype_restriction_value_has_datatype(self):
@@ -779,9 +779,9 @@ class TestPhase3:
         g.add((bnode, OWL.withRestrictions, head))
         g.add((facet_node, XSD.minInclusive, RDFLiteral("0.0", datatype=XSD.double)))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        inst = _instance_for_uri(logic, bnode, DatatypeRestriction)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        inst = _instance_for_uri(reader, bnode, DatatypeRestriction)
         val = inst.get_has_restriction_value()
         assert isinstance(val, Literal)
         dt = val.get_has_type()
@@ -806,11 +806,11 @@ class TestPhase4:
         g.add((EX.B, RDF.type, OWL.Class))
         g.add((EX.C, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        a = _instance_for_uri(logic, EX.A, Concept)
-        b = _instance_for_uri(logic, EX.B, Concept)
-        c = _instance_for_uri(logic, EX.C, Concept)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        a = _instance_for_uri(reader, EX.A, Concept)
+        b = _instance_for_uri(reader, EX.B, Concept)
+        c = _instance_for_uri(reader, EX.C, Concept)
         assert b in a.get_is_disjoint_with()
         assert c in a.get_is_disjoint_with()
         assert a in b.get_is_disjoint_with()
@@ -825,10 +825,10 @@ class TestPhase4:
         g.add((EX.i1, RDF.type, OWL.NamedIndividual))
         g.add((EX.i2, RDF.type, OWL.NamedIndividual))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        i1 = _instance_for_uri(logic, EX.i1, Individual)
-        i2 = _instance_for_uri(logic, EX.i2, Individual)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        i1 = _instance_for_uri(reader, EX.i1, Individual)
+        i2 = _instance_for_uri(reader, EX.i2, Individual)
         assert i2 in i1.get_is_different_from()
         assert i1 in i2.get_is_different_from()
 
@@ -842,10 +842,10 @@ class TestPhase4:
         g.add((EX.p1, RDF.type, OWL.ObjectProperty))
         g.add((EX.p2, RDF.type, OWL.ObjectProperty))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        p1 = _instance_for_uri(logic, EX.p1, Relation)
-        p2 = _instance_for_uri(logic, EX.p2, Relation)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        p1 = _instance_for_uri(reader, EX.p1, Relation)
+        p2 = _instance_for_uri(reader, EX.p2, Relation)
         assert p2 in p1.get_is_disjoint_with()
         assert p1 in p2.get_is_disjoint_with()
 
@@ -858,78 +858,78 @@ class TestPhase5Defaults:
 
     def test_relation_gets_owl_thing_domain_when_none_declared(self):
         """A Relation without explicit domain must receive owl:Thing as default domain."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        _run_all(logic)
-        rel = _instance_for_uri(logic, EX.myRel, Relation)
+        _run_all(reader)
+        rel = _instance_for_uri(reader, EX.myRel, Relation)
         domains = rel.get_has_domain()
         assert any(d.get_has_identifier() == str(OWL.Thing) for d in domains)
 
     def test_relation_gets_owl_thing_range_when_none_declared(self):
         """A Relation without explicit range must receive owl:Thing as default range."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
         ])
-        _run_all(logic)
-        rel = _instance_for_uri(logic, EX.myRel, Relation)
+        _run_all(reader)
+        rel = _instance_for_uri(reader, EX.myRel, Relation)
         ranges = rel.get_has_range()
         assert any(r.get_has_identifier() == str(OWL.Thing) for r in ranges)
 
     def test_attribute_gets_rdfs_literal_range_when_none_declared(self):
         """A DatatypeProperty without explicit range must receive rdfs:Literal as default range."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myAttr, RDF.type, OWL.DatatypeProperty),
         ])
-        _run_all(logic)
-        attr = _instance_for_uri(logic, EX.myAttr, Attribute)
+        _run_all(reader)
+        attr = _instance_for_uri(reader, EX.myAttr, Attribute)
         ranges = attr.get_has_range()
         assert any(r.get_has_identifier() == str(RDFS.Literal) for r in ranges)
 
     def test_individual_gets_owl_thing_type_when_none_declared(self):
         """A NamedIndividual without explicit rdf:type assertion must have owl:Thing as type."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myInd, RDF.type, OWL.NamedIndividual),
         ])
-        _run_all(logic)
-        ind = _instance_for_uri(logic, EX.myInd, Individual)
+        _run_all(reader)
+        ind = _instance_for_uri(reader, EX.myInd, Individual)
         types = ind.get_has_type()
         assert any(t.get_has_identifier() == str(OWL.Thing) for t in types)
 
     def test_explicitly_typed_individual_keeps_declared_type(self):
         """An Individual with an explicit rdf:type must keep it and not be overridden."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myInd, RDF.type, OWL.NamedIndividual),
             (EX.myInd, RDF.type, EX.SomeClass),
             (EX.SomeClass, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        ind = _instance_for_uri(logic, EX.myInd, Individual)
+        _run_all(reader)
+        ind = _instance_for_uri(reader, EX.myInd, Individual)
         types = ind.get_has_type()
         ids = [t.get_has_identifier() for t in types]
         assert str(EX.SomeClass) in ids
 
     def test_explicit_domain_not_overridden_by_owl_thing(self):
         """A Relation with explicit domain must NOT have owl:Thing added as extra domain."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
             (EX.DomainClass, RDF.type, OWL.Class),
             (EX.myRel, RDFS.domain, EX.DomainClass),
         ])
-        _run_all(logic)
-        rel = _instance_for_uri(logic, EX.myRel, Relation)
+        _run_all(reader)
+        rel = _instance_for_uri(reader, EX.myRel, Relation)
         ids = [d.get_has_identifier() for d in rel.get_has_domain()]
         assert str(OWL.Thing) not in ids
 
     def test_explicit_range_not_overridden_by_owl_thing(self):
         """A Relation with explicit range must NOT have owl:Thing added as extra range."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
             (EX.RangeClass, RDF.type, OWL.Class),
             (EX.myRel, RDFS.range, EX.RangeClass),
         ])
-        _run_all(logic)
-        rel = _instance_for_uri(logic, EX.myRel, Relation)
+        _run_all(reader)
+        rel = _instance_for_uri(reader, EX.myRel, Relation)
         ids = [r.get_has_identifier() for r in rel.get_has_range()]
         assert str(OWL.Thing) not in ids
 
@@ -943,46 +943,46 @@ class TestPhase5Reclassification:
     def test_generic_property_reclassified_via_inverse_of(self):
         """A generic Property with owl:inverseOf pointing to a known Relation
         must be reclassified as Relation."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.hasPart, RDF.type, OWL.ObjectProperty),
             (EX.isPartOf, OWL.inverseOf, EX.hasPart),
         ])
-        _run_all(logic)
+        _run_all(reader)
         # isPartOf never typed as owl:ObjectProperty explicitly
-        inst = _instance_for_uri(logic, EX.isPartOf, Relation)
+        inst = _instance_for_uri(reader, EX.isPartOf, Relation)
         assert inst is not None, "isPartOf must be reclassified as Relation via inverseOf"
 
     def test_generic_property_reclassified_via_super_property_up(self):
         """A generic Property whose parent is a Relation must be reclassified as Relation
         (upward traversal of the subPropertyOf hierarchy)."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.parentProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.childProp, Relation)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.childProp, Relation)
         assert child is not None, "childProp must be reclassified as Relation via subPropertyOf (up)"
 
     def test_generic_property_reclassified_via_sub_property_down(self):
         """A generic Property whose child is a Relation must be reclassified as Relation
         (downward traversal of the subPropertyOf hierarchy)."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.childProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
-        _run_all(logic)
-        parent = _instance_for_uri(logic, EX.parentProp, Relation)
+        _run_all(reader)
+        parent = _instance_for_uri(reader, EX.parentProp, Relation)
         assert parent is not None, "parentProp must be reclassified as Relation via subPropertyOf (down)"
 
     def test_untyped_property_falls_back_to_annotation(self):
         """A predicate used in the graph but never typed or connected to any typed
         property must default to Annotation."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.someSubject, EX.unknownPred, RDFLiteral("value")),
         ])
-        _run_all(logic)
+        _run_all(reader)
         # After phase5 fallback the predicate should be created as Annotation
-        inst = _instance_for_uri(logic, EX.unknownPred, Annotation)
+        inst = _instance_for_uri(reader, EX.unknownPred, Annotation)
         assert inst is not None
 
 # ===========================================================================
@@ -993,30 +993,30 @@ class TestDomainRangeInheritance:
 
     def test_child_inherits_domain_from_parent(self):
         """A child Relation with no domain must inherit the parent's domain."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.parentProp, RDF.type, OWL.ObjectProperty),
             (EX.DomainClass, RDF.type, OWL.Class),
             (EX.parentProp, RDFS.domain, EX.DomainClass),
             (EX.childProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.childProp, Relation)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.childProp, Relation)
         ids = [d.get_has_identifier() for d in child.get_has_domain()]
         assert str(EX.DomainClass) in ids
         assert str(OWL.Thing) not in ids
 
     def test_child_inherits_range_from_parent(self):
         """A child Relation with no range must inherit the parent's range."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.parentProp, RDF.type, OWL.ObjectProperty),
             (EX.RangeClass, RDF.type, OWL.Class),
             (EX.parentProp, RDFS.range, EX.RangeClass),
             (EX.childProp, RDF.type, OWL.ObjectProperty),
             (EX.childProp, RDFS.subPropertyOf, EX.parentProp),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.childProp, Relation)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.childProp, Relation)
         ids = [r.get_has_identifier() for r in child.get_has_range()]
         assert str(EX.RangeClass) in ids
         assert str(OWL.Thing) not in ids
@@ -1024,30 +1024,30 @@ class TestDomainRangeInheritance:
     def test_inverse_domain_inferred_from_inverse_range(self):
         """A Relation whose inverse has an explicit range must use that range
         as its own domain (inverseOf domain/range swap)."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.hasPart, RDF.type, OWL.ObjectProperty),
             (EX.RangeClass, RDF.type, OWL.Class),
             (EX.hasPart, RDFS.range, EX.RangeClass),
             (EX.isPartOf, RDF.type, OWL.ObjectProperty),
             (EX.isPartOf, OWL.inverseOf, EX.hasPart),
         ])
-        _run_all(logic)
-        is_part_of = _instance_for_uri(logic, EX.isPartOf, Relation)
+        _run_all(reader)
+        is_part_of = _instance_for_uri(reader, EX.isPartOf, Relation)
         ids = [d.get_has_identifier() for d in is_part_of.get_has_domain()]
         assert str(EX.RangeClass) in ids
 
     def test_inverse_range_inferred_from_inverse_domain(self):
         """A Relation whose inverse has an explicit domain must use that doman
         as its own range (inverseOf domain/range swap)."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.hasPart, RDF.type, OWL.ObjectProperty),
             (EX.DomainClass, RDF.type, OWL.Class),
             (EX.hasPart, RDFS.domain, EX.DomainClass),
             (EX.isPartOf, RDF.type, OWL.ObjectProperty),
             (EX.isPartOf, OWL.inverseOf, EX.hasPart),
         ])
-        _run_all(logic)
-        is_part_of = _instance_for_uri(logic, EX.isPartOf, Relation)
+        _run_all(reader)
+        is_part_of = _instance_for_uri(reader, EX.isPartOf, Relation)
         ids = [d.get_has_identifier() for d in is_part_of.get_has_range()]
         assert str(EX.DomainClass) in ids
 
@@ -1061,12 +1061,12 @@ class TestPunning:
     def test_punned_uri_has_two_instances(self):
         """A URI declared as both owl:Class and owl:NamedIndividual must have
         exactly two cached instances (Concept + Individual)."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.NaturalElement, RDF.type, OWL.Class),
             (EX.NaturalElement, RDF.type, OWL.NamedIndividual),
         ])
-        _run_all(logic)
-        instances = logic._instance_cache.get(EX.NaturalElement, set())
+        _run_all(reader)
+        instances = reader._instance_cache.get(EX.NaturalElement, set())
         types = {type(i) for i in instances}
         assert Concept in types
         assert Individual in types
@@ -1075,12 +1075,12 @@ class TestPunning:
     # def test_punned_instances_annotated_with_also_defined_as(self):
     #     """After phase5 each instance involved in punning must reference the other
     #     via also_defined_as (set_also_defined_as)."""
-    #     logic = _make_logic([
+    #     reader = _make_reader([
     #         (EX.NaturalElement, RDF.type, OWL.Class),
     #         (EX.NaturalElement, RDF.type, OWL.NamedIndividual),
     #     ])
-    #     _run_all(logic)
-    #     instances = list(logic._instance_cache.get(EX.NaturalElement, set()))
+    #     _run_all(reader)
+    #     instances = list(reader._instance_cache.get(EX.NaturalElement, set()))
     #     assert len(instances) == 2
     #     # Each must reference the other
     #     for inst in instances:
@@ -1098,22 +1098,22 @@ class TestPhase6:
 
     def test_unmapped_triple_produces_statement(self):
         """A triple whose predicate is not mapped in the config must generate a Statement."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.subject, RDF.type, OWL.Class),
             (EX.subject, EX.customPred, EX.someObject),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         assert len(stmts) >= 1
 
     def test_statement_subject_predicate_object_set(self):
         """The produced Statement must have subject, predicate, and object populated."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.subject, RDF.type, OWL.Class),
             (EX.subject, EX.customPred, RDFLiteral("hello")),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         assert len(stmts) >= 1
         stmt = stmts[0]
         assert stmt.get_has_subject() is not None
@@ -1122,12 +1122,12 @@ class TestPhase6:
 
     def test_mapped_triple_does_not_produce_statement(self):
         """A triple already handled by the property mapping must NOT generate a Statement."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
             (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         # rdfs:label is mapped -> no extra statement for it
         for stmt in stmts:
             pred = stmt.get_has_predicate()
@@ -1138,14 +1138,14 @@ class TestPhase6:
         """A BNode typed as owl:Axiom must be a Statement with subject, predicate,
         and object populated — not an Individual."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, RDF.type, OWL.Axiom),
             (bnode, OWL.annotatedSource, EX.subject),
             (bnode, OWL.annotatedProperty, EX.pred),
             (bnode, OWL.annotatedTarget, RDFLiteral("val")),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(bnode, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
         assert inst is not None
         assert isinstance(inst, Statement)
         assert not isinstance(inst, Individual)
@@ -1156,12 +1156,12 @@ class TestPhase6:
     def test_literal_object_produces_annotation_predicate(self):
         """A Statement whose object is a Literal must have an Annotation as predicate
         when the predicate is not already in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.subject, RDF.type, OWL.Class),
             (EX.subject, EX.customPred, RDFLiteral("hello")),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         target = next((s for s in stmts if isinstance(s.get_has_object(), Literal)), None)
         assert target is not None
         assert isinstance(target.get_has_predicate(), Annotation)
@@ -1170,13 +1170,13 @@ class TestPhase6:
         """A Statement whose object is a BNode must resolve the object to a Statement
         instance, not a generic Resource."""
         bnode_obj = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.subject, RDF.type, OWL.NamedIndividual),
             (bnode_obj, RDF.type, OWL.Axiom),
             (EX.subject, EX.customPred, bnode_obj),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         target = next((s for s in stmts
                     if s.get_has_subject() is not None
                     and s.get_has_subject().get_has_identifier() == str(EX.subject)), None)
@@ -1194,64 +1194,64 @@ class TestGetOrCreate:
     def test_same_uri_same_class_returns_same_instance(self):
         """Calling get_or_create twice with the same URI and class must return
         the same instance."""
-        logic = _make_logic([])
-        i1 = logic.get_or_create(EX.A, Concept, populate=False)
-        i2 = logic.get_or_create(EX.A, Concept, populate=False)
+        reader = _make_reader([])
+        i1 = reader.get_or_create(EX.A, Concept, populate=False)
+        i2 = reader.get_or_create(EX.A, Concept, populate=False)
         assert i1 is i2
 
     # def test_owl_namespace_uri_filtered_out(self):
     #     """Arbitrary OWL-namespace URIs that are not whitelisted must return None."""
-    #     logic = _make_logic([])
-    #     result = logic.get_or_create(OWL.topObjectProperty, Relation, populate=False)
+    #     reader = _make_reader([])
+    #     result = reader.get_or_create(OWL.topObjectProperty, Relation, populate=False)
     #     assert result is None
 
     # def test_owl_thing_not_filtered(self):
     #     """OWL.Thing must NOT be filtered even though it's in the OWL namespace."""
-    #     logic = _make_logic([])
-    #     result = logic.get_or_create(OWL.Thing, Concept, populate=False)
+    #     reader = _make_reader([])
+    #     result = reader.get_or_create(OWL.Thing, Concept, populate=False)
     #     assert result is not None
     #     assert isinstance(result, Concept)
 
     # def test_rdfs_literal_not_filtered(self):
     #     """RDFS.Literal must NOT be filtered."""
-    #     logic = _make_logic([])
-    #     result = logic.get_or_create(RDFS.Literal, Datatype, populate=False)
+    #     reader = _make_reader([])
+    #     result = reader.get_or_create(RDFS.Literal, Datatype, populate=False)
     #     assert result is not None
 
     def test_punning_individual_does_not_overwrite_concept(self):
         """Requesting Individual for a URI already cached as Concept (without
         explicit owl:NamedIndividual declaration) must return the existing Concept."""
-        logic = _make_logic([])
-        concept = logic.get_or_create(EX.A, Concept, populate=False)
-        result = logic.get_or_create(EX.A, Individual, populate=False)
+        reader = _make_reader([])
+        concept = reader.get_or_create(EX.A, Concept, populate=False)
+        result = reader.get_or_create(EX.A, Individual, populate=False)
         assert result is concept
 
     def test_named_individual_punning_allowed(self):
         """When the graph contains (uri, rdf:type, owl:NamedIndividual), requesting
         Individual for a URI already cached as Concept must create a second instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.A, RDF.type, OWL.NamedIndividual),
         ])
-        logic.get_or_create(EX.A, Concept, populate=False)
-        result = logic.get_or_create(EX.A, Individual, populate=False)
+        reader.get_or_create(EX.A, Concept, populate=False)
+        result = reader.get_or_create(EX.A, Individual, populate=False)
         assert isinstance(result, Individual)
         # Both must coexist in cache
-        types = {type(i) for i in logic._instance_cache[EX.A]}
+        types = {type(i) for i in reader._instance_cache[EX.A]}
         assert Concept in types
         assert Individual in types
 
     def test_xsd_uri_creates_datatype(self):
         """A URI in the XSD namespace must always produce a Datatype regardless of
         the requested class."""
-        logic = _make_logic([])
-        result = logic.get_or_create(XSD.string, Concept, populate=False)
+        reader = _make_reader([])
+        result = reader.get_or_create(XSD.string, Concept, populate=False)
         assert isinstance(result, Datatype)
 
     def test_literal_returns_literal_instance(self):
         """Passing an RDFLib Literal to get_or_create must return a Literal model."""
-        logic = _make_logic([])
+        reader = _make_reader([])
         rdf_lit = RDFLiteral("hello", lang="en")
-        result = logic.get_or_create(rdf_lit, populate=False)
+        result = reader.get_or_create(rdf_lit, populate=False)
         assert isinstance(result, Literal)
         assert result.get_has_value() == "hello"
 
@@ -1259,17 +1259,17 @@ class TestGetOrCreate:
         """If a URI is typed as both owl:ObjectProperty (Relation) and owl:FunctionalProperty
         (Property), get_or_create must keep only the Relation and apply the functional setter
         on it — no duplicate generic Property instance must be created."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.ObjectProperty),
             (EX.myProp, RDF.type, OWL.FunctionalProperty),
         ])
-        logic.phase1_classify_from_predicates()
-        logic.phase2_create_from_types()
-        logic.phase3_populate_properties()
-        logic.phase4_process_group_axioms()
-        logic.phase5_fallback()
+        reader.phase1_classify_from_predicates()
+        reader.phase2_create_from_types()
+        reader.phase3_populate_properties()
+        reader.phase4_process_group_axioms()
+        reader.phase5_fallback()
 
-        instances = logic._instance_cache.get(EX.myProp, set())
+        instances = reader._instance_cache.get(EX.myProp, set())
         # Only one instance, and it must be Relation (not generic Property)
         assert len(instances) == 1
         inst = next(iter(instances))
@@ -1279,92 +1279,92 @@ class TestGetOrCreate:
     def test_resource_promoted_to_concept_when_requested(self):
         """A URI already in cache as Resource must be promoted to Concept when requested,
         since Concept is a subclass of Resource."""
-        logic = _make_logic([])
+        reader = _make_reader([])
         # First create as Resource
-        r = logic.get_or_create(EX.foo, Resource, populate=False)
+        r = reader.get_or_create(EX.foo, Resource, populate=False)
         assert isinstance(r, Resource)
         assert type(r) is Resource
         # Now request as Concept — must promote, not return stale Resource
-        c = logic.get_or_create(EX.foo, Concept, populate=False)
+        c = reader.get_or_create(EX.foo, Concept, populate=False)
         assert isinstance(c, Concept)
         assert type(c) is Concept
         # Cache must contain only the promoted instance
-        assert len(logic._instance_cache[EX.foo]) == 1
+        assert len(reader._instance_cache[EX.foo]) == 1
 
     def test_resource_not_promoted_when_punning(self):
         """A URI declared as owl:NamedIndividual (explicit punning) plus Concept
         must not be collapsed when Resource is requested."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.foo, RDF.type, OWL.NamedIndividual),
             (EX.foo, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        result = logic.get_or_create(EX.foo, Resource, populate=False)
-        assert len(logic._instance_cache[EX.foo]) == 2
+        _run_all(reader)
+        result = reader.get_or_create(EX.foo, Resource, populate=False)
+        assert len(reader._instance_cache[EX.foo]) == 2
         assert isinstance(result, (Concept, Individual))
 
     def test_concept_not_downgraded_to_resource(self):
         """A URI already in cache as Concept must never be downgraded to Resource."""
-        logic = _make_logic([])
-        logic.get_or_create(EX.foo, Concept, populate=False)
-        result = logic.get_or_create(EX.foo, Resource, populate=False)
+        reader = _make_reader([])
+        reader.get_or_create(EX.foo, Concept, populate=False)
+        result = reader.get_or_create(EX.foo, Resource, populate=False)
         assert isinstance(result, Concept)
         assert type(result) is Concept
 
     # def test_rdfs_resource_filtered(self):
     #     """RDFS.Resource must be filtered and return None."""
-    #     logic = _make_logic([])
-    #     result = logic.get_or_create(RDFS.Resource, Resource, populate=False)
+    #     reader = _make_reader([])
+    #     result = reader.get_or_create(RDFS.Resource, Resource, populate=False)
     #     assert result is None
 
     # def test_rdfs_class_filtered(self):
     #     """RDFS.Class must be filtered and return None."""
-    #     logic = _make_logic([])
-    #     result = logic.get_or_create(RDFS.Class, Concept, populate=False)
+    #     reader = _make_reader([])
+    #     result = reader.get_or_create(RDFS.Class, Concept, populate=False)
     #     assert result is None
 
     def test_bnode_in_cache_returns_existing(self):
         """get_or_create on a BNode already in cache must return the existing instance."""
-        logic = _make_logic([])
+        reader = _make_reader([])
         bnode = BNode()
-        first = logic.get_or_create(bnode, Concept, populate=False)
-        second = logic.get_or_create(bnode, Concept, populate=False)
+        first = reader.get_or_create(bnode, Concept, populate=False)
+        second = reader.get_or_create(bnode, Concept, populate=False)
         assert first is second
 
     def test_uriref_in_cache_returns_matching_type(self):
         """get_or_create on a URIRef already in cache must return the instance
         matching the requested class."""
-        logic = _make_logic([])
-        first = logic.get_or_create(EX.A, Concept, populate=False)
-        second = logic.get_or_create(EX.A, Concept, populate=False)
+        reader = _make_reader([])
+        first = reader.get_or_create(EX.A, Concept, populate=False)
+        second = reader.get_or_create(EX.A, Concept, populate=False)
         assert first is second
 
     def test_populate_true_calls_populate_instance(self):
         """get_or_create with populate=True on a new URI must populate the instance
         (label populated from graph)."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
         ])
         # No phase2 — EX.MyClass not in cache yet
-        inst = logic.get_or_create(EX.MyClass, Concept, populate=True)
+        inst = reader.get_or_create(EX.MyClass, Concept, populate=True)
         labels = inst.get_has_label()
         assert len(labels) >= 1
         assert any(l.get_has_value() == "My Class" for l in labels)
 
     def test_populate_false_skips_populate_instance(self):
         """get_or_create with populate=False must not populate the instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
             (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
         ])
-        inst = logic.get_or_create(EX.MyClass, Concept, populate=False)
+        inst = reader.get_or_create(EX.MyClass, Concept, populate=False)
         labels = inst.get_has_label()
         assert len(labels) == 0
 
     def test_identifier_always_set(self):
         """get_or_create must always set has_identifier even with populate=False."""
-        logic = _make_logic([])
-        inst = logic.get_or_create(EX.MyClass, Concept, populate=False)
+        reader = _make_reader([])
+        inst = reader.get_or_create(EX.MyClass, Concept, populate=False)
         assert inst.get_has_identifier() == str(EX.MyClass)
 
 
@@ -1381,7 +1381,7 @@ class TestIntegration:
                      inverseOf isToppingOf
           isToppingOf: no explicit domain/range -> must inherit from inverse
         """
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.hasTopping, RDF.type, OWL.ObjectProperty),
             (EX.Pizza, RDF.type, OWL.Class),
             (EX.PizzaTopping, RDF.type, OWL.Class),
@@ -1390,10 +1390,10 @@ class TestIntegration:
             (EX.isToppingOf, RDF.type, OWL.ObjectProperty),
             (EX.isToppingOf, OWL.inverseOf, EX.hasTopping),
         ])
-        _run_all(logic)
+        _run_all(reader)
 
-        has_topping = _instance_for_uri(logic, EX.hasTopping, Relation)
-        is_topping_of = _instance_for_uri(logic, EX.isToppingOf, Relation)
+        has_topping = _instance_for_uri(reader, EX.hasTopping, Relation)
+        is_topping_of = _instance_for_uri(reader, EX.isToppingOf, Relation)
 
         assert has_topping is not None
         assert is_topping_of is not None
@@ -1413,15 +1413,15 @@ class TestIntegration:
         - applies_on_concept pointing to the filler class
         """
         restriction = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (restriction, RDF.type, OWL.Restriction),
             (restriction, OWL.onProperty, EX.myProp),
             (EX.myProp, RDF.type, OWL.ObjectProperty),
             (restriction, OWL.someValuesFrom, EX.FillerClass),
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        inst = next(iter(logic._instance_cache.get(restriction, set())), None)
+        _run_all(reader)
+        inst = next(iter(reader._instance_cache.get(restriction, set())), None)
         assert inst is not None
         assert isinstance(inst, Quantifier)
         assert inst.get_has_quantifier_type() == "some"
@@ -1446,13 +1446,13 @@ class TestIntegration:
         g.add((EX.A, RDF.type, OWL.Class))
         g.add((EX.B, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
 
-        tf = _instance_for_uri(logic, bnode, TruthFunction)
+        tf = _instance_for_uri(reader, bnode, TruthFunction)
         if tf is None:
             # TF may be keyed on the head BNode (collection)
-            tf = _instance_for_uri(logic, head, TruthFunction)
+            tf = _instance_for_uri(reader, head, TruthFunction)
         assert tf is not None
         assert tf.get_has_logical_operator() == "and"
         concepts = tf.get_applies_on_concept()
@@ -1472,11 +1472,11 @@ class TestIntegration:
         g.add((EX.A, RDF.type, OWL.Class))
         g.add((EX.B, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        tf = _instance_for_uri(logic, bnode, TruthFunction)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        tf = _instance_for_uri(reader, bnode, TruthFunction)
         if tf is None:
-            tf = _instance_for_uri(logic, head, TruthFunction)
+            tf = _instance_for_uri(reader, head, TruthFunction)
         assert tf is not None
         assert tf.get_has_logical_operator() == "or"
         concepts = tf.get_applies_on_concept()
@@ -1488,12 +1488,12 @@ class TestIntegration:
         """owl:complementOf on a BNode must produce a TruthFunction with
         has_logical_operator='not' and applies_on_concept populated."""
         bnode = BNode()
-        logic = _make_logic([
+        reader = _make_reader([
             (bnode, OWL.complementOf, EX.A),
             (EX.A, RDF.type, OWL.Class),
         ])
-        _run_all(logic)
-        tf = _instance_for_uri(logic, bnode, TruthFunction)
+        _run_all(reader)
+        tf = _instance_for_uri(reader, bnode, TruthFunction)
         assert tf is not None
         assert tf.get_has_logical_operator() == "not"
         concepts = tf.get_applies_on_concept()
@@ -1512,9 +1512,9 @@ class TestIntegration:
         g.add((EX.ind1, RDF.type, OWL.NamedIndividual))
         g.add((EX.ind2, RDF.type, OWL.NamedIndividual))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        one_of = _instance_for_uri(logic, bnode, OneOf)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        one_of = _instance_for_uri(reader, bnode, OneOf)
         assert one_of is not None
         resources = one_of.get_applies_on_resource()
         ids = [r.get_has_identifier() for r in resources]
@@ -1524,7 +1524,7 @@ class TestIntegration:
     def test_multi_level_sub_property_inheritance(self):
         """Domain/range must be inherited across a three-level subPropertyOf chain:
         grandchild -> child -> parent, where only parent declares domain and range."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.parent, RDF.type, OWL.ObjectProperty),
             (EX.DomainClass, RDF.type, OWL.Class),
             (EX.RangeClass, RDF.type, OWL.Class),
@@ -1535,8 +1535,8 @@ class TestIntegration:
             (EX.grandchild, RDF.type, OWL.ObjectProperty),
             (EX.grandchild, RDFS.subPropertyOf, EX.child),
         ])
-        _run_all(logic)
-        grandchild = _instance_for_uri(logic, EX.grandchild, Relation)
+        _run_all(reader)
+        grandchild = _instance_for_uri(reader, EX.grandchild, Relation)
         domain_ids = [d.get_has_identifier() for d in grandchild.get_has_domain()]
         range_ids = [r.get_has_identifier() for r in grandchild.get_has_range()]
         assert str(EX.DomainClass) in domain_ids
@@ -1560,16 +1560,16 @@ class TestIntegration:
         g.add((EX.B, RDF.type, OWL.Class))
         g.add((EX.C, RDF.type, OWL.Class))
         cache = {}
-        logic = OwlLogic(g, cache, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        outer_tf = _instance_for_uri(logic, outer, TruthFunction)
+        reader = OwlReader(g, cache, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        outer_tf = _instance_for_uri(reader, outer, TruthFunction)
         if outer_tf is None:
-            outer_tf = _instance_for_uri(logic, outer_head, TruthFunction)
+            outer_tf = _instance_for_uri(reader, outer_head, TruthFunction)
         assert outer_tf is not None
         assert outer_tf.get_has_logical_operator() == "and"
-        inner_tf = _instance_for_uri(logic, inner, TruthFunction)
+        inner_tf = _instance_for_uri(reader, inner, TruthFunction)
         if inner_tf is None:
-            inner_tf = _instance_for_uri(logic, inner_head, TruthFunction)
+            inner_tf = _instance_for_uri(reader, inner_head, TruthFunction)
         assert inner_tf is not None
         assert inner_tf.get_has_logical_operator() == "or"
         # outer must reference inner via applies_on_concept
@@ -1582,13 +1582,13 @@ class TestPopulationEdgeCases:
     def test_same_predicate_twice_both_values_in_list(self):
         """rdfs:label declared twice on the same class must produce two Literal
         instances in has_label — not just the last one."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
             (EX.MyClass, RDFS.label, RDFLiteral("First", lang="en")),
             (EX.MyClass, RDFS.label, RDFLiteral("Secondo", lang="it")),
         ])
-        _run_all(logic)
-        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        _run_all(reader)
+        inst = _instance_for_uri(reader, EX.MyClass, Concept)
         labels = inst.get_has_label()
         values = [l.get_has_value() for l in labels]
         assert "First" in values
@@ -1597,41 +1597,41 @@ class TestPopulationEdgeCases:
     def test_same_subclass_triple_twice_no_duplicate_in_list(self):
         """rdfs:subClassOf declared twice for the same pair must not add the
         parent twice to is_sub_concept_of."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.Child, RDF.type, OWL.Class),
             (EX.Parent, RDF.type, OWL.Class),
             (EX.Child, RDFS.subClassOf, EX.Parent),
             (EX.Child, RDFS.subClassOf, EX.Parent),
         ])
-        _run_all(logic)
-        child = _instance_for_uri(logic, EX.Child, Concept)
-        parent = _instance_for_uri(logic, EX.Parent, Concept)
+        _run_all(reader)
+        child = _instance_for_uri(reader, EX.Child, Concept)
+        parent = _instance_for_uri(reader, EX.Parent, Concept)
         parents_in_list = [c for c in child.get_is_sub_concept_of() if c is parent]
         assert len(parents_in_list) == 1
  
     def test_setter_not_called_with_none_object(self):
         """When get_or_create returns None for a filtered URI (e.g. OWL namespace),
         the setter must not be called — None must never appear in has_domain."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.ObjectProperty),
             # rdfs:domain points to a filtered OWL URI
             (EX.myProp, RDFS.domain, OWL.topObjectProperty),
         ])
-        _run_all(logic)
-        prop = _instance_for_uri(logic, EX.myProp, Relation)
+        _run_all(reader)
+        prop = _instance_for_uri(reader, EX.myProp, Relation)
         domains = prop.get_has_domain()
         assert None not in domains
  
     def test_handler_exception_triple_not_in_triples_map(self):
         """When a handler raises an exception, the triple must not appear in
         _triples_map for the instance."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myRel, RDF.type, OWL.ObjectProperty),
             (EX.myRel, OWL.propertyChainAxiom, EX.notAList),
         ])
-        _run_all(logic)
-        inst = _instance_for_uri(logic, EX.myRel, Relation)
-        triples = logic._triples_map.get(inst, set())
+        _run_all(reader)
+        inst = _instance_for_uri(reader, EX.myRel, Relation)
+        triples = reader._triples_map.get(inst, set())
         assert not any(p == OWL.propertyChainAxiom for _, p, _ in triples)
  
 # ===========================================================================
@@ -1643,36 +1643,36 @@ class TestCacheEdgeCases:
     def test_populate_true_on_cached_uri_does_not_duplicate_triples(self):
         """Calling get_or_create with populate=True on a URI already in cache
         must not add duplicate entries to _triples_map."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
             (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
         ])
-        logic.phase2_create_from_types()
-        logic.phase3_populate_properties()
+        reader.phase2_create_from_types()
+        reader.phase3_populate_properties()
  
-        inst = _instance_for_uri(logic, EX.MyClass, Concept)
-        triples_before = len(logic._triples_map.get(inst, set()))
+        inst = _instance_for_uri(reader, EX.MyClass, Concept)
+        triples_before = len(reader._triples_map.get(inst, set()))
  
         # Call again with populate=True on already-cached URI
-        logic.get_or_create(EX.MyClass, Concept, populate=True)
-        triples_after = len(logic._triples_map.get(inst, set()))
+        reader.get_or_create(EX.MyClass, Concept, populate=True)
+        triples_after = len(reader._triples_map.get(inst, set()))
  
         assert triples_after == triples_before
  
     def test_populate_true_on_cached_uri_does_not_duplicate_labels(self):
         """Calling get_or_create with populate=True on a URI already populated
         must not add the label twice to has_label."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),
             (EX.MyClass, RDFS.label, RDFLiteral("My Class")),
         ])
-        logic.phase2_create_from_types()
-        logic.phase3_populate_properties()
+        reader.phase2_create_from_types()
+        reader.phase3_populate_properties()
  
-        inst = _instance_for_uri(logic, EX.MyClass, Concept)
+        inst = _instance_for_uri(reader, EX.MyClass, Concept)
         labels_before = len(inst.get_has_label())
  
-        logic.get_or_create(EX.MyClass, Concept, populate=True)
+        reader.get_or_create(EX.MyClass, Concept, populate=True)
         labels_after = len(inst.get_has_label())
  
         assert labels_after == labels_before
@@ -1686,12 +1686,12 @@ class TestPhase6Exclusions:
  
     def test_rdf_first_not_produces_statement(self):
         """Triples with rdf:first as predicate must be excluded from Statement production."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.subject, RDF.type, OWL.Class),
             (EX.subject, EX.customPred, EX.someObject),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         pred_ids = [
             s.get_has_predicate().get_has_identifier()
             for s in stmts
@@ -1701,12 +1701,12 @@ class TestPhase6Exclusions:
  
     def test_rdf_rest_not_produces_statement(self):
         """Triples with rdf:rest as predicate must be excluded from Statement production."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.subject, RDF.type, OWL.Class),
             (EX.subject, EX.customPred, EX.someObject),
         ])
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         pred_ids = [
             s.get_has_predicate().get_has_identifier()
             for s in stmts
@@ -1725,9 +1725,9 @@ class TestPhase6Exclusions:
         g.add((node, OWL.members, head))
         g.add((EX.A, RDF.type, OWL.Class))
         g.add((EX.B, RDF.type, OWL.Class))
-        logic = OwlLogic(g, {}, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        reader = OwlReader(g, {}, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         pred_ids = [
             s.get_has_predicate().get_has_identifier()
             for s in stmts
@@ -1747,9 +1747,9 @@ class TestPhase6Exclusions:
         g.add((node, OWL.distinctMembers, head))
         g.add((EX.i1, RDF.type, OWL.NamedIndividual))
         g.add((EX.i2, RDF.type, OWL.NamedIndividual))
-        logic = OwlLogic(g, {}, ConfigManager(profiles.get("owl")))
-        _run_all(logic)
-        stmts = _instances_of(logic, Statement)
+        reader = OwlReader(g, {}, ConfigManager(profiles.get("owl")))
+        _run_all(reader)
+        stmts = _instances_of(reader, Statement)
         pred_ids = [
             s.get_has_predicate().get_has_identifier()
             for s in stmts
@@ -1759,55 +1759,55 @@ class TestPhase6Exclusions:
 
     def test_rdfs_class_not_in_cache_after_phases(self):
         """RDFS.Class used only as rdf:type target must not end up in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.foo, RDF.type, RDFS.Class),
         ])
-        _run_all(logic)
-        assert RDFS.Class not in logic._instance_cache
+        _run_all(reader)
+        assert RDFS.Class not in reader._instance_cache
 
     # reserved namespaces handling checks
     
     def test_reserved_ns_predicate_not_in_cache(self):
         """A random reserved entity used ad predicate must not appear in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, OWL.disjointWith, EX.myProp2),
         ])
-        _run_all(logic)
-        assert OWL.disjointWith not in logic._instance_cache
+        _run_all(reader)
+        assert OWL.disjointWith not in reader._instance_cache
 
     def test_reserved_ns_class_not_in_cache(self):
         """A random reserved entity used ad class must not appear in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDF.type, OWL.FunctionalProperty),
         ])
-        _run_all(logic)
-        assert OWL.FunctionalProperty not in logic._instance_cache
+        _run_all(reader)
+        assert OWL.FunctionalProperty not in reader._instance_cache
 
     def test_sub_property_of_rdfs_comment_stays_in_cache(self):
         """A property declared as rdfs:subPropertyOf rdfs:comment must appear in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (EX.myProp, RDFS.subPropertyOf, RDFS.comment),
         ])
-        _run_all(logic)
-        assert EX.myProp in logic._instance_cache
+        _run_all(reader)
+        assert EX.myProp in reader._instance_cache
 
     def test_owl_namespace_subject_with_type_not_in_cache(self):
         """A subject explicitly typed even if belonging to OWL namespace must appear in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (OWL.topObjectProperty, RDF.type, OWL.ObjectProperty),
             (OWL.topObjectProperty, RDFS.label, RDFLiteral("top")),
         ])
-        _run_all(logic)
-        assert OWL.topObjectProperty in logic._instance_cache
+        _run_all(reader)
+        assert OWL.topObjectProperty in reader._instance_cache
 
     def test_owl_namespace_subject_with_type_not_in_cache(self):
         """A subject explicitly typed even if belonging to OWL namespace must appear in cache."""
-        logic = _make_logic([
+        reader = _make_reader([
             (OWL.topObjectProperty, RDFS.range, EX.myProp),
             (OWL.topObjectProperty, RDFS.label, RDFLiteral("top")),
         ])
-        _run_all(logic)
-        assert OWL.topObjectProperty in logic._instance_cache
+        _run_all(reader)
+        assert OWL.topObjectProperty in reader._instance_cache
 
 
 # ---------------------------------------------------------------------------
@@ -1819,7 +1819,7 @@ def test_phase5_untyped_iri_becomes_an_individual():
 
     EX.customPred is not mapped, so phase 1 does not classify the subject.
     """
-    logic = _make_logic([(EX.Loose, EX.customPred, RDFLiteral("x"))])
-    _run_all(logic)
-    assert type(_instance_for_uri(logic, EX.Loose)) is Individual
+    reader = _make_reader([(EX.Loose, EX.customPred, RDFLiteral("x"))])
+    _run_all(reader)
+    assert type(_instance_for_uri(reader, EX.Loose)) is Individual
     
