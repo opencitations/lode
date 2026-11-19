@@ -4,10 +4,10 @@ LODE is extended by adding a package next to the existing ones, not by changing 
 core. A format (OWL, SKOS, ...) is a **profile**: a package under `lode/profiles/` that
 holds everything that format needs. This page shows how to write one, using SKOS as the
 worked example: it is the smallest complete format in the code base, a YAML mapper plus
-a 40-line logic class and a small viewer. The last section shows how to ship a profile
+a 40-line reader class and a small viewer. The last section shows how to ship a profile
 as a separate package, without touching LODE.
 
-## Rules every extension follows
+## General rules for extension
 
 - **The mapping is data.** The translation from RDF constructs to model classes is
   declared in YAML. Python is written only for what YAML cannot express.
@@ -15,8 +15,7 @@ as a separate package, without touching LODE.
   import neither. The core reaches a profile only through the registry
   (`lode.profiles`), never by importing its package, and a profile never imports
   another profile. `tests/test_architecture.py` fails when this is broken.
-- **The reader hands over an `Artefact`.** Nothing downstream reads from the Reader
-  or from its logic, so a new format needs no change outside its own package.
+- **The reader populates an `Artefact`, the viewer consumes it**, so a new format needs no change outside its own package.
 
 ## Anatomy of a profile
 
@@ -27,10 +26,10 @@ name (`skos`, for example).
 |------|------|
 | `__init__.py` | Declares the `Profile` and registers it. |
 | `reader.yaml` | The mapper: which RDF constructs become which model classes. |
-| `logic.py` | Implements what the mapper cannot express. |
+| `reader.py` | Implements what the mapper cannot express. |
+| `artefact.py` | The `Artefact` subclass users read the format with (`OwlOntology`, `SkosVocabulary`). It carries no code. |
 | `viewer.yaml` | What the viewer shows: display names, table of contents, vocabulary. |
 | `viewer.py` | The viewer class. It can be an empty subclass of `BaseViewer` when the YAML says everything. |
-| `artefact.py` | The `Artefact` subclass users read the format with (`OwlOntology`, `SkosVocabulary`). It carries no code. |
 | `templates/` | Optional. Templates that replace the base ones, matched by file name. |
 
 The name of the folder is the name of the format. It is also the value of `read_as`.
@@ -103,18 +102,18 @@ skos:memberList:
 ```
 
 The mapper fails early on mistakes. An unknown model class name raises `KeyError` when
-the configuration is loaded, and a handler that does not exist on the logic class raises
-`AttributeError` when the logic is built.
+the configuration is loaded, and a handler that does not exist on the reader class raises
+`AttributeError` when the reader is built.
 
-### Step 2. Write the logic class
+### Step 2. Write the reader class
 
-`BaseLogic` already runs the extraction phases (classify, create instances, populate
-properties, group axioms, fallback, statements). A format subclasses it in `logic.py` and
-overrides only what differs. `SkosLogic` overrides one phase and adds one handler:
+`Reader` already runs the extraction phases (classify, create instances, populate
+properties, group axioms, fallback, statements). A format subclasses it in `reader.py` and
+overrides only what differs. `SkosReader` overrides one phase and adds one handler:
 
 ```python
-class SkosLogic(BaseLogic):
-    """SKOS logic."""
+class SkosReader(Reader):
+    """SKOS reader."""
 
     def phase1_classify_from_predicates(self):
         """Do nothing: in SKOS the class always comes from rdf:type."""
@@ -156,7 +155,7 @@ from lode.profiles import Profile, register
 register(Profile(
     name="skos",
     package=__name__,
-    logic=".logic:SkosLogic",
+    reader=".reader:SkosReader",
     viewer=".viewer:SkosViewer",
     artefact=".artefact:SkosVocabulary",
 ))
@@ -166,10 +165,10 @@ register(Profile(
 |-------|---------|
 | `name` | The name of the format, and the value of `read_as`. |
 | `package` | The package that holds `reader.yaml`, `viewer.yaml` and `templates/`. Use `__name__`. |
-| `logic` | The logic class, as `module:Name`. A module that starts with a dot is relative to `package`. |
+| `reader` | The reader class, as `module:Name`. A module that starts with a dot is relative to `package`. |
 | `viewer` | The viewer class, as `module:Name`, with the same rule. |
 | `artefact` | The `Artefact` subclass of the format, as `module:Name`, with the same rule. |
-| `post_checks` | Optional `module:function`, called with the logic after extraction. OWL uses it for its warnings. |
+| `post_checks` | Optional `module:function`, called with the reader after extraction. OWL uses it for its warnings. |
 | `enabled` | `True` by default. |
 
 Classes are given as strings and imported only when they are needed. That keeps
@@ -343,7 +342,7 @@ from lode.profiles import Profile
 PROFILE = Profile(
     name="shacl",
     package=__name__,
-    logic="lode_shacl.logic:ShaclLogic",
+    reader="lode_shacl.reader:ShaclReader",
     viewer="lode_shacl.viewer:ShaclViewer",
     artefact="lode_shacl.artefact:ShaclRules",
 )

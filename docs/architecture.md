@@ -5,17 +5,30 @@ LODE is built in layers. Data flows in one direction, from the document you give
 ::::{grid} 1 1 1 1
 
 :::{card} 1. Profile
-**What it is.** The package `lode/profiles/<format>/` that tells LODE how to read and show one format. Its `__init__.py` registers a `Profile` (name, logic class, viewer class, `Artefact` class, whether it is enabled).
+**What it is.** The package `lode/profiles/<format>/` that tells LODE how to read and show one format. Its `__init__.py` registers a `Profile` (name, reader class, viewer class, `Artefact` class, whether it is enabled).
 
 **How LODE uses it.** Everything that depends on the format asks the registry in `lode.profiles`: `lode.read` for the reader, `lode.viewer.get_viewer` for the viewer, the CLI and the API for the formats they accept. It is the only place that knows which formats exist. LODE ships `owl` and `skos`; other packages add formats through the `lode.profiles` entry point group.
 
-**You write.** `reader.yaml`, `logic.py`, `viewer.yaml`, `viewer.py`, `artefact.py`, optional `templates/`.
+**You write.** A profile is built over three kinds of files.
+
+*Configuration* (YAML, no code):
+- `reader.yaml`: declarative mapping between the constructs of the format and the LODE model entities.
+- `viewer.yaml`: declarative mapping of how the entities are grouped and labelled in the output documentation.
+
+*Code* (Python):
+- `reader.py`: extends what the YAML cannot express, for example format-specific checks.
+- `artefact.py`: the `Artefact` class users import, for example `OwlOntology`.
+- `viewer.py`: the rendering of the format.
+
+*Templates* (HTML5+Jinja2) 
+- `templates/` (optional): templates for the viewer.
+
 +++
 [See Extending LODE](extending.md)
 :::
 
 :::{card} 2. Reader
-**What it does.** Turns an RDF graph into model instances. The mapping from RDF constructs to model classes is declared in YAML, not in Python: `lode/reader/config/base.yaml`, with the `reader.yaml` of the profile merged on top. A logic class implements the phases that differ between formats.
+**What it does.** Turns an RDF graph into model instances. The mapping from RDF constructs to model classes is declared in YAML, not in Python: `lode/reader/config/base.yaml`, with the `reader.yaml` of the profile merged on top. A reader class implements the phases that differ between formats.
 
 **Six phases**, all filling one cache `{IRI: set of instances}`:
 1. Classify blank nodes from the predicates they carry (OWL only).
@@ -25,7 +38,7 @@ LODE is built in layers. Data flows in one direction, from the document you give
 5. Apply fallbacks and defaults (OWL: default domain and range).
 6. Turn every triple not consumed so far into a `Statement`.
 
-**You change.** The YAML mapper for what a construct means; a logic class (subclass of `BaseLogic`) only for what YAML cannot say. The entities are `lode.models` classes (`Concept`, `Collection`, `Relation`, ...), which know neither who fills them nor who shows them.
+**You change.** The YAML mapper for what a construct means; a reader class (subclass of `Reader`) only for what YAML cannot say. The entities are `lode.models` classes (`Concept`, `Collection`, `Relation`, ...), which know neither who fills them nor who shows them.
 +++
 [See Extending LODE](extending.md) · [Step by step](notebooks/extending.ipynb)
 :::
