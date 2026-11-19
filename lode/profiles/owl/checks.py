@@ -21,7 +21,7 @@ def has_warning(reader, code: str, subject=None) -> bool:
     return False
 
 # ====================================================================
-# PIPELINE-TIME (called inline from owl_logic during specific phases)
+# PIPELINE-TIME (called inline from OwlReader during specific phases)
 # ====================================================================
 
 def flag_malformed_restrictions(reader, classified):

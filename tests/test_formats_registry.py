@@ -53,7 +53,7 @@ def test_format_config_files_exist(fmt):
 
 
 @pytest.mark.parametrize("fmt", FORMATS)
-def test_format_builds_its_logic(fmt):
+def test_format_builds_its_reader(fmt):
     """The registry entry resolves to a reader class that can be instantiated."""
     assert profiles.get(fmt).make_reader(Graph(), {}, ConfigManager(profiles.get(fmt))) is not None
 

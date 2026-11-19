@@ -11,6 +11,7 @@ from typing import Optional
 
 from rdflib import URIRef
 
+from lode.models import Model
 from lode.provenance_graph import ProvenanceGraph
 from lode.reader import modules
 from lode.reader.config_manager import ConfigManager
@@ -44,6 +45,7 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
     configuration = ConfigManager(artefact.profile)
     reader = artefact.profile.make_reader(artefact.graph, artefact.entities, configuration)
     _extract_instances(reader, artefact.profile, warnings)
+    _populate_namespaces(artefact)
 
     artefact.reader = reader
     artefact.warnings = reader.warnings if warnings else []
@@ -88,7 +90,7 @@ def load_graph(source: str, *, imported=None, closure=None, partial_import=None,
 def _extract_instances(reader, profile, warnings_enabled: bool) -> None:
     """Run the extraction phases in order, delegating each one to the reader.
 
-    Phases 1-5 depend on the artefact type; statements and namespaces are shared.
+    Phases 1-5 depend on the artefact type; the statements phase is shared.
     The post-extraction checks of the profile run only when warnings are enabled.
     """
     reader.phase1_classify_from_predicates()
@@ -97,7 +99,6 @@ def _extract_instances(reader, profile, warnings_enabled: bool) -> None:
     reader.phase4_process_group_axioms()
     reader.phase5_fallback()
     reader.phase6_create_statements()
-    reader.populate_namespaces()
 
     if warnings_enabled:
         profile.run_post_checks(reader)
@@ -108,6 +109,21 @@ def _extract_instances(reader, profile, warnings_enabled: bool) -> None:
             # for popups, report and CLI, so raw model names would be confusing
             for w in reader.warnings:
                 logger.debug("[%s] %s", w['code'], w['message'])
+
+
+def _populate_namespaces(artefact) -> None:
+    """Give every Model of the artefact the prefixes declared in its graph.
+
+    The model knows nothing about RDF, so the pipeline copies the `{prefix: URI}`
+    pairs of the graph into `Model.has_namespaces`, from where the viewer shows
+    them. Runs once the extraction is over, so every Model exists; each one gets
+    the same dictionary.
+    """
+    ns = {prefix: str(uri) for prefix, uri in artefact.graph.namespaces()}
+    for instances in artefact.entities.values():
+        for instance in instances:
+            if isinstance(instance, Model):
+                instance.set_has_namespaces(ns)
 
 
 def _value_key(value) -> str:

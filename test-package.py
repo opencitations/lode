@@ -21,7 +21,7 @@ onto.main_graph()                                    # solo le triple dell'artef
 # 3. Capire da dove viene un'entità
 entity = next(iter(onto.get_instance("http://example.org/o#A")))
 onto.provenance(entity)                              # triple da cui è nata
-onto.reader                                           # logica del formato, per ispezione
+onto.reader                                           # reader del formato, per ispezione
 
 # 4. Vedere cosa riceve il template
 onto.viewer.view(language="en")                      # tutta la documentazione

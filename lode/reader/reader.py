@@ -19,7 +19,7 @@ class Reader():
     Common base reader for RDF parsing.
 
     Owns the instance cache, the triples-to-instance provenance map and the
-    generic machinery (get_or_create, populate_instance, statements);
+    generic machinery (get_or_create, _populate_instance, statements);
     subclasses implement the phases that differ between formats.
     """
 
@@ -125,14 +125,14 @@ class Reader():
     def phase3_populate_properties(self):
         """Phase 3: fill every instance from its triples, through the property mapping.
 
-        Every cached instance goes through populate_instance, which sends each
+        Every cached instance goes through _populate_instance, which sends each
         predicate to the setters or handlers declared in the YAML mapper. A format
         overrides this only to add steps, and calls super() first.
         """
         for uri in list(self._instance_cache.keys()):
             # both levels are copied: populating an instance can add new ones to the cache
             for instance in list(self._instance_cache[uri]):
-                self.populate_instance(instance, uri)
+                self._populate_instance(instance, uri)
 
     def phase4_process_group_axioms(self):
         """Phase 4: process axioms that involve several entities at once (e.g. AllDisjointClasses).
@@ -214,16 +214,6 @@ class Reader():
                 f"Config/Reader contract violations in {type(self).__name__}:\n"
                 + "\n".join(f"  - {e}" for e in errors)
             )
-
-    # ========== Namespaces resolution ==========
-    
-    def populate_namespaces(self):
-        """Attach the graph prefixes to every cached Model."""
-        ns = {prefix: str(uri) for prefix, uri in self.graph.namespaces()}
-        for instances in self._instance_cache.values():
-            for inst in instances:
-                if isinstance(inst, Model):
-                    inst.set_has_namespaces(ns)
 
     # ========== PROVENANCE ========== (note: _triples_map is written only by these three methods.)
 
@@ -552,7 +542,7 @@ class Reader():
             instance.set_has_identifier(str(id))
 
             if populate:
-                self.populate_instance(instance, id)
+                self._populate_instance(instance, id)
 
             return instance
 
@@ -561,7 +551,7 @@ class Reader():
                            python_class.__name__ if python_class else "Unknown", id, exc_info=True)
             return None
 
-    def populate_instance(self, instance, uri: Node):
+    def _populate_instance(self, instance, uri: Node):
         """Fill an instance from the triples of `uri`, following the property mapping.
 
         Only predicates in the allowed namespaces are read. A configured handler or

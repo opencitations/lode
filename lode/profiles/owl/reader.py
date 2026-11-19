@@ -121,7 +121,7 @@ class OwlReader(Reader):
                         instance.__class__ = inferred
                         inferred.__init__(instance)
                         instance.__dict__.update(old_dict)
-                        self.populate_instance(instance, uri)
+                        self._populate_instance(instance, uri)
 
                 self._enrich_or_apply_owl_defaults(instance, uri)        
 
