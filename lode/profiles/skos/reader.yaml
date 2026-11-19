@@ -164,7 +164,6 @@ mapper:
     setters:
       - set_has_member:
           targets: [Concept, Collection]
-          inverse_of: set_has_related_match
 
   skos:memberList:
     is: predicate
