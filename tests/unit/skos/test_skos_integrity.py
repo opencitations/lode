@@ -19,7 +19,7 @@ from rdflib.namespace import RDF, SKOS
 
 from lode.models import Concept, Collection, Model, Literal
 
-VOCABULARIES_PATH = Path(__file__).parent / "taxonomies_skos.json"
+VOCABULARIES_PATH = Path(__file__).resolve().parents[2] / "taxonomies_skos.json"
 
 
 def _load_uris():

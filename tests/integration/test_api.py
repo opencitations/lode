@@ -1,4 +1,4 @@
-# tests/test_api.py
+# tests/integration/test_api.py
 """
 Integration tests for the /extract web layer:
 content negotiation (Accept + ?format), full vs subgraph serialization,

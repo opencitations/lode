@@ -1,5 +1,5 @@
 {#- A template written from the viewer contract alone (docs/usage/viewer_contract.md).
-    It uses no variable outside: model, toc, entities, focus, error. -#}
+    It uses no variable outside: model, toc, cards, focus, error. -#}
 {% macro value(v) -%}
     {%- if v.parts -%}
         {%- for p in v.parts -%}{{ value(p) }}{%- endfor -%}
@@ -55,18 +55,18 @@
 
 <nav>
     {% for section in toc %}
-        <h2 id="{{ section.id }}">{{ section.label }} ({{ section.entities|length }})</h2>
+        <h2 id="{{ section.id }}">{{ section.label }} ({{ section.entries|length }})</h2>
         {#- `tree` is not in the contract: a profile may add it (SKOS does), so test that it exists. -#}
         {% if section.tree is defined and section.tree %}
             {{ branch(section.tree) }}
         {% else %}
-            <ul>{% for e in section.entities %}<li>{{ entry(e) }}</li>{% endfor %}</ul>
+            <ul>{% for e in section.entries %}<li>{{ entry(e) }}</li>{% endfor %}</ul>
         {% endif %}
     {% endfor %}
 </nav>
 
 <main>
-    {% for e in entities %}
+    {% for e in cards %}
         <article id="{{ e.anchor }}">
             <h2>{{ e.label }} <small>{{ types[e.type].singular if e.type in types else e.type }}</small> {% if e.deprecated %} (deprecated){% endif %}</h2>
             {% if e.characteristics %}<p>{{ e.characteristics|join(", ") }}</p>{% endif %}

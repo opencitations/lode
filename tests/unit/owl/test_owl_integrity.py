@@ -16,7 +16,7 @@ from lode.models import (
 
 # check model coherence nd dt integrity
 
-ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
+ONTOLOGIES_PATH = Path(__file__).resolve().parents[2] / "ontologies_spar.json"
 
 def _load_uris():
     single = os.environ.get("TEST_ONTOLOGY_URI")

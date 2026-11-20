@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 import lode 
 from lode.viewer import get_viewer
 
-_TEMPLATES = Path(__file__).resolve().parent.parent / "lode" / "templates"
+_TEMPLATES = Path(__file__).resolve().parents[2] / "lode" / "templates"
 _TYPES = {"Concept": {"singular": "Concept", "plural": "Concepts", "abbreviation": "c"}}
 
 

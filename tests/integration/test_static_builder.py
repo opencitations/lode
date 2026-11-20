@@ -20,7 +20,7 @@ from lode.builder import build_html, _rel_slug, _prefix_map, _write_in
 from lode.viewer import get_viewer
 from rdflib import URIRef
 
-ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
+ONTOLOGIES_PATH = Path(__file__).resolve().parents[1] / "ontologies_spar.json"
 URIS = [e["uri"] for e in json.loads(ONTOLOGIES_PATH.read_text(encoding="utf-8"))["uris"]]
 
 from lode.helpers.formats import SERIALIZATION_FORMATS

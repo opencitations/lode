@@ -1,4 +1,4 @@
-# tests/test_packaging.py
+# tests/unit/core/test_packaging.py
 import importlib
 import importlib.resources as ir
 import os

@@ -398,7 +398,7 @@ class TestHeaderStructuredBnodes:
 # Integration: real corpus, same loader pattern as test_owl_integrity.
 # ===========================================================================
 
-ONTOLOGIES_PATH = Path(__file__).parent / "ontologies_spar.json"
+ONTOLOGIES_PATH = Path(__file__).resolve().parents[2] / "ontologies_spar.json"
 
 
 def _load_uris():

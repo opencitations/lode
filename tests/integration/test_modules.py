@@ -55,7 +55,7 @@ from lode.profiles.owl.artefact import OwlOntology
 # FIXTURES
 # ==========================================================================
 
-DATA = Path(__file__).parent / "data" / "provenance"
+DATA = Path(__file__).resolve().parents[1] / "data" / "provenance"
 DOCS = {f"http://ex.org/{p.stem}": p.read_text(encoding="utf-8") for p in DATA.glob("*.ttl")}
 assert "http://ex.org/main" in DOCS, f"fixture documents missing in {DATA}"
 MAIN_TTL = DOCS["http://ex.org/main"]

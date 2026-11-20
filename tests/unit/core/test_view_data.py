@@ -11,7 +11,7 @@ import lode
 from lode.viewer import get_viewer
 from lode.helpers.links import Links
 
-_EXAMPLES = Path(__file__).resolve().parent.parent / "docs" / "examples"
+_EXAMPLES = Path(__file__).resolve().parents[3] / "docs" / "examples"
 
 
 def test_top_level_keys():

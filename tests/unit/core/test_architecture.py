@@ -6,7 +6,7 @@ read the source files, so they need no network and no fixtures.
 import ast
 from pathlib import Path
 
-LODE = Path(__file__).resolve().parent.parent / "lode"
+LODE = Path(__file__).resolve().parents[3] / "lode"
 
 
 def _imports(path: Path) -> set:
