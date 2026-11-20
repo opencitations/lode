@@ -1,6 +1,6 @@
 """Format-independent core of the reader.
 
-Reader turns the triples of a graph into model instances in phases. What is
+Reader turns the triples of a graph into model entities in phases. What is
 specific to OWL, RDF or SKOS lives in the subclasses and in the YAML mapper.
 """
 from collections import deque
@@ -18,8 +18,8 @@ class Reader():
     """
     Common base reader for RDF parsing.
 
-    Owns the instance cache, the triples-to-instance provenance map and the
-    generic machinery (get_or_create, _populate_instance, statements);
+    Owns the entity cache, the triples-to-entity provenance map and the
+    generic machinery (get_or_create, _populate_entity, statements);
     subclasses implement the phases that differ between formats.
     """
 
@@ -37,7 +37,7 @@ class Reader():
         self._statements_by_subject = None
         # Namespaces now driven by config YAML (key: 'namespaces')
         self._allowed_namespaces = self._get_allowed_namespaces()
-        # Validate all handlers declared in config exist on this instance
+        # Validate all handlers declared in config exist on this entity
         self._validate_handlers()
         # The reader warnings found while extracting: read by the reader and by the checks
         # of the profile, never by the viewers (they get them through the artefact).
@@ -66,7 +66,7 @@ class Reader():
     _FALLBACK_CLASS = Resource
 
     def phase1_classify_from_predicates(self):
-        """Phase 1: create instances for subjects whose predicates reveal their class.
+        """Phase 1: create entities for subjects whose predicates reveal their class.
 
         A subject that uses a mapped predicate gets the class the YAML implies for it
         (classify_by_predicate), even without an rdf:type. IRIs are created while
@@ -97,12 +97,12 @@ class Reader():
 
 
     def phase2_create_from_types(self):
-        """Phase 2: create instances from the rdf:type declarations of the graph.
+        """Phase 2: create entities from the rdf:type declarations of the graph.
 
-        Every subject typed with a type the YAML maps gets an instance of the mapped
+        Every subject typed with a type the YAML maps gets an entity of the mapped
         class, and the triple that says so becomes part of its provenance. The static
         setters of the mapping (constants such as set_is_ordered: True) are applied to
-        every instance of the subject, also to one created by phase 1. A format with
+        every entity of the subject, also to one created by phase 1. A format with
         more to do for its types extends this and calls super() first.
         """
         type_mapping = self._configuration.get_type_mapping()
@@ -116,23 +116,23 @@ class Reader():
                 if inst is not None:
                     self._track(inst, (uri, RDF.type, rdf_type))
                 # Apply static setters (e.g. set_is_transitive: True) always,
-                # even if instance already existed in cache from phase1.
+                # even if entity already existed in cache from phase1.
                 if 'setters' in config:
-                    for instance in self.entities.get(uri, set()):
-                        self._apply_setters_immediate(instance, config['setters'])
+                    for entity in self.entities.get(uri, set()):
+                        self._apply_setters_immediate(entity, config['setters'])
 
 
     def phase3_populate_properties(self):
-        """Phase 3: fill every instance from its triples, through the property mapping.
+        """Phase 3: fill every entity from its triples, through the property mapping.
 
-        Every cached instance goes through _populate_instance, which sends each
+        Every cached entity goes through _populate_entity, which sends each
         predicate to the setters or handlers declared in the YAML mapper. A format
         overrides this only to add steps, and calls super() first.
         """
         for uri in list(self.entities.keys()):
-            # both levels are copied: populating an instance can add new ones to the cache
-            for instance in list(self.entities[uri]):
-                self._populate_instance(instance, uri)
+            # both levels are copied: populating an entity can add new ones to the cache
+            for entity in list(self.entities[uri]):
+                self._populate_entity(entity, uri)
 
     def phase4_process_group_axioms(self):
         """Phase 4: process axioms that involve several entities at once (e.g. AllDisjointClasses).
@@ -150,16 +150,16 @@ class Reader():
     def phase5_fallback(self):
         """Phase 5: give a class (and the format defaults) to whatever is still unclassified.
 
-        Every IRI subject that no earlier phase classified becomes an instance of
+        Every IRI subject that no earlier phase classified becomes an entity of
         _FALLBACK_CLASS, populated like any other. IRIs of the format's own
         vocabularies are skipped: they are the language, not data. A format extends
-        this and calls super() first, so its own defaults reach the new instances too.
+        this and calls super() first, so its own defaults reach the new entities too.
         """
         if self._FALLBACK_CLASS is None:
             return
 
         vocabularies = tuple(self._allowed_namespaces)
-        # set(): each subject once, and a stable list while instances are created
+        # set(): each subject once, and a stable list while entities are created
         for subj in set(self.graph.subjects()):
             if (isinstance(subj, URIRef) and subj not in self.entities
                     and not str(subj).startswith(vocabularies)):
@@ -169,7 +169,7 @@ class Reader():
         """Phase 6: reify every triple no earlier phase consumed as a Statement.
 
         Structural list triples and structural vocabulary subjects without a type
-        are skipped; triples already tracked by an instance are not duplicated.
+        are skipped; triples already tracked by an entity are not duplicated.
         """
         for subj, pred, obj in self.graph:
             if pred in [RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members]:
@@ -189,7 +189,7 @@ class Reader():
     def _validate_handlers(self):
         """
         Fail-fast: check that every handler declared in the config
-        exists as a method on this Reader instance.
+        exists as a method on this Reader entity.
         Raises AttributeError immediately, before any parsing.
         """
         errors = []
@@ -217,19 +217,19 @@ class Reader():
 
     # ========== PROVENANCE ========== (note: _triples_map is written only by these three methods.)
 
-    def _track(self, instance, *triples):
-        """Attribute one or more triples to the provenance of `instance`."""
-        self._triples_map.setdefault(instance, set()).update(triples)
+    def _track(self, entity, *triples):
+        """Attribute one or more triples to the provenance of `entity`."""
+        self._triples_map.setdefault(entity, set()).update(triples)
 
     def _move_tracking(self, old, new):
-        """Move the provenance from `old` to `new` when an instance is promoted or replaced."""
+        """Move the provenance from `old` to `new` when an entity is promoted or replaced."""
         if old in self._triples_map:
             self._triples_map.setdefault(new, set()).update(self._triples_map.pop(old))
 
     # ========== UTILITIES ==========
 
-    def _apply_setters_immediate(self, instance, setters_config):
-        """Apply the static setter values of a mapping directly to an instance.
+    def _apply_setters_immediate(self, entity, setters_config):
+        """Apply the static setter values of a mapping directly to an entity.
 
         No RDF object is resolved: this is for the constants declared next to an
         'is: class' entry (set_is_symmetric: True) and used in phase 2.
@@ -237,11 +237,11 @@ class Reader():
         for setter_item in setters_config:
             if isinstance(setter_item, dict):
                 for setter_name, value in setter_item.items():
-                    if hasattr(instance, setter_name):
-                        getattr(instance, setter_name)(value)
+                    if hasattr(entity, setter_name):
+                        getattr(entity, setter_name)(value)
             else:
-                if hasattr(instance, setter_item):
-                    getattr(instance, setter_item)()
+                if hasattr(entity, setter_item):
+                    getattr(entity, setter_item)()
 
 
     def _traverse_hierarchy(
@@ -257,10 +257,10 @@ class Reader():
 
         Parameters
         ----------
-        start        : starting node (Python model instance)
+        start        : starting node (Python model entity)
         next_getter  : name of the getter that returns the next nodes in the
                     'up' direction (e.g. 'get_is_sub_property_of').
-                    For 'down' the cache is scanned for instances that list
+                    For 'down' the cache is scanned for entities that list
                     `start` as one of their `next_getter` targets.
         direction    : 'up'   - follow next_getter only
                     'down' - scan cache for reverse links only
@@ -326,9 +326,9 @@ class Reader():
     def _create_literal(self, rdflib_literal):
         """Return the model Literal for an rdflib literal, one per distinct lexical form.
 
-        The instance is cached under a LITERAL:: key built from lexical form, language
+        The entity is cached under a LITERAL:: key built from lexical form, language
         and datatype: two literals with the same text but a different language tag
-        or datatype are different values and must not share one instance.
+        or datatype are different values and must not share one entity.
         """
         literal_key = (
             f"LITERAL::{rdflib_literal}"
@@ -356,9 +356,9 @@ class Reader():
         """Return True if the node is the head of an RDF list (it has an rdf:first)."""
         return (node, RDF.first, None) in self.graph
 
-    def _instance_matches_target(self, instance, target_classes: list) -> bool:
-        """Return True if the instance is of one of the target classes, or a subclass of one."""
-        instance_class = instance.__class__
+    def _entity_matches_target(self, entity, target_classes: list) -> bool:
+        """Return True if the entity is of one of the target classes, or a subclass of one."""
+        instance_class = entity.__class__
         if instance_class in target_classes:
             return True
         for parent_class in instance_class.__mro__[1:]:
@@ -369,7 +369,7 @@ class Reader():
     def _resolve_target_class(self, obj, candidates: list) -> type:
         """Pick, among the candidate model classes, the one `obj` is declared as.
 
-        An instance already cached for `obj` wins (punning keeps its class); 
+        An entity already cached for `obj` wins (punning keeps its class); 
         otherwise falls back to Resource.
         """
         cached = {type(c) for c in self.entities.get(obj, ())}
@@ -393,12 +393,12 @@ class Reader():
         getattr(target, setter_name)(value)
 
 
-    def _apply_setters(self, instance, setters_config, obj):
-        """Call the setters declared in the config on `instance`, using `obj` as the value.
+    def _apply_setters(self, entity, setters_config, obj):
+        """Call the setters declared in the config on `entity`, using `obj` as the value.
 
         Per entry: 'Literal' builds a Literal from obj; a bool or a string is passed
-        as a constant; a model class resolves obj to an instance of that class (the
-        punned instance of the same class if one is cached); anything else passes
+        as a constant; a model class resolves obj to an entity of that class (the
+        punned entity of the same class if one is cached); anything else passes
         obj as is. An entry with no value calls the setter with no argument.
         Structural vocabulary URIs are never added to has_type.
 
@@ -408,9 +408,9 @@ class Reader():
         for setter_item in setters_config:
             if isinstance(setter_item, dict):
                 for setter_name, value_type in setter_item.items():
-                    if not hasattr(instance, setter_name):
+                    if not hasattr(entity, setter_name):
                         continue
-                    setter = getattr(instance, setter_name)
+                    setter = getattr(entity, setter_name)
                     # extracts declarative inverses (implicit)
                     inverse_name = None
                     if isinstance(value_type, dict):
@@ -433,26 +433,26 @@ class Reader():
                             obj_str = str(obj)
                             if any(obj_str.startswith(ns) for ns in self._allowed_namespaces) and obj not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
                                 continue
-                        # punning: prefer the instance of obj with the same class as the subject
+                        # punning: prefer the entity of obj with the same class as the subject
                         obj_instance = next(
                             (c for c in self.entities.get(obj, ())
-                             if type(c) is type(instance) and isinstance(c, value_type)),
+                             if type(c) is type(entity) and isinstance(c, value_type)),
                             None
                         ) or self.get_or_create(obj, value_type)
                         if not obj_instance:
                             continue
                         if inverse_name:
-                            self._add_link(instance, setter_name, obj_instance)
-                            self._add_link(obj_instance, inverse_name, instance)
+                            self._add_link(entity, setter_name, obj_instance)
+                            self._add_link(obj_instance, inverse_name, entity)
                         else:
                             setter(obj_instance)
                     else:
                         setter(obj)
             else:
-                if hasattr(instance, setter_item):
-                    getattr(instance, setter_item)()
+                if hasattr(entity, setter_item):
+                    getattr(entity, setter_item)()
 
-    def _handle_collection_object(self, instance, predicate, collection_uri):
+    def _handle_collection_object(self, entity, predicate, collection_uri):
         """Resolve an RDF list used as an object and pass its members to the first matching setter.
 
         Failures are logged and swallowed: one malformed list must not stop the read.
@@ -472,21 +472,21 @@ class Reader():
             for setter_item in config.get('setters', []):
                 if isinstance(setter_item, dict):
                     for setter_name in setter_item:
-                        if hasattr(instance, setter_name):
-                            getattr(instance, setter_name)(items)
+                        if hasattr(entity, setter_name):
+                            getattr(entity, setter_name)(items)
                             break
         except Exception:
             logger.warning("Collection handling failed on %s (predicate %s)",
-                           instance, predicate, exc_info=True)
+                           entity, predicate, exc_info=True)
 
     # ========== READER CORE ==========
 
     def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
-        """Return the model instance for a node, creating (and populating) it when needed.
+        """Return the model entity for a node, creating (and populating) it when needed.
 
         Literals go through _create_literal; built-in datatypes and undeclared XSD
-        terms are always Datatype. A cached instance is reused; a single cached
-        instance of a broader class is promoted to the requested one, so punning
+        terms are always Datatype. A cached entity is reused; a single cached
+        entity of a broader class is promoted to the requested one, so punning
         keeps working. Returns None, after logging, when creation fails.
         """
         try:
@@ -522,7 +522,7 @@ class Reader():
                     for obj in self.entities[id]:
                         if isinstance(obj, python_class):
                             return obj
-                    # Promote only if there is exactly one cached instance and
+                    # Promote only if there is exactly one cached entity and
                     # the requested class is strictly more specific than it
                     # so punning is mantained
                     cached = list(self.entities[id])
@@ -535,34 +535,34 @@ class Reader():
                         self._move_tracking(old, new)
                         return new
 
-            instance = python_class()
+            entity = python_class()
             if id not in self.entities:
                 self.entities[id] = set()
-            self.entities[id].add(instance)
-            instance.set_has_identifier(str(id))
+            self.entities[id].add(entity)
+            entity.set_has_identifier(str(id))
 
             if populate:
-                self._populate_instance(instance, id)
+                self._populate_entity(entity, id)
 
-            return instance
+            return entity
 
         except Exception:
             logger.warning("Cannot create %s for %s",
                            python_class.__name__ if python_class else "Unknown", id, exc_info=True)
             return None
 
-    def _populate_instance(self, instance, uri: Node):
-        """Fill an instance from the triples of `uri`, following the property mapping.
+    def _populate_entity(self, entity, uri: Node):
+        """Fill an entity from the triples of `uri`, following the property mapping.
 
         Only predicates in the allowed namespaces are read. A configured handler or
         setters list runs for each predicate; failures are logged and skipped. Every
         handled triple is recorded in the provenance map, except the rdf:type that
-        selected the instance's class.
+        selected the entity's class.
         """
         if isinstance(uri, URIRef):
-            instance.set_has_identifier(str(uri))
+            entity.set_has_identifier(str(uri))
         elif isinstance(uri, BNode):
-            instance.has_identifier = str(uri)
+            entity.has_identifier = str(uri)
 
         for predicate, obj in self.graph.predicate_objects(uri):
             if iri_namespace(str(predicate)) not in self._allowed_namespaces:
@@ -573,43 +573,43 @@ class Reader():
 
             if config is not None:
                 target_classes = config.get('target_classes', [])
-                if target_classes and not self._instance_matches_target(instance, target_classes):
+                if target_classes and not self._entity_matches_target(entity, target_classes):
                     continue
 
                 if 'handler' in config:
                     try:
-                        # An explicit False means "not admissible for this instance".
-                        result = getattr(self, config['handler'])(instance, uri, predicate, obj, None)
+                        # An explicit False means "not admissible for this entity".
+                        result = getattr(self, config['handler'])(entity, uri, predicate, obj, None)
                         handled = result is not False
                     except Exception:
                         logger.warning("Handler %s failed on %s (predicate %s)",
                                        config['handler'], uri, predicate, exc_info=True)
                 elif 'setters' in config:
                     try:
-                        self._apply_setters(instance, config['setters'], obj)
+                        self._apply_setters(entity, config['setters'], obj)
                         handled = True
                     except Exception:
                         logger.warning("Setters failed on %s (predicate %s)",
                                        uri, predicate, exc_info=True)
 
             if not handled and config is None and self._is_rdf_collection(obj):
-                self._handle_collection_object(instance, predicate, obj)
+                self._handle_collection_object(entity, predicate, obj)
                 handled = True
 
             if handled and not (predicate == RDF.type and obj in self._configuration.get_type_mapping()):
-                self._track(instance, (uri, predicate, obj))
+                self._track(entity, (uri, predicate, obj))
 
     # ========== HELPERS ==========
 
     def _is_triple_mapped(self, subj, pred, obj) -> bool:
-        """Return True if some instance already tracks this triple in its provenance."""
+        """Return True if some entity already tracks this triple in its provenance."""
         if subj not in self.entities:
             return False
-        instances = self.entities[subj]
-        instances_list = instances if isinstance(instances, set) else [instances]
-        for instance in instances_list:
-            if instance in self._triples_map:
-                if (subj, pred, obj) in self._triples_map[instance]:
+        entities = self.entities[subj]
+        instances_list = entities if isinstance(entities, set) else [entities]
+        for entity in instances_list:
+            if entity in self._triples_map:
+                if (subj, pred, obj) in self._triples_map[entity]:
                     return True
         return False
 
@@ -767,7 +767,7 @@ class Reader():
         return statement
 
     def _get_punning_dominant(self, uri):
-        """Return the instance that wins when an IRI is used as several things (punning).
+        """Return the entity that wins when an IRI is used as several things (punning).
 
         The winner follows the config's punning priority; with no match, any cached one.
         """
@@ -785,19 +785,19 @@ class Reader():
                     return inst
         return next(iter(cached))
 
-    def _is_punning_subordinate(self, instance, uri):
-        """Return True if `instance` loses against another instance of the same IRI."""
+    def _is_punning_subordinate(self, entity, uri):
+        """Return True if `entity` loses against another entity of the same IRI."""
         dom = self._get_punning_dominant(uri)
-        return dom is not None and dom is not instance
+        return dom is not None and dom is not entity
 
     # ========== PROVENANCE SUBGRAPH ==========
 
-    def build_provenance_subgraph(self, instance):
+    def build_provenance_subgraph(self, entity):
         """
-        Build the RDF subgraph that provenanced `instance`:
-        - direct triples from _triples_map[instance]
+        Build the RDF subgraph that provenanced `entity`:
+        - direct triples from _triples_map[entity]
         - BNode-transitive closure on object positions
-        - reified Statements with `instance` as has_subject
+        - reified Statements with `entity` as has_subject
         - format-specific axioms (hook: _add_axiom_provenance)
 
         No prefix is bound on the subgraph: callers only iterate its triples, and
@@ -810,7 +810,7 @@ class Reader():
         sub = Graph(bind_namespaces="none")
 
         # 1. direct triples
-        source_triples = self._triples_map.get(instance, set())
+        source_triples = self._triples_map.get(entity, set())
         for t in source_triples:
             sub.add(t)
 
@@ -820,8 +820,8 @@ class Reader():
             if isinstance(o, BNode):
                 self._expand_bnode_into(o, sub, seen)
 
-        # 3. reified Statements pointing at instance
-        for other_triples in self._get_statements_by_subject().get(id(instance), ()):
+        # 3. reified Statements pointing at entity
+        for other_triples in self._get_statements_by_subject().get(id(entity), ()):
             for t in other_triples:
                 sub.add(t)
                 _, _, o = t
@@ -829,12 +829,12 @@ class Reader():
                     self._expand_bnode_into(o, sub, seen)
 
         # 4. format-specific axioms (hook)
-        self._add_axiom_provenance(instance, sub)
+        self._add_axiom_provenance(entity, sub)
 
         return sub
 
     def _get_statements_by_subject(self) -> dict:
-        """Group the triples of every reified Statement by the id of its subject instance.
+        """Group the triples of every reified Statement by the id of its subject entity.
 
         Built once, on the first provenance request, so each request is a lookup instead of
         a scan of the whole triples map (quadratic in a static build). The map is complete
@@ -864,7 +864,7 @@ class Reader():
                 if isinstance(o, BNode) and o not in seen:
                     stack.append(o)
 
-    def _add_axiom_provenance(self, instance, sub):
+    def _add_axiom_provenance(self, entity, sub):
         """Hook for subclasses. Default: no format-specific axioms."""
         pass
     

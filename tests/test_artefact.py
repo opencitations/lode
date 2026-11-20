@@ -22,30 +22,30 @@ def _artefact():
 
 def test_instances_lists_entities_and_skips_literals():
     artefact, *_ = _artefact()
-    assert len(artefact.instances()) == 3
-    assert all(not isinstance(i, Literal) for i in artefact.instances())
+    assert len(artefact.get_entities()) == 3
+    assert all(not isinstance(i, Literal) for i in artefact.get_entities())
 
 def test_instances_by_exact_class_name():
     artefact, concept, collection, punned = _artefact()
-    assert artefact.instances(Concept) == [concept]
-    assert set(artefact.instances(Collection)) == {collection, punned}
+    assert artefact.get_entities(Concept) == [concept]
+    assert set(artefact.get_entities(Collection)) == {collection, punned}
 
 def test_instances_include_subclasses():
     artefact, *_ = _artefact()
-    assert artefact.instances(Resource) == artefact.instances()
+    assert artefact.get_entities(Resource) == artefact.get_entities()
 
 def test_class_name_instead_of_class_raises():
     artefact, *_ = _artefact()
     with pytest.raises(TypeError):
-        artefact.instances("Concept")
+        artefact.get_entities("Concept")
 
 def test_get_instance_returns_the_punned_set():
     artefact, concept, _, punned = _artefact()
-    assert artefact.get_instance("http://ex.org/a") == {concept, punned}
+    assert artefact.get_entities_by_iri("http://ex.org/a") == {concept, punned}
 
 def test_get_instance_unknown_iri_is_none():
     artefact, *_ = _artefact()
-    assert artefact.get_instance("http://ex.org/missing") is None
+    assert artefact.get_entities_by_iri("http://ex.org/missing") is None
 
 def test_from_parts_leaves_the_rest_empty():
     artefact = Artefact.from_parts(entities={}, graph=Graph())

@@ -1,4 +1,4 @@
-"""Generic viewer: turns model instances into the dictionaries the HTML templates render.
+"""Generic viewer: turns model entities into the dictionaries the HTML templates render.
 
 Format-specific viewers (OWL, RDF, SKOS) extend it with their table of contents
 and display names. It also serializes the provenance of each entity.
@@ -14,7 +14,7 @@ from lode.helpers.formats import QUAD_SERIALIZATION_FORMATS, SERIALIZATION_FORMA
 from lode.helpers.rdf import iri_local_name
 from lode.viewer.contract import resolve_links, to_model
 from lode.helpers.links import Links
-from lode.viewer.view_data import Entity, TocEntity, TocSection, TypeLabel, Value, ViewData, new_value
+from lode.viewer.view_data import Card, TocEntry, TocSection, TypeLabel, Value, ViewData, new_value
 
 import lode.models as _models
 
@@ -28,7 +28,7 @@ from lode.viewer.helpers import (
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 
 class BaseViewer:
-    """Base viewer to display the instances extracted by the Reader.
+    """Base viewer to display the entities extracted by the Reader.
 
     It orchestrates the view: everything that differs between formats (display
     names, table of contents, card template, vocabulary) is read from
@@ -101,23 +101,23 @@ class BaseViewer:
         if self._internal_iris is None:
             self._internal_iris = {
                 str(i.get_has_identifier())
-                for i in self.get_toc_instances()
+                for i in self.get_toc_entities()
                 if i.get_has_identifier()
             }
         return str(uri) in self._internal_iris
 
-    def _is_toc_entity(self, instance) -> bool:
+    def _is_toc_entity(self, entity) -> bool:
         """Browsable (own card + clickable link) iff its type is in get_toc_config. 
             Resources not listed in get_o_config are shown when mentioned as plain text 
             in cards  (external-ref), just never linked."""
         toc_keys = {key for key, _id, _title in self.get_toc_config()}
-        if type(instance).__name__ not in toc_keys:
+        if type(entity).__name__ not in toc_keys:
             return False
-        return self._has_local_triples(instance.get_has_identifier())
+        return self._has_local_triples(entity.get_has_identifier())
 
-    def get_toc_instances(self) -> List:
-        """Return the instances that get their own card and link (the browsable entities)."""
-        return [i for i in self.artefact.instances() if self._is_toc_entity(i)]
+    def get_toc_entities(self) -> List:
+        """Return the entities that get their own card and link (the browsable entities)."""
+        return [i for i in self.artefact.get_entities() if self._is_toc_entity(i)]
 
     # ==========================================================================
     # 3. LABELS AND LANGUAGES
@@ -186,13 +186,13 @@ class BaseViewer:
         """
         language = language.strip() if language else "en"   # no language means English
         links = links or Links()
-        entities, error = self._build_entities(resource_uri, language)
-        header = self._find_and_format_semantic_artefact_metadata(self.artefact.instances(), language)
+        cards, error = self._build_cards(resource_uri, language)
+        header = self._find_and_format_semantic_artefact_metadata(self.artefact.get_entities(), language)
         data = {
             'model': to_model(header, self._formats(), self.format_warnings(self.artefact.warnings)),
             'toc': [] if resource_uri else self._build_toc(language),
             'types': self._build_types(),
-            'entities': entities,
+            'cards': cards,
             'focus': resource_uri or None,
             'error': error,
         }
@@ -206,7 +206,7 @@ class BaseViewer:
         resolve_links(data, links)
         return data
 
-    def _build_entities(self, resource_uri: Optional[str], language: str) -> Tuple[List[Entity], Optional[str]]:
+    def _build_cards(self, resource_uri: Optional[str], language: str) -> Tuple[List[Card], Optional[str]]:
         """Return the cards of a page and the error, if there is one.
 
         One resource gives its own cards (an IRI can name several entities: a class and an
@@ -215,31 +215,31 @@ class BaseViewer:
         viewer) the artefact is shown as a flat list.
         """
         if resource_uri:
-            found = self.artefact.get_instance(resource_uri)
+            found = self.artefact.get_entities_by_iri(resource_uri)
             if not found:
                 return [], f'Resource {resource_uri} not found'
-            instances = list(found) if isinstance(found, set) else [found]
-            instances = [i for i in instances if self._is_toc_entity(i)]
-            if not instances:
+            candidates = list(found) if isinstance(found, set) else [found]
+            candidates = [i for i in candidates if self._is_toc_entity(i)]
+            if not candidates:
                 return [], f'{resource_uri} is not a browsable entity'
-            return self._format_entities(instances, language), None
+            return self._format_cards(candidates, language), None
 
-        all_instances = self.artefact.instances()
+        all_entities = self.artefact.get_entities()
         if not self._config["toc"]:
-            return self._format_entities(all_instances, language), None
-        entities = []
+            return self._format_cards(all_entities, language), None
+        cards = []
         for class_key, _section_id, _title in self.get_toc_config():
-            members = [i for i in all_instances
+            members = [i for i in all_entities
                        if type(i).__name__ == class_key and self._is_toc_entity(i)]
-            entities += self._format_entities(members, language)
-        return entities, None
+            cards += self._format_cards(members, language)
+        return cards, None
 
 
     def _build_types(self) -> Dict[str, TypeLabel]:
         """How each type is called and abbreviated, keyed by the name of its model class.
 
         The configuration keys the names by the lower-case class name; the contract uses the exact
-        name, the one a Value, an Entity and a section carry in `type`.
+        name, the one a Value, an Card and a section carry in `type`.
         """
         exact = {name.lower(): name for name in _models.__all__}
         return {exact.get(key, key.capitalize()): {'singular': entry['singular'],
@@ -254,10 +254,10 @@ class BaseViewer:
         It does not depend on the view, so the page of one resource has the same navigation as
         the whole artefact.
         """
-        instances = self.artefact.instances()
+        entities = self.artefact.get_entities()
         toc = []
         for class_key, section_id, _ in self.get_toc_config():
-            members = [i for i in instances
+            members = [i for i in entities
                        if type(i).__name__ == class_key and self._is_toc_entity(i)]
             if not members:
                 continue
@@ -265,48 +265,48 @@ class BaseViewer:
                              key=lambda e: (e['label'] or e['iri']).lower())
             names = self._config["type_map"].get(class_key.lower(), {})
             toc.append({'id': section_id, 'type': class_key, 'label': names.get('plural', class_key),
-                        'entities': entries})
+                        'entries': entries})
         return toc
 
-    def _anchor(self, instance) -> str:
+    def _anchor(self, entity) -> str:
         """Return the HTML id of the card of an entity.
 
         Derived from its IRI, so it is stable and safe in an attribute. The navigation 
         and the card both use it: a link from the navigation reaches the card.
         """
-        type_name = type(instance).__name__.replace(" ", "_")
-        digest = hashlib.md5(str(instance.has_identifier).encode('utf-8')).hexdigest()
+        type_name = type(entity).__name__.replace(" ", "_")
+        digest = hashlib.md5(str(entity.has_identifier).encode('utf-8')).hexdigest()
         return f"id_{digest}_{type_name}"
 
 
-    def _toc_entry(self, instance, language: str) -> TocEntity:
+    def _toc_entry(self, entity, language: str) -> TocEntry:
         """Reduce an entity to what a navigation needs: IRI, type, label and anchor.
 
         The anchor has the same form as the one of its card, so a link from the navigation
         reaches the card.
         """
-        return {'iri': instance.has_identifier, 'type': type(instance).__name__.replace(" ", "_"),
-                'label': self._get_best_label(instance, language),
-                'anchor': self._anchor(instance), 'href': None, 'kind': "page"}
+        return {'iri': entity.has_identifier, 'type': type(entity).__name__.replace(" ", "_"),
+                'label': self._get_best_label(entity, language),
+                'anchor': self._anchor(entity), 'href': None, 'kind': "page"}
 
-    def _format_entities(self, instances: List, language: Optional[str] = None) -> List[Entity]:
+    def _format_cards(self, members: List, language: Optional[str] = None) -> List[Card]:
         """
         onverts Python Models -> contract Entities (the content of a card).
         Ensures the same keys across all viewers.
         """
-        all_instances = self.artefact.instances()
+        all_entities = self.artefact.get_entities()
 
-        entities = []
-        for instance in instances:
-            uri = instance.has_identifier if hasattr(instance, 'has_identifier') else None
+        cards = []
+        for entity in members:
+            uri = entity.has_identifier if hasattr(entity, 'has_identifier') else None
 
             if not uri:
                 continue
 
             # Extract internal attributes (SuperClasses, etc.)
             relations = {}
-            if hasattr(instance, '__dict__'):
-                for attr, value in instance.__dict__.items():
+            if hasattr(entity, '__dict__'):
+                for attr, value in entity.__dict__.items():
                     if not attr.startswith('_') and value:
                         # Skip attributes that are handled elsewhere or are empty
                         # Clean up name:
@@ -367,37 +367,37 @@ class BaseViewer:
             for attr in self._config["characteristics"]:
                 getter = f"get_{attr}"
                 # Safely get the boolean value
-                is_true = getattr(instance, getter)() if hasattr(instance, getter) else getattr(instance, attr, False)
+                is_true = getattr(entity, getter)() if hasattr(entity, getter) else getattr(entity, attr, False)
 
                 # Convert 'is_asymmetric' to 'is asymmetric' for the HTML label
                 if is_true:
                     characteristics.append(attr.replace('_', ' '))
 
             # Extract Statement Entities
-            statements = self._format_statement(all_instances, instance, language)
-            type_inst = type(instance).__name__.replace(" ", "_")
+            statements = self._format_statement(all_entities, entity, language)
+            type_inst = type(entity).__name__.replace(" ", "_")
 
-            is_dep = getattr(instance, 'get_is_deprecated')() if hasattr(instance, 'get_is_deprecated') else getattr(
-                instance, 'is_deprecated', False)
+            is_dep = getattr(entity, 'get_is_deprecated')() if hasattr(entity, 'get_is_deprecated') else getattr(
+                entity, 'is_deprecated', False)
 
-            entities.append({
+            cards.append({
                 'iri': uri,
                 'type': type_inst,
-                'label': self._get_best_label(instance, language),
-                'anchor': self._anchor(instance),
+                'label': self._get_best_label(entity, language),
+                'anchor': self._anchor(entity),
                 'href': None,
                 'kind': "page" if self._is_internal(uri) else "external",
                 'deprecated': bool(is_dep),
                 'relations': ordered_relations,
                 'statements': statements,
                 'characteristics': characteristics,
-                'provenance': self._serialize_provenance(instance),
+                'provenance': self._serialize_provenance(entity),
             })
 
-        entities.sort(key=lambda x: (x['label'] or x['iri']).lower())
-        return entities
+        cards.sort(key=lambda x: (x['label'] or x['iri']).lower())
+        return cards
 
-    def _find_and_format_semantic_artefact_metadata(self, all_instances: List[Resource], language=None) -> Dict:
+    def _find_and_format_semantic_artefact_metadata(self, all_entities: List[Resource], language=None) -> Dict:
         """
         Searches for the Model and its Statements and formatting them
         for the template.
@@ -408,7 +408,7 @@ class BaseViewer:
         # A source that declares no ontology or concept scheme has none: no header.
         main_iri = str(self.artefact.artefact_iri)
         sem_art_model = next(
-            (m for m in self.artefact.instances(Model)
+            (m for m in self.artefact.get_entities(Model)
              if str(m.get_has_identifier()) == main_iri),
             None,
         )
@@ -476,7 +476,7 @@ class BaseViewer:
             ]
             
         # 9. Statements
-        data.update(self._format_statement(all_instances, sem_art_model, language))
+        data.update(self._format_statement(all_entities, sem_art_model, language))
 
         # uri/label first, then the order from the YAML, then alphabetical
         pinned = ['uri', 'label']
@@ -633,28 +633,28 @@ class BaseViewer:
         """Return the export formats (triples): the same whatever modules are active."""
         return SERIALIZATION_FORMATS
 
-    def _format_statement(self, instances, target_instance, language=None) -> Dict:
+    def _format_statement(self, entities, target_entity, language=None) -> Dict:
         """
-        Extracts all statements where the subject matches the given target_instance.
+        Extracts all statements where the subject matches the given target_entity.
         """
         statements = {}
 
-        # 1. Validate the target instance
-        if target_instance is None:
+        # 1. Validate the target entity
+        if target_entity is None:
             return statements
 
         # 2. Group the objects by predicate: the language is chosen per property
         grouped = {}
-        for instance in instances:
-            if not isinstance(instance, Statement):
+        for entity in entities:
+            if not isinstance(entity, Statement):
                 continue
-            # Identity comparison (handles punning: same URI, different Python instances)
-            if instance.get_has_subject() is not target_instance:
+            # Identity comparison (handles punning: same URI, different Python entities)
+            if entity.get_has_subject() is not target_entity:
                 continue
-            obj = instance.get_has_object()
+            obj = entity.get_has_object()
             if not obj:
                 continue
-            predicate = instance.get_has_predicate()
+            predicate = entity.get_has_predicate()
             pred_label = self._get_best_label(predicate, language) if predicate else "Annotation"
             grouped.setdefault(pred_label, []).append(obj)
 
@@ -676,12 +676,12 @@ class BaseViewer:
     # RDF RELATED FEATURES = Provenance + Export RDF
     # ==========================================================================
     
-    def _serialize_provenance(self, instance) -> List[Dict[str, str]]:
-        """Serialize the triples an instance comes from, once per available format.
+    def _serialize_provenance(self, entity) -> List[Dict[str, str]]:
+        """Serialize the triples an entity comes from, once per available format.
 
-        Returns an empty list when the instance has no provenance.
+        Returns an empty list when the entity has no provenance.
         """
-        sub = self.artefact.provenance(instance)
+        sub = self.artefact.provenance(entity)
         if not any(True for _ in sub):
             return []
         sub = self.artefact.with_provenance(sub)
@@ -691,7 +691,7 @@ class BaseViewer:
         ]
     
     def _resource_graph(self, resource_uri: str) -> Graph:
-        """Build the subgraph of a single resource (the union of its punned instances).
+        """Build the subgraph of a single resource (the union of its punned entities).
 
         Only triples of the loaded artefact are kept; the ones that come from imported
         modules belong to the provenance, not to the export. The graph starts without
@@ -702,9 +702,9 @@ class BaseViewer:
         for prefix, ns in self.artefact.graph.namespaces():
             g.bind(prefix, ns)
         main = self.artefact.main_graph()
-        instances = self.artefact.get_instance(resource_uri)
-        if instances:
-            inst_iter = instances if isinstance(instances, set) else [instances]
+        entities = self.artefact.get_entities_by_iri(resource_uri)
+        if entities:
+            inst_iter = entities if isinstance(entities, set) else [entities]
             for inst in inst_iter:
                 for t in self.artefact.provenance(inst):
                     if t in main:

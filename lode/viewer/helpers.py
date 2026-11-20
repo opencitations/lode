@@ -1,6 +1,6 @@
 """Stateless helpers shared by the viewers.
 
-Nothing here needs a Reader or a model instance: serialization formats, the
+Nothing here needs a Reader or a model entity: serialization formats, the
 deterministic order of the header metadata, label cleaning, URL heuristics and
 the loader of the per-format YAML configuration.
 """

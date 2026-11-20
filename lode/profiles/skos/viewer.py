@@ -3,12 +3,12 @@
 from typing import List, Optional
 
 # internal imports
-from lode.viewer.view_data import TocEntity, TocSection, ViewData
+from lode.viewer.view_data import TocEntry, TocSection, ViewData
 from lode.helpers.links import Links
 from lode.viewer.base_viewer import BaseViewer
 
 
-class TreeNode(TocEntity):
+class TreeNode(TocEntry):
     """One node of the concept taxonomy: a concept and the concepts narrower than it."""
 
     children: List["TreeNode"]
@@ -43,7 +43,7 @@ class SkosViewer(BaseViewer):
 
         data = super().view(resource_uri, language, links)
         for section in data['toc']:
-            addresses = {e['iri']: (e['href'], e['kind']) for e in section['entities']}
+            addresses = {e['iri']: (e['href'], e['kind']) for e in section['entries']}
             self._copy_addresses(section['tree'], addresses)
         return data
 
@@ -60,7 +60,7 @@ class SkosViewer(BaseViewer):
         collections), so the SKOS sidebar can read it without checking that it exists.
         """
         toc = super()._build_toc(language)
-        concepts = [i for i in self.get_toc_instances() if type(i).__name__ == 'Concept']
+        concepts = [i for i in self.get_toc_entities() if type(i).__name__ == 'Concept']
         for section in toc:
             section['tree'] = self._build_taxonomy(concepts, language) if section['type'] == 'Concept' else []
         return toc

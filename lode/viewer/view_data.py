@@ -8,7 +8,7 @@ Rules that hold everywhere:
   - every key listed is always present: an empty list, an empty dictionary or None says "nothing",
     never a missing key;
   - labels are already in the requested language, with the fallback applied;
-  - lists keep a meaningful order (entities by label, relations in display order);
+  - lists keep a meaningful order (cards by label, relations in display order);
   - nothing here depends on how the data will be drawn: there is no HTML, no CSS class.
 """
 from typing import Dict, List, Optional, TypedDict
@@ -75,8 +75,8 @@ class Provenance(TypedDict):
     code: str                    # the serialization
 
 
-class Entity(TypedDict):
-    """One entity with all its data: the content of a card."""
+class Card(TypedDict):
+    """One entity with all its data: what a card shows."""
 
     iri: str
     type: str                    # model class name: "Concept", "Relation", ...
@@ -91,8 +91,8 @@ class Entity(TypedDict):
     provenance: List[Provenance]         # [] when unknown
 
 
-class TocEntity(TypedDict):
-    """One entity reduced to what a list needs: no relations, no statements."""
+class TocEntry(TypedDict):
+    """One entry of the navigation: an entity reduced to what a list needs, no relations, no statements."""
 
     iri: str
     type: str
@@ -102,12 +102,12 @@ class TocEntity(TypedDict):
     kind: Optional[str]
 
 class TocSection(TypedDict):
-    """The entities of one class, as a section of the table of contents."""
+    """The entries of one class, as a section of the table of contents."""
 
     id: str                      # a stable HTML id for the section
     type: str                    # model class name
     label: str                   # display name of the group, "Classes"
-    entities: List[TocEntity]
+    entries: List[TocEntry]
 
 class Model(TypedDict):
     """The documented artefact: its header, and what concerns it as a whole."""
@@ -133,7 +133,7 @@ class ViewData(TypedDict):
     model: Model
     toc: List[TocSection]        # the navigation of the whole artefact, for the sidebar and the contents list; [] on the page of one resource
     types: Dict[str, TypeLabel]  # how each type is called, by the class name that `type` carries
-    entities: List[Entity]       # what the main part shows: all the cards, one, or none
+    cards: List[Card]            # what the main part shows: all the cards, one, or none
     focus: Optional[str]         # the IRI that was asked for; None for the whole artefact
     error: Optional[str]         # a message when the request cannot be answered; None otherwise
 

@@ -66,7 +66,7 @@ def test_a_nested_statement_lists_its_pairs():
     assert "source:" in html and "note:" in html
 
 def _entity(label: str, href=None) -> dict:
-    """A contract TocEntity; `href` is None for an entity that is not published."""
+    """A contract TocEntry; `href` is None for an entity that is not published."""
     return {"iri": f"http://e.org/{label}", "type": "Concept", "label": label,
             "anchor": f"id_{label}", "href": href, "kind": "anchor" if href else None}
 
@@ -74,7 +74,7 @@ def _entity(label: str, href=None) -> dict:
 def _toc() -> list:
     """One section with a published entity and one without a page."""
     return [{"id": "concepts", "type": "Concept", "label": "Concepts",
-             "entities": [_entity("cat", "#id_cat"), _entity("dog")], "tree": []}]
+             "entries": [_entity("cat", "#id_cat"), _entity("dog")], "tree": []}]
 
 
 def _render_toc(call: str) -> str:
@@ -104,7 +104,7 @@ def test_the_contents_counts_namespaces():
     assert "Table of Contents" not in _render_toc("contents([], namespaces)")
 
 def _card(**fields) -> dict:
-    """A contract Entity with every key present, overridden by `fields`."""
+    """A contract Card with every key present, overridden by `fields`."""
     base = {"iri": "http://e.org/cat", "type": "Concept", "label": "Cat", "anchor": "id_cat",
             "href": "resources/cat.html", "kind": "page", "deprecated": False, "relations": {},
             "statements": {}, "characteristics": [], "provenance": []}
@@ -176,8 +176,8 @@ def test_the_page_has_a_card_for_every_entity(tmp_path):
     """The whole artefact: each entity once, each section, the namespaces."""
     data = _viewer(tmp_path).view()
     html = _render_page(data)
-    assert data["entities"]
-    for entity in data["entities"]:
+    assert data["cards"]
+    for entity in data["cards"]:
         assert html.count(f'id="{entity["anchor"]}"') == 1
     for section in data["toc"]:
         assert f'id="{section["id"]}"' in html
@@ -188,7 +188,7 @@ def test_the_page_of_a_resource_shows_only_that_resource(tmp_path):
     data = _viewer(tmp_path).view(resource_uri=_CAT)
     data["model"]["href"] = "index.html"
     html = _render_page(data)
-    assert len(data["entities"]) == 1 and 'href="index.html"' in html
+    assert len(data["cards"]) == 1 and 'href="index.html"' in html
     assert 'id="toc"' not in html
 
 

@@ -22,7 +22,7 @@ class SkosReader(Reader):
 # SKOS-SPECIFIC HANDLERS READ FROM DECLARATIVE MAPPING
 # ==========================================================================
     
-    def handle_member_list(self, instance, uri, predicate, obj, value):
+    def handle_member_list(self, entity, uri, predicate, obj, value):
         """Handle skos:memberList: add every item of the RDF list as a member, in order.
 
         The list is expanded here because a plain setter would receive the list head, not
@@ -37,5 +37,5 @@ class SkosReader(Reader):
                 continue
             member = self.get_or_create(item, self._resolve_target_class(item, [Concept, Collection]))
             if member:
-                instance.set_has_member(member)
-        instance.set_is_ordered(True)
+                entity.set_has_member(member)
+        entity.set_is_ordered(True)

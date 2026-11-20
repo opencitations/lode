@@ -32,7 +32,7 @@ def test_read_returns_an_artefact(vocabulary):
 
 def test_instances_of_a_class(vocabulary):
     artefact = lode.read(str(vocabulary), "skos")
-    ids = {c.get_has_identifier() for c in artefact.instances(Concept)}
+    ids = {c.get_has_identifier() for c in artefact.get_entities(Concept)}
     assert ids == {"http://example.org/animal", "http://example.org/cat"}
 
 

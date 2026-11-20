@@ -16,7 +16,7 @@ _EXAMPLES = Path(__file__).resolve().parent.parent / "docs" / "examples"
 
 def test_top_level_keys():
     """Adding or removing a top-level key is a change of the contract, never an accident."""
-    assert set(ViewData.__annotations__) == {"model", "toc", "entities", "focus", "error", "types"}
+    assert set(ViewData.__annotations__) == {"model", "toc", "cards", "focus", "error", "types"}
 
 """A template written from the contract alone renders the three kinds of view."""
 from pathlib import Path
@@ -71,8 +71,8 @@ def _toc():
     animal = {**_short("Animal"), "children": [cat]}
     return [
         {"id": "concepts", "type": "Concept", "label": "Concepts",
-         "entities": [_short("Animal"), _short("Cat"), _short("Kitten")], "tree": [animal]},
-        {"id": "collections", "type": "Collection", "label": "Collections", "entities": [], "tree": []},
+         "entries": [_short("Animal"), _short("Cat"), _short("Kitten")], "tree": [animal]},
+        {"id": "collections", "type": "Collection", "label": "Collections", "entries": [], "tree": []},
     ]
 
 
@@ -97,12 +97,12 @@ _PAGE = _value(text="Kitten", iri="http://example.org/kitten", href="resources/k
 _EXTERNAL = _value(text="Elsewhere", iri="http://other.org/x", href="http://other.org/x", kind="external")
 
 _TYPES = {"Concept": {"singular": "Concept", "plural": "Concepts", "abbreviation": "c"}}
-WHOLE = {"model": _model(), "toc": _toc(), "entities": [_card({"broader": [_ANCHOR]})],
+WHOLE = {"model": _model(), "toc": _toc(), "cards": [_card({"broader": [_ANCHOR]})],
          "focus": None, "error": None, "types": _TYPES}
-WHOLE_WITHOUT_CARDS = {**WHOLE, "entities": []}
-ONE = {"model": _model(), "toc": _toc(), "entities": [_card({"broader": [_PAGE, _EXTERNAL]})],
+WHOLE_WITHOUT_CARDS = {**WHOLE, "cards": []}
+ONE = {"model": _model(), "toc": _toc(), "cards": [_card({"broader": [_PAGE, _EXTERNAL]})],
        "focus": "http://example.org/cat", "error": None, "types": _TYPES}
-ERROR = {"model": _model(), "toc": _toc(), "entities": [], "focus": "http://example.org/nope",
+ERROR = {"model": _model(), "toc": _toc(), "cards": [], "focus": "http://example.org/nope",
          "error": "Resource http://example.org/nope not found", "types": _TYPES}
 
 @pytest.fixture
@@ -215,7 +215,7 @@ def test_focus_and_error(viewer_and_iri):
     assert viewer.view()["focus"] is None
     assert viewer.view(resource_uri=iri)["focus"] == iri
     missing = viewer.view(resource_uri="http://example.org/nope")
-    assert missing["error"] and missing["entities"] == []
+    assert missing["error"] and missing["cards"] == []
 
 class _TestLinks(Links):
     """Addresses that say what they stand for, so a test can tell where each came from."""
@@ -264,10 +264,10 @@ def test_the_whole_artefact_links_its_cards_by_anchor(viewer_and_iri):
     """An entry of the toc whose card is on the page points to that card."""
     viewer, _ = viewer_and_iri
     data = viewer.view(links=_TestLinks())
-    anchors = {e["iri"]: e["anchor"] for e in data["entities"]}
+    anchors = {e["iri"]: e["anchor"] for e in data["cards"]}
     assert anchors
     for section in data["toc"]:
-        for entry in section["entities"]:
+        for entry in section["entries"]:
             if entry["iri"] in anchors:
                 assert (entry["kind"], entry["href"]) == ("anchor", "#" + anchors[entry["iri"]])
 

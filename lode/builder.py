@@ -168,7 +168,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en",
         return (URIRef(str(uri)), None, None) in main_graph
 
     grouped = defaultdict(list)
-    for inst in viewer.artefact.instances():
+    for inst in viewer.artefact.get_entities():
         grouped[type(inst).__name__].append(inst)
 
     toc_config = viewer.get_toc_config()

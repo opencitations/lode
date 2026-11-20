@@ -7,7 +7,7 @@ Typical use as a library:
     from lode.models import Concept
 
     vocabulary = SkosVocabulary("vocabulary.ttl")
-    for concept in vocabulary.instances(Concept):
+    for concept in vocabulary.get_entities(Concept):
         print(concept.get_has_identifier())
 
     lode.build_site(vocabulary, "site")

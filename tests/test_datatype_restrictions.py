@@ -55,7 +55,7 @@ def test_range_preserves_datatype_and_every_facet(range_artefact, name, datatype
                                                 expected):
     viewer = get_viewer(range_artefact)
     data = viewer.view(resource_uri=str(EX[name]))
-    rendered = data["entities"][0]["relations"]["range"][0]
+    rendered = data["cards"][0]["relations"]["range"][0]
 
     assert rendered["text"] == expected
     assert rendered["parts"][0]["iri"] == str(XSD[datatype])

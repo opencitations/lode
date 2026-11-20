@@ -44,7 +44,7 @@ def read_into(artefact, source: str, *, imported=None, closure=None, partial_imp
 
     configuration = ConfigManager(artefact.profile)
     reader = artefact.profile.make_reader(artefact.graph, artefact.entities, configuration)
-    _extract_instances(reader, artefact.profile, warnings)
+    _extract_entities(reader, artefact.profile, warnings)
     _populate_namespaces(artefact)
 
     artefact.reader = reader
@@ -87,7 +87,7 @@ def load_graph(source: str, *, imported=None, closure=None, partial_import=None,
 # ==========================================================================
 # 3. EXTRACTION
 # ==========================================================================
-def _extract_instances(reader, profile, warnings_enabled: bool) -> None:
+def _extract_entities(reader, profile, warnings_enabled: bool) -> None:
     """Run the extraction phases in order, delegating each one to the reader.
 
     Phases 1-5 depend on the artefact type; the statements phase is shared.
@@ -120,10 +120,10 @@ def _populate_namespaces(artefact) -> None:
     the same dictionary.
     """
     ns = {prefix: str(uri) for prefix, uri in artefact.graph.namespaces()}
-    for instances in artefact.entities.values():
-        for instance in instances:
-            if isinstance(instance, Model):
-                instance.set_has_namespaces(ns)
+    for entities in artefact.entities.values():
+        for entity in entities:
+            if isinstance(entity, Model):
+                entity.set_has_namespaces(ns)
 
 
 def _value_key(value) -> str:
@@ -145,13 +145,13 @@ def _prioritize_documented_values(artefact) -> None:
     The sort is stable: within each group the original order is kept.
     """
     main = artefact.graph.graph(artefact.artefact_iri)
-    for uri, instances in artefact.entities.items():
+    for uri, entities in artefact.entities.items():
         if not isinstance(uri, URIRef):
             continue
         local = {str(o) for o in main.objects(uri, None)}
         if not local:
             continue
-        for instance in instances:
-            for value in vars(instance).values():
+        for entity in entities:
+            for value in vars(entity).values():
                 if isinstance(value, list) and len(value) > 1:
                     value.sort(key=lambda v: _value_key(v) not in local)

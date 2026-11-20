@@ -1339,7 +1339,7 @@ class TestGetOrCreate:
         second = reader.get_or_create(EX.A, Concept, populate=False)
         assert first is second
 
-    def test_populate_true_calls_populate_instance(self):
+    def test_populate_true_calls_populate_entity(self):
         """get_or_create with populate=True on a new URI must populate the instance
         (label populated from graph)."""
         reader = _make_reader([
@@ -1351,7 +1351,7 @@ class TestGetOrCreate:
         assert len(labels) >= 1
         assert any(l.get_has_value() == "My Class" for l in labels)
 
-    def test_populate_false_skips_populate_instance(self):
+    def test_populate_false_skips_populate_entity(self):
         """get_or_create with populate=False must not populate the instance."""
         reader = _make_reader([
             (EX.MyClass, RDF.type, OWL.Class),

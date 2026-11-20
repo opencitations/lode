@@ -34,7 +34,7 @@ class TestArtefactWithLoadedOntology:
     def test_get_viewer_picks_the_viewer_of_the_format(self, artefact):
         viewer = get_viewer(artefact)
         assert isinstance(viewer, OwlViewer)
-        assert hasattr(viewer.artefact, 'instances')
+        assert hasattr(viewer.artefact, 'get_entities')
 
     def test_reading_fills_every_field_of_the_artefact(self, artefact):
         assert artefact.profile.name == "owl" and artefact.read_as == "owl"
@@ -96,7 +96,7 @@ class TestReaderTriplesMap:
         viewer = get_viewer(artefact)
 
         # Usa il viewer per ottenere l'istanza
-        instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
+        instance_set = viewer.artefact.get_entities_by_iri("http://example.org/test#Person")
         assert instance_set is not None
 
         # Prendi la prima istanza dal set
@@ -116,7 +116,7 @@ class TestReaderTriplesMap:
     def test_triples_contain_expected_predicates(self, artefact):
         """Verifica che le triple contengano i predicati attesi"""
         viewer = get_viewer(artefact)
-        instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
+        instance_set = viewer.artefact.get_entities_by_iri("http://example.org/test#Person")
         person = next(iter(instance_set))
 
         triples_map = artefact.reader._triples_map
@@ -133,7 +133,7 @@ class TestReaderTriplesMap:
     def test_triples_contain_expected_objects(self, artefact):
         """Verifica che le triple contengano gli oggetti attesi"""
         viewer = get_viewer(artefact)
-        instance_set = viewer.artefact.get_instance("http://example.org/test#Person")
+        instance_set = viewer.artefact.get_entities_by_iri("http://example.org/test#Person")
         person = next(iter(instance_set))
 
         triples_map = artefact.reader._triples_map
@@ -149,7 +149,7 @@ class TestReaderTriplesMap:
     def test_subclass_has_subClassOf_triple(self, artefact):
         """Verifica che Student abbia la tripla rdfs:subClassOf"""
         viewer = get_viewer(artefact)
-        instance_set = viewer.artefact.get_instance("http://example.org/test#Student")
+        instance_set = viewer.artefact.get_entities_by_iri("http://example.org/test#Student")
         assert instance_set is not None
 
         student = next(iter(instance_set))
@@ -170,7 +170,7 @@ class TestReaderTriplesMap:
     def test_property_has_domain_range_triples(self, artefact):
         """Verifica che la property 'knows' abbia domain e range"""
         viewer = get_viewer(artefact)
-        instance_set = viewer.artefact.get_instance("http://example.org/test#knows")
+        instance_set = viewer.artefact.get_entities_by_iri("http://example.org/test#knows")
         assert instance_set is not None
 
         knows = next(iter(instance_set))
@@ -200,7 +200,7 @@ class TestReaderTriplesMap:
         graph = artefact.reader.graph
 
         orphans = []
-        for inst in viewer.artefact.instances():
+        for inst in viewer.artefact.get_entities():
             if triples_map.get(inst):
                 continue
             ident = inst.get_has_identifier()

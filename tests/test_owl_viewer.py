@@ -87,7 +87,7 @@ def _looks_like_bnode(value) -> bool:
 def _iter_resolved_values(data):
     """Yield every Value in the cards of a view (relations + statements),
     flattening restriction parts."""
-    for ent in data["entities"]:
+    for ent in data["cards"]:
         for values in list(ent["relations"].values()) + list(ent["statements"].values()):
             for v in values:
                 for part in (v["parts"] or [v]):
@@ -135,14 +135,14 @@ class TestIsTocEntity:
 
 
 # ---------------------------------------------------------------------------
-# get_toc_instances — only ToC entities surface
+# get_toc_entities — only ToC entities surface
 # ---------------------------------------------------------------------------
 
 class TestGetTocInstances:
 
     def test_excludes_model(self):
         v = _viewer(_entity(Concept, C), _entity(Model, ONTO))
-        types = {type(i).__name__ for i in v.get_toc_instances()}
+        types = {type(i).__name__ for i in v.get_toc_entities()}
         assert "Concept" in types
         assert "Model" not in types
 
@@ -154,7 +154,7 @@ class TestGetTocInstances:
             _entity(Annotation, "http://ex.org/anno"),
             _entity(Individual, I),
         )
-        types = {type(i).__name__ for i in v.get_toc_instances()}
+        types = {type(i).__name__ for i in v.get_toc_entities()}
         assert types == {"Concept", "Relation", "Attribute", "Annotation", "Individual"}
 
     def test_punned_individual_still_surfaces(self):
@@ -163,7 +163,7 @@ class TestGetTocInstances:
         onto = _entity(Model, ONTO)
         indiv = _entity(Individual, ONTO)
         v = _viewer(onto, indiv)
-        instances = v.get_toc_instances()
+        instances = v.get_toc_entities()
         assert any(type(i).__name__ == "Individual" for i in instances)
         assert not any(type(i).__name__ == "Model" for i in instances)
 
@@ -230,20 +230,20 @@ class TestSingleResource:
         v = _viewer(_entity(Concept, C, "My Class"))
         data = v.view(resource_uri=C)
         assert data["error"] is None
-        assert len(data["entities"]) == 1
-        assert data["entities"][0]["iri"] == C
+        assert len(data["cards"]) == 1
+        assert data["cards"][0]["iri"] == C
 
     def test_ontology_iri_is_not_browsable(self):
         """Opening ?resource=<ontology> must NOT dump the whole model."""
         v = _viewer(_entity(Model, ONTO))
         data = v.view(resource_uri=ONTO)
         assert data["error"]
-        assert data["entities"] == []
+        assert data["cards"] == []
 
     def test_punned_ontology_drops_model_keeps_individual(self):
         v = _viewer(_entity(Model, ONTO), _entity(Individual, ONTO, "thing"))
         data = v.view(resource_uri=ONTO)
-        types = {e["type"] for e in data["entities"]}
+        types = {e["type"] for e in data["cards"]}
         assert "Model" not in types
         assert "Individual" in types
 
@@ -280,7 +280,7 @@ class TestGroupedView:
         data = v.view()
         toc_keys = {key for key, _id, _title in v.get_toc_config()}
         for section in data["toc"]:
-            for ent in section["entities"]:
+            for ent in section["entries"]:
                 assert ent["type"] in toc_keys
 
 
@@ -427,24 +427,24 @@ class TestCorpusInvariants:
 
     def test_no_model_in_toc_instances(self, viewer):
         """No ToC entity is a Model, on any real ontology."""
-        assert all(type(i).__name__ != "Model" for i in viewer.get_toc_instances())
+        assert all(type(i).__name__ != "Model" for i in viewer.get_toc_entities())
 
     def test_grouped_sections_only_toc_kinds(self, viewer):
         data = viewer.view()
         toc_keys = {key for key, _id, _title in viewer.get_toc_config()}
-        for ent in data["entities"]:
+        for ent in data["cards"]:
             assert ent["type"] in toc_keys
 
     def test_single_resource_roundtrip(self, viewer):
         """Opening any ToC entity by URI returns exactly that entity, browsable."""
-        toc = viewer.get_toc_instances()
+        toc = viewer.get_toc_entities()
         if not toc:
             pytest.skip("no ToC entities in this ontology")
         target = toc[0]
         uri = str(target.get_has_identifier())
         data = viewer.view(resource_uri=uri)
         assert data["error"] is None
-        assert any(e["iri"] == uri for e in data["entities"])
+        assert any(e["iri"] == uri for e in data["cards"])
 
     def test_opening_ontology_iri_shows_no_model_facet(self, viewer):
         """Opening the ontology IRI never surfaces the Model facet (only its
@@ -456,7 +456,7 @@ class TestCorpusInvariants:
                 continue
             data = viewer.view(resource_uri=str(onto))
             if data["error"] is None:
-                assert all(e["type"] != "Model" for e in data["entities"])
+                assert all(e["type"] != "Model" for e in data["cards"])
             break
 
     def test_no_raw_bnode_in_entity_links(self, viewer):
@@ -464,7 +464,7 @@ class TestCorpusInvariants:
         unprocessed blank nodes must never become clickable links."""
         data = viewer.view()
         offenders = []
-        for ent in data["entities"]:
+        for ent in data["cards"]:
             for rel_name, values in ent["relations"].items():
                 for v in values:
                     # restriction parts carry their own sub-links
@@ -477,7 +477,7 @@ class TestCorpusInvariants:
         """No ToC entity is itself a raw BNode (every card must have a real IRI)."""
         bad = [
             str(i.get_has_identifier())
-            for i in viewer.get_toc_instances()
+            for i in viewer.get_toc_entities()
             if _looks_like_bnode(i.get_has_identifier())
         ]
         assert not bad, f"ToC entities with BNode identifier: {bad[:10]}"
@@ -488,7 +488,7 @@ class TestCorpusInvariants:
         values only — a leaf whose text equals a BNode id is a leak."""
         data = viewer.view()
         offenders = []
-        for ent in data["entities"]:
+        for ent in data["cards"]:
             for rel_name, values in ent["relations"].items():
                 for v in values:
                     if v["parts"]:

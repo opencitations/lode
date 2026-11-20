@@ -130,7 +130,7 @@ def apply_closure(graph: ProvenanceGraph):
 #    - what the documented ontology says about it, in the main graph, and
 #    - ALL the triples of its "home" graph (types included), in the home graph.
 #  No per-predicate priority here: both sources are kept with their provenance;
-#  conflicting types become punned instances in the Reader, and the Viewer decides
+#  conflicting types become punned entities in the Reader, and the Viewer decides
 #  what to show. Redefinitions in third-party ontologies are NOT copied.
 #  If the home cannot be reached, the term receives no external definition.
 

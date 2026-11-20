@@ -13,12 +13,12 @@ from lode.helpers.rdf import iri_namespace
 from lode.profiles import Profile
 from lode.provenance_graph import ProvenanceGraph
 
-# Prefix of the literal entries in the reader's instance cache. Literals are values,
+# Prefix of the literal entries in the reader's entity cache. Literals are values,
 # not entities, and must never be listed as such.
 _LITERAL_PREFIX = "LITERAL::"
 
 
-def _no_provenance(instance) -> Graph:
+def _no_provenance(entity) -> Graph:
     """Return an empty subgraph: the provenance of an artefact built without a reader."""
     return Graph()
 
@@ -27,7 +27,7 @@ class Artefact:
     """A semantic artefact after extraction: its entities, its RDF graph and its provenance.
 
     `profile` is the format it was read as (None for an artefact built by hand). The reader
-    sets the rest: `entities` is the instance cache shared by reference with `reader`, not a
+    sets the rest: `entities` is the entity cache shared by reference with `reader`, not a
     copy, and consumers must treat it as read-only; `reader` is the reader of the format after
     extraction, kept for inspection and never used by the viewers; `provenance` is a callable
     that returns the subgraph an entity was built from, computed only when asked for because
@@ -124,11 +124,11 @@ class Artefact:
             self._viewer = get_viewer(self)
         return self._viewer
 
-    def instances(self, cls: Optional[type] = None) -> list:
-        """Return the extracted instances, optionally only those of one model class.
+    def get_entities(self, cls: Optional[type] = None) -> list:
+        """Return the extracted entities, optionally only those of one model class.
 
         `cls` is a model class (Concept, Relation): its subclasses are included, as
-        with isinstance, so Resource gives every instance. Literals are not entities
+        with isinstance, so Resource gives every entity. Literals are not entities
         and are never returned. Passing anything that is not a class, such as the
         class name, raises TypeError. The full list is built once and reused, because
         a static build asks for it on every page: `entities` must not change after the
@@ -136,19 +136,19 @@ class Artefact:
         """
         if self._all is None:
             self._all = [
-                instance
+                entity
                 for key, group in self.entities.items()
                 if not (isinstance(key, str) and key.startswith(_LITERAL_PREFIX))
-                for instance in (group if isinstance(group, set) else [group])
+                for entity in (group if isinstance(group, set) else [group])
             ]
         if cls is None:
             return list(self._all)
         return [i for i in self._all if isinstance(i, cls)]
 
-    def get_instance(self, iri: str) -> Optional[set]:
-        """Return the instances registered under an IRI, or None when it is unknown.
+    def get_entities_by_iri(self, iri: str) -> Optional[set]:
+        """Return the entities registered under an IRI, or None when it is unknown.
 
-        More than one instance comes back for a punned IRI (same IRI used as a
+        More than one entity comes back for a punned IRI (same IRI used as a
         class and as an individual). The lookup scans the keys because they are
         rdflib terms, which do not compare equal to a plain string.
         """

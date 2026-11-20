@@ -10,16 +10,16 @@ onto = OwlOntology("onto.ttl", warnings=True)        # raccoglie i warning del r
 voc = SkosVocabulary("vocabulary.ttl")
 
 # 2. Ispezionare il contenuto
-onto.instances()                                     # tutte le entità
-onto.instances(Concept)                              # solo una classe del modello
-onto.get_instance("http://example.org/o#A")          # entità di un IRI
+onto.get_entities()                                     # tutte le entità
+onto.get_entities(Concept)                              # solo una classe del modello
+onto.get_entities_by_iri("http://example.org/o#A")          # entità di un IRI
 onto.artefact_iri                                    # IRI dell'ontologia
 onto.warnings                                        # problemi trovati
 onto.graph                                           # grafo RDF
 onto.main_graph()                                    # solo le triple dell'artefatto, senza gli import
 
 # 3. Capire da dove viene un'entità
-entity = next(iter(onto.get_instance("http://example.org/o#A")))
+entity = next(iter(onto.get_entities_by_iri("http://example.org/o#A")))
 onto.provenance(entity)                              # triple da cui è nata
 onto.reader                                           # reader del formato, per ispezione
 

@@ -41,13 +41,13 @@
                         <span class="toc-sidebar-section-title">
                             <a href="#{{ section.id }}">{{ section.label }}</a>
                         </span>
-                        <span class="toc-sidebar-section-count">{{ section.entities|length }}</span>
+                        <span class="toc-sidebar-section-count">{{ section.entries|length }}</span>
                     </summary>
                     {% if section.tree %}
                          {{ _tree(section.tree, true) }}
                     {% else %}
                         <ul class="toc-sidebar-list">
-                            {% for item in section.entities %}
+                            {% for item in section.entries %}
                                 <li>{{ _entry(item) }}</li>
                             {% endfor %}
                         </ul>
@@ -144,7 +144,7 @@
                         <li>
                             <a href="#{{ section.id }}" class="text-decoration-underline px-3">
                                 {{ section.label }}
-                                <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ section.entities|length }}</span>
+                                <span class="btn btn-outline-secondary badge ms-1 rounded-circle">{{ section.entries|length }}</span>
                             </a>
                         </li>
                     {% endfor %}

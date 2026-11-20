@@ -51,15 +51,15 @@ def flag_malformed_restrictions(reader, classified):
         reader.add_warning('malformed_restriction', parent,
             f"OWL 2 DL: malformed restrictions on {parent} ({', '.join(names)})")
 
-def empty_truth_function(reader, instance, bnode, operator):
+def empty_truth_function(reader, entity, bnode, operator):
     """Warn that a truth function has an empty operand list and was ignored."""
-    ident = instance.get_has_identifier()
+    ident = entity.get_has_identifier()
     reader.add_warning('empty_truth_function', ident,
         f'§8.1.1: Truth Function ({ident}, {operator}) is empty — ignored (collection BNode: {bnode})')
 
-def singleton_truth_function(reader, instance, bnode, operator):
+def singleton_truth_function(reader, entity, bnode, operator):
     """Warn that a truth function has a single operand, which usually points to an ontology mistake."""
-    ident = instance.get_has_identifier()
+    ident = entity.get_has_identifier()
     reader.add_warning('singleton_truth_function', ident,
         f'§8.1.1: TruthFunction ({ident}, {operator}) has a single element — ontology should be checked (collection BNode: {bnode})')
 
@@ -70,81 +70,81 @@ def singleton_truth_function(reader, instance, bnode, operator):
 
 def run_post_checks(reader):
     """Single sweep over cache + config-driven sweep."""
-    for uri, instances in list(reader.entities.items()):
-        for instance in list(instances):
-            _check_orphan_restriction(reader, instance, uri)
-            _check_inverse_multiplicity(reader, instance, uri)
-            # _check_self_inverse(reader, instance, uri)
-            _check_empty_truth_function_post(reader, instance, uri)
-            _check_property_hierarchy(reader, instance, uri)
-            _check_class_datatype_hierarchy(reader, instance, uri)
+    for uri, entities in list(reader.entities.items()):
+        for entity in list(entities):
+            _check_orphan_restriction(reader, entity, uri)
+            _check_inverse_multiplicity(reader, entity, uri)
+            # _check_self_inverse(reader, entity, uri)
+            _check_empty_truth_function_post(reader, entity, uri)
+            _check_property_hierarchy(reader, entity, uri)
+            _check_class_datatype_hierarchy(reader, entity, uri)
         if isinstance(uri, URIRef):
-            _check_punning_conflicts(reader, uri, instances)
+            _check_punning_conflicts(reader, uri, entities)
     _check_config_mismatches(reader)
 
 
-def _check_orphan_restriction(reader, instance, uri):
+def _check_orphan_restriction(reader, entity, uri):
     """Warn about a restriction with no property; an anonymous one without owl:onProperty is also removed."""
-    if not isinstance(instance, PropertyConceptRestriction):
+    if not isinstance(entity, PropertyConceptRestriction):
         return
-    if instance.get_applies_on_property() is not None:
+    if entity.get_applies_on_property() is not None:
         return
     if isinstance(uri, BNode) and (uri, OWL.onProperty, None) not in reader.graph:
         reader.add_warning('orphan_restriction', uri,
-            f'Orphan {type(instance).__name__}: no owl:onProperty in graph, removed')
-        reader.entities[uri].discard(instance)
+            f'Orphan {type(entity).__name__}: no owl:onProperty in graph, removed')
+        reader.entities[uri].discard(entity)
     else:
         reader.add_warning('missing_on_property', uri,
-            f'{type(instance).__name__} has owl:onProperty but applies_on_property is None')
+            f'{type(entity).__name__} has owl:onProperty but applies_on_property is None')
 
-def _check_inverse_multiplicity(reader, instance, uri):
+def _check_inverse_multiplicity(reader, entity, uri):
     """Warn about a relation declared inverse of more than one relation."""
-    if not isinstance(instance, Relation):
+    if not isinstance(entity, Relation):
         return
-    inv = instance.get_is_inverse_of()
+    inv = entity.get_is_inverse_of()
     if isinstance(inv, list) and len(inv) > 1:
         ids = ', '.join(i.get_has_identifier() for i in inv)
         reader.add_warning('multiple_inverse_of', uri,
             f'§9.2.4: Relation {uri} has {len(inv)} owl:inverseOf declarations ({ids})')
 
-# def _check_self_inverse(reader, instance, uri):
-#     if not isinstance(instance, Relation):
+# def _check_self_inverse(reader, entity, uri):
+#     if not isinstance(entity, Relation):
 #         return
-#     inv = instance.get_is_inverse_of()
+#     inv = entity.get_is_inverse_of()
 #     candidates = inv if isinstance(inv, list) else ([inv] if inv else [])
-#     if any(c is instance for c in candidates):
+#     if any(c is entity for c in candidates):
 #         reader.add_warning('self_inverse', uri,
 #             f'§6.1.1: Relation {uri} is inverse of itself')
 
-def _check_empty_truth_function_post(reader, instance, uri):
+def _check_empty_truth_function_post(reader, entity, uri):
     """Warn about a truth function that still has no concepts after the whole read."""
-    if isinstance(instance, TruthFunction) and len(instance.get_applies_on_concept()) == 0:
+    if isinstance(entity, TruthFunction) and len(entity.get_applies_on_concept()) == 0:
         reader.add_warning('empty_restriction', uri,
-            f'{type(instance).__name__} has empty applies_on_concept')
+            f'{type(entity).__name__} has empty applies_on_concept')
 
-def _check_property_hierarchy(reader, instance, uri):
+def _check_property_hierarchy(reader, entity, uri):
     """Warn when a property is a sub property of a property of a different kind (relation, attribute, annotation)."""
-    if not isinstance(instance, (Relation, Attribute, Annotation)):
+    if not isinstance(entity, (Relation, Attribute, Annotation)):
         return
-    for sup in (instance.get_is_sub_property_of() or []):
-        if sup is not None and not isinstance(sup, type(instance)):
+    for sup in (entity.get_is_sub_property_of() or []):
+        if sup is not None and not isinstance(sup, type(entity)):
             reader.add_warning('property_type_mismatch_hierarchy', uri,
-                f'§5.8.1: {type(instance).__name__} {uri} subPropertyOf '
+                f'§5.8.1: {type(entity).__name__} {uri} subPropertyOf '
                 f'{type(sup).__name__} {sup.get_has_identifier()}')
 
-def _check_class_datatype_hierarchy(reader, instance, uri):
+def _check_class_datatype_hierarchy(reader, entity, uri):
     """Warn when a class is a subclass of a datatype, or the other way round."""
-    if not isinstance(instance, (Concept, Datatype)) or isinstance(instance, DatatypeRestriction):
+    if not isinstance(entity, (Concept, Datatype)) or isinstance(entity, DatatypeRestriction):
         return
-    for sup in (instance.get_is_sub_concept_of() or []):
-        if sup is not None and not isinstance(sup, type(instance)):
+    for sup in (entity.get_is_sub_concept_of() or []):
+        if sup is not None and not isinstance(sup, type(entity)):
             reader.add_warning('class_datatype_mismatch_hierarchy', uri,
-                f'§5.8.1: {type(instance).__name__} {uri} subClassOf '
+                f'§5.8.1: {type(entity).__name__} {uri} subClassOf '
                 f'{type(sup).__name__} {sup.get_has_identifier()}')
 
-def _check_punning_conflicts(reader, uri, instances):
+def _check_punning_conflicts(reader, uri, entities):
     """Warn about an IRI used as both class and datatype, or as several property kinds (illegal punning)."""
-    types = {type(i) for i in instances}
+    types = {type(i) for i in entities}
     if Concept in types and Datatype in types:
         reader.add_warning('class_datatype_conflict', uri,
             f'§5.8.1: {uri} has both Concept and Datatype in cache')
@@ -164,8 +164,8 @@ def _check_config_mismatches(reader):
         for uri in reader.graph.subjects(pred, None):
             if not isinstance(uri, URIRef):
                 continue
-            instances = reader.entities.get(uri, set())
-            if instances and not any(isinstance(i, target_tuple) for i in instances):
-                actual = [type(i).__name__ for i in instances]
+            entities = reader.entities.get(uri, set())
+            if entities and not any(isinstance(i, target_tuple) for i in entities):
+                actual = [type(i).__name__ for i in entities]
                 reader.add_warning('config_type_mismatch', uri,
                     f'{uri} subject of {pred} (expected {expected}) got {actual}')

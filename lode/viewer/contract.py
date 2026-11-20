@@ -41,8 +41,8 @@ def resolve_links(view: ViewData, links: Links) -> None:
     the link has no `href` and no `kind`: it is plain text.
     """
     anchors = {}
-    for entity in view["entities"]:
-        anchors.setdefault(entity["iri"], entity["anchor"])
+    for card in view["cards"]:
+        anchors.setdefault(card["iri"], card["anchor"])
 
     def to_page(item, iri):
         href = links.resource(iri)
@@ -75,10 +75,10 @@ def resolve_links(view: ViewData, links: Links) -> None:
         for v in values:
             value(v)
     for section in view["toc"]:
-        for entry in section["entities"]:
+        for entry in section["entries"]:
             point(entry, entry["iri"], True)
-    for entity in view["entities"]:
-        to_page(entity, entity["iri"])          # its own page, never an anchor to itself
-        for values in (*entity["relations"].values(), *entity["statements"].values()):
+    for card in view["cards"]:
+        to_page(card, card["iri"])          # its own page, never an anchor to itself
+        for values in (*card["relations"].values(), *card["statements"].values()):
             for v in values:
                 value(v)

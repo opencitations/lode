@@ -559,7 +559,7 @@ class TestNamespaceFilter:
         assert str(SKOS) in allowed
         assert "http://www.w3.org/2002/07/owl#" not in allowed
 
-    def test_non_mapped_predicate_does_not_populate_instance(self):
+    def test_non_mapped_predicate_does_not_populate_entity(self):
         """A predicate outside the mapping must not be tracked as populated."""
         reader = _make_reader(_concept_graph(EX.A) + [
             (EX.A, EX.customPred, RDFLiteral("v")),

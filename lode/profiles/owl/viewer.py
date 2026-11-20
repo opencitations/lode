@@ -68,13 +68,13 @@ class OwlViewer(BaseViewer):
             parts = []
 
             # Helper to safely call getter methods (e.g., get_applies_on_property)
-            def _get(instance, prop_name, default=None):
+            def _get(entity, prop_name, default=None):
                 """Read a property through its getter, or directly as an attribute, with a default for None."""
                 getter = f"get_{prop_name}"
-                if hasattr(instance, getter):
-                    res = getattr(instance, getter)()
+                if hasattr(entity, getter):
+                    res = getattr(entity, getter)()
                     return res if res is not None else default
-                return getattr(instance, prop_name, default)
+                return getattr(entity, prop_name, default)
 
             if obj_type == "Quantifier":
                 prop = _get(obj, 'applies_on_property')

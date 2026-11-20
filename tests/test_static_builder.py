@@ -108,7 +108,7 @@ def test_local_triples_implies_internal(built):
     """The real invariant: a ToC entity that is subject of triples is internal."""
     viewer = built["viewer"]
     checked = 0
-    for i in viewer.get_toc_instances():
+    for i in viewer.get_toc_entities():
         uri = i.get_has_identifier()
         if uri and viewer._has_local_triples(uri):
             assert viewer._is_internal(uri), f"has triples but external: {uri}"
@@ -124,7 +124,7 @@ def test_object_only_has_no_page(built):
     graph = viewer.artefact.graph
     artefact_ns = viewer.get_artefact_ns()
 
-    for i in viewer.get_toc_instances():
+    for i in viewer.get_toc_entities():
         uri = i.get_has_identifier()
         if not uri:
             continue

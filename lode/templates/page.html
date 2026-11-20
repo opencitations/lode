@@ -1,5 +1,5 @@
 {# The whole page, written from the viewer contract (docs/usage/viewer_contract.md).
-   Besides model, toc, entities, focus, error and types it needs one global from the adapter,
+   Besides model, toc, cards, focus, error and types it needs one global from the adapter,
    `url_for(name, path)`, to find the stylesheet: where the assets live depends on where the
    page is served from, so it is not data of the artefact. #}
    
@@ -44,7 +44,7 @@
         {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
 
         {% if focus %}
-            {% set current = entities[0] if entities else none %}
+            {% set current = cards[0] if cards else none %}
             <details class="metadata-accordion">
                 <summary class="metadata-accordion-summary">
                     <div class="resource-frontmatter">
@@ -96,7 +96,7 @@
         {% endif %}
 
         {% if focus %}
-            {% for e in entities %}{{ card(e, toc, focus) }}{% endfor %}
+            {% for e in cards %}{{ card(e, toc, focus) }}{% endfor %}
         {% else %}
             {{ contents(toc, model.namespaces) }}
 
@@ -104,19 +104,19 @@
                 <div id="{{ section.id }}" class="anchor-offset mb-5">
                     <h3 class="section-header d-flex align-items-center justify-content-between mb-4">
                         {{ section.label }}
-                        <span class="btn btn-outline-secondary badge bg-primary rounded-pill fs-6">{{ section.entities|length }}</span>
+                        <span class="btn btn-outline-secondary badge bg-primary rounded-pill fs-6">{{ section.entries|length }}</span>
                     </h3>
                     <div class="card bg-light border-0 mb-4 shadow-sm">
                         <div class="card-body p-3" style="background-color:#F4FFFF">
                             <p class="text-muted mb-2 text-uppercase fw-bold">Jump to:</p>
                             <div class="d-flex flex-wrap gap-2">
-                                {% for item in section.entities %}<a href="#{{ item.anchor }}">{{ item.label }}</a>{% endfor %}
+                                {% for item in section.entries %}<a href="#{{ item.anchor }}">{{ item.label }}</a>{% endfor %}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="anchor-offset mb-5">
-                    {% for e in entities | selectattr('type', 'equalto', section.type) %}{{ card(e, toc, focus) }}{% endfor %}
+                    {% for e in cards | selectattr('type', 'equalto', section.type) %}{{ card(e, toc, focus) }}{% endfor %}
                 </div>
             {% endfor %}
 
