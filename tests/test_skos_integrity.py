@@ -44,13 +44,13 @@ def skos_reader(request):
         pytest.skip(f"Could not load {request.param}: {e}")
     reader = artefact.reader
     yield reader
-    reader._instance_cache.clear()
+    reader.entities.clear()
     reader._triples_map.clear()
 
 
 def _inst(reader, uri, cls):
     """Return the cached instance of `uri` that is a `cls`, or None."""
-    return next((i for i in reader._instance_cache.get(uri, set()) if isinstance(i, cls)), None)
+    return next((i for i in reader.entities.get(uri, set()) if isinstance(i, cls)), None)
 
 
 def _uri_triples(reader, predicate):
@@ -107,7 +107,7 @@ def test_collection_declaration_produces_collection(skos_reader):
 def test_disjoint_classes_not_mixed_in_cache(skos_reader, cls_a, cls_b, rdf_a, rdf_b):
     """§4.6.2 / §9.6.2: Concept, ConceptScheme and Collection are pairwise disjoint.
     Guard: if the vocabulary itself declares both types, it is malformed, not a LODE bug."""
-    for uri, instances in skos_reader._instance_cache.items():
+    for uri, instances in skos_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         if (uri, RDF.type, rdf_a) in skos_reader.graph and (uri, RDF.type, rdf_b) in skos_reader.graph:
@@ -121,7 +121,7 @@ def test_disjoint_classes_not_mixed_in_cache(skos_reader, cls_a, cls_b, rdf_a, r
 
 def test_no_duplicate_instances_of_same_type(skos_reader):
     """A URIRef must not have two instances of the same type in cache."""
-    for uri, instances in skos_reader._instance_cache.items():
+    for uri, instances in skos_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         types = [type(i) for i in instances]
@@ -131,7 +131,7 @@ def test_no_duplicate_instances_of_same_type(skos_reader):
 
 def test_no_instance_has_none_identifier(skos_reader):
     """Every non-Literal instance must have an identifier."""
-    for instances in skos_reader._instance_cache.values():
+    for instances in skos_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Literal):
                 assert inst.get_has_identifier() is not None, f"{type(inst).__name__} has None identifier"
@@ -139,7 +139,7 @@ def test_no_instance_has_none_identifier(skos_reader):
 
 def test_all_literals_have_value(skos_reader):
     """Every Literal in cache must have has_value set."""
-    for instances in skos_reader._instance_cache.values():
+    for instances in skos_reader.entities.values():
         for inst in instances:
             if isinstance(inst, Literal):
                 assert inst.get_has_value() is not None, "Literal has no value"
@@ -175,7 +175,7 @@ def test_literal_properties_are_populated(skos_reader, predicate, getter):
     for s, _, o in skos_reader.graph.triples((None, predicate, None)):
         if not isinstance(s, URIRef) or not isinstance(o, RDFLiteral):
             continue
-        holders = [i for i in skos_reader._instance_cache.get(s, set()) if hasattr(i, getter)]
+        holders = [i for i in skos_reader.entities.get(s, set()) if hasattr(i, getter)]
         assert holders, f"{s} has {predicate} in graph but no instance with {getter}"
         assert any((str(o), o.language) in _pairs(getattr(h, getter)()) for h in holders), (
             f"{s} {predicate} {o!r}: not in {getter}() (value or language lost)"
@@ -228,7 +228,7 @@ def test_in_scheme_populated(skos_reader):
         scheme = _inst(skos_reader, o, Model)
         assert scheme is not None, f"{o} is object of skos:inScheme but not Model in cache"
         assert any(scheme in i.get_is_included_in()
-                   for i in skos_reader._instance_cache.get(s, set()) if hasattr(i, "get_is_included_in")), (
+                   for i in skos_reader.entities.get(s, set()) if hasattr(i, "get_is_included_in")), (
             f"{s} skos:inScheme {o}: is_included_in missing"
         )
 

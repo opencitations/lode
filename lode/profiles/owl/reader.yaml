@@ -548,7 +548,7 @@ mapper:
     
   owl:differentFrom:
     is: predicate
-    inferred: Individual
+    inferred_class: Individual
     target_classes: [Resource]
     handler: handle_different_from
 

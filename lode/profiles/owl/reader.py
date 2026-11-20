@@ -43,13 +43,13 @@ class OwlReader(Reader):
         # [ owl:inverseOf <prop> ] used as object of owl:onProperty is an anonymous
         # property expression, not an entity of its own: it would leave a spurious
         # cache entry, and nothing has populated or tracked it yet
-        spurious = [n for n in self._instance_cache
+        spurious = [n for n in self.entities
                     if isinstance(n, BNode) and (None, OWL.onProperty, n) in self.graph]
         for bnode in spurious:
-            del self._instance_cache[bnode]
+            del self.entities[bnode]
 
         classified = {n: type(next(iter(instances)))
-                      for n, instances in self._instance_cache.items()
+                      for n, instances in self.entities.items()
                       if isinstance(n, BNode)}
 
         checks.flag_malformed_restrictions(self, classified)
@@ -72,7 +72,7 @@ class OwlReader(Reader):
 
         # Subjects with rdf:type not covered by config -> Individual
         for s, o in self.graph.subject_objects(RDF.type):
-            if isinstance(s, BNode) or s in self._instance_cache:
+            if isinstance(s, BNode) or s in self.entities:
                 continue
             if o not in type_mapping:
                 if isinstance(o, URIRef):
@@ -83,7 +83,7 @@ class OwlReader(Reader):
 
         # Subjects with an rdf:type not mapped in config -> Individual
         for s, o in self.graph.subject_objects(RDF.type):
-            if o not in type_mapping and not isinstance(s, BNode) and s not in self._instance_cache:
+            if o not in type_mapping and not isinstance(s, BNode) and s not in self.entities:
                 self.get_or_create(s, Individual, populate=True)
         
 
@@ -101,7 +101,7 @@ class OwlReader(Reader):
         
         super().phase5_fallback()
 
-        for uri, instances in list(self._instance_cache.items()):
+        for uri, instances in list(self.entities.items()):
             for instance in list(instances):
 
                 if type(instance) is Property:
@@ -114,7 +114,7 @@ class OwlReader(Reader):
                     
                     if has_concrete:
                         # Remove generic Property, keep the concrete one
-                        self._instance_cache[uri].discard(instance)
+                        self.entities[uri].discard(instance)
                     else:
                         inferred = self._infer_property_type(instance)
                         old_dict = instance.__dict__.copy()
@@ -195,7 +195,7 @@ class OwlReader(Reader):
 
     def handle_equivalent_property(self, instance, uri, predicate, obj, setter=None):
         """Handle owl:equivalentProperty: link the two properties to each other (symmetric)."""
-        if obj in self._instance_cache:
+        if obj in self.entities:
             other = self.get_or_create(obj, Property)
         else:
             other = self.get_or_create(obj, type(instance))
@@ -218,13 +218,13 @@ class OwlReader(Reader):
         """Get or create an Individual for node, preserving existing types (punning)."""
         if isinstance(node, RDFlibLiteral):
             return None
-        cached = self._instance_cache.get(node, set())
+        cached = self.entities.get(node, set())
         ind = next((i for i in cached if isinstance(i, Individual)), None)
         if ind:
             return ind
         ind = Individual()
         ind.set_has_identifier(str(node))
-        self._instance_cache.setdefault(node, set()).add(ind)
+        self.entities.setdefault(node, set()).add(ind)
         return ind
 
     def handle_same_as(self, instance, uri, predicate, obj, setter=None):
@@ -290,13 +290,13 @@ class OwlReader(Reader):
 
         It copies the attributes of the first cached instance, when there is one.
         """
-        cached = list(self._instance_cache.get(uri, set()))
+        cached = list(self.entities.get(uri, set()))
         concept = Concept()
         if cached:
             concept.__dict__.update(cached[0].__dict__)
         else:
             concept.set_has_identifier(str(uri))
-        self._instance_cache.setdefault(uri, set()).add(concept)
+        self.entities.setdefault(uri, set()).add(concept)
         return concept
 
     def _enrich_or_apply_owl_defaults(self, instance, uri):
@@ -310,7 +310,7 @@ class OwlReader(Reader):
         for punning subordinates.
         """
         
-        if uri not in self._instance_cache:
+        if uri not in self.entities:
             return
 
         owl_thing = self.get_or_create(OWL.Thing, Concept)
@@ -385,9 +385,9 @@ class OwlReader(Reader):
             return
 
         if isinstance(instance, Resource):
-            if len(self._instance_cache[uri]) > 1:
+            if len(self.entities[uri]) > 1:
                 existing = instance.get_also_defined_as() or []
-                for other in self._instance_cache[uri]:
+                for other in self.entities[uri]:
                     if other is instance:
                         continue
                     if other not in existing:
@@ -731,9 +731,9 @@ class OwlReader(Reader):
                 # Register facet node in cache keyed to the parent DatatypeRestriction
                 # and mark all its triples as mapped, so phase6 does not create
                 # spurious Statements or Individuals for the facet BNode.
-                if facet_node not in self._instance_cache:
-                    self._instance_cache[facet_node] = set()
-                self._instance_cache[facet_node].add(instance)
+                if facet_node not in self.entities:
+                    self.entities[facet_node] = set()
+                self.entities[facet_node].add(instance)
                 self._track(instance, *((facet_node, fp, fv) for fp, fv in self.graph.predicate_objects(facet_node)))
 
         except Exception:
@@ -965,13 +965,13 @@ class OwlReader(Reader):
             # so the predicate is still reifiable.
             subj_inst = Resource()
             subj_inst.set_has_identifier(str(subj))
-            if subj not in self._instance_cache:
-                self._instance_cache[subj] = set()
-            self._instance_cache[subj].add(subj_inst)
+            if subj not in self.entities:
+                self.entities[subj] = set()
+            self.entities[subj].add(subj_inst)
 
-        if pred in self._instance_cache:
+        if pred in self.entities:
             pred_inst = next(
-                (i for i in self._instance_cache[pred] if isinstance(i, Property)),
+                (i for i in self.entities[pred] if isinstance(i, Property)),
                 None
             )
         else:
@@ -980,9 +980,9 @@ class OwlReader(Reader):
         if pred_inst is None:
             pred_inst = Annotation()
             pred_inst.set_has_identifier(str(pred))
-            if pred not in self._instance_cache:
-                self._instance_cache[pred] = set()
-            self._instance_cache[pred].add(pred_inst)
+            if pred not in self.entities:
+                self.entities[pred] = set()
+            self.entities[pred].add(pred_inst)
 
         statement = Statement()
         stmt_bnode = BNode()
@@ -1007,9 +1007,9 @@ class OwlReader(Reader):
         if obj_inst:
             statement.set_has_object(obj_inst)
 
-        if stmt_bnode not in self._instance_cache:
-            self._instance_cache[stmt_bnode] = set()
-        self._instance_cache[stmt_bnode].add(statement)
+        if stmt_bnode not in self.entities:
+            self.entities[stmt_bnode] = set()
+        self.entities[stmt_bnode].add(statement)
 
         self._enrich_or_apply_owl_defaults(subj_inst, subj)
         if obj_inst and not isinstance(obj, RDFlibLiteral):
@@ -1030,13 +1030,13 @@ class OwlReader(Reader):
     def handle_swrl_imp(self, uri):
         """Build a Rule from a swrl:Imp, with its body atoms as antecedent and head atoms as consequent."""
         # Force promotion to Rule if cached as something else
-        if uri in self._instance_cache:
-            existing = next(iter(self._instance_cache[uri]))
+        if uri in self.entities:
+            existing = next(iter(self.entities[uri]))
             if not isinstance(existing, Rule):
                 rule = Rule()
                 rule.__dict__.update(existing.__dict__)
-                self._instance_cache[uri].discard(existing)
-                self._instance_cache[uri].add(rule)
+                self.entities[uri].discard(existing)
+                self.entities[uri].add(rule)
                 self._move_tracking(existing, rule)
             else:
                 rule = existing

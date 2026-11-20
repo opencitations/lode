@@ -70,7 +70,7 @@ def singleton_truth_function(reader, instance, bnode, operator):
 
 def run_post_checks(reader):
     """Single sweep over cache + config-driven sweep."""
-    for uri, instances in list(reader._instance_cache.items()):
+    for uri, instances in list(reader.entities.items()):
         for instance in list(instances):
             _check_orphan_restriction(reader, instance, uri)
             _check_inverse_multiplicity(reader, instance, uri)
@@ -92,7 +92,7 @@ def _check_orphan_restriction(reader, instance, uri):
     if isinstance(uri, BNode) and (uri, OWL.onProperty, None) not in reader.graph:
         reader.add_warning('orphan_restriction', uri,
             f'Orphan {type(instance).__name__}: no owl:onProperty in graph, removed')
-        reader._instance_cache[uri].discard(instance)
+        reader.entities[uri].discard(instance)
     else:
         reader.add_warning('missing_on_property', uri,
             f'{type(instance).__name__} has owl:onProperty but applies_on_property is None')
@@ -164,7 +164,7 @@ def _check_config_mismatches(reader):
         for uri in reader.graph.subjects(pred, None):
             if not isinstance(uri, URIRef):
                 continue
-            instances = reader._instance_cache.get(uri, set())
+            instances = reader.entities.get(uri, set())
             if instances and not any(isinstance(i, target_tuple) for i in instances):
                 actual = [type(i).__name__ for i in instances]
                 reader.add_warning('config_type_mismatch', uri,

@@ -3,7 +3,7 @@ test_owl_viewer.py
 Tests for OwlViewer / BaseViewer.
 
 Two layers:
-  - Unit:        a fake reader with a hand-built _instance_cache, so we exercise
+  - Unit:        with hand-built entities, so we exercise
                  the viewer in isolation (no RDF parsing, no network). These pin
                  the ToC-filtering / internal-vs-external / single-resource
                  contract precisely.

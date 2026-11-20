@@ -67,7 +67,7 @@ def _run_all(reader: OwlReader):
 def _instances_of(reader: OwlReader, cls):
     """Return all cached instances of a given class (exact type match)."""
     result = []
-    for instances in reader._instance_cache.values():
+    for instances in reader.entities.values():
         for i in instances:
             if type(i) is cls:
                 result.append(i)
@@ -75,7 +75,7 @@ def _instances_of(reader: OwlReader, cls):
 
 def _instance_for_uri(reader: OwlReader, uri, cls=None):
     """Return the cached instance for uri, optionally filtered by class."""
-    instances = reader._instance_cache.get(uri, set())
+    instances = reader.entities.get(uri, set())
     for i in instances:
         if cls is None or isinstance(i, cls):
             return i
@@ -102,8 +102,8 @@ class TestPhase1:
             (bnode, OWL.someValuesFrom, EX.SomeConcept),
         ])
         reader.phase1_classify_from_predicates()
-        assert bnode in reader._instance_cache
-        inst = next(iter(reader._instance_cache[bnode]))
+        assert bnode in reader.entities
+        inst = next(iter(reader.entities[bnode]))
         assert isinstance(inst, Quantifier)
 
     def test_bnode_classified_as_quantifier_via_all_values_from(self):
@@ -113,7 +113,7 @@ class TestPhase1:
             (bnode, OWL.allValuesFrom, EX.SomeConcept),
         ])
         reader.phase1_classify_from_predicates()
-        inst = next(iter(reader._instance_cache[bnode]))
+        inst = next(iter(reader.entities[bnode]))
         assert isinstance(inst, Quantifier)
 
     def test_bnode_classified_as_cardinality_via_min_cardinality(self):
@@ -123,7 +123,7 @@ class TestPhase1:
             (bnode, OWL.minCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
         ])
         reader.phase1_classify_from_predicates()
-        inst = next(iter(reader._instance_cache[bnode]))
+        inst = next(iter(reader.entities[bnode]))
         assert isinstance(inst, Cardinality)
 
     def test_bnode_classified_as_truth_function_via_intersection_of(self):
@@ -133,7 +133,7 @@ class TestPhase1:
             (bnode, OWL.intersectionOf, BNode()),
         ])
         reader.phase1_classify_from_predicates()
-        inst = next(iter(reader._instance_cache[bnode]))
+        inst = next(iter(reader.entities[bnode]))
         assert isinstance(inst, TruthFunction)
 
     def test_uriref_classified_in_phase1(self):
@@ -143,7 +143,7 @@ class TestPhase1:
             (EX.MyClass, OWL.disjointWith, BNode()),
         ])
         reader.phase1_classify_from_predicates()
-        assert EX.MyClass in reader._instance_cache
+        assert EX.MyClass in reader.entities
 
     def test_bnode_classified_as_one_of(self):
         """A BNode bearing owl:oneOf must be classified as OneOf."""
@@ -152,7 +152,7 @@ class TestPhase1:
             (bnode, OWL.oneOf, BNode()),
         ])
         reader.phase1_classify_from_predicates()
-        inst = next(iter(reader._instance_cache[bnode]))
+        inst = next(iter(reader.entities[bnode]))
         assert isinstance(inst, OneOf)
 
     def test_bnode_classified_as_value_via_has_value(self):
@@ -162,7 +162,7 @@ class TestPhase1:
             (bnode, OWL.hasValue, EX.SomeIndividual),
         ])
         reader.phase1_classify_from_predicates()
-        inst = next(iter(reader._instance_cache[bnode]))
+        inst = next(iter(reader.entities[bnode]))
         assert isinstance(inst, Value)
 
 
@@ -358,7 +358,7 @@ class TestPhase2:
         ])
         reader.phase2_create_from_types()
         reader.phase2_create_from_types()
-        assert len(reader._instance_cache.get(EX.MyClass, set())) == 1
+        assert len(reader.entities.get(EX.MyClass, set())) == 1
 
     def test_relation_is_symmetric_defaults_false(self):
         """A Relation not typed as owl:SymmetricProperty must have is_symmetric=False."""
@@ -515,7 +515,7 @@ class TestPhase3:
         ])
         _run_all(reader)
         child = _instance_for_uri(reader, EX.Child, Concept)
-        restr = next(iter(reader._instance_cache.get(restriction, set())), None)
+        restr = next(iter(reader.entities.get(restriction, set())), None)
         assert restr in child.get_is_sub_concept_of()
         assert child in restr.get_is_super_concept_of()
 
@@ -631,7 +631,7 @@ class TestPhase3:
             (restriction, OWL.someValuesFrom, EX.SomeClass),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(restriction, set())), None)
+        inst = next(iter(reader.entities.get(restriction, set())), None)
         assert inst is not None
         prop = inst.get_applies_on_property()
         assert prop is not None
@@ -662,7 +662,7 @@ class TestPhase3:
             (bnode, OWL.cardinality, RDFLiteral(2, datatype=XSD.nonNegativeInteger)),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "exactly"
         assert inst.get_has_cardinality() == 2
@@ -677,7 +677,7 @@ class TestPhase3:
             (bnode, OWL.minCardinality, RDFLiteral(1, datatype=XSD.nonNegativeInteger)),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "min"
         assert inst.get_has_cardinality() == 1
@@ -689,7 +689,7 @@ class TestPhase3:
             (bnode, OWL.maxCardinality, RDFLiteral(5, datatype=XSD.nonNegativeInteger)),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "max"
         assert inst.get_has_cardinality() == 5
@@ -703,7 +703,7 @@ class TestPhase3:
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "exactly"
         concept = inst.get_applies_on_concept()
@@ -719,7 +719,7 @@ class TestPhase3:
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "min"
 
@@ -732,7 +732,7 @@ class TestPhase3:
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         assert inst.get_has_cardinality_type() == "max"
 
@@ -745,7 +745,7 @@ class TestPhase3:
             (bnode, OWL.onDataRange, XSD.string),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert isinstance(inst, Cardinality)
         concepts = inst.get_applies_on_concept()
         concepts = concepts if isinstance(concepts, list) else [concepts]
@@ -1066,7 +1066,7 @@ class TestPunning:
             (EX.NaturalElement, RDF.type, OWL.NamedIndividual),
         ])
         _run_all(reader)
-        instances = reader._instance_cache.get(EX.NaturalElement, set())
+        instances = reader.entities.get(EX.NaturalElement, set())
         types = {type(i) for i in instances}
         assert Concept in types
         assert Individual in types
@@ -1080,7 +1080,7 @@ class TestPunning:
     #         (EX.NaturalElement, RDF.type, OWL.NamedIndividual),
     #     ])
     #     _run_all(reader)
-    #     instances = list(reader._instance_cache.get(EX.NaturalElement, set()))
+    #     instances = list(reader.entities.get(EX.NaturalElement, set()))
     #     assert len(instances) == 2
     #     # Each must reference the other
     #     for inst in instances:
@@ -1145,7 +1145,7 @@ class TestPhase6:
             (bnode, OWL.annotatedTarget, RDFLiteral("val")),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(bnode, set())), None)
+        inst = next(iter(reader.entities.get(bnode, set())), None)
         assert inst is not None
         assert isinstance(inst, Statement)
         assert not isinstance(inst, Individual)
@@ -1236,7 +1236,7 @@ class TestGetOrCreate:
         result = reader.get_or_create(EX.A, Individual, populate=False)
         assert isinstance(result, Individual)
         # Both must coexist in cache
-        types = {type(i) for i in reader._instance_cache[EX.A]}
+        types = {type(i) for i in reader.entities[EX.A]}
         assert Concept in types
         assert Individual in types
 
@@ -1269,7 +1269,7 @@ class TestGetOrCreate:
         reader.phase4_process_group_axioms()
         reader.phase5_fallback()
 
-        instances = reader._instance_cache.get(EX.myProp, set())
+        instances = reader.entities.get(EX.myProp, set())
         # Only one instance, and it must be Relation (not generic Property)
         assert len(instances) == 1
         inst = next(iter(instances))
@@ -1289,7 +1289,7 @@ class TestGetOrCreate:
         assert isinstance(c, Concept)
         assert type(c) is Concept
         # Cache must contain only the promoted instance
-        assert len(reader._instance_cache[EX.foo]) == 1
+        assert len(reader.entities[EX.foo]) == 1
 
     def test_resource_not_promoted_when_punning(self):
         """A URI declared as owl:NamedIndividual (explicit punning) plus Concept
@@ -1300,7 +1300,7 @@ class TestGetOrCreate:
         ])
         _run_all(reader)
         result = reader.get_or_create(EX.foo, Resource, populate=False)
-        assert len(reader._instance_cache[EX.foo]) == 2
+        assert len(reader.entities[EX.foo]) == 2
         assert isinstance(result, (Concept, Individual))
 
     def test_concept_not_downgraded_to_resource(self):
@@ -1421,7 +1421,7 @@ class TestIntegration:
             (EX.FillerClass, RDF.type, OWL.Class),
         ])
         _run_all(reader)
-        inst = next(iter(reader._instance_cache.get(restriction, set())), None)
+        inst = next(iter(reader.entities.get(restriction, set())), None)
         assert inst is not None
         assert isinstance(inst, Quantifier)
         assert inst.get_has_quantifier_type() == "some"
@@ -1763,7 +1763,7 @@ class TestPhase6Exclusions:
             (EX.foo, RDF.type, RDFS.Class),
         ])
         _run_all(reader)
-        assert RDFS.Class not in reader._instance_cache
+        assert RDFS.Class not in reader.entities
 
     # reserved namespaces handling checks
     
@@ -1773,7 +1773,7 @@ class TestPhase6Exclusions:
             (EX.myProp, OWL.disjointWith, EX.myProp2),
         ])
         _run_all(reader)
-        assert OWL.disjointWith not in reader._instance_cache
+        assert OWL.disjointWith not in reader.entities
 
     def test_reserved_ns_class_not_in_cache(self):
         """A random reserved entity used ad class must not appear in cache."""
@@ -1781,7 +1781,7 @@ class TestPhase6Exclusions:
             (EX.myProp, RDF.type, OWL.FunctionalProperty),
         ])
         _run_all(reader)
-        assert OWL.FunctionalProperty not in reader._instance_cache
+        assert OWL.FunctionalProperty not in reader.entities
 
     def test_sub_property_of_rdfs_comment_stays_in_cache(self):
         """A property declared as rdfs:subPropertyOf rdfs:comment must appear in cache."""
@@ -1789,7 +1789,7 @@ class TestPhase6Exclusions:
             (EX.myProp, RDFS.subPropertyOf, RDFS.comment),
         ])
         _run_all(reader)
-        assert EX.myProp in reader._instance_cache
+        assert EX.myProp in reader.entities
 
     def test_owl_namespace_subject_with_type_not_in_cache(self):
         """A subject explicitly typed even if belonging to OWL namespace must appear in cache."""
@@ -1798,7 +1798,7 @@ class TestPhase6Exclusions:
             (OWL.topObjectProperty, RDFS.label, RDFLiteral("top")),
         ])
         _run_all(reader)
-        assert OWL.topObjectProperty in reader._instance_cache
+        assert OWL.topObjectProperty in reader.entities
 
     def test_owl_namespace_subject_with_type_not_in_cache(self):
         """A subject explicitly typed even if belonging to OWL namespace must appear in cache."""
@@ -1807,7 +1807,7 @@ class TestPhase6Exclusions:
             (OWL.topObjectProperty, RDFS.label, RDFLiteral("top")),
         ])
         _run_all(reader)
-        assert OWL.topObjectProperty in reader._instance_cache
+        assert OWL.topObjectProperty in reader.entities
 
 
 # ---------------------------------------------------------------------------

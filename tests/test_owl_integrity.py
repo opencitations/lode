@@ -28,7 +28,7 @@ def _load_uris():
 
 def _instances_of(reader, cls):
     result = []
-    for instances in reader._instance_cache.values():
+    for instances in reader.entities.values():
         for inst in instances:
             if type(inst) is cls:
                 result.append(inst)
@@ -48,7 +48,7 @@ def owl_reader(request):
         pytest.skip(f"Could not load {uri}: {e}")
     reader = artefact.reader
     yield reader
-    reader._instance_cache.clear()
+    reader.entities.clear()
     reader._triples_map.clear()
     reader.warnings.clear()
 
@@ -81,7 +81,7 @@ def test_ontology_declaration_produces_model(owl_reader):
     for uri in owl_reader.graph.subjects(RDF.type, OWL.Ontology):
         if not isinstance(uri, URIRef):
             continue
-        instances = owl_reader._instance_cache.get(uri, set())
+        instances = owl_reader.entities.get(uri, set())
         assert any(isinstance(i, Model) for i in instances), (
             f"§3: {uri} declared as owl:Ontology "
             f"but not Model in cache: "
@@ -108,19 +108,19 @@ def test_model_relations_subject_object_are_models(owl_reader):
         for s, _, o in owl_reader.graph.triples((None, predicate, None)):
             if not isinstance(s, URIRef) or not isinstance(o, URIRef):
                 continue
-            s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Model)), None)
-            o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Model)), None)
+            s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Model)), None)
+            o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Model)), None)
             if s_inst is None:
                 skip_if_warning(owl_reader, 'config_type_mismatch', s)
                 assert s_inst is not None, (
                     f"{s} is subject of {predicate} but not Model in cache: "
-                    f"{[type(i).__name__ for i in owl_reader._instance_cache.get(s, set())]}"
+                    f"{[type(i).__name__ for i in owl_reader.entities.get(s, set())]}"
                 )
             if o_inst is None:
                 skip_if_warning(owl_reader, 'config_type_mismatch', o)
                 assert o_inst is not None, (
                     f"{o} is object of {predicate} but not Model in cache: "
-                    f"{[type(i).__name__ for i in owl_reader._instance_cache.get(o, set())]}"
+                    f"{[type(i).__name__ for i in owl_reader.entities.get(o, set())]}"
                 )
 
 def test_model_relations_are_populated(owl_reader):
@@ -143,8 +143,8 @@ def test_model_relations_are_populated(owl_reader):
         for s, _, o in owl_reader.graph.triples((None, predicate, None)):
             if not isinstance(s, URIRef) or not isinstance(o, URIRef):
                 continue
-            s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Model)), None)
-            o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Model)), None)
+            s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Model)), None)
+            o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Model)), None)
             if s_inst is None or o_inst is None:
                 continue
             # Skip if subject has multiple values for this predicate (malformed ontology)
@@ -172,7 +172,7 @@ def test_reserved_subject_with_mapped_predicate_in_cache(owl_reader):
             (uri, p, None) in owl_reader.graph for p in mapped_preds
         )
         if has_mapped_pred:
-            assert uri in owl_reader._instance_cache, (
+            assert uri in owl_reader.entities, (
                 f"Reserved URI {uri} with mapped predicate must be in cache"
             )
 
@@ -228,10 +228,10 @@ def test_datatype_uris_in_cache(owl_reader):
             # legitimate in SPIN ontologies, so skip the cache assertion.
             if (None, RDF.type, node) in owl_reader.graph:
                 continue
-            assert node in owl_reader._instance_cache, (
+            assert node in owl_reader.entities, (
                 f"{node} is a datatype URI but not in cache"
             )
-            instances = owl_reader._instance_cache[node]
+            instances = owl_reader.entities[node]
             assert any(isinstance(i, Datatype) for i in instances), (
                 f"{node} is in cache but not as Datatype: "
                 f"{[type(i).__name__ for i in instances]}"
@@ -269,7 +269,7 @@ def test_datatype_iris_are_valid(owl_reader):
     
     RESERVED_NS = {str(OWL), str(RDF), str(RDFS), str(XSD)}
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Datatype):
                 continue
@@ -374,19 +374,19 @@ def test_concept_relations_subject_object_are_concepts(owl_reader):
         for s, _, o in owl_reader.graph.triples((None, predicate, None)):
             if not isinstance(s, URIRef) or not isinstance(o, URIRef):
                 continue
-            s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Concept)), None)
-            o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Concept)), None)
+            s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Concept)), None)
+            o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Concept)), None)
             if s_inst is None:
                 skip_if_warning(owl_reader, 'config_type_mismatch', s)
                 assert s_inst is not None, (
                     f"{s} is subject of {predicate} but not Concept in cache: "
-                    f"{[type(i).__name__ for i in owl_reader._instance_cache.get(s, set())]}"
+                    f"{[type(i).__name__ for i in owl_reader.entities.get(s, set())]}"
                 )
             if o_inst is None:
                 skip_if_warning(owl_reader, 'config_type_mismatch', o)
                 assert o_inst is not None, (
                     f"{o} is object of {predicate} but not Concept in cache: "
-                    f"{[type(i).__name__ for i in owl_reader._instance_cache.get(o, set())]}"
+                    f"{[type(i).__name__ for i in owl_reader.entities.get(o, set())]}"
                 )
 
 def test_concept_relations_are_populated(owl_reader):
@@ -409,12 +409,12 @@ def test_concept_relations_are_populated(owl_reader):
                 if len(list(owl_reader.graph.objects(s, predicate))) > 1:
                     continue
                 # skips datatypes -.-
-                if any(isinstance(i, Datatype) for i in owl_reader._instance_cache.get(o, set())):
+                if any(isinstance(i, Datatype) for i in owl_reader.entities.get(o, set())):
                     continue
-                if any(isinstance(i, Datatype) for i in owl_reader._instance_cache.get(s, set())):
+                if any(isinstance(i, Datatype) for i in owl_reader.entities.get(s, set())):
                     continue
-                s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Concept)), None)
-                o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Concept)), None)
+                s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Concept)), None)
+                o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Concept)), None)
                 if s_inst is None or o_inst is None:
                     continue
 
@@ -432,7 +432,7 @@ def test_skos_concept_relations_not_populated(owl_reader):
         'get_has_close_match',
     ]
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Concept):
                 continue
@@ -452,7 +452,7 @@ def test_object_property_declaration_produces_relation(owl_reader):
     for uri in owl_reader.graph.subjects(RDF.type, OWL.ObjectProperty):
         if not isinstance(uri, URIRef):
             continue
-        instances = owl_reader._instance_cache.get(uri, set())
+        instances = owl_reader.entities.get(uri, set())
         assert any(isinstance(i, Relation) for i in instances), (
             f"§5.3: {uri} declared as owl:ObjectProperty "
             f"but not Relation in cache: "
@@ -468,7 +468,7 @@ def test_annotation_property_declaration_produces_annotation(owl_reader):
     for uri in owl_reader.graph.subjects(RDF.type, OWL.AnnotationProperty):
         if not isinstance(uri, URIRef):
             continue
-        instances = owl_reader._instance_cache.get(uri, set())
+        instances = owl_reader.entities.get(uri, set())
         assert any(isinstance(i, Annotation) for i in instances), (
             f"§5.5: {uri} declared as owl:AnnotationProperty "
             f"but not Annotation in cache: "
@@ -479,7 +479,7 @@ def test_all_literals_have_value(owl_reader):
     """Every Literal in cache must have has_value set."""
     from lode.models import Literal
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Literal):
                 continue
@@ -488,7 +488,7 @@ def test_all_literals_have_value(owl_reader):
             )
 
 def test_no_generic_property_in_cache(owl_reader):
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             assert type(inst) is not Property, (
                 f"Generic Property found in cache: {inst.get_has_identifier()}"
@@ -518,7 +518,7 @@ def test_no_iri_has_conflicting_property_types(owl_reader, cls_a, cls_b, label):
         Datatype: RDFS.Datatype,
     }
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
 
@@ -563,7 +563,7 @@ def test_punning_concept_and_individual_preserved(owl_reader):
     for uri in punned:
         if not isinstance(uri, URIRef):
             continue
-        instances = owl_reader._instance_cache.get(uri, set())
+        instances = owl_reader.entities.get(uri, set())
         has_concept = any(isinstance(i, Concept) for i in instances)
         has_individual = any(isinstance(i, Individual) for i in instances)
         assert has_concept and has_individual, (
@@ -575,7 +575,7 @@ def test_punning_concept_and_individual_preserved(owl_reader):
 def test_no_duplicate_instances_for_non_punned_uri(owl_reader):
     """A URIRef must not have duplicate instances of the same type in cache."""
     from rdflib import URIRef
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         if len(instances) <= 1:
@@ -588,7 +588,7 @@ def test_no_duplicate_instances_for_non_punned_uri(owl_reader):
             )
 
 def test_no_instance_has_none_identifier(owl_reader):
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if isinstance(inst, Literal):
                 continue
@@ -603,7 +603,7 @@ def test_untyped_property_fallback_is_annotation(owl_reader):
     from rdflib import URIRef
     from lode.models import Property, Relation, Attribute, Annotation
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         for inst in instances:
@@ -652,8 +652,8 @@ def test_inverse_of_bidirectional_and_domain_range_swapped(owl_reader):
         skip_if_warning(owl_reader, 'multiple_inverse_of', s)
         skip_if_warning(owl_reader, 'multiple_inverse_of', o)
 
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Relation)), None)
-        o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Relation)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Relation)), None)
+        o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Relation)), None)
 
         if s_inst is None:
             skip_if_warning(owl_reader, 'config_type_mismatch', s)
@@ -719,7 +719,7 @@ def test_on_property_inverse_bnode_resolved(owl_reader):
             continue
         if (obj, OWL.inverseOf, None) not in owl_reader.graph:
             continue
-        instances = owl_reader._instance_cache.get(restr_uri, set())
+        instances = owl_reader.entities.get(restr_uri, set())
         pcr = next((i for i in instances if isinstance(i, PropertyConceptRestriction)), None)
         if pcr is None:
             continue
@@ -780,7 +780,7 @@ def test_datatype_restriction_graph_correspondence(owl_reader):
     for subj in owl_reader.graph.subjects(OWL.withRestrictions, None):
         if not isinstance(subj, BNode):
             continue
-        instances = owl_reader._instance_cache.get(subj, set())
+        instances = owl_reader.entities.get(subj, set())
         assert any(isinstance(i, DatatypeRestriction) for i in instances), (
             f"§7.5: BNode {subj} has owl:withRestrictions in graph "
             f"but no DatatypeRestriction in cache: "
@@ -792,7 +792,7 @@ def test_datatype_restriction_has_applies_on_concept(owl_reader):
     (the base datatype from owl:onDatatype)."""
     from lode.models import DatatypeRestriction
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, DatatypeRestriction):
                 continue
@@ -807,7 +807,7 @@ def test_datatype_restriction_has_constraint_and_value(owl_reader):
     has_restriction_value populated from the XSD facet."""
     from lode.models import DatatypeRestriction
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, DatatypeRestriction):
                 continue
@@ -824,7 +824,7 @@ def test_datatype_restriction_value_is_literal(owl_reader):
     """§7.5 — has_restriction_value must be a Literal instance."""
     from lode.models import DatatypeRestriction, Literal
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, DatatypeRestriction):
                 continue
@@ -852,7 +852,7 @@ def test_datatype_restriction_facet_nodes_not_in_cache(owl_reader):
             for item in RDFLibCollection(owl_reader.graph, wr):
                 if not isinstance(item, BNode):
                     continue
-                instances = owl_reader._instance_cache.get(item, set())
+                instances = owl_reader.entities.get(item, set())
                 assert not any(isinstance(i, DatatypeRestriction) for i in instances), (
                     f"§7.5: Facet BNode {item} should NOT be in cache "
                     f"as DatatypeRestriction"
@@ -870,7 +870,7 @@ def test_datatype_restriction_only_one_per_parent(owl_reader):
     for subj in owl_reader.graph.subjects(OWL.withRestrictions, None):
         if not isinstance(subj, BNode):
             continue
-        instances = owl_reader._instance_cache.get(subj, set())
+        instances = owl_reader.entities.get(subj, set())
         dr_count = sum(1 for i in instances if isinstance(i, DatatypeRestriction))
         assert dr_count == 1, (
             f"§7.5: BNode {subj} has {dr_count} DatatypeRestriction instances "
@@ -985,7 +985,7 @@ def test_restriction_applies_on_concept_not_empty(owl_reader):
     """
     from lode.models import Restriction, PropertyConceptRestriction, TruthFunction
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, (PropertyConceptRestriction, TruthFunction)):
                 continue
@@ -1010,7 +1010,7 @@ def test_restriction_applies_on_concept_are_concepts(owl_reader):
     """
     from lode.models import PropertyConceptRestriction, TruthFunction, Concept
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, (PropertyConceptRestriction, TruthFunction)):
                 continue
@@ -1042,7 +1042,7 @@ def test_property_concept_restriction_has_property(owl_reader):
     for inst in _instances_of(owl_reader, None):  # handled below
         pass
  
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, PropertyConceptRestriction):
                 continue
@@ -1101,7 +1101,7 @@ def test_quantifier_graph_correspondence(owl_reader):
         for subj in owl_reader.graph.subjects(pred, None):
             if not isinstance(subj, BNode):
                 continue
-            instances = owl_reader._instance_cache.get(subj, set())
+            instances = owl_reader.entities.get(subj, set())
             q = next((i for i in instances if isinstance(i, Quantifier)), None)
             assert q is not None, (
                 f"BNode {subj} has {pred.split('#')[-1]} in graph "
@@ -1184,7 +1184,7 @@ def test_cardinality_graph_correspondence(owl_reader):
             if (subj, OWL.onProperty, None) not in owl_reader.graph:
                 continue
             
-            instances = owl_reader._instance_cache.get(subj, set())
+            instances = owl_reader.entities.get(subj, set())
             card = next((i for i in instances if isinstance(i, Cardinality)), None)
 
             skip_if_warning(owl_reader, 'malformed_restriction', subj)
@@ -1272,7 +1272,7 @@ def test_truth_function_graph_correspondence(owl_reader):
         for subj in owl_reader.graph.subjects(pred, None):
             if not isinstance(subj, BNode):
                 continue
-            instances = owl_reader._instance_cache.get(subj, set())
+            instances = owl_reader.entities.get(subj, set())
             tf = next((i for i in instances if isinstance(i, TruthFunction)), None)
             
             skip_if_warning(owl_reader, 'empty_truth_function', subj)
@@ -1323,7 +1323,7 @@ def test_one_of_graph_correspondence(owl_reader):
     for subj in owl_reader.graph.subjects(OWL.oneOf, None):
         if not isinstance(subj, BNode):
             continue
-        instances = owl_reader._instance_cache.get(subj, set())
+        instances = owl_reader.entities.get(subj, set())
         one_of = next((i for i in instances if isinstance(i, OneOf)), None)
         assert one_of is not None, (
             f"BNode {subj} has owl:oneOf in graph but no OneOf in cache"
@@ -1371,7 +1371,7 @@ def test_value_graph_correspondence(owl_reader):
     for subj in owl_reader.graph.subjects(OWL.hasValue, None):
         if not isinstance(subj, BNode):
             continue
-        instances = owl_reader._instance_cache.get(subj, set())
+        instances = owl_reader.entities.get(subj, set())
         val = next((i for i in instances if isinstance(i, Value)), None)
         assert val is not None, (
             f"BNode {subj} has owl:hasValue in graph but no Value in cache"
@@ -1577,8 +1577,8 @@ def test_sub_class_of_inverse_populated(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, RDFS.subClassOf, None)):
         if not isinstance(s, URIRef):
             continue
-        s_cache = owl_reader._instance_cache.get(s, set())
-        o_cache = owl_reader._instance_cache.get(o, set())
+        s_cache = owl_reader.entities.get(s, set())
+        o_cache = owl_reader.entities.get(o, set())
         if any(isinstance(i, Datatype) for i in s_cache | o_cache):
             continue
         s_inst = next((i for i in s_cache if type(i) is Concept), None)
@@ -1605,8 +1605,8 @@ def test_property_reclassified_via_sub_property_of(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, RDFS.subPropertyOf, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef):
             continue
-        child = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Property)), None)
-        parent = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Property)), None)
+        child = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Property)), None)
+        parent = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Property)), None)
         if child is None or parent is None:
             continue
         if not isinstance(parent, CONCRETE):
@@ -1638,19 +1638,19 @@ def test_property_relations_subject_object_are_properties(owl_reader):
         for s, _, o in owl_reader.graph.triples((None, predicate, None)):
             if not isinstance(s, URIRef) or not isinstance(o, URIRef):
                 continue
-            s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Property)), None)
-            o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Property)), None)
+            s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Property)), None)
+            o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Property)), None)
             if s_inst is None:
                 skip_if_warning(owl_reader, 'config_type_mismatch', s)
                 assert s_inst is not None, (
                     f"{s} is subject of {predicate} but not Property in cache: "
-                    f"{[type(i).__name__ for i in owl_reader._instance_cache.get(s, set())]}"
+                    f"{[type(i).__name__ for i in owl_reader.entities.get(s, set())]}"
                 )
             if o_inst is None:
                 skip_if_warning(owl_reader, 'config_type_mismatch', o)
                 assert o_inst is not None, (
                     f"{o} is object of {predicate} but not Property in cache: "
-                    f"{[type(i).__name__ for i in owl_reader._instance_cache.get(o, set())]}"
+                    f"{[type(i).__name__ for i in owl_reader.entities.get(o, set())]}"
                 )
 
 def test_sub_property_of_inverse_populated(owl_reader):
@@ -1663,7 +1663,7 @@ def test_sub_property_of_inverse_populated(owl_reader):
     from lode.models import Property
 
     def props(uri):
-        return [i for i in owl_reader._instance_cache.get(uri, set()) if isinstance(i, Property)]
+        return [i for i in owl_reader.entities.get(uri, set()) if isinstance(i, Property)]
 
     for s, _, o in owl_reader.graph.triples((None, RDFS.subPropertyOf, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef) or s == o:
@@ -1697,7 +1697,7 @@ def test_disjoint_union_produces_equivalent_union(owl_reader):
         if not isinstance(s, URIRef):
             continue
         s_inst = next(
-            (i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Concept)),
+            (i for i in owl_reader.entities.get(s, set()) if isinstance(i, Concept)),
             None
         )
         assert s_inst is not None, (
@@ -1715,7 +1715,7 @@ def test_disjoint_union_produces_equivalent_union(owl_reader):
             tf_concepts = {c.get_has_identifier() for c in tf.get_applies_on_concept()}
             for member in members:
                 member_inst = next(
-                    (i for i in owl_reader._instance_cache.get(member, set())
+                    (i for i in owl_reader.entities.get(member, set())
                      if isinstance(i, Concept)), None
                 )
                 if member_inst is None:
@@ -1743,7 +1743,7 @@ def test_disjoint_union_members_are_pairwise_disjoint(owl_reader):
             instances = []
             for m in members:
                 inst = next(
-                    (i for i in owl_reader._instance_cache.get(m, set())
+                    (i for i in owl_reader.entities.get(m, set())
                      if isinstance(i, Concept)), None
                 )
                 if inst:
@@ -1773,10 +1773,10 @@ def test_property_chain_matches_graph(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.propertyChainAxiom, None)):
         if not isinstance(s, URIRef):
             continue
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Relation)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Relation)), None)
         assert s_inst is not None, (
             f"{s} has owl:propertyChainAxiom but is not Relation in cache: "
-            f"{[type(i).__name__ for i in owl_reader._instance_cache.get(s, set())]}"
+            f"{[type(i).__name__ for i in owl_reader.entities.get(s, set())]}"
         )
         chain = s_inst.get_has_property_chain()
         assert isinstance(chain, list), (
@@ -1799,12 +1799,12 @@ def test_equivalent_class_is_symmetric(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.equivalentClass, None)):
             if not isinstance(s, URIRef) or not isinstance(o, URIRef):
                 continue
-            if any(isinstance(i, Datatype) for i in owl_reader._instance_cache.get(o, set())):
+            if any(isinstance(i, Datatype) for i in owl_reader.entities.get(o, set())):
                 continue
-            if any(isinstance(i, Datatype) for i in owl_reader._instance_cache.get(s, set())):
+            if any(isinstance(i, Datatype) for i in owl_reader.entities.get(s, set())):
                 continue
-            s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Concept)), None)
-            o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Concept)), None)
+            s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Concept)), None)
+            o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Concept)), None)
             if s_inst is None or o_inst is None:
                 continue
 
@@ -1817,7 +1817,7 @@ def test_has_key_graph_correspondence(owl_reader):
     for subj in owl_reader.graph.subjects(OWL.hasKey, None):
         if not isinstance(subj, URIRef):
             continue
-        inst = next((i for i in owl_reader._instance_cache.get(subj, set()) if isinstance(i, Concept)), None)
+        inst = next((i for i in owl_reader.entities.get(subj, set()) if isinstance(i, Concept)), None)
         if inst is None:
             continue
         keys = inst.get_has_key()
@@ -1856,7 +1856,7 @@ def test_datatype_property_declaration_produces_attribute(owl_reader):
     for uri in owl_reader.graph.subjects(RDF.type, OWL.DatatypeProperty):
         if not isinstance(uri, URIRef):
             continue
-        instances = owl_reader._instance_cache.get(uri, set())
+        instances = owl_reader.entities.get(uri, set())
         assert any(isinstance(i, Attribute) for i in instances), (
             f"§5.4: {uri} declared as owl:DatatypeProperty "
             f"but not Attribute in cache: "
@@ -1882,7 +1882,7 @@ def test_no_iri_is_both_concept_and_datatype(owl_reader):
     from rdflib import URIRef
     from lode.models import Concept, Datatype
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         if (uri, RDF.type, OWL.Class) in owl_reader.graph and \
@@ -1912,7 +1912,7 @@ def test_no_iri_is_both_relation_and_attribute(owl_reader):
     from rdflib import URIRef
     from lode.models import Relation, Attribute
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         if (uri, RDF.type, OWL.ObjectProperty) in owl_reader.graph and \
@@ -1937,7 +1937,7 @@ def test_no_iri_is_both_relation_and_annotation(owl_reader):
     from rdflib import URIRef
     from lode.models import Relation, Annotation
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         if (uri, RDF.type, OWL.ObjectProperty) in owl_reader.graph and \
@@ -1962,7 +1962,7 @@ def test_no_iri_is_both_attribute_and_annotation(owl_reader):
     from rdflib import URIRef
     from lode.models import Attribute, Annotation
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         if (uri, RDF.type, OWL.DatatypeProperty) in owl_reader.graph and \
@@ -1997,8 +1997,8 @@ def test_disjoint_with_is_symmetric(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.disjointWith, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef):
             continue
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Concept)), None)
-        o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Concept)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Concept)), None)
+        o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Concept)), None)
         if s_inst is None or o_inst is None:
             continue
         assert o_inst in s_inst.get_is_disjoint_with(), (
@@ -2026,8 +2026,8 @@ def test_same_as_is_symmetric(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.sameAs, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef):
             continue
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Individual)), None)
-        o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Individual)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Individual)), None)
+        o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Individual)), None)
         if s_inst is None or o_inst is None:
             continue
         assert o_inst in s_inst.get_is_same_as(), (
@@ -2056,8 +2056,8 @@ def test_different_from_is_symmetric(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.differentFrom, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef):
             continue
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Individual)), None)
-        o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Individual)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Individual)), None)
+        o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Individual)), None)
         if s_inst is None or o_inst is None:
             continue
         assert o_inst in s_inst.get_is_different_from(), (
@@ -2088,7 +2088,7 @@ def test_negative_property_assertion_is_negative(owl_reader):
     for uri in owl_reader.graph.subjects(RDF.type, OWL.NegativePropertyAssertion):
         if not isinstance(uri, URIRef):
             continue
-        instances = owl_reader._instance_cache.get(uri, set())
+        instances = owl_reader.entities.get(uri, set())
         stmt = next((i for i in instances if isinstance(i, Statement)), None)
         assert stmt is not None, (
             f"§9.6.5/9.6.7: {uri} declared as owl:NegativePropertyAssertion "
@@ -2121,8 +2121,8 @@ def test_equivalent_property_is_symmetric(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.equivalentProperty, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef):
             continue
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Property)), None)
-        o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Property)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Property)), None)
+        o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Property)), None)
         if s_inst is None or o_inst is None:
             continue
         assert o_inst in s_inst.get_is_equivalent_to(), (
@@ -2152,8 +2152,8 @@ def test_property_disjoint_with_is_symmetric(owl_reader):
     for s, _, o in owl_reader.graph.triples((None, OWL.propertyDisjointWith, None)):
         if not isinstance(s, URIRef) or not isinstance(o, URIRef):
             continue
-        s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Property)), None)
-        o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Property)), None)
+        s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Property)), None)
+        o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Property)), None)
         if s_inst is None or o_inst is None:
             continue
         assert o_inst in s_inst.get_is_disjoint_with(), (
@@ -2181,7 +2181,7 @@ def test_attribute_range_is_datatype(owl_reader):
     from rdflib import URIRef
     from lode.models import Attribute, Datatype, DatatypeRestriction, Restriction
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         if not isinstance(uri, URIRef):
             continue
         for inst in instances:
@@ -2215,7 +2215,7 @@ def test_property_domain_and_range_populated(owl_reader):
     Only Relation and Attribute are checked since Annotation has no domain/range defaults."""
     from lode.models import Relation, Attribute, Concept, Resource
 
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         for inst in instances:
             if not isinstance(inst, (Relation, Attribute)):
                 continue
@@ -2264,8 +2264,8 @@ def test_domain_inherited_via_sub_property_of(owl_reader):
         # Skip if child has multiple superproperties (inherits from the first it finds in the hierarchy, then it stops)
         if len(list(owl_reader.graph.objects(s, RDFS.subPropertyOf))) > 1:
             continue
-        child = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Relation)), None)
-        parent = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Relation)), None)
+        child = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Relation)), None)
+        parent = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Relation)), None)
         if child is None or parent is None:
             continue
         parent_domains = {d.get_has_identifier() for d in parent.get_has_domain()} - {owl_thing}
@@ -2299,8 +2299,8 @@ def test_range_inherited_via_sub_property_of(owl_reader):
             continue
         if len(list(owl_reader.graph.objects(s, RDFS.subPropertyOf))) > 1:
             continue
-        child = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Relation)), None)
-        parent = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Relation)), None)
+        child = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Relation)), None)
+        parent = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Relation)), None)
         if child is None or parent is None:
             continue
         parent_ranges = {r.get_has_identifier() for r in parent.get_has_range()} - {owl_thing}
@@ -2319,7 +2319,7 @@ def test_range_inherited_via_sub_property_of(owl_reader):
         )
 
 def test_no_none_in_has_domain(owl_reader):
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if isinstance(inst, Property):
                 assert None not in inst.get_has_domain(), (
@@ -2328,7 +2328,7 @@ def test_no_none_in_has_domain(owl_reader):
                 )
 
 def test_no_none_in_has_range(owl_reader):
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if isinstance(inst, Property):
                 assert None not in inst.get_has_range(), (
@@ -2346,10 +2346,10 @@ def test_property_characteristics_functional(owl_reader):
     for uri in owl_reader.graph.subjects(RDF.type, OWL.FunctionalProperty):
         if not isinstance(uri, URIRef):
             continue
-        inst = next((i for i in owl_reader._instance_cache.get(uri, set()) if isinstance(i, Property)), None)
+        inst = next((i for i in owl_reader.entities.get(uri, set()) if isinstance(i, Property)), None)
         assert inst is not None, (
             f"{uri} declared as FunctionalProperty but not Property in cache: "
-            f"{[type(i).__name__ for i in owl_reader._instance_cache.get(uri, set())]}"
+            f"{[type(i).__name__ for i in owl_reader.entities.get(uri, set())]}"
         )
         assert inst.get_is_functional() is True, (
             f"{uri} is FunctionalProperty in graph but get_is_functional() is False"
@@ -2377,10 +2377,10 @@ def test_relation_characteristics_match_graph(owl_reader):
         for uri in owl_reader.graph.subjects(RDF.type, rdf_type):
             if not isinstance(uri, URIRef):
                 continue
-            inst = next((i for i in owl_reader._instance_cache.get(uri, set()) if isinstance(i, Relation)), None)
+            inst = next((i for i in owl_reader.entities.get(uri, set()) if isinstance(i, Relation)), None)
             assert inst is not None, (
                 f"{uri} declared as {rdf_type.split('#')[-1]} but not Relation in cache: "
-                f"{[type(i).__name__ for i in owl_reader._instance_cache.get(uri, set())]}"
+                f"{[type(i).__name__ for i in owl_reader.entities.get(uri, set())]}"
             )
             assert getattr(inst, getter_name)() is True, (
                 f"{uri} is {rdf_type.split('#')[-1]} in graph but {getter_name}() is False"
@@ -2397,15 +2397,15 @@ def test_individual_relations_subject_object_are_individuals(owl_reader):
         for s, _, o in owl_reader.graph.triples((None, predicate, None)):
             if not isinstance(s, URIRef) or not isinstance(o, URIRef):
                 continue
-            s_inst = next((i for i in owl_reader._instance_cache.get(s, set()) if isinstance(i, Individual)), None)
-            o_inst = next((i for i in owl_reader._instance_cache.get(o, set()) if isinstance(i, Individual)), None)
+            s_inst = next((i for i in owl_reader.entities.get(s, set()) if isinstance(i, Individual)), None)
+            o_inst = next((i for i in owl_reader.entities.get(o, set()) if isinstance(i, Individual)), None)
             assert s_inst is not None, (
                 f"{s} is subject of {predicate} but not Individual in cache: "
-                f"{[type(i).__name__ for i in owl_reader._instance_cache.get(s, set())]}"
+                f"{[type(i).__name__ for i in owl_reader.entities.get(s, set())]}"
             )
             assert o_inst is not None, (
                 f"{o} is object of {predicate} but not Individual in cache: "
-                f"{[type(i).__name__ for i in owl_reader._instance_cache.get(o, set())]}"
+                f"{[type(i).__name__ for i in owl_reader.entities.get(o, set())]}"
             )
 
 def test_all_individuals_have_type(owl_reader):
@@ -2537,7 +2537,7 @@ def test_statements_do_not_reuse_mapped_predicates(owl_reader):
 
 def test_every_resource_has_is_deprecated(owl_reader):
     """Every Resource in cache must have is_deprecated set to True or False, never None."""
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         for inst in instances:
             if isinstance(inst, Literal):
                 continue
@@ -2553,7 +2553,7 @@ def test_every_resource_has_is_deprecated(owl_reader):
 
 def test_every_resource_has_identifier(owl_reader):
     """Every Resource in cache must have a non-None identifier. Literals are excluded."""
-    for uri, instances in owl_reader._instance_cache.items():
+    for uri, instances in owl_reader.entities.items():
         for inst in instances:
             if isinstance(inst, Literal):
                 continue
@@ -2623,7 +2623,7 @@ def test_swrl_imp_produces_rule(owl_reader):
     from lode.models import Rule
 
     for subj in owl_reader.graph.subjects(RDF.type, SWRL_IMP):
-        instances = owl_reader._instance_cache.get(subj, set())
+        instances = owl_reader.entities.get(subj, set())
         assert any(isinstance(i, Rule) for i in instances), (
             f"swrl:Imp {subj} not Rule in cache: "
             f"{[type(i).__name__ for i in instances]}"
@@ -2633,7 +2633,7 @@ def test_swrl_rule_has_antecedent_and_consequent(owl_reader):
     """Every Rule must have non-empty get_has_consequent and get_has_antecedent."""
     from lode.models import Rule
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Rule):
                 continue
@@ -2648,7 +2648,7 @@ def test_swrl_atoms_have_arguments(owl_reader):
     """Every Atom must have at least one argument."""
     from lode.models import Rule
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Rule):
                 continue
@@ -2668,7 +2668,7 @@ def test_swrl_atoms_have_predicate(owl_reader):
     SWRL_DIFF = URIRef(SWRL_NS + 'DifferentIndividualsAtom')
     NO_PREDICATE_TYPES = {SWRL_SAME, SWRL_DIFF}
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Rule):
                 continue
@@ -2687,7 +2687,7 @@ def test_swrl_arguments_are_variables_or_resources(owl_reader):
     """Atom arguments must be Variable or Resource instances."""
     from lode.models import Rule, Variable, Resource
 
-    for instances in owl_reader._instance_cache.values():
+    for instances in owl_reader.entities.values():
         for inst in instances:
             if not isinstance(inst, Rule):
                 continue
@@ -2706,7 +2706,7 @@ def test_swrl_variable_declaration_produces_variable(owl_reader):
 
     SWRL_VARIABLE = URIRef(SWRL_NS + 'Variable')
     for subj in owl_reader.graph.subjects(RDF.type, SWRL_VARIABLE):
-        instances = owl_reader._instance_cache.get(subj, set())
+        instances = owl_reader.entities.get(subj, set())
         assert any(isinstance(i, Variable) for i in instances), (
             f"swrl:Variable {subj} not Variable in cache: "
             f"{[type(i).__name__ for i in instances]}"
@@ -2761,7 +2761,7 @@ def test_swrl_predicates_not_annotations(owl_reader):
 
 # #     FORBIDDEN = (Concept, Annotation, Relation, Attribute, Individual, Model)
 
-# #     for uri, instances in owl_reader._instance_cache.items():
+# #     for uri, instances in owl_reader.entities.items():
 # #         if not isinstance(uri, BNode):
 # #             continue
 # #         for inst in instances:

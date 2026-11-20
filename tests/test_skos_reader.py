@@ -56,7 +56,7 @@ def _run_all(reader: SkosReader):
 
 def _instance_for_uri(reader: SkosReader, uri, cls=None):
     """Return the cached instance for uri, optionally filtered by class."""
-    for i in reader._instance_cache.get(uri, set()):
+    for i in reader.entities.get(uri, set()):
         if cls is None or isinstance(i, cls):
             return i
     return None
@@ -64,7 +64,7 @@ def _instance_for_uri(reader: SkosReader, uri, cls=None):
 
 def _instances_of(reader: SkosReader, cls):
     """Return all cached instances of exactly the given class."""
-    return [i for insts in reader._instance_cache.values()
+    return [i for insts in reader.entities.values()
             for i in insts if type(i) is cls]
 
 
@@ -88,7 +88,7 @@ class TestPhase1:
         """Phase 1 must not create anything: SKOS uses only rdf:type."""
         reader = _make_reader([(EX.A, SKOS.broader, EX.B)])
         reader.phase1_classify_from_predicates()
-        assert reader._instance_cache == {}
+        assert reader.entities == {}
 
 
 # ===========================================================================
@@ -129,14 +129,14 @@ class TestPhase2:
         """A subject typed with an unmapped class must not be instantiated in phase 2."""
         reader = _make_reader([(EX.X, RDF.type, EX.Unknown)])
         reader.phase2_create_from_types()
-        assert EX.X not in reader._instance_cache
+        assert EX.X not in reader.entities
 
     def test_no_duplicate_on_repeated_call(self):
         """Calling phase 2 twice must not add a second instance."""
         reader = _make_reader(_concept_graph(EX.A))
         reader.phase2_create_from_types()
         reader.phase2_create_from_types()
-        assert len(reader._instance_cache[EX.A]) == 1
+        assert len(reader.entities[EX.A]) == 1
 
 
 # ===========================================================================
@@ -517,10 +517,10 @@ class TestNoopPhases:
         reader = _make_reader(_concept_graph(EX.A, EX.B) + [(EX.A, SKOS.broader, EX.B)])
         reader.phase2_create_from_types()
         reader.phase3_populate_properties()
-        before = {k: set(v) for k, v in reader._instance_cache.items()}
+        before = {k: set(v) for k, v in reader.entities.items()}
         reader.phase4_process_group_axioms()
         reader.phase5_fallback()
-        assert reader._instance_cache == before
+        assert reader.entities == before
 
 
 # ===========================================================================
@@ -590,4 +590,4 @@ def test_phase5_leaves_a_classified_iri_alone():
     """The fallback only touches IRIs that nothing else classified."""
     reader = _make_reader(_concept_graph(EX.A))
     _run_all(reader)
-    assert [type(i) for i in reader._instance_cache[EX.A]] == [Concept]
+    assert [type(i) for i in reader.entities[EX.A]] == [Concept]

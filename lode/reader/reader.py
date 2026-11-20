@@ -23,13 +23,13 @@ class Reader():
     subclasses implement the phases that differ between formats.
     """
 
-    def __init__(self, graph: Graph, instance_cache: dict, configuration):
-        """Bind the reader to a graph, a shared instance cache and a config manager.
+    def __init__(self, graph: Graph, entities: dict, configuration):
+        """Bind the reader to a graph, the shared `entities` dictionary and a config manager.
 
         Fails fast if the config names a handler this reader does not implement.
         """
         self.graph = graph
-        self._instance_cache = instance_cache
+        self.entities = entities
         self._configuration = configuration
         self._property_mapping = configuration.get_property_mapping()
         self._triples_map = {}
@@ -81,7 +81,7 @@ class Reader():
 
         for pred in self._property_mapping:
             for node in self.graph.subjects(pred, None):
-                if node in self._instance_cache or node in tried:
+                if node in self.entities or node in tried:
                     continue
                 tried.add(node)
                 python_class = self._configuration.classify_by_predicate(node, self.graph)
@@ -118,7 +118,7 @@ class Reader():
                 # Apply static setters (e.g. set_is_transitive: True) always,
                 # even if instance already existed in cache from phase1.
                 if 'setters' in config:
-                    for instance in self._instance_cache.get(uri, set()):
+                    for instance in self.entities.get(uri, set()):
                         self._apply_setters_immediate(instance, config['setters'])
 
 
@@ -129,9 +129,9 @@ class Reader():
         predicate to the setters or handlers declared in the YAML mapper. A format
         overrides this only to add steps, and calls super() first.
         """
-        for uri in list(self._instance_cache.keys()):
+        for uri in list(self.entities.keys()):
             # both levels are copied: populating an instance can add new ones to the cache
-            for instance in list(self._instance_cache[uri]):
+            for instance in list(self.entities[uri]):
                 self._populate_instance(instance, uri)
 
     def phase4_process_group_axioms(self):
@@ -161,7 +161,7 @@ class Reader():
         vocabularies = tuple(self._allowed_namespaces)
         # set(): each subject once, and a stable list while instances are created
         for subj in set(self.graph.subjects()):
-            if (isinstance(subj, URIRef) and subj not in self._instance_cache
+            if (isinstance(subj, URIRef) and subj not in self.entities
                     and not str(subj).startswith(vocabularies)):
                 self.get_or_create(subj, self._FALLBACK_CLASS)
 
@@ -308,7 +308,7 @@ class Reader():
                 if children is None:
                     # one scan of the cache instead of one per visited node
                     children = {}
-                    for instances_set in self._instance_cache.values():
+                    for instances_set in self.entities.values():
                         for inst in instances_set:
                             getter = getattr(inst, next_getter, None)
                             if getter:
@@ -335,8 +335,8 @@ class Reader():
             f"@{rdflib_literal.language or ''}"
             f"^^{rdflib_literal.datatype or ''}"
         )
-        if literal_key in self._instance_cache:
-            return next(iter(self._instance_cache[literal_key]))
+        if literal_key in self.entities:
+            return next(iter(self.entities[literal_key]))
 
         literal = Literal()
         literal.set_has_value(str(rdflib_literal))
@@ -349,7 +349,7 @@ class Reader():
             if dt:
                 literal.set_has_type(dt)
 
-        self._instance_cache[literal_key] = {literal}
+        self.entities[literal_key] = {literal}
         return literal
 
     def _is_rdf_collection(self, node: Node) -> bool:
@@ -372,7 +372,7 @@ class Reader():
         An instance already cached for `obj` wins (punning keeps its class); 
         otherwise falls back to Resource.
         """
-        cached = {type(c) for c in self._instance_cache.get(obj, ())}
+        cached = {type(c) for c in self.entities.get(obj, ())}
         return next((c for c in candidates if c in cached), Resource)
 
 
@@ -435,7 +435,7 @@ class Reader():
                                 continue
                         # punning: prefer the instance of obj with the same class as the subject
                         obj_instance = next(
-                            (c for c in self._instance_cache.get(obj, ())
+                            (c for c in self.entities.get(obj, ())
                              if type(c) is type(instance) and isinstance(c, value_type)),
                             None
                         ) or self.get_or_create(obj, value_type)
@@ -508,37 +508,37 @@ class Reader():
                         python_class = Datatype  # XSD: only if explicitly declared as something else
 
             # Individual punning: do not override existing non-Individual types
-            if python_class == Individual and id in self._instance_cache:
+            if python_class == Individual and id in self.entities:
                 is_named_individual = (id, RDF.type, OWL.NamedIndividual) in self.graph
                 if not is_named_individual:
-                    for existing in self._instance_cache[id]:
+                    for existing in self.entities[id]:
                         if not isinstance(existing, Individual):
                             return existing
 
-            if id in self._instance_cache:
+            if id in self.entities:
                 if isinstance(id, BNode):
-                    return next(iter(self._instance_cache[id]))
+                    return next(iter(self.entities[id]))
                 if isinstance(id, URIRef):
-                    for obj in self._instance_cache[id]:
+                    for obj in self.entities[id]:
                         if isinstance(obj, python_class):
                             return obj
                     # Promote only if there is exactly one cached instance and
                     # the requested class is strictly more specific than it
                     # so punning is mantained
-                    cached = list(self._instance_cache[id])
+                    cached = list(self.entities[id])
                     if len(cached) == 1 and issubclass(python_class, type(cached[0])):
                         old = cached[0]
                         new = python_class()
                         new.__dict__.update(old.__dict__)
-                        self._instance_cache[id].discard(old)
-                        self._instance_cache[id].add(new)
+                        self.entities[id].discard(old)
+                        self.entities[id].add(new)
                         self._move_tracking(old, new)
                         return new
 
             instance = python_class()
-            if id not in self._instance_cache:
-                self._instance_cache[id] = set()
-            self._instance_cache[id].add(instance)
+            if id not in self.entities:
+                self.entities[id] = set()
+            self.entities[id].add(instance)
             instance.set_has_identifier(str(id))
 
             if populate:
@@ -603,9 +603,9 @@ class Reader():
 
     def _is_triple_mapped(self, subj, pred, obj) -> bool:
         """Return True if some instance already tracks this triple in its provenance."""
-        if subj not in self._instance_cache:
+        if subj not in self.entities:
             return False
-        instances = self._instance_cache[subj]
+        instances = self.entities[subj]
         instances_list = instances if isinstance(instances, set) else [instances]
         for instance in instances_list:
             if instance in self._triples_map:
@@ -619,17 +619,17 @@ class Reader():
         The container is cached before its members are resolved, so a list that
         contains itself cannot loop forever.
         """
-        if collection_uri in self._instance_cache:
-            for cached in self._instance_cache[collection_uri]:
+        if collection_uri in self.entities:
+            for cached in self.entities[collection_uri]:
                 if isinstance(cached, Container):
                     return cached
 
         container = Container()
         container.set_has_identifier(str(collection_uri))
 
-        if collection_uri not in self._instance_cache:
-            self._instance_cache[collection_uri] = set()
-        self._instance_cache[collection_uri].add(container)
+        if collection_uri not in self.entities:
+            self.entities[collection_uri] = set()
+        self.entities[collection_uri].add(container)
 
         try:
             collection = RDFLibCollection(self.graph, collection_uri)
@@ -681,9 +681,9 @@ class Reader():
         if obj_inst:
             statement.set_has_object(obj_inst)
 
-        if stmt_bnode not in self._instance_cache:
-            self._instance_cache[stmt_bnode] = set()
-        self._instance_cache[stmt_bnode].add(statement)
+        if stmt_bnode not in self.entities:
+            self.entities[stmt_bnode] = set()
+        self.entities[stmt_bnode].add(statement)
 
     def _is_unmapped_structured_bnode(self, node) -> bool:
         """A BNode is a structured Statement value if:
@@ -696,7 +696,7 @@ class Reader():
         """
         if not isinstance(node, BNode):
             return False
-        if any(type(i) is not Resource for i in self._instance_cache.get(node, ())):
+        if any(type(i) is not Resource for i in self.entities.get(node, ())):
             return False
         has_out = False
         for _ in self.graph.predicate_objects(node):
@@ -718,15 +718,15 @@ class Reader():
         statement.set_has_identifier(str(node))
 
         # drop the placeholder Resource: the node is represented by the Statement
-        self._instance_cache[node] = {statement}
+        self.entities[node] = {statement}
 
         for p, o in self.graph.predicate_objects(node):
             self._track(statement, (node, p, o))
 
             # The predicate becomes an Annotation if not otherwise known
-            if p in self._instance_cache:
+            if p in self.entities:
                 pred_inst = next(
-                    (i for i in self._instance_cache[p] if isinstance(i, Property)),
+                    (i for i in self.entities[p] if isinstance(i, Property)),
                     None
                 )
             else:
@@ -734,7 +734,7 @@ class Reader():
             if pred_inst is None:
                 pred_inst = Annotation()
                 pred_inst.set_has_identifier(str(p))
-                self._instance_cache.setdefault(p, set()).add(pred_inst)
+                self.entities.setdefault(p, set()).add(pred_inst)
 
             # Resolve the object recursively
             if self._is_rdf_collection(o):
@@ -771,9 +771,9 @@ class Reader():
 
         The winner follows the config's punning priority; with no match, any cached one.
         """
-        if uri not in self._instance_cache:
+        if uri not in self.entities:
             return None
-        cached = self._instance_cache[uri]
+        cached = self.entities[uri]
         if not cached:
             return None
         if len(cached) == 1:
