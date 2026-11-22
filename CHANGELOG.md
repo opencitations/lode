@@ -1,3 +1,9 @@
+# [2.2.0](https://github.com/opencitations/lode/compare/v2.1.1...v2.2.0) (2026-11-22)
+
+### Features
+
+* profiles refactor for SKOS integration [release] ([#25](https://github.com/opencitations/lode/issues/25)) ([ffc5920](https://github.com/opencitations/lode/commit/ffc5920994645f19f758ad95957c53dd097f52c7))
+
 ## [2.1.1](https://github.com/opencitations/lode/compare/v2.1.0...v2.1.1) (2026-11-02)
 
 
