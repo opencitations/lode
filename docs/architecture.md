@@ -1,66 +1,75 @@
 # Architecture
 
+:::{warning} Beta version · unstable
+LODE 2 is under development and in beta: anything described in this documentation may change. This page describes internals that can change without notice.
+:::
+
 LODE is built in layers. Data flows in one direction, from the document you give it to the documentation it produces, and each layer knows only the one before it. A new format is a **profile** that plugs into this flow. The cards below follow it in order, and each one says what the step does, what you can change, and where to read more.
+
+::::{div}
+:class: text-center
+```{mermaid}
+%%{init: {"themeVariables": {"fontSize": "16px"}, "flowchart": {"nodeSpacing": 30, "rankSpacing": 30, "padding": 12}}}%%
+flowchart TB
+    doc(["Document<br/>OWL · RDF · SKOS"])
+    reader["2 · Reader"]
+    model[["3 · Model"]]
+    artefact["4 · Artefact"]
+    viewer["5 · Viewer"]
+    html(["HTML"])
+    rdf(["RDF serializations<br/>Turtle · RDF/XML · N3"])
+    profile{{"1 · Profile"}}
+
+    doc --> reader
+    reader -- populates --> artefact
+    artefact --> viewer
+    viewer --> html
+    viewer --> rdf
+    reader -. instantiates .-> model
+    profile -. configures .-> reader
+    profile -. configures .-> viewer
+
+    classDef flow fill:#dbeafe,stroke:#60a5fa,color:#1f2937
+    classDef shared fill:#fef3c7,stroke:#f59e0b,color:#1f2937
+    classDef io fill:#e5e7eb,stroke:#9ca3af,color:#1f2937
+    class reader,artefact,viewer flow
+    class model,profile shared
+    class doc,html,rdf io
+```
+::::
+
+The numbers are those of the cards below. Solid arrows are the data flow; dotted ones are what the steps rely on.
 
 ::::{grid} 1 1 1 1
 
 :::{card} 1. Profile
-**What it is.** The package `lode/profiles/<format>/` that tells LODE how to read and show one format. Its `__init__.py` registers a `Profile` (name, reader class, viewer class, `Artefact` class, whether it is enabled).
-
-**How LODE uses it.** Everything that depends on the format asks the registry in `lode.profiles`: `lode.read` for the reader, `lode.viewer.get_viewer` for the viewer, the CLI and the API for the formats they accept. It is the only place that knows which formats exist. LODE ships `owl` and `skos`; other packages add formats through the `lode.profiles` entry point group.
-
-**You write.** A profile is built over three kinds of files.
-
-*Configuration* (YAML, no code):
-- `reader.yaml`: declarative mapping between the constructs of the format and the LODE model entities.
-- `viewer.yaml`: declarative mapping of how the entities are grouped and labelled in the output documentation.
-
-*Code* (Python):
-- `reader.py`: extends what the YAML cannot express, for example format-specific checks.
-- `artefact.py`: the `Artefact` class users import, for example `OwlOntology`.
-- `viewer.py`: the rendering of the format.
-
-*Templates* (HTML5+Jinja2) 
-- `templates/` (optional): templates for the viewer.
-
+**What it is.** The package `lode/profiles/<format>/` that tells LODE how to read and show one format. It is the only place that knows which formats exist.
 +++
-[See Extending LODE](extending.md)
+[Profile](examples/profile.ipynb)
 :::
 
 :::{card} 2. Reader
-**What it does.** Turns an RDF graph into model instances. The mapping from RDF constructs to model classes is declared in YAML, not in Python: `lode/reader/config/base.yaml`, with the `reader.yaml` of the profile merged on top. A reader class implements the phases that differ between formats.
-
-**Six phases**, all filling one cache `{IRI: set of instances}`:
-1. Classify blank nodes from the predicates they carry (OWL only).
-2. Create an instance for every subject typed with a mapped class, and apply the static setters.
-3. Populate properties through the setters declared in the mapper.
-4. Process group axioms (OWL: `AllDisjointClasses`, `AllDifferent`, ...).
-5. Apply fallbacks and defaults (OWL: default domain and range).
-6. Turn every triple not consumed so far into a `Statement`.
-
-**You change.** The YAML mapper for what a construct means; a reader class (subclass of `Reader`) only for what YAML cannot say. The entities are `lode.models` classes (`Concept`, `Collection`, `Relation`, ...), which know neither who fills them nor who shows them.
+**What it does.** Turns an RDF graph into model entities, following a YAML mapper and, where YAML is not enough, a reader class.
 +++
-[See Extending LODE](extending.md) · [Step by step](notebooks/extending.ipynb)
+[Reader](examples/reader.ipynb)
 :::
 
-:::{card} 3. Artefact
-**What it is.** The hand-over between the reader and everything after it. It holds the entities, the RDF graph, the IRI of the documented artefact, the imported modules, the warnings and the format (`read_as`).
-
-**What it gives.** `instances()` and `get_instance()` list its entities, so a consumer never needs the reader that built it. Viewers, the builder and the API depend on this object only.
-
-**Provenance.** The triples an entity was built from, computed on demand with `artefact.provenance(entity)`. Nothing is precomputed: a documentation can hold thousands of entities and most are never inspected.
-
-**You write.** A subclass with no code, so users can read the format with `MyFormat(path)`.
+:::{card} 3. Model
+**What it is.** The entity classes of `lode.models` (`Concept`, `Relation`, `Statement`, ...). The reader creates them, the artefact holds them, the viewer reads them.
 +++
-[Python API](usage/python_api.md) · [See Extending LODE](extending.md)
+[Model](examples/model.ipynb)
 :::
 
-:::{card} 4. Viewer
-**What it does.** Turns the artefact into the dictionaries the HTML templates render, and into RDF serializations. `lode.viewer.get_viewer(artefact)` picks the viewer from `artefact.read_as`, asking the registry for the viewer class of that profile.
-
-**You change.** What each format shows (table of contents, display names, card template) is declared in the `viewer.yaml` and the `templates/` folder of its profile. A `viewer.py` is needed only for what those cannot say.
+:::{card} 4. Artefact
+**What it is.** The hand-over between the reader and everything after it: entities, graph, warnings and format. Viewers, the builder and the API depend on it only.
 +++
-[See Extending LODE](extending.md)
+[Artefact](examples/artefact.ipynb)
+:::
+
+:::{card} 5. Viewer
+**What it does.** Turns the artefact into the dictionaries the HTML templates render, and into RDF serializations.
++++
+[Viewer](viewer.md)
 :::
 ::::
 
@@ -72,4 +81,4 @@ LODE is built in layers. Data flows in one direction, from the document you give
 - The core (reader, viewer, model, helpers) reaches a profile only through the registry in `lode.profiles`. It never imports a profile package.
 - A profile does not import another profile.
 
-`tests/test_architecture.py` checks these rules on the source files, so a violation fails the test suite.
+`tests/unit/core/test_architecture.py` checks these rules on the source files, so a violation fails the test suite.

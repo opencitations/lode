@@ -1,5 +1,9 @@
 # API endpoints
 
+:::{note} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 The API is part of the web service and needs the `[server]` extra
 (`pip install "oc-lode[server]"`, see [Getting started](../getting_started.md#which-install-do-i-need)).
 

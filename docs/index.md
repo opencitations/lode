@@ -1,13 +1,12 @@
 # LODE 2.0
 
+:::{warning} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 Live OWL Documentation Environment — extract and document semantic artefacts as browsable, interlinked HTML. Maintained by [OpenCitations](https://opencitations.net).
 
-```{button} Get started
-:url: getting_started.md
-```
-```{button} View on GitHub
-:url: https://github.com/opencitations/lode
-```
+[Get started](getting_started.md) · [View on GitHub](https://github.com/opencitations/lode)
 
 ## Features
 

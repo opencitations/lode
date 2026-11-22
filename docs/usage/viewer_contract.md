@@ -1,5 +1,9 @@
 # Viewer contract
 
+:::{warning} Beta version · unstable
+LODE 2 is under development and in beta: anything described in this documentation may change. This page describes internals that can change without notice.
+:::
+
 A viewer turns an `Artefact` into a plain dictionary, and a template reads that
 dictionary and nothing else. This page describes the dictionary, how to write a template
 for it, and how a profile adds its own data to it.
@@ -7,14 +11,14 @@ for it, and how a profile adds its own data to it.
 The dictionary is a `ViewData`. The classes that describe it are in
 `lode/viewer/view_data.py`. They are `TypedDict` classes and are not used at runtime: they
 are the reference for whoever writes a template or a viewer, and
-`tests/test_view_data.py` checks that the viewers keep to them.
+`tests/unit/core/test_view_data.py` checks that the viewers keep to them.
 
 ## Rules
 
 - **Every key listed is always present.** An empty list, an empty dictionary or `None`
   says "nothing", never a missing key. A template never asks whether a key exists.
 - **Labels are already in the requested language**, with the fallback applied.
-- **Lists keep a meaningful order**: entities by label, relations in display order.
+- **Lists keep a meaningful order**: cards by label, relations in display order.
 - **Nothing depends on how the data is drawn.** There is no HTML and no CSS class.
 
 ## What a viewer returns
@@ -32,11 +36,11 @@ goes, as the next section explains.
 | `model` | The documented artefact: its header, namespaces, the serializations on offer and the reader warnings. |
 | `toc` | The navigation of the whole artefact, as sections. It is `[]` on the page of one resource. |
 | `types` | How each type is called, by the model class name that `type` carries: `singular`, `plural` and `abbreviation`. |
-| `entities` | What the main part shows: all the cards, one, or none. |
+| `cards` | What the main part shows: all the cards, one, or none. |
 | `focus` | The IRI that was asked for, `None` for the whole artefact. |
 | `error` | A message when the request cannot be answered, `None` otherwise. |
 
-There are three kinds of view. The **whole artefact** has every card in `entities`, a
+There are three kinds of view. The **whole artefact** has every card in `cards`, a
 filled `toc` and `focus` set to `None`. **One resource** has one card, an empty `toc` and
 `focus` set to its IRI: a site of N resources does not carry N copies of its own index.
 An **error** has no card and a message in `error`.
@@ -46,7 +50,7 @@ or removed. A profile adds its data inside the existing structures, as SKOS does
 
 ### The structures inside
 
-An **entity** is the content of one card:
+A **card** is the content of one entity:
 
 | Key | Meaning |
 |-----|---------|
@@ -73,7 +77,7 @@ possibly structured.
 | `parts` | The components of a class expression or of a property chain, or `[]`. |
 | `nested` | The annotations carried by a value that is itself a statement, or `None`. |
 
-A **section of the navigation** has `id`, `type`, `label` and `entities`, a list of
+A **section of the navigation** has `id`, `type`, `label` and `entries`, a list of
 entries with `iri`, `type`, `label`, `anchor`, `href` and `kind`: an entity without
 relations and statements. The **model** has `iri`, `label`, `metadata`, `namespaces`,
 `serializations`, `warnings` and `href`.
@@ -132,7 +136,7 @@ inside a section. The tests accept extra keys below the top level and fail only 
 the contract declares is missing.
 
 ```python
-class TreeNode(TocEntity):
+class TreeNode(TocEntry):
     """One node of the concept taxonomy: a concept and the concepts narrower than it."""
 
     children: List["TreeNode"]
@@ -154,7 +158,7 @@ list where there is nothing, so the template never checks that it exists.
 ```python
 def _build_toc(self, language: str) -> List[TocSection]:
     toc = super()._build_toc(language)
-    concepts = [i for i in self.get_toc_instances() if type(i).__name__ == 'Concept']
+    concepts = [i for i in self.get_toc_entities() if type(i).__name__ == 'Concept']
     for section in toc:
         section['tree'] = self._build_taxonomy(concepts, language) if section['type'] == 'Concept' else []
     return toc
@@ -169,16 +173,16 @@ after the base method has run:
 def view(self, resource_uri=None, language=None, links=None) -> ViewData:
     data = super().view(resource_uri, language, links)
     for section in data['toc']:
-        addresses = {e['iri']: (e['href'], e['kind']) for e in section['entities']}
+        addresses = {e['iri']: (e['href'], e['kind']) for e in section['entries']}
         self._copy_addresses(section['tree'], addresses)
     return data
 ```
 
 **4. Read it in a template.** The profile's `templates/_toc.html` defines `sidebar` and
-`contents`, and draws `section.tree` where the base template draws `section.entities`.
+`contents`, and draws `section.tree` where the base template draws `section.entries`.
 
 **5. Check it.** Build the viewer on a small artefact and render the page, as
-`tests/test_view_data.py` does for OWL and SKOS.
+`tests/unit/core/test_view_data.py` does for OWL and SKOS.
 
 ### The steps you can override
 
@@ -186,9 +190,9 @@ def view(self, resource_uri=None, language=None, links=None) -> ViewData:
 |--------|----------------|
 | `view()` | The whole `ViewData`. Public: the web service and the static builder call it. |
 | `_build_toc(language)` | The sections of the navigation. |
-| `_build_entities(resource_uri, language)` | The cards of the main part. |
-| `_format_entities(instances, language)` | One card for each instance. |
-| `_toc_entry(instance, language)` | One entry of the navigation. |
+| `_build_cards(resource_uri, language)` | The cards of the main part. |
+| `_format_cards(members, language)` | One card for each entity. |
+| `_toc_entry(entity, language)` | One entry of the navigation. |
 | `_build_types()` | The `types` dictionary, from the `type_map` of `viewer.yaml`. |
 
 The names that start with an underscore are internal: they can change between versions of

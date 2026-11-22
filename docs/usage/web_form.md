@@ -1,5 +1,9 @@
 # Web form
 
+:::{note} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 Start the server and open `http://localhost:8000`. This needs the `[server]` extra:
 `pip install "oc-lode[server]"` (see [Getting started](../getting_started.md#which-install-do-i-need)).
 

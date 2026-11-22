@@ -1,5 +1,9 @@
 # CLI reference
 
+:::{note} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 ## Commands
 
 ### `lode serve`
