@@ -7,4 +7,5 @@ register(Profile(
     reader=".reader:SkosReader",
     viewer=".viewer:SkosViewer",
     artefact=".artefact:SkosVocabulary",
+    enabled=False,  # not ready for release: refused by lode.read, the CLI and the API
 ))

@@ -124,7 +124,7 @@ def register(profile: Profile) -> None:
     _PROFILES[profile.name] = profile
 
 
-def find(name: Optional[str]) -> Optional[Profile]:
+def _find(name: Optional[str]) -> Optional[Profile]:
     """Return the profile called `name`, ignoring case, or None when there is none.
 
     The only place where a format name is normalised: the reader, the viewer and the
@@ -136,7 +136,7 @@ def find(name: Optional[str]) -> Optional[Profile]:
 
 def get(name: str) -> Profile:
     """Return the profile called `name`; raise ValueError listing the available ones."""
-    profile = find(name)
+    profile = _find(name)
     if profile is None:
         raise ValueError(f"Unknown configuration: '{name}'. Available: {', '.join(names())}")
     return profile
@@ -149,7 +149,7 @@ def get_enabled(name: Optional[str]) -> Profile:
     and the CLI). An unknown name and a disabled one get the same error, with the list of
     valid formats. Asked every time, not cached, because plugins register on first use.
     """
-    profile = find(name)
+    profile = _find(name)
     if profile is None or not profile.enabled:
         raise ArtefactValidationError(
             f"Format '{name}' is not available",

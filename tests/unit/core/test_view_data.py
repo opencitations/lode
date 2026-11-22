@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from lode.viewer.view_data import ViewData
 import lode
+from lode import profiles
 from lode.viewer import get_viewer
 from lode.helpers.links import Links
 
@@ -182,7 +183,8 @@ def viewer_and_iri(request, tmp_path):
     text, iri = _SOURCES[request.param]
     path = tmp_path / "source.ttl"
     path.write_text(text, encoding="utf-8")
-    return get_viewer(lode.read(str(path), request.param)), iri
+    # By the class of the profile, not by name: a format that is not enabled yet is still tested
+    return get_viewer(profiles.get(request.param).artefact_class()(str(path))), iri
 
 
 def test_the_viewer_produces_the_contract(viewer_and_iri):

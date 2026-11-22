@@ -7,6 +7,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 import lode 
+from lode import SkosVocabulary
 from lode.viewer import get_viewer
 
 _TEMPLATES = Path(__file__).resolve().parents[2] / "lode" / "templates"
@@ -162,7 +163,7 @@ def _viewer(tmp_path):
     """A viewer over the small SKOS artefact above."""
     path = tmp_path / "source.ttl"
     path.write_text(_SKOS, encoding="utf-8")
-    return get_viewer(lode.read(str(path), "skos"))
+    return get_viewer(SkosVocabulary(str(path)))
 
 
 def _render_page(data: dict) -> str:

@@ -24,21 +24,26 @@ def vocabulary(tmp_path):
     return path
 
 
-def test_read_returns_an_artefact(vocabulary):
-    artefact = lode.read(str(vocabulary), "skos")
-    assert isinstance(artefact, SkosVocabulary)
+def test_a_format_class_reads_its_format(vocabulary):
+    artefact = SkosVocabulary(str(vocabulary))
     assert artefact.read_as == "skos"
 
 
+def test_skos_is_not_enabled_yet(vocabulary):
+    """SKOS is not ready for release: lode.read refuses it, the class still reads it."""
+    with pytest.raises(ArtefactValidationError):
+        lode.read(str(vocabulary), "skos")
+
+
 def test_instances_of_a_class(vocabulary):
-    artefact = lode.read(str(vocabulary), "skos")
+    artefact = SkosVocabulary(str(vocabulary))
     ids = {c.get_has_identifier() for c in artefact.get_entities(Concept)}
     assert ids == {"http://example.org/animal", "http://example.org/cat"}
 
 
 def test_build_site_writes_the_site(vocabulary, tmp_path):
     out = tmp_path / "site"
-    lode.build_site(lode.read(str(vocabulary), "skos"), out)
+    lode.build_site(SkosVocabulary(str(vocabulary)), out)
     assert (out / "index.html").exists()
     assert (out / "index.ttl").exists()
 
