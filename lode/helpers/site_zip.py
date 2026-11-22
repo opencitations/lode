@@ -94,7 +94,12 @@ def build_zip(artefact, slug: str, lang: Optional[str] = None) -> Tuple[str, str
             raise BuildCapacityError("Build storage full, retry shortly", retry_after=60)
 
         workdir = tempfile.mkdtemp(prefix="build_", dir=BUILD_DIR)
-        site_dir = Path(workdir) / slug
+        # The slug is already sanitised by slugify; this check keeps the site inside the
+        # workdir even if a caller passes a slug that was not, so it cannot be a path escape.
+        site_path = os.path.normpath(os.path.join(workdir, slug))
+        if not site_path.startswith(os.path.normpath(workdir) + os.sep):
+            raise ValueError(f"Unsafe site directory name: {slug!r}")
+        site_dir = Path(site_path)
         site_dir.mkdir(parents=True, exist_ok=True)
 
         core.build_site(artefact, site_dir, lang=lang or "en")
