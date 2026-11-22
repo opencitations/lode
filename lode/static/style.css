@@ -191,6 +191,15 @@ dd { margin: 0 0 .5em 2em; }
     background-size: 6px 2px;          /* hover: stesso passo, più spesso */
 }
 
+/* Header of the artefact: its links are plain links, like the ones of a markdown text */
+.metadata-block a.external-ref {
+    text-decoration: underline;
+    text-decoration-thickness: auto;
+    text-underline-offset: auto;
+    color: var(--lode-blue);
+    opacity: 1;
+}
+
 /* Entita definite nell'ontologia vs importate da vocabolari esterni */
 .entity-internal { color: var(--lode-blue); }
 

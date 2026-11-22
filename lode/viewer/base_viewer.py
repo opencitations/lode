@@ -478,6 +478,16 @@ class BaseViewer:
         # 9. Statements
         data.update(self._format_statement(all_entities, sem_art_model, language))
 
+        # The header shows every link as its full IRI, not as a label or the last part of it:
+        # the reader needs to see where it points. Applied here, once, because the values come
+        # from two places (getters above, statements) and cards keep their labels.
+        for key, values in data.items():
+            if key in ('uri', 'label', '_namespaces'):
+                continue
+            for value in values:
+                if value['iri']:
+                    value['text'] = str(value['iri'])
+
         # uri/label first, then the order from the YAML, then alphabetical
         pinned = ['uri', 'label']
         rest = sorted((k for k in data if k not in pinned), key=annotation_sort_key)
