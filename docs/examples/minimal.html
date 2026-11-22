@@ -1,0 +1,94 @@
+{#- A template written from the viewer contract alone (docs/usage/viewer_contract.md).
+    It uses no variable outside: model, toc, cards, focus, error. -#}
+{% macro value(v) -%}
+    {%- if v.parts -%}
+        {%- for p in v.parts -%}{{ value(p) }}{%- endfor -%}
+    {%- elif v.href -%}
+        <a href="{{ v.href }}"{% if v.kind == "external" %} target="_blank" rel="noopener"{% endif %}>{{ v.text or v.iri }}</a>
+    {%- else -%}
+        {{ v.text }}
+    {%- endif -%}
+    {%- if v.language %} <sup>{{ v.language }}</sup>{% endif -%}
+    {%- if v.type in types %} <sup>{{ types[v.type].abbreviation }}</sup>{% endif -%}
+    {%- if v.deprecated %} <del>deprecated</del>{% endif -%}
+    {%- if v.nested %}
+        <ul>{% for pair in [v.nested.main] + v.nested.siblings %}<li>{{ pair.predicate }}: {{ value(pair.value) }}</li>{% endfor %}</ul>
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro entry(e) -%}
+    {%- if e.iri == focus %}<strong>{{ e.label }}</strong>
+    {%- elif e.href %}<a href="{{ e.href }}">{{ e.label }}</a>
+    {%- else %}{{ e.label }}{% endif -%}
+{%- endmacro %}
+
+{% macro branch(nodes) -%}
+<ul>
+    {% for n in nodes %}
+        <li>{{ entry(n) }}{% if n.children %}{{ branch(n.children) }}{% endif %}</li>
+    {% endfor %}
+</ul>
+{%- endmacro %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ model.label or model.iri or "Artefact" }}</title>
+</head>
+<body>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<header>
+    <h1>{{ model.label or model.iri or "" }}</h1>
+    {% if focus and model.href %}<p><a href="{{ model.href }}">All the documentation</a></p>{% endif %}
+    <dl>
+        {% for name, values in model.metadata.items() %}
+            <dt>{{ name }}</dt>
+            {% for v in values %}<dd>{{ value(v) }}</dd>{% endfor %}
+        {% endfor %}
+    </dl>
+    <ul>
+        {% for s in model.serializations %}{% if s.href %}<li><a href="{{ s.href }}">{{ s.label }}</a></li>{% endif %}{% endfor %}
+    </ul>
+    {% for w in model.warnings %}<p class="warning">{{ w.message }}</p>{% endfor %}
+</header>
+
+<nav>
+    {% for section in toc %}
+        <h2 id="{{ section.id }}">{{ section.label }} ({{ section.entries|length }})</h2>
+        {#- `tree` is not in the contract: a profile may add it (SKOS does), so test that it exists. -#}
+        {% if section.tree is defined and section.tree %}
+            {{ branch(section.tree) }}
+        {% else %}
+            <ul>{% for e in section.entries %}<li>{{ entry(e) }}</li>{% endfor %}</ul>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<main>
+    {% for e in cards %}
+        <article id="{{ e.anchor }}">
+            <h2>{{ e.label }} <small>{{ types[e.type].singular if e.type in types else e.type }}</small> {% if e.deprecated %} (deprecated){% endif %}</h2>
+            {% if e.characteristics %}<p>{{ e.characteristics|join(", ") }}</p>{% endif %}
+            <dl>
+                {% for name, values in e.relations.items() %}
+                    <dt>{{ name }}</dt>
+                    {% for v in values %}<dd>{{ value(v) }}</dd>{% endfor %}
+                {% endfor %}
+                {% for name, values in e.statements.items() %}
+                    <dt>{{ name }}</dt>
+                    {% for v in values %}<dd>{{ value(v) }}</dd>{% endfor %}
+                {% endfor %}
+            </dl>
+            {% for p in e.provenance %}<details><summary>{{ p.label }}</summary><pre>{{ p.code }}</pre></details>{% endfor %}
+        </article>
+    {% endfor %}
+</main>
+
+<footer>
+    <table>
+        {% for ns in model.namespaces %}<tr><td>{{ ns.prefix }}</td><td>{{ ns.uri }}</td></tr>{% endfor %}
+    </table>
+</footer>
+</body>
+</html>

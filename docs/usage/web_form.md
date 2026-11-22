@@ -1,5 +1,9 @@
 # Web form
 
+:::{note} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 Start the server and open `http://localhost:8000`. This needs the `[server]` extra:
 `pip install "oc-lode[server]"` (see [Getting started](../getting_started.md#which-install-do-i-need)).
 
@@ -9,7 +13,7 @@ Start the server and open `http://localhost:8000`. This needs the `[server]` ext
 |-------|-------------|
 | **URL** | Public http(s) URL of the artefact |
 | **File** | Upload a local `.ttl`, `.rdf`, `.owl`, `.n3`, `.jsonld` file |
-| **Format** | Artefact type (`owl`, `rdf`, `skos`) - Currently only `owl` is available |
+| **Format** | Artefact type: `owl` or `skos` |
 | **Language** | Preferred language for labels (e.g. `en`, `it`) |
 | **Load imports** | Also fetch `owl:imports` at depth 1 |
 | **Load closure** | Fetch the full `owl:imports` closure |

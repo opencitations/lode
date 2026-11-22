@@ -1,0 +1,35 @@
+version: 1
+project:
+  title: LODE
+  description: Live OWL Documentation Environment
+  github: https://github.com/opencitations/lode
+  toc:
+    - file: index.md
+    - file: getting_started.md
+    - title: Usage
+      children:
+        - file: usage/web_form.md
+        - file: usage/cli.md
+        - file: usage/python_library.md
+          title: Python library
+        - file: usage/docker.md
+    - title: API reference
+      children:
+        - file: api/endpoints.md
+    - file: architecture.md
+      title: Architecture ⚠️
+      children:
+        - file: examples/profile.ipynb
+          title: "Profile: how a format plugs in"
+        - file: examples/reader.ipynb
+          title: "Reader: RDF to entities"
+        - file: examples/model.ipynb
+          title: "Model: the entity classes"
+        - file: examples/artefact.ipynb
+          title: "Artefact: the result of reading"
+        - file: viewer.md
+          title: "Viewer: from artefact to output"
+    - file: extending.md
+      title: Extending LODE ⚠️
+site:
+  template: book-theme

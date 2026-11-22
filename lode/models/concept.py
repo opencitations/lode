@@ -24,10 +24,10 @@ class Concept(Resource):
         self.has_related_match = []   # 0..*
         self.has_exact_match = []     # 0..* 
         self.has_close_match = []     # 0..*
+        self.is_top_concept_of = []   # 0..*                   (inverse of is Model.has_top_concept)
         self.has_key = []             # 0..*
         self.individuals_with_this_type = []          # 0..*  (inverse of Individual.has_type)
         self.is_in_domain_of = []     # 0..*
-
 
     def set_has_key(self, prop):
         """Add a property to has_key (owl:hasKey)."""
@@ -127,7 +127,7 @@ class Concept(Resource):
         """Return the has_exact_match list (not a copy)."""
         return self.has_exact_match
     
-    # Setter and getter forhas_close_match
+    # Setter and getter for has_close_match
     def set_has_close_match(self, concept):
         """Add a concept to has_close_match."""
         self.has_close_match.append(concept)
@@ -135,6 +135,15 @@ class Concept(Resource):
     def get_has_close_match(self):
         """Return the has_close_match list (not a copy)."""
         return self.has_close_match
+
+    # Setter and getter for is_top_concept_of
+    def set_is_top_concept_of(self, model):
+        """Add a concept to has_close_match."""
+        self.is_top_concept_of.append(model)
+    
+    def get_is_top_concept_of(self):
+        """Return the is_top_concept_of list"""
+        return self.is_top_concept_of
 
     def set_individuals_with_this_type(self, individual):
         """Add an individual to individuals_with_this_type (inverse of rdf:type), ignoring duplicates."""

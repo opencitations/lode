@@ -25,6 +25,7 @@ htmlcov/
 
 # Docs site build artifacts
 site/
+docs/_build/
 
 # Runtime spool cache
 **/spool/

@@ -1,19 +1,28 @@
 """Literal: an RDF literal with its value, language and datatype."""
 from .resource import Resource
 
-class Literal(Resource):
+class Literal():
     """An RDF literal: a lexical value with an optional language tag and datatype."""
 
     def __init__(self, **kwargs):
         """Create an empty literal: no value, language or datatype."""
 
-        super().__init__(**kwargs)
+        # super().__init__(**kwargs)
         
         # Attributes
         self.has_language = None
         self.has_value = None     
         # Relation with Datatypes
         self.has_type = None   
+
+    def __repr__(self):
+        """Return the value, with its language tag when there is one, e.g. Literal('cat', lang='en').
+
+        Hashing by object identity is untouched: the getters that de-duplicate literals
+        rely on it.
+        """
+        lang = f", lang={self.has_language!r}" if self.has_language else ""
+        return f"Literal({self.has_value!r}{lang})"
 
     def set_has_language(self, literal):
         """Set has_language."""

@@ -7,47 +7,41 @@ import os
 import re
 import shutil
 from pathlib import Path
-from urllib.parse import quote
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-import importlib.resources
 from rdflib import URIRef
-from rdflib.namespace import split_uri
+from typing import List
 
 # internal modules
-from lode.viewer.base_viewer import SERIALIZATION_FORMATS
+from lode.helpers.formats import SERIALIZATION_FORMATS
 from lode.helpers.html_utils import minify as _minify
-from lode.models.model import Model
 from lode.exceptions import ArtefactValidationError
-
+from typing import Optional
+from lode.helpers.links import Links
 
 _SER = [(f["fmt"], f["ext"]) for f in SERIALIZATION_FORMATS]
 
-def _get_template_env(static_path: str = "static") -> Environment:
+def _get_template_env(template_dirs: List[Path], static_path: str = "static") -> Environment:
     """Create the Jinja2 environment used to render the static pages.
 
-    `static_path` is the relative path from the page to the static folder, so it
-    differs between the index and the resource pages. The web app's url_for does
-    not exist here, hence the minimal replacement registered below.
+    `template_dirs` is the search path of the viewer (BaseViewer.template_dirs): a template of
+    the format replaces the base one with the same name. `static_path` is the relative path
+    from the page to the static folder, so it differs between the index and the resource
+    pages. The web app's url_for does not exist here, hence the minimal replacement below.
     """
-    try:
-        pkg_path = importlib.resources.files("lode").joinpath("templates")
-        template_dir = str(pkg_path)
-    except Exception:
-        template_dir = str(Path(__file__).parent / "templates")
-    
     env = Environment(
-        loader=FileSystemLoader(template_dir),
+        loader=FileSystemLoader([str(d) for d in template_dirs]),
         autoescape=select_autoescape(["html"]),
     )
-    
+
     def url_for(name: str, path: str = "") -> str:
         """Resolve static files relative to the page; every other route goes to the root."""
         if name == "static":
             return f"{static_path}/{path}"
         return "/"
-    
+
     env.globals["url_for"] = url_for
     return env
+
 
 def _prefix_map(graph):
     """Map each namespace IRI of the graph to its prefix ('default' for the empty one)."""
@@ -75,11 +69,6 @@ def _rel_slug(uri, graph):
     prefix, ns, local = graph.namespace_manager.compute_qname(URIRef(str(uri)), generate=True)
     prefix = _safe_segment(prefix or "default") or "default"
     return f"{prefix}/{_safe_segment(local)}"
-
-
-def _local_name(uri: str) -> str:
-    """Return the part of an IRI after '#', or its last path segment."""
-    return uri.split('#', 1)[1] if '#' in uri else uri.rstrip('/').rsplit('/', 1)[-1]
 
 
 def _check_artefact_name(name: str) -> str:
@@ -136,7 +125,18 @@ def _write_warnings_report(warnings: list, out_dir: Path) -> None:
     lines = [f"[{w['code']}] {w['message']}" for w in warnings]
     _write_in(out_dir, "report.txt", "\n".join(lines) + "\n")
 
-def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
+def _page_data(viewer, lang: str, links: "_StaticLinks", resource: Optional[str] = None) -> dict:
+    """Return the contract data of one static page, without the reader warnings.
+
+    A published page cannot send the reader to a server log, and the same warnings are
+    already written to report.txt, so the page does not repeat them as toasts.
+    """
+    data = viewer.view(resource_uri=resource, language=lang, links=links)
+    data["model"]["warnings"] = []
+    return data
+
+
+def build_html(viewer, out_dir: Path, lang: str = "en",
                artefact_name: str = "index") -> None:
     """Write the whole static site for a viewer into `out_dir`.
 
@@ -153,12 +153,11 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
     artefact_name = _check_artefact_name(artefact_name)
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_static(out_dir)
-    if reader is not None:
-        _write_warnings_report(viewer.format_warnings(reader.get_warnings()), out_dir)
+    _write_warnings_report(viewer.format_warnings(viewer.artefact.warnings), out_dir)
 
-    ontology_ns = viewer._get_ontology_ns()
-    graph = reader._graph if reader else viewer.reader._graph
-    main_graph = viewer.reader.get_main_graph()
+    artefact_ns = viewer.get_artefact_ns()
+    graph = viewer.artefact.graph
+    main_graph = viewer.artefact.main_graph()
 
     def _in_main_graph(uri) -> bool:
         """Tell whether the loaded artefact itself says something about this IRI.
@@ -169,10 +168,10 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
         return (URIRef(str(uri)), None, None) in main_graph
 
     grouped = defaultdict(list)
-    for inst in viewer.get_all_instances():
+    for inst in viewer.artefact.get_entities():
         grouped[type(inst).__name__].append(inst)
 
-    toc_config = viewer.get_toc_config() if hasattr(viewer, "get_toc_config") else []
+    toc_config = viewer.get_toc_config()
 
     # URI that will actually get a file (same criterion as the loop below)
     materialized = set()
@@ -181,55 +180,24 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
             u = inst.get_has_identifier()
             if not u:
                 continue
-            if not (u.startswith(ontology_ns) or _in_main_graph(u)):
+            if not (u.startswith(artefact_ns) or _in_main_graph(u)):
                 continue
             if _rel_slug(u, graph).rsplit("/", 1)[-1] == "":   # namespace IRI, no local
                 continue
             materialized.add(str(u))
 
-    def _keep(uri):
-        """Tell whether a resource gets its own page, and so can be linked to."""
-        return str(uri) in materialized
+    env_index = _get_template_env(viewer.template_dirs(), static_path="static")
+    env_resource = _get_template_env(viewer.template_dirs(), static_path="../../static")
 
-    def resource_url_resource(uri, section=None):
-        """Link to a resource from a resource page; unpublished IRIs stay absolute."""
-        if not _keep(uri):
-            return uri
-        rel = _rel_slug(uri, graph)
-        if rel.rsplit("/", 1)[-1] == "":      # namespace IRI
-            return f"../../{artefact_name}.html"
-        return f"../{rel}.html"
+    for fmt, ext in _SER:
+        _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))
 
-    def resource_url_index(uri, section=None):
-        """Link to a resource from the index page; unpublished IRIs stay absolute."""
-        if not _keep(uri):
-            return uri
-        rel = _rel_slug(uri, graph)
-        if rel.rsplit("/", 1)[-1] == "":
-            return f"{artefact_name}.html"
-        return f"resources/{rel}.html"
-
-    env_index = _get_template_env(static_path="static")
-    env_resource = _get_template_env(static_path="../../static")
-    
-    if reader is not None:
-        for fmt, ext in _SER:
-            _write_in(out_dir, f"{artefact_name}.{ext}", viewer.export_main(fmt))
-
-
-    template_index = env_index.get_template("viewer.html")
-    template_resource = env_resource.get_template("viewer.html")
-
-    toc_config = viewer.get_toc_config() if hasattr(viewer, "get_toc_config") else []
+    template_index = env_index.get_template("page.html")
+    template_resource = env_resource.get_template("page.html")
 
     # --- index.html ---
-    data = viewer.get_view_data(language=lang)
-    data["request"] = _FakeRequest("/")
-    data["is_static"] = True
-    data["resource_url"] = resource_url_index
-    data["export_base"] = artefact_name
+    data = _page_data(viewer, lang, _StaticLinks(graph, materialized, artefact_name))
     _write_in(out_dir, f"{artefact_name}.html", _minify(template_index.render(**data)))
-    print(f"  [build] {artefact_name}.html")
 
     if not toc_config:
         return
@@ -242,7 +210,7 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
             uri = inst.get_has_identifier()
             if not uri:
                 continue
-            native = uri.startswith(ontology_ns)
+            native = uri.startswith(artefact_ns)
             if not (native or _in_main_graph(uri)):
                 continue
 
@@ -257,49 +225,55 @@ def build_html(viewer, out_dir: Path, lang: str = "en", reader=None,
                 continue
             page.parent.mkdir(parents=True, exist_ok=True)
 
+            outputs = viewer.export_resource_all(uri, [fmt for fmt, _ in _SER])
             for fmt, ext in _SER:
-                out = viewer.export_resource(uri, fmt)
+                out = outputs[fmt]
                 if isinstance(out, bytes):
                     out = out.decode("utf-8")
                 (res_dir / f"{rel}.{ext}").write_text(out, encoding="utf-8")
 
-            data_r = viewer.get_view_data(resource_uri=uri, language=lang)
-            data_r["request"] = _FakeRequest(f"resources/{rel}.html")
-            data_r["is_static"] = True
-            data_r["resource_url"] = resource_url_resource
-            data_r["export_base"] = _local_name(uri)
-            data_r["artefact_name"] = artefact_name
+            links = _StaticLinks(graph, materialized, artefact_name, focus=uri)
+            data_r = _page_data(viewer, lang, links, uri)
             page.write_text(_minify(template_resource.render(**data_r)), encoding="utf-8")
 
-class _FakeRequest:
-    """Minimal stand-in for a web request, so the viewer templates render without a web app."""
+class _StaticLinks(Links):
+    """The addresses inside a static site, seen from the page that is being written.
 
-    def __init__(self, path: str):
-        """Build a GET request for `path` with no query parameters."""
-        self.url = _FakeURL(path)
-        self.method = "GET"
-        self.query_params = _FakeQueryParams()
-        self.is_static = True
+    A site has two kinds of page: the index, at its root, and the page of a resource, two folders
+    deep (resources/<prefix>/<name>.html). A resource that gets no page of its own, such as one only
+    the imports describe, has no address here.
+    """
 
-class _FakeQueryParams:
-    """Query parameters that are always empty: a static page has no query string."""
+    def __init__(self, graph, kept: set, artefact_name: str, focus: Optional[str] = None):
+        """`kept` holds the IRIs that get a page; `focus` is the resource this page is about, None for the index."""
+        self._graph = graph
+        self._kept = kept
+        self._name = artefact_name
+        self._focus = focus
 
-    def get(self, key: str, default: str = "") -> str:
-        """Return the default for any key."""
-        return default
+    def _up(self) -> str:
+        """The path from this page back to the root of the site."""
+        return "" if self._focus is None else "../../"
 
-    # Direct access such as request.query_params.read_as
-    def __getattr__(self, key: str) -> str:
-        """Return an empty string for any attribute."""
-        return ""
+    def _file(self, iri: str, ext: str) -> Optional[str]:
+        """The path of the file `ext` of a resource, or None when it has none."""
+        if str(iri) not in self._kept:
+            return None
+        rel = _rel_slug(iri, self._graph)
+        if rel.rsplit("/", 1)[-1] == "":       # a bare namespace IRI stands for the whole artefact
+            return f"{self._up()}{self._name}.{ext}"
+        return f"resources/{rel}.{ext}" if self._focus is None else f"../{rel}.{ext}"
 
-class _FakeURL:
-    """Minimal URL object exposing only the path, as the templates need."""
+    def resource(self, iri: str) -> Optional[str]:
+        """Return the page of a resource, or None when it has none."""
+        return self._file(iri, "html")
 
-    def __init__(self, path: str):
-        """Store the page path."""
-        self.path = path
+    def export(self, ext: str, iri: Optional[str] = None) -> Optional[str]:
+        """Return the file of the artefact, or of a resource, in the format with extension `ext`."""
+        if iri is None:
+            return f"{self._up()}{self._name}.{ext}"
+        return self._file(iri, ext)
 
-    def __str__(self) -> str:
-        """Return the page path."""
-        return self.path
+    def home(self) -> str:
+        """Return the page of the whole artefact."""
+        return f"{self._up()}{self._name}.html"

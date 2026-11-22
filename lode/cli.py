@@ -26,33 +26,24 @@ def cmd_serve(args):
 def cmd_build(args):
     """Generate the static HTML documentation for one artefact.
 
-    Reader and builder are imported lazily so that `lode serve` and `--help`
-    do not pay their import cost. Creates the output directory if missing and
+    Goes through lode.core only, imported lazily so that `lode serve` and `--help`
+    do not pay its import cost. Creates the output directory if missing and
     overwrites existing pages in it. Prints the output path on success.
     """
-    from lode.reader import Reader
-    from lode.builder import build_html
-    from lode.helpers.formats import check_format_enabled, ReadAsFormat
+    from lode.core import build_site, read
 
-    check_format_enabled(ReadAsFormat(args.read_as))
-
-    source = args.url or args.file
     out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    reader = Reader()
-    reader.load_instances(
-        source, args.read_as,
+    artefact = read(
+        args.url or args.file, args.read_as,
         imported=args.imported or None,
         closure=args.closure or None,
         partial_import=args.partial_import or None,
         warnings=args.warnings,
     )
-    viewer = reader.get_viewer()
-    build_html(viewer, out_dir, lang=args.lang, reader=reader,
-               artefact_name=args.artefact_name)
+    build_site(artefact, out_dir, lang=args.lang, artefact_name=args.artefact_name)
+
     if args.warnings:
-        warnings = viewer.format_warnings(reader.get_warnings())
+        warnings = artefact.viewer.format_warnings(artefact.warnings)
         for w in warnings:
             print(f"[{w['code']}] {w['message']}")
         if warnings:
@@ -80,7 +71,8 @@ def main():
     src = p_build.add_mutually_exclusive_group(required=True)
     src.add_argument("--url")
     src.add_argument("--file")
-    p_build.add_argument("--read-as", required=True, choices=["owl", "rdf", "skos"])
+    p_build.add_argument("--read-as", required=True,
+                         help="Artefact format: a registered profile, e.g. owl or skos")
     p_build.add_argument("--out", default="./lode_output")
     p_build.add_argument("--lang", default="en")
     p_build.add_argument("--artefact-name", default="index",

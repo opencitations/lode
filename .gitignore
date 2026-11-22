@@ -27,3 +27,7 @@ spool/
 # claude
 CLAUDE.md
 .claude/
+
+# Jupyter Book
+docs/_build/
+.ipynb_checkpoints/

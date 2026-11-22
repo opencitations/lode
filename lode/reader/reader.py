@@ -1,292 +1,870 @@
-"""Generic orchestrator that turns a loaded RDF graph into model instances.
+"""Format-independent core of the reader.
 
-The Reader sits between the Loader (parsing) and the Viewer (rendering): it
-picks the configuration for the artefact type and runs the logic phases, so
-CLI, API and viewers never depend on parsing details.
+Reader turns the triples of a graph into model entities in phases. What is
+specific to OWL, RDF or SKOS lives in the subclasses and in the YAML mapper.
 """
-from lode.reader.loader import Loader
-from lode.reader.config_manager import get_configuration
+from collections import deque
+from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
+from rdflib.collection import Collection as RDFLibCollection
+
 from lode.models import *
-from typing import Optional
-from rdflib import Graph, URIRef
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.helpers.rdf import iri_local_name, iri_namespace
 
 import logging
 logger = logging.getLogger(__name__)
 
-def _value_key(value) -> str:
-    """Comparable form of a model value: lexical form for literals, IRI otherwise."""
-    get_value = getattr(value, "get_has_value", None)
-    if get_value is not None and get_value() is not None:
-        return str(get_value())
-    get_id = getattr(value, "get_has_identifier", None)
-    if get_id is not None and get_id():
-        return str(get_id())
-    return str(value)
-
-class Reader:
+class Reader():
     """
-    Generic RDF Reader/Orchestrator.
-    
-    Responsibilities:
-    - Calls the loader to parse input RDF (via rdflib)
-    - Orchestrates Python model population phases
-    - Delegates specific logics for extraction and population to other modules
+    Common base reader for RDF parsing.
+
+    Owns the entity cache, the triples-to-entity provenance map and the
+    generic machinery (get_or_create, _populate_entity, statements);
+    subclasses implement the phases that differ between formats.
     """
-    
-    def __init__(self):
-        """Create an empty Reader; call load_instances() to populate it."""
-        self._instance_cache = {}
-        self._logic = None  # specialised logic (OWL, SKOS, RDF/RDFS)
-        self._graph = None
-        self._configuration = None
-        self._imported_uris = set()   # needed to get the model before imported/closure models
-        self._ontology_iri = None
 
-    def get_warnings(self) -> list:
-        """Return the warnings collected while reading, or [] when they were not requested."""
-        if not getattr(self, '_warnings_enabled', False):
-            return []
-        if self._logic and hasattr(self._logic, '_warnings'):
-            return self._logic._warnings
-        return []
+    def __init__(self, graph: Graph, entities: dict, configuration):
+        """Bind the reader to a graph, the shared `entities` dictionary and a config manager.
 
-    def _prioritize_documented_values(self) -> None:
-        """Reorder every multi-valued field so that values asserted by the documented
-        ontology (main named graph) come before those from imported or home graphs.
-
-        Needed because the graph does not preserve insertion order across named graphs.
-        The sort is stable: within each group the original order is kept."""
-        main = self._graph.graph(self._ontology_iri)
-        for uri, instances in self._instance_cache.items():
-            if not isinstance(uri, URIRef):
-                continue
-            local = {str(o) for o in main.objects(uri, None)}
-            
-            if not local:
-                continue
-            for instance in instances:
-                for value in vars(instance).values():
-                    if isinstance(value, list) and len(value) > 1:
-                        value.sort(key=lambda v: _value_key(v) not in local)
-
-
-    def load_instances(self, graph_path: str, read_as: str, imported=None, closure=None, partial_import=None,
-                       warnings=False, source_name: Optional[str] = None):
-        """Load an artefact and extract its model instances.
-
-        `read_as` selects the configuration (owl, rdf, skos). Imports, closure and
-        partial_import are forwarded to the Loader; `warnings` turns on the reader
-        warnings. `source_name` names the artefact when `graph_path` is only a local
-        copy of it. Blocking: it may fetch remote documents.
+        Fails fast if the config names a handler this reader does not implement.
         """
-        self._warnings_enabled = warnings
+        self.graph = graph
+        self.entities = entities
+        self._configuration = configuration
+        self._property_mapping = configuration.get_property_mapping()
+        self._triples_map = {}
+        # Statement triples grouped by subject, built on the first provenance request
+        self._statements_by_subject = None
+        # Namespaces now driven by config YAML (key: 'namespaces')
+        self._allowed_namespaces = self._get_allowed_namespaces()
+        # Validate all handlers declared in config exist on this entity
+        self._validate_handlers()
+        # The reader warnings found while extracting: read by the reader and by the checks
+        # of the profile, never by the viewers (they get them through the artefact).
+        self.warnings = []
 
-        # 1. Generic parsing
-        loader = Loader(graph_path, imported=imported, closure=closure, partial_import=partial_import,
-                        source_name=source_name)
-        self._graph = loader.get_graph()
-        self._ontology_iri = loader.ontology_iri
-        
-        # 1.5 saves the imported/closure uris to be reused in viewer so the model metadata are not overwritten 
-        self._imported_uris = getattr(loader, "imported_uris", set())
+    def add_warning(self, code, subject, message):
+        """Record a reader warning with a machine-readable code, its subject and a message."""
+        self.warnings.append({'code': code, 'subject': str(subject), 'message': message})
 
-        # 2. Select the configuration for the artefact type
-        self._configuration = get_configuration(read_as)
-        
-        # 3. Create the specialised logic
-        self._logic = self._configuration.create_logic(self._graph, self._instance_cache)
-
-        # 4. Run the extraction phases
-        self._extract_instances()
-
-        # 5. Documented ontology first (only when a module is active)
-        if isinstance(self._graph, ProvenanceGraph):
-            self._prioritize_documented_values()
-
-    
-    def get_instance(self, uri: str, instance_type=None):
-        """Return the instances registered under an IRI.
-
-        With `instance_type`, only the first instance of that type (or None);
-        otherwise the whole set. Returns None when the IRI is unknown.
+    def _get_allowed_namespaces(self) -> set:
         """
-        uri_identifier = None
-        
-        for identifier in self._instance_cache.keys():
-            if str(identifier) == uri:
-                uri_identifier = identifier
-                break
-        
-        if uri_identifier is None:
-            return None
-        
-        instances = self._instance_cache[uri_identifier]
-        
-        if instance_type is None:
-            return instances
-        
-        for instance in instances:
-            if isinstance(instance, instance_type):
-                return instance
-        
+        Reads namespaces from config YAML key 'namespaces'.
+        Subclasses do NOT need to override this anymore.
+        """
+        return set(self._configuration.config.get('namespaces', []))
+    
+
+# ==========================================================================
+# READER PHASES
+# ==========================================================================
+
+    # Classes that exist only as blank nodes: in phase 1 an IRI is never given one of them.
+    _BNODE_ONLY_CLASSES: tuple = ()
+    # Class given in phase 5 to the IRIs no earlier phase classified. A format that
+    # types them differently overrides it (OWL: Individual); None turns the fallback off.
+    _FALLBACK_CLASS = Resource
+
+    def phase1_classify_from_predicates(self):
+        """Phase 1: create entities for subjects whose predicates reveal their class.
+
+        A subject that uses a mapped predicate gets the class the YAML implies for it
+        (classify_by_predicate), even without an rdf:type. IRIs are created while
+        scanning; blank nodes are collected and created at the end. A format with
+        constructs of its own extends this method and calls super() first. A format
+        that does not classify from predicates at all overrides the whole phase
+        (SKOS does).
+        """
+        classified = {}
+        # a node uses several mapped predicates: classify it once, not once per predicate
+        tried = set()
+
+        for pred in self._property_mapping:
+            for node in self.graph.subjects(pred, None):
+                if node in self.entities or node in tried:
+                    continue
+                tried.add(node)
+                python_class = self._configuration.classify_by_predicate(node, self.graph)
+                if not python_class:
+                    continue
+                if isinstance(node, BNode):
+                    classified.setdefault(node, python_class)
+                elif isinstance(node, URIRef) and not issubclass(python_class, self._BNODE_ONLY_CLASSES):
+                    self.get_or_create(node, python_class, populate=False)
+
+        for bnode, python_class in classified.items():
+            self.get_or_create(bnode, python_class, populate=False)
+
+
+    def phase2_create_from_types(self):
+        """Phase 2: create entities from the rdf:type declarations of the graph.
+
+        Every subject typed with a type the YAML maps gets an entity of the mapped
+        class, and the triple that says so becomes part of its provenance. The static
+        setters of the mapping (constants such as set_is_ordered: True) are applied to
+        every entity of the subject, also to one created by phase 1. A format with
+        more to do for its types extends this and calls super() first.
+        """
+        type_mapping = self._configuration.get_type_mapping()
+
+        for rdf_type, config in type_mapping.items():
+            py_class = config.get('target_class')
+            if not py_class:
+                continue
+            for uri in self.graph.subjects(RDF.type, rdf_type):
+                inst = self.get_or_create(uri, py_class, populate=False)
+                if inst is not None:
+                    self._track(inst, (uri, RDF.type, rdf_type))
+                # Apply static setters (e.g. set_is_transitive: True) always,
+                # even if entity already existed in cache from phase1.
+                if 'setters' in config:
+                    for entity in self.entities.get(uri, set()):
+                        self._apply_setters_immediate(entity, config['setters'])
+
+
+    def phase3_populate_properties(self):
+        """Phase 3: fill every entity from its triples, through the property mapping.
+
+        Every cached entity goes through _populate_entity, which sends each
+        predicate to the setters or handlers declared in the YAML mapper. A format
+        overrides this only to add steps, and calls super() first.
+        """
+        for uri in list(self.entities.keys()):
+            # both levels are copied: populating an entity can add new ones to the cache
+            for entity in list(self.entities[uri]):
+                self._populate_entity(entity, uri)
+
+    def phase4_process_group_axioms(self):
+        """Phase 4: process axioms that involve several entities at once (e.g. AllDisjointClasses).
+
+        Driven by the 'enricher' section of the YAML: each entry maps an rdf:type to
+        the name of a handler, which receives every subject of that type. A format
+        with no group axioms of its own can keep the default, or override it with a
+        no-op when the inherited entries do not apply.
+        """
+        for axiom_type, handler_name in self._configuration.get_group_axioms().items():
+            for uri in self.graph.subjects(RDF.type, axiom_type):
+                # the handler is guaranteed to exist: _validate_handlers checks it at init
+                getattr(self, handler_name)(uri)
+
+    def phase5_fallback(self):
+        """Phase 5: give a class (and the format defaults) to whatever is still unclassified.
+
+        Every IRI subject that no earlier phase classified becomes an entity of
+        _FALLBACK_CLASS, populated like any other. IRIs of the format's own
+        vocabularies are skipped: they are the language, not data. A format extends
+        this and calls super() first, so its own defaults reach the new entities too.
+        """
+        if self._FALLBACK_CLASS is None:
+            return
+
+        vocabularies = tuple(self._allowed_namespaces)
+        # set(): each subject once, and a stable list while entities are created
+        for subj in set(self.graph.subjects()):
+            if (isinstance(subj, URIRef) and subj not in self.entities
+                    and not str(subj).startswith(vocabularies)):
+                self.get_or_create(subj, self._FALLBACK_CLASS)
+
+    def phase6_create_statements(self):
+        """Phase 6: reify every triple no earlier phase consumed as a Statement.
+
+        Structural list triples and structural vocabulary subjects without a type
+        are skipped; triples already tracked by an entity are not duplicated.
+        """
+        for subj, pred, obj in self.graph:
+            if pred in [RDF.first, RDF.rest, RDF.nil, OWL.distinctMembers, OWL.members]:
+                continue
+            if isinstance(subj, URIRef):
+                subj_str = str(subj)
+                # structural entities from taken namespaces are not used for statements 
+                if any(subj_str.startswith(ns) for ns in self._allowed_namespaces):
+                    if not any(True for _ in self.graph.objects(subj, RDF.type)):
+                        continue
+            if self._is_triple_mapped(subj, pred, obj):
+                continue
+            self._create_statement_for_triple(subj, pred, obj)
+
+    # ========== CONFIG -> READER VALIDATION ==========
+
+    def _validate_handlers(self):
+        """
+        Fail-fast: check that every handler declared in the config
+        exists as a method on this Reader entity.
+        Raises AttributeError immediately, before any parsing.
+        """
+        errors = []
+
+        for uri_str, cfg in self._configuration.config.get('mapper', {}).items():
+            handler_name = cfg.get('handler')
+            if handler_name and not hasattr(self, handler_name):
+                errors.append(
+                    f"mapper['{uri_str}'].handler='{handler_name}' "
+                    f"not found on {type(self).__name__}"
+                )
+
+        for uri_str, handler_name in self._configuration.config.get('enricher', {}).items():
+            if isinstance(handler_name, str) and not hasattr(self, handler_name):
+                errors.append(
+                    f"enricher['{uri_str}']='{handler_name}' "
+                    f"not found on {type(self).__name__}"
+                )
+
+        if errors:
+            raise AttributeError(
+                f"Config/Reader contract violations in {type(self).__name__}:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
+
+    # ========== PROVENANCE ========== (note: _triples_map is written only by these three methods.)
+
+    def _track(self, entity, *triples):
+        """Attribute one or more triples to the provenance of `entity`."""
+        self._triples_map.setdefault(entity, set()).update(triples)
+
+    def _move_tracking(self, old, new):
+        """Move the provenance from `old` to `new` when an entity is promoted or replaced."""
+        if old in self._triples_map:
+            self._triples_map.setdefault(new, set()).update(self._triples_map.pop(old))
+
+    # ========== UTILITIES ==========
+
+    def _apply_setters_immediate(self, entity, setters_config):
+        """Apply the static setter values of a mapping directly to an entity.
+
+        No RDF object is resolved: this is for the constants declared next to an
+        'is: class' entry (set_is_symmetric: True) and used in phase 2.
+        """
+        for setter_item in setters_config:
+            if isinstance(setter_item, dict):
+                for setter_name, value in setter_item.items():
+                    if hasattr(entity, setter_name):
+                        getattr(entity, setter_name)(value)
+            else:
+                if hasattr(entity, setter_item):
+                    getattr(entity, setter_item)()
+
+
+    def _traverse_hierarchy(
+        self,
+        start: object,
+        next_getter: str,
+        direction: str = "up",          # "up" | "down" | "both"
+        collect: callable = None,       # (node) -> value | None  — stops and returns when not None
+        visit_all: callable = None,     # (node) -> None          — visits every node without stopping
+    ) -> object | None:
+        """
+        Generic BFS traversal along a property hierarchy.
+
+        Parameters
+        ----------
+        start        : starting node (Python model entity)
+        next_getter  : name of the getter that returns the next nodes in the
+                    'up' direction (e.g. 'get_is_sub_property_of').
+                    For 'down' the cache is scanned for entities that list
+                    `start` as one of their `next_getter` targets.
+        direction    : 'up'   - follow next_getter only
+                    'down' - scan cache for reverse links only
+                    'both' - up first, then down
+        collect      : callable(node) -> value | None
+                    Called on every visited node (including start).
+                    When it returns a non-None value the traversal stops
+                    immediately and that value is returned.
+        visit_all    : callable(node) -> None
+                    Called on every visited node; traversal never stops early.
+                    Mutually exclusive with collect (collect takes priority).
+
+        Returns the first non-None value from collect, or None if visit_all is used.
+        """
+        visited = set()
+        queue = deque([start])
+        result = None
+        children = None     # reverse index, built once per call and only for "down"
+
+        while queue:
+            current = queue.popleft()
+            if id(current) in visited:
+                continue
+            visited.add(id(current))
+
+            # --- collect / visit ---
+            if collect:
+                value = collect(current)
+                if value is not None:
+                    return value
+            elif visit_all:
+                visit_all(current)
+
+            # --- enqueue next nodes ---
+            if direction in ("up", "both"):
+                getter = getattr(current, next_getter, None)
+                if getter:
+                    nexts = getter()
+                    if nexts:
+                        if not isinstance(nexts, list):
+                            nexts = [nexts]
+                        queue.extend(nexts)
+
+            if direction in ("down", "both"):
+                if children is None:
+                    # one scan of the cache instead of one per visited node
+                    children = {}
+                    for instances_set in self.entities.values():
+                        for inst in instances_set:
+                            getter = getattr(inst, next_getter, None)
+                            if getter:
+                                parents = getter() or []
+                                if not isinstance(parents, list):
+                                    parents = [parents]
+                                for p in {id(p): p for p in parents}.values():
+                                    children.setdefault(id(p), []).append(inst)
+                for inst in children.get(id(current), ()):
+                    if inst is not current and id(inst) not in visited:
+                        queue.append(inst)
+
         return None
-    
-    def get_instances(self) -> dict:
-        """Group all instances by model class name; literal cache entries are skipped."""
-        grouped = {}
-        
-        for uri_identifier, instances in self._instance_cache.items():
-            if isinstance(uri_identifier, str) and uri_identifier.startswith("LITERAL::"):
+
+    def _create_literal(self, rdflib_literal):
+        """Return the model Literal for an rdflib literal, one per distinct lexical form.
+
+        The entity is cached under a LITERAL:: key built from lexical form, language
+        and datatype: two literals with the same text but a different language tag
+        or datatype are different values and must not share one entity.
+        """
+        literal_key = (
+            f"LITERAL::{rdflib_literal}"
+            f"@{rdflib_literal.language or ''}"
+            f"^^{rdflib_literal.datatype or ''}"
+        )
+        if literal_key in self.entities:
+            return next(iter(self.entities[literal_key]))
+
+        literal = Literal()
+        literal.set_has_value(str(rdflib_literal))
+
+        if rdflib_literal.language:
+            literal.set_has_language(rdflib_literal.language)
+
+        if rdflib_literal.datatype:
+            dt = self.get_or_create(rdflib_literal.datatype, Datatype)
+            if dt:
+                literal.set_has_type(dt)
+
+        self.entities[literal_key] = {literal}
+        return literal
+
+    def _is_rdf_collection(self, node: Node) -> bool:
+        """Return True if the node is the head of an RDF list (it has an rdf:first)."""
+        return (node, RDF.first, None) in self.graph
+
+    def _entity_matches_target(self, entity, target_classes: list) -> bool:
+        """Return True if the entity is of one of the target classes, or a subclass of one."""
+        instance_class = entity.__class__
+        if instance_class in target_classes:
+            return True
+        for parent_class in instance_class.__mro__[1:]:
+            if parent_class in target_classes:
+                return True
+        return False
+
+    def _resolve_target_class(self, obj, candidates: list) -> type:
+        """Pick, among the candidate model classes, the one `obj` is declared as.
+
+        An entity already cached for `obj` wins (punning keeps its class); 
+        otherwise falls back to Resource.
+        """
+        cached = {type(c) for c in self.entities.get(obj, ())}
+        return next((c for c in candidates if c in cached), Resource)
+
+
+    def _add_link(self, target, setter_name: str, value) -> None:
+        """Call `target.<setter_name>(value)` unless `value` is already linked.
+
+        The model setters for match relations append blindly, so when both sides of a
+        link are in the data (A broadMatch B, B narrowMatch A) the check here keeps
+        each side listed once. Targets without that setter are skipped silently: the
+        inverse is optional, e.g. for a Restriction or TruthFunction.
+        """
+        if not hasattr(target, setter_name):
+            return
+        getter = getattr(target, setter_name.replace('set_', 'get_', 1), None)
+        current = getter() if getter else None
+        if isinstance(current, (list, tuple, set)) and value in current:
+            return
+        getattr(target, setter_name)(value)
+
+
+    def _apply_setters(self, entity, setters_config, obj):
+        """Call the setters declared in the config on `entity`, using `obj` as the value.
+
+        Per entry: 'Literal' builds a Literal from obj; a bool or a string is passed
+        as a constant; a model class resolves obj to an entity of that class (the
+        punned entity of the same class if one is cached); anything else passes
+        obj as is. An entry with no value calls the setter with no argument.
+        Structural vocabulary URIs are never added to has_type.
+
+        A dict value is the long form: targets is the class, inverse_of the 
+        setter called on the target to register the subject back.
+        """
+        for setter_item in setters_config:
+            if isinstance(setter_item, dict):
+                for setter_name, value_type in setter_item.items():
+                    if not hasattr(entity, setter_name):
+                        continue
+                    setter = getattr(entity, setter_name)
+                    # extracts declarative inverses (implicit)
+                    inverse_name = None
+                    if isinstance(value_type, dict):
+                        inverse_name = value_type.get('inverse_of')
+                        value_type = value_type['targets']
+                    if isinstance(value_type, list):
+                        value_type = self._resolve_target_class(obj, value_type)
+                    if value_type == 'Literal':
+                        try:
+                            setter(self._create_literal(obj))
+                        except:
+                            continue
+                    elif isinstance(value_type, bool):
+                        setter(value_type)
+                    elif isinstance(value_type, str):
+                        setter(value_type)
+                    elif isinstance(value_type, type):
+                        # Don't add structural OWL/RDFS/RDF URIs to has_type
+                        if setter_name == 'set_has_type' and isinstance(obj, URIRef):
+                            obj_str = str(obj)
+                            if any(obj_str.startswith(ns) for ns in self._allowed_namespaces) and obj not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
+                                continue
+                        # punning: prefer the entity of obj with the same class as the subject
+                        obj_instance = next(
+                            (c for c in self.entities.get(obj, ())
+                             if type(c) is type(entity) and isinstance(c, value_type)),
+                            None
+                        ) or self.get_or_create(obj, value_type)
+                        if not obj_instance:
+                            continue
+                        if inverse_name:
+                            self._add_link(entity, setter_name, obj_instance)
+                            self._add_link(obj_instance, inverse_name, entity)
+                        else:
+                            setter(obj_instance)
+                    else:
+                        setter(obj)
+            else:
+                if hasattr(entity, setter_item):
+                    getattr(entity, setter_item)()
+
+    def _handle_collection_object(self, entity, predicate, collection_uri):
+        """Resolve an RDF list used as an object and pass its members to the first matching setter.
+
+        Failures are logged and swallowed: one malformed list must not stop the read.
+        """
+        try:
+            collection = RDFLibCollection(self.graph, collection_uri)
+            items = []
+            for item in collection:
+                if isinstance(item, RDFlibLiteral):
+                    items.append(self._create_literal(item))
+                else:
+                    item_instance = self.get_or_create(item, Resource)
+                    if item_instance:
+                        items.append(item_instance)
+
+            config = self._property_mapping.get(predicate, {})
+            for setter_item in config.get('setters', []):
+                if isinstance(setter_item, dict):
+                    for setter_name in setter_item:
+                        if hasattr(entity, setter_name):
+                            getattr(entity, setter_name)(items)
+                            break
+        except Exception:
+            logger.warning("Collection handling failed on %s (predicate %s)",
+                           entity, predicate, exc_info=True)
+
+    # ========== READER CORE ==========
+
+    def get_or_create(self, id: Node, python_class: type = None, populate: bool = True):
+        """Return the model entity for a node, creating (and populating) it when needed.
+
+        Literals go through _create_literal; built-in datatypes and undeclared XSD
+        terms are always Datatype. A cached entity is reused; a single cached
+        entity of a broader class is promoted to the requested one, so punning
+        keeps working. Returns None, after logging, when creation fails.
+        """
+        try:
+            
+            if isinstance(id, RDFlibLiteral):
+                return self._create_literal(id)
+
+            DATATYPE_BUILTINS = frozenset({
+            RDFS.Literal, RDF.XMLLiteral, RDF.HTML,
+            RDF.PlainLiteral, RDF.langString, RDF.JSON,
+            OWL.real, OWL.rational
+            })
+
+            if isinstance(id, URIRef):
+                if id in DATATYPE_BUILTINS:
+                    python_class = Datatype  # built-ins: always Datatype, no exceptions
+                elif str(id).startswith(str(XSD)) and str(id) != str(XSD):
+                    if (id, RDF.type, None) not in self.graph:
+                        python_class = Datatype  # XSD: only if explicitly declared as something else
+
+            # Individual punning: do not override existing non-Individual types
+            if python_class == Individual and id in self.entities:
+                is_named_individual = (id, RDF.type, OWL.NamedIndividual) in self.graph
+                if not is_named_individual:
+                    for existing in self.entities[id]:
+                        if not isinstance(existing, Individual):
+                            return existing
+
+            if id in self.entities:
+                if isinstance(id, BNode):
+                    return next(iter(self.entities[id]))
+                if isinstance(id, URIRef):
+                    for obj in self.entities[id]:
+                        if isinstance(obj, python_class):
+                            return obj
+                    # Promote only if there is exactly one cached entity and
+                    # the requested class is strictly more specific than it
+                    # so punning is mantained
+                    cached = list(self.entities[id])
+                    if len(cached) == 1 and issubclass(python_class, type(cached[0])):
+                        old = cached[0]
+                        new = python_class()
+                        new.__dict__.update(old.__dict__)
+                        self.entities[id].discard(old)
+                        self.entities[id].add(new)
+                        self._move_tracking(old, new)
+                        return new
+
+            entity = python_class()
+            if id not in self.entities:
+                self.entities[id] = set()
+            self.entities[id].add(entity)
+            entity.set_has_identifier(str(id))
+
+            if populate:
+                self._populate_entity(entity, id)
+
+            return entity
+
+        except Exception:
+            logger.warning("Cannot create %s for %s",
+                           python_class.__name__ if python_class else "Unknown", id, exc_info=True)
+            return None
+
+    def _populate_entity(self, entity, uri: Node):
+        """Fill an entity from the triples of `uri`, following the property mapping.
+
+        Only predicates in the allowed namespaces are read. A configured handler or
+        setters list runs for each predicate; failures are logged and skipped. Every
+        handled triple is recorded in the provenance map, except the rdf:type that
+        selected the entity's class.
+        """
+        if isinstance(uri, URIRef):
+            entity.set_has_identifier(str(uri))
+        elif isinstance(uri, BNode):
+            entity.has_identifier = str(uri)
+
+        for predicate, obj in self.graph.predicate_objects(uri):
+            if iri_namespace(str(predicate)) not in self._allowed_namespaces:
                 continue
-            
-            instances_list = instances if isinstance(instances, set) else [instances]
-            
-            for instance in instances_list:
-                class_name = instance.__class__.__name__
-                if class_name not in grouped:
-                    grouped[class_name] = []
-                grouped[class_name].append(instance)
-        
-        return grouped
-    
-    def get_triples_for_instance(self, instance):
-        """Return the RDF triples that produced a model instance (empty set if unknown)."""
-        if self._logic and hasattr(self._logic, '_triples_map'):
-            return self._logic._triples_map.get(instance, set())
-        return set()
 
-    def get_all_triples_map(self) -> dict:
-        """Return the full instance -> triples map (empty dict if no logic is loaded)."""
-        if self._logic and hasattr(self._logic, '_triples_map'):
-            return self._logic._triples_map
-        return {}
+            handled = False
+            config = self._property_mapping.get(predicate)
 
-    def get_main_graph(self) -> Graph:
-        """Return the triples of the loaded artefact only, as a plain Graph view.
+            if config is not None:
+                target_classes = config.get('target_classes', [])
+                if target_classes and not self._entity_matches_target(entity, target_classes):
+                    continue
 
-        Imported and partially imported ontologies are left out: this is what
-        exports and content negotiation must return. Without modules it is the
-        loaded graph itself.
+                if 'handler' in config:
+                    try:
+                        # An explicit False means "not admissible for this entity".
+                        result = getattr(self, config['handler'])(entity, uri, predicate, obj, None)
+                        handled = result is not False
+                    except Exception:
+                        logger.warning("Handler %s failed on %s (predicate %s)",
+                                       config['handler'], uri, predicate, exc_info=True)
+                elif 'setters' in config:
+                    try:
+                        self._apply_setters(entity, config['setters'], obj)
+                        handled = True
+                    except Exception:
+                        logger.warning("Setters failed on %s (predicate %s)",
+                                       uri, predicate, exc_info=True)
+
+            if not handled and config is None and self._is_rdf_collection(obj):
+                self._handle_collection_object(entity, predicate, obj)
+                handled = True
+
+            if handled and not (predicate == RDF.type and obj in self._configuration.get_type_mapping()):
+                self._track(entity, (uri, predicate, obj))
+
+    # ========== HELPERS ==========
+
+    def _is_triple_mapped(self, subj, pred, obj) -> bool:
+        """Return True if some entity already tracks this triple in its provenance."""
+        if subj not in self.entities:
+            return False
+        entities = self.entities[subj]
+        instances_list = entities if isinstance(entities, set) else [entities]
+        for entity in instances_list:
+            if entity in self._triples_map:
+                if (subj, pred, obj) in self._triples_map[entity]:
+                    return True
+        return False
+
+    def _convert_collection_to_container(self, collection_uri):
+        """Return the Container that represents an RDF list, building and caching it once.
+
+        The container is cached before its members are resolved, so a list that
+        contains itself cannot loop forever.
         """
-        if isinstance(self._graph, ProvenanceGraph):
-            return self._graph.graph(self._ontology_iri)
-        return self._graph
+        if collection_uri in self.entities:
+            for cached in self.entities[collection_uri]:
+                if isinstance(cached, Container):
+                    return cached
 
-    def get_provenance_subgraph(self, instance):
-        """Return the rdflib.Graph subgraph that provenanced `instance`."""
-        if self._logic and hasattr(self._logic, 'build_provenance_subgraph'):
-            return self._logic.build_provenance_subgraph(instance)
-        return Graph()
-    
-     
-    # function reused by the api to push instances
-    def to_dict(self, instance) -> dict:
-        """Serialize a model instance into a JSON-friendly dict, including its RDF triples.
+        container = Container()
+        container.set_has_identifier(str(collection_uri))
 
-        Empty values are left out of "properties"; every value is converted to a string.
+        if collection_uri not in self.entities:
+            self.entities[collection_uri] = set()
+        self.entities[collection_uri].add(container)
+
+        try:
+            collection = RDFLibCollection(self.graph, collection_uri)
+            members = []
+            for item in collection:
+                if isinstance(item, RDFlibLiteral):
+                    members.append(self._create_literal(item))
+                else:
+                    member_instance = self.get_or_create(item, Resource)
+                    if member_instance:
+                        members.append(member_instance)
+            container.set_has_members(members)
+        except Exception:
+            logger.warning("Collection to container conversion failed for %s",
+                           collection_uri, exc_info=True)
+
+        return container
+
+    def _create_statement_for_triple(self, subj, pred, obj):
+        """Reify one triple as a Statement, unless its predicate is already mapped.
+
+        Lists in object position become Containers and literals become Literals.
         """
-        result = {
-            "instance": str(instance),
-            "type": type(instance).__name__,
-            "uri": str(instance.has_identifier) if instance.has_identifier else None,
-            "properties": {},
-            "rdf_triples": []
-        }
-        
-        # Serialize the instance properties
-        for attr_name in instance.__dict__.keys():
-            value = getattr(instance, attr_name)
-            # removes empty values from the properties
-            if value is not None and not (isinstance(value, (list, set)) and not value):
-                result["properties"][attr_name] = str(value)
-        
-        # Add the associated RDF triples
-        triples = self.get_triples_for_instance(instance)
-        for s, p, o in triples:
-            triple_dict = {
-                "subject": str(s),
-                "predicate": str(p),
-                "object": str(o)
-            }
-            result["rdf_triples"].append(triple_dict)
-        
-        return result
 
-    # def _serialize_value(self, value):
-    #     """Convert a value into a JSON-friendly form, recursing into lists and sets."""
-    #     if isinstance(value, (str, int, float, bool)):
-    #         return value
-    #     elif isinstance(value, (list, set)):
-    #         return [self._serialize_value(v) for v in value]
-    #     elif hasattr(value, 'uri'):
-    #         return str(value.uri)
-    #     else:
-    #         return str(value)
-        
-    def get_viewer(self):
-        """Return the viewer matching the loaded artefact type.
-
-        Raises ValueError if load_instances() has not been called yet.
-        """
-        if not self._configuration:
-            raise ValueError("No configuration loaded. Call load_instances() first.")
-
-        return self._configuration.create_viewer(self)
-    
-    def clear_cache(self):
-        """Drop every cached instance, in the Reader and in its logic."""
-        self._instance_cache.clear()
-        if self._logic:
-            self._logic.clear_cache()
-    
-    # ==================== EXTRACTION (ORCHESTRATION) ====================
-    
-    def _extract_instances(self):
-        """Run the extraction phases in order, delegating each one to the logic.
-
-        Phases 1-4 depend on the artefact type; fallback, statements and
-        namespaces are shared. Post-pipeline warning checks run only when enabled.
-        """        
-        # PHASES 1-4: delegated to the specific logic
-        self._logic.phase1_classify_from_predicates()
-        self._logic.phase2_create_from_types()
-        self._logic.phase3_populate_properties()
-        self._logic.phase4_process_group_axioms()
-        
-        # PHASE 5: fallback (shared)
-        self._logic.phase5_fallback()
-        
-        # PHASE 6: statements
-        self._logic.phase6_create_statements()
-
-        # FASE 7: Namespaces 
-        self._logic.populate_namespaces()
-
-        # Post-pipeline warning checks
-        if self._warnings_enabled:
-            from lode.reader.warnings import owl_warnings
-            owl_warnings.run_post_checks(self._logic)
-
-            if self._logic._warnings:
-                logger.warning("%d reader warnings", len(self._logic._warnings))
-                # details only at DEBUG: the viewer words them with display names
-                # for popups, report and CLI, so raw model names would be confusing
-                for w in self._logic._warnings:
-                    logger.debug("[%s] %s", w['code'], w['message'])
-    
-    def _phase5_fallback(self):
-        """Fallback per risorse non categorizzate (comune)"""
-        
-        fallback_class = self._configuration.get_fallback_class()
-        if not fallback_class:
-            logger.warning("No fallback class configured")
+        if pred in self._property_mapping:
             return
         
-        all_subjects = set(self._graph.subjects())
-        fallback_count = 0
-        
-        for subj in all_subjects:
-            if subj not in self._instance_cache:
-                self._logic.get_or_create(subj, fallback_class)
-                fallback_count += 1
+        statement = Statement()
+        stmt_bnode = BNode()
+        statement.set_has_identifier(str(stmt_bnode))
+
+        self._track(statement, (subj, pred, obj))
+
+        subj_obj = self.get_or_create(subj, Resource)
+        if subj_obj:
+            statement.set_has_subject(subj_obj)
+
+        pred_inst = self.get_or_create(pred, Property)
+        if pred_inst:
+            statement.set_has_predicate(pred_inst)
+
+        if self._is_rdf_collection(obj):
+            obj_inst = self._convert_collection_to_container(obj)
+        elif isinstance(obj, RDFlibLiteral):
+            obj_inst = self._create_literal(obj)
+        else:
+            obj_inst = self.get_or_create(obj, Resource)
+
+        if obj_inst:
+            statement.set_has_object(obj_inst)
+
+        if stmt_bnode not in self.entities:
+            self.entities[stmt_bnode] = set()
+        self.entities[stmt_bnode].add(statement)
+
+    def _is_unmapped_structured_bnode(self, node) -> bool:
+        """A BNode is a structured Statement value if:
+        - it's a BNode (not URIRef, not Literal)
+        - it's not already classified by any phase (a bare Resource in the cache is
+        only a placeholder made by a mapped predicate such as rdfs:seeAlso)
+        - it has at least one outgoing triple
+        - none of its outgoing predicates carry a useful rdf:type for our model
+        (i.e. it's not declaring itself as a typed entity)
+        """
+        if not isinstance(node, BNode):
+            return False
+        if any(type(i) is not Resource for i in self.entities.get(node, ())):
+            return False
+        has_out = False
+        for _ in self.graph.predicate_objects(node):
+            has_out = True
+            break
+        if not has_out:
+            return False
+        # if it declares an rdf:type that we know how to map, leave it alone
+        for t in self.graph.objects(node, RDF.type):
+            if t in self._configuration.get_type_mapping():
+                return False
+        return True
+
+    def _create_nested_statement(self, node):
+        """Materialises an unmapped structured BNode as a Statement whose own
+        triples become its annotations. Recurses for nested structured BNodes.
+        """
+        statement = Statement()
+        statement.set_has_identifier(str(node))
+
+        # drop the placeholder Resource: the node is represented by the Statement
+        self.entities[node] = {statement}
+
+        for p, o in self.graph.predicate_objects(node):
+            self._track(statement, (node, p, o))
+
+            # The predicate becomes an Annotation if not otherwise known
+            if p in self.entities:
+                pred_inst = next(
+                    (i for i in self.entities[p] if isinstance(i, Property)),
+                    None
+                )
+            else:
+                pred_inst = None
+            if pred_inst is None:
+                pred_inst = Annotation()
+                pred_inst.set_has_identifier(str(p))
+                self.entities.setdefault(p, set()).add(pred_inst)
+
+            # Resolve the object recursively
+            if self._is_rdf_collection(o):
+                o_inst = self._convert_collection_to_container(o)
+            elif isinstance(o, RDFlibLiteral):
+                o_inst = self._create_literal(o)
+            elif self._is_unmapped_structured_bnode(o):
+                o_inst = self._create_nested_statement(o)
+            else:
+                o_inst = self.get_or_create(o, Resource)
+
+            # The first (predicate, object) pair fills the Statement slots;
+            # additional pairs are stored as side annotations on the Statement
+            # itself via setattr (a Statement keeps its own __dict__).
+            if statement.get_has_predicate() is None:
+                statement.set_has_predicate(pred_inst)
+                if o_inst:
+                    statement.set_has_object(o_inst)
+            else:
+                # extra triples live as ad-hoc attributes keyed by the predicate label
+                attr_name = iri_local_name(p) # rdf helper
+                existing = getattr(statement, attr_name, None)
+                if existing is None:
+                    setattr(statement, attr_name, o_inst)
+                elif isinstance(existing, list):
+                    existing.append(o_inst)
+                else:
+                    setattr(statement, attr_name, [existing, o_inst])
+
+        return statement
+
+    def _get_punning_dominant(self, uri):
+        """Return the entity that wins when an IRI is used as several things (punning).
+
+        The winner follows the config's punning priority; with no match, any cached one.
+        """
+        if uri not in self.entities:
+            return None
+        cached = self.entities[uri]
+        if not cached:
+            return None
+        if len(cached) == 1:
+            return next(iter(cached))
+        priority = self._configuration.get_punning_priority()
+        for cls in priority:
+            for inst in cached:
+                if type(inst) is cls:
+                    return inst
+        return next(iter(cached))
+
+    def _is_punning_subordinate(self, entity, uri):
+        """Return True if `entity` loses against another entity of the same IRI."""
+        dom = self._get_punning_dominant(uri)
+        return dom is not None and dom is not entity
+
+    # ========== PROVENANCE SUBGRAPH ==========
+
+    def build_provenance_subgraph(self, entity):
+        """
+        Build the RDF subgraph that provenanced `entity`:
+        - direct triples from _triples_map[entity]
+        - BNode-transitive closure on object positions
+        - reified Statements with `entity` as has_subject
+        - format-specific axioms (hook: _add_axiom_provenance)
+
+        No prefix is bound on the subgraph: callers only iterate its triples, and
+        Artefact.with_provenance binds the artefact prefixes on the graph it serializes.
+        Binding them here cost one bind per prefix per entity, the largest share of
+        the provenance time in a static build.
+        """
+        from rdflib import Graph, BNode
+
+        sub = Graph(bind_namespaces="none")
+
+        # 1. direct triples
+        source_triples = self._triples_map.get(entity, set())
+        for t in source_triples:
+            sub.add(t)
+
+        # 2. BNode-transitive closure on objects
+        seen = set()
+        for (_s, _p, o) in source_triples:
+            if isinstance(o, BNode):
+                self._expand_bnode_into(o, sub, seen)
+
+        # 3. reified Statements pointing at entity
+        for other_triples in self._get_statements_by_subject().get(id(entity), ()):
+            for t in other_triples:
+                sub.add(t)
+                _, _, o = t
+                if isinstance(o, BNode) and o not in seen:
+                    self._expand_bnode_into(o, sub, seen)
+
+        # 4. format-specific axioms (hook)
+        self._add_axiom_provenance(entity, sub)
+
+        return sub
+
+    def _get_statements_by_subject(self) -> dict:
+        """Group the triples of every reified Statement by the id of its subject entity.
+
+        Built once, on the first provenance request, so each request is a lookup instead of
+        a scan of the whole triples map (quadratic in a static build). The map is complete
+        by then: provenance is only asked for after the extraction phases.
+        """
+        if self._statements_by_subject is None:
+            index = {}
+            for inst, triples in self._triples_map.items():
+                if isinstance(inst, Statement):
+                    subject = inst.get_has_subject()
+                    if subject is not None:
+                        index.setdefault(id(subject), []).append(triples)
+            self._statements_by_subject = index
+        return self._statements_by_subject
+
+    def _expand_bnode_into(self, bn, sub, seen):
+        """Add `bn` and its BNode-transitive closure to `sub`."""
+        from rdflib import BNode
+        stack = [bn]
+        while stack:
+            n = stack.pop()
+            if n in seen:
+                continue
+            seen.add(n)
+            for p, o in self.graph.predicate_objects(n):
+                sub.add((n, p, o))
+                if isinstance(o, BNode) and o not in seen:
+                    stack.append(o)
+
+    def _add_axiom_provenance(self, entity, sub):
+        """Hook for subclasses. Default: no format-specific axioms."""
+        pass
+    

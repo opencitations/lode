@@ -26,7 +26,11 @@ def minify(html: str) -> str:
         r'<(span|div|a|p)\b[^>]*\brender-markdown\b[^>]*>.*?</\1>',
         _hold, html, flags=re.S,
     )
+    
+    def _restore(m: re.Match) -> str:
+        """Return the protected block that a placeholder stands for."""
+        return stash[int(m.group(1))]
+
     out = minify_html.minify(protected, minify_css=False, minify_js=False)
-    for i, block in enumerate(stash):
-        out = out.replace(f"\x00MD{i}\x00", block)
-    return out
+    # One pass: replacing block by block rescanned the whole page once per block.
+    return re.sub(r"\x00MD(\d+)\x00", _restore, out)

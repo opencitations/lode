@@ -1,5 +1,9 @@
 # Docker
 
+:::{note} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 The image listens on port `8080`.
 
 ## Quick start

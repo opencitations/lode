@@ -38,6 +38,17 @@ class ArtefactUnavailableError(LODEError):
     """
     pass
 
+class BuildCapacityError(LODEError):
+    """The service cannot start a static-site build right now (no free slot or no disk quota).
+
+    `retry_after` is the number of seconds the client should wait before retrying.
+    """
+
+    def __init__(self, message: str, retry_after: int, context: Optional[dict] = None):
+        """Store the message, the suggested wait and the optional context."""
+        super().__init__(message, context)
+        self.retry_after = retry_after
+
 class ArtefactValidationError(LODEError):
     """The artefact was rejected by a security check (size, extension, URL scheme/SSRF, non-text)."""
     pass

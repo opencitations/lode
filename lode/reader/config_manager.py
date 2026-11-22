@@ -1,52 +1,42 @@
-"""Configuration managers: bind each artefact type to its YAML mapper, logic and viewer.
+"""Configuration managers: bind each artefact type to its YAML mapper and reader.
 
 The mapping from RDF/OWL/SKOS constructs to the model lives in the YAML files
 under reader/config, not in Python: a manager loads base.yaml, merges the
-type-specific file on top and exposes the result to the logic classes.
+type-specific file on top and exposes the result to the reader classes.
 """
 
 import yaml
 from pathlib import Path
-from abc import ABC, abstractmethod
 from rdflib import URIRef, Graph, Node
 from lode.models import *
+from lode import profiles
+from lode.profiles import Profile
 
-class ConfigManager(ABC):
+class ConfigManager:
     """Strategy driven by a single merged YAML configuration.
 
-    Subclasses only say which config file they use and how to build their
-    logic and viewer; parsing and caching of the mappings is shared here.
+    One instance per artefact format: its `profile` gives the YAML file (see
+    lode.profiles), and the profile builds the reader with this manager. Adding a format
+    needs no new subclass. Viewers are not a concern of this layer: see lode.viewer.get_viewer.
     """
 
-    def __init__(self):
-        """Load and merge the YAML configuration; mappings are parsed lazily."""
+    def __init__(self, profile: Profile):
+        """Load and merge the YAML configuration of `profile`; mappings are parsed lazily."""
+        self.profile = profile
         self.config = self._load_config()
         self._type_mapping_cache = None
         self._property_mapping_cache = None
-    
-    @abstractmethod
-    def create_logic(self, graph: Graph, cache: dict):
-        """Factory method: build the logic specific to this artefact type."""
-        pass
 
-    @property
-    @abstractmethod
-    def config_name(self) -> str:
-        """Name of the type-specific config file: 'owl' | 'skos' | 'rdf'."""
-        pass
-    
     def _load_config(self) -> dict:
-        """Read base.yaml and the type-specific YAML, and return them deep-merged.
-
-        Files are looked up next to this module so the config ships inside the wheel.
+        """base.yaml sits next to this module, the type-specific file in the folder of the
+        profile; both are package data, so they ship inside the wheel.
         """
-        config_dir = Path(__file__).parent / 'config'
-        
-        with open(config_dir / 'base.yaml') as f:
+        with open(Path(__file__).parent / 'config' / 'base.yaml') as f:
             base = yaml.safe_load(f)
-        
-        with open(config_dir / f'{self.config_name}.yaml') as f:
+
+        with open(self.profile.path() / 'reader.yaml') as f:
             specific = yaml.safe_load(f)
+
         
         return self._deep_merge(base, specific)
     
@@ -64,12 +54,7 @@ class ConfigManager(ABC):
             else:
                 result[key] = value
         return result
-    
-    @abstractmethod
-    def create_viewer(self, reader):
-        """Factory method: build the viewer specific to this artefact type."""
-        pass
-    
+
     # ========== NAMESPACE MAP ==========
     NAMESPACES = {
         'owl': 'http://www.w3.org/2002/07/owl#',
@@ -91,8 +76,14 @@ class ConfigManager(ABC):
     def _parse_class(self, class_name: str):
         """Resolve a model class name from the YAML into the class itself.
 
-        Raises KeyError for an unknown name, so a typo in the config fails loudly.
+        A bare name is looked up in lode.models; "module:Name" points to a class defined by
+        a profile plugin. Raises KeyError for an unknown name, so a typo in the config fails loudly.
         """
+        if ':' in class_name:
+            try:
+                return profiles.resolve(class_name)
+            except (ImportError, AttributeError) as e:
+                raise KeyError(class_name) from e
         import lode.models as _models
         cls = getattr(_models, class_name, None)
         if cls is None:
@@ -103,11 +94,19 @@ class ConfigManager(ABC):
         """Convert a setter argument from the YAML: model class names become classes.
 
         'Literal', booleans and strings that are not model classes are kept as they are.
+        A dict is the long form {targets: <Class>, inverse_of: <setter name>}: only
+        'targets' is resolved, and it is required so a typo fails loudly at load time.
         """
         if value == 'Literal':
             return 'Literal'
         elif value is True or value is False:
             return value
+        elif isinstance(value, dict):
+            if 'targets' not in value:
+                raise ValueError(f"setter long form needs 'targets': {value}")
+            return {**value, 'targets': self._parse_value(value['targets'])}
+        elif isinstance(value, list):
+            return [self._parse_value(v) for v in value]
         elif isinstance(value, str):
             import lode.models as _models
             cls = getattr(_models, value, None)
@@ -168,17 +167,6 @@ class ConfigManager(ABC):
             for uri, handler in self.config.get('enricher', {}).items()
         }
     
-    def get_fallback_class(self) -> type | None:
-        """Return the class given to resources no mapping recognised, or None if unset.
-
-        An unknown class name in the config falls back to Statement.
-        """
-        fallback = self.config.get('mapper', {}).get('fallback_class')
-        if fallback:
-            import lode.models as _models
-            return getattr(_models, fallback, Statement)
-        return None
-        
     # ========== HELPER METHODS ==========
     
     def get_classifier_predicates(self) -> set[URIRef]:
@@ -200,8 +188,11 @@ class ConfigManager(ABC):
             """
             fallback = None
             inferred = None
+            # one pass over the node's own predicates instead of one graph lookup per
+            # mapped predicate; the loop below still follows the mapping order
+            present = set(graph.predicates(uri))
             for predicate, cfg in self.get_property_mapping().items():
-                if (uri, predicate, None) in graph:
+                if predicate in present:
                     if 'inferred_class' in cfg:
                         candidate = cfg['inferred_class']
                         if inferred is None or issubclass(candidate, inferred):
@@ -215,81 +206,4 @@ class ConfigManager(ABC):
         """Return the classes in the order that decides which one wins on a punned IRI."""
         names = self.config.get('punning_priority', [])
         return [self._parse_class(n) for n in names]
-    
-    
-# ========== CONCRETE MANAGERS ==========
 
-class OwlConfigManager(ConfigManager):
-    """Configuration for OWL artefacts."""
-    
-    @property
-    def config_name(self) -> str:
-        """Use owl.yaml on top of base.yaml."""
-        return 'owl'
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the OWL logic."""
-        from lode.reader.logic import OwlLogic
-        return OwlLogic(graph, cache, self)
-    
-    def create_viewer(self, reader):
-        """Build the OWL viewer."""
-        from lode.viewer import OwlViewer
-        return OwlViewer(reader)
-
-class RdfConfigManager(ConfigManager):
-    """Configuration for RDF/RDFS artefacts."""
-
-    @property
-    def config_name(self) -> str:
-        """Use rdf.yaml on top of base.yaml."""
-        return 'rdf'
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the RDF logic."""
-        from lode.reader.logic import RdfLogic
-        return RdfLogic(graph, cache, self)
-
-    def create_viewer(self, reader):
-        """Build the RDF viewer."""
-        from lode.viewer import RdfViewer
-        return RdfViewer(reader)
-
-
-class SkosConfigManager(ConfigManager):
-    """Configuration for SKOS artefacts."""
-
-    @property
-    def config_name(self) -> str:
-        """Use skos.yaml on top of base.yaml."""
-        return 'skos'
-
-    def create_logic(self, graph: Graph, cache: dict):
-        """Build the SKOS logic."""
-        from lode.reader.logic import SkosLogic
-        return SkosLogic(graph, cache, self)
-
-    def create_viewer(self, reader):
-        """Build the SKOS viewer."""
-        from lode.viewer import SkosViewer
-        return SkosViewer(reader)
-
-# ========== CONFIGURATIONS REGISTRY ==========
-
-CONFIGURATION_REGISTRY = {
-    'OWL': OwlConfigManager,
-    'SKOS': SkosConfigManager,
-    'RDF': RdfConfigManager
-}
-
-
-def get_configuration(configuration_name: str) -> ConfigManager:
-    """Return a new manager for the given artefact type (case-insensitive).
-
-    Raises ValueError listing the available types when the name is unknown.
-    """
-    key = configuration_name.upper()
-    if key not in CONFIGURATION_REGISTRY:
-        available = ', '.join(CONFIGURATION_REGISTRY.keys())
-        raise ValueError(f"Unknown configuration: '{configuration_name}'. Available: {available}")
-    return CONFIGURATION_REGISTRY[key]()

@@ -196,9 +196,8 @@
 
             <div class="alert alert-warning" role="alert">
                 <span class="callout-title">Implementation status</span>
-                <p>Only <code>read_as=owl</code> is currently enabled. RDF/RDFS
-                    (<code>read_as=rdf</code>) and SKOS (<code>read_as=skos</code>) are under
-                    development; requesting them returns an error.</p>
+                <p><code>read_as=owl</code> and <code>read_as=skos</code> are enabled.
+                    Other values return an error.</p>
             </div>
 
             <h3>Parameters</h3>
@@ -408,7 +407,7 @@
         const submitBtn = document.getElementById('submitBtn');
         const fileError = document.getElementById('fileError');
 
-        // Client-side guard rails (kept in sync with lode/reader/security.py).
+        // Client-side guard rails (kept in sync with lode/security.py).
         const MAX_UPLOAD_BYTES   = 10 * 1024 * 1024; // 10 MB
         const ALLOWED_EXTENSIONS = ['rdf', 'owl', 'ttl', 'n3', 'nt', 'jsonld', 'xml'];
 

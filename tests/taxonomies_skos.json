@@ -1,0 +1,17 @@
+{
+  "uris": [
+    {"uri": "https://vocabularies.unesco.org/exports/thesaurus/latest/unesco-thesaurus.ttl", "provenance": "UNESCO"},
+    {"uri": "https://publications.europa.eu/resource/distribution/data-theme/rdf/skos_core/data-theme-skos.rdf", "provenance": "EU Publications Office"},
+    {"uri": "https://inspire.ec.europa.eu/theme/theme.en.rdf", "provenance": "INSPIRE"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/L05/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/L06/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/L13/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/L18/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/L19/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/L22/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/C32/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/S11/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/P02/current/", "provenance": "NERC"},
+    {"uri": "https://vocab.nerc.ac.uk/collection/P06/current/", "provenance": "NERC"}
+  ]
+}

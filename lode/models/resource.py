@@ -45,6 +45,15 @@ class Resource():
         # Relation with Resources (0..*)
         self.is_in_range_of = []
 
+    def __repr__(self):
+        """Return the class name and the identifier, e.g. Concept('http://example.org/cat').
+
+        Only the identifier is shown, never the relations: they point to other resources
+        and would recurse. __eq__ and __hash__ are left alone on purpose, because the
+        getters de-duplicate by object identity.
+        """
+        return f"{type(self).__name__}({self.has_identifier!r})"
+
     def set_has_identifier(self, value):
         """Set has_identifier."""
         self.has_identifier = value

@@ -1,0 +1,19 @@
+# Settings of the SKOS viewer. Read by lode.viewer.helpers.load_viewer_config.
+
+# SKOS shows its own terms for the hierarchy relations.
+vocabulary:
+  is sub concept of: broader
+  is super concept of: narrower
+
+# Display names of the entity types, keyed by the lowercase model class name.
+type_map:
+  concept:    {singular: Concept,    plural: Concepts,    abb: c}
+  collection: {singular: Collection, plural: Collections, abb: col}
+  
+# Table of contents in display order: model class name, section id, type_map key.
+toc:
+  - [Concept,    concepts,    Concept]
+  - [Collection, collections, Collection]
+
+characteristics:
+  - is_ordered

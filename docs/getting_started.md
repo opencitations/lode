@@ -1,5 +1,9 @@
 # Getting started
 
+:::{note} Beta version
+LODE 2 is under development and in beta: anything described in this documentation may change.
+:::
+
 ## Requirements
 
 - Python 3.10 or later
@@ -28,10 +32,11 @@ which adds `fastapi`, `uvicorn`, `gunicorn` and `python-multipart`.
 | Build static docs with `lode build` | `pip install oc-lode` |
 | Run `lode serve` or import `lode.api` | `pip install "oc-lode[server]"` |
 
-!!! warning
-    Without the extra, `lode serve` exits with
-    `Server dependencies missing: pip install oc-lode[server]`, and
-    `import lode.api` fails with `ModuleNotFoundError: No module named 'fastapi'`.
+:::{warning}
+Without the extra, `lode serve` exits with
+`Server dependencies missing: pip install oc-lode[server]`, and
+`import lode.api` fails with `ModuleNotFoundError: No module named 'fastapi'`.
+:::
 
 ## First run
 

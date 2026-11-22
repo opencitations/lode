@@ -1,0 +1,1170 @@
+"""Reader for OWL artefacts."""
+
+from rdflib import Graph, URIRef, Node, Literal as RDFlibLiteral, BNode
+from rdflib.namespace import RDF, RDFS, OWL, SKOS, XSD, Namespace
+from rdflib.collection import Collection as RDFLibCollection
+
+SWRL_NS = Namespace("http://www.w3.org/2003/11/swrl#")
+
+from lode.models import *
+from lode.helpers.rdf import iri_local_name
+from lode.reader.reader import Reader
+from lode.profiles.owl import checks
+
+import logging
+logger = logging.getLogger(__name__)
+
+class OwlReader(Reader):
+    """
+    OWL-specific reader.
+
+    Extends Reader with:
+    - Phase 1 BNode classification for OWL restrictions and truth functions
+    - OWL defaults for domain, range (owl:Thing) and Individual type
+    - Handlers for property characteristics, cardinality, truth functions,
+      quantifiers, and group axioms (AllDisjointClasses, AllDifferent, etc.)
+    - Property type inference for properties not explicitly typed in the artefact
+    """
+
+    # A Restriction exists only as a blank node, so an IRI is never given that class.
+    _BNODE_ONLY_CLASSES = (Restriction,)
+    _FALLBACK_CLASS = Individual
+
+    def phase1_classify_from_predicates(self):
+        """Classify from the predicates as the base does, then apply what only OWL knows.
+
+        The base has already created the entities, blank nodes included. OWL drops
+        the anonymous property expressions that sit inside a restriction, flags the
+        malformed restrictions and classifies the nodes nested in OWL lists.
+        Phase 1 runs first, so every blank node in the cache comes from the base.
+        """
+        super().phase1_classify_from_predicates()
+
+        # [ owl:inverseOf <prop> ] used as object of owl:onProperty is an anonymous
+        # property expression, not an entity of its own: it would leave a spurious
+        # cache entry, and nothing has populated or tracked it yet
+        spurious = [n for n in self.entities
+                    if isinstance(n, BNode) and (None, OWL.onProperty, n) in self.graph]
+        for bnode in spurious:
+            del self.entities[bnode]
+
+        classified = {n: type(next(iter(entities)))
+                      for n, entities in self.entities.items()
+                      if isinstance(n, BNode)}
+
+        checks.flag_malformed_restrictions(self, classified)
+
+        first_level = set(classified)
+        self._classify_nested(classified, self._configuration.get_classifier_predicates())
+
+        for bnode, python_class in classified.items():
+            if bnode not in first_level:
+                self.get_or_create(bnode, python_class, populate=False)
+
+    def phase2_create_from_types(self):
+        """Create the entities of the mapped types, then Individuals for the other types.
+
+        The base creates the entities of the mapped types. Subjects whose type is not
+        mapped become Individuals, except for structural vocabulary types.
+        """
+        super().phase2_create_from_types()
+        type_mapping = self._configuration.get_type_mapping()
+
+        # Subjects with rdf:type not covered by config -> Individual
+        for s, o in self.graph.subject_objects(RDF.type):
+            if isinstance(s, BNode) or s in self.entities:
+                continue
+            if o not in type_mapping:
+                if isinstance(o, URIRef):
+                    o_str = str(o)
+                    if any(o_str.startswith(ns) for ns in self._allowed_namespaces) and o not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
+                        continue
+                self.get_or_create(s, Individual, populate=True)
+
+        # Subjects with an rdf:type not mapped in config -> Individual
+        for s, o in self.graph.subject_objects(RDF.type):
+            if o not in type_mapping and not isinstance(s, BNode) and s not in self.entities:
+                self.get_or_create(s, Individual, populate=True)
+        
+
+    def phase5_fallback(self):
+        """
+        First the base fallback (none for OWL: _FALLBACK_CLASS is Individual), then the OWL steps.
+
+        Classifies or reclassifies any entity whose concrete type could not be
+        determined in earlier phases, in particular generic Property entities
+        whose subtype (Relation, Attribute, Annotation) is not explicitly
+        asserted in the semantic artefact via rdf:type (handled by phase 2). It uses _infer_property_type to resolve the concrete subtype.
+
+        After reclassification, applies OWL defaults (e.g., domain, range, thing) to all entities via _enrich_or_apply_owl_defaults.
+        """
+        
+        super().phase5_fallback()
+
+        for uri, entities in list(self.entities.items()):
+            for entity in list(entities):
+
+                if type(entity) is Property:
+                    # Check if a more specific Property subclass already exists for this URI
+
+                    has_concrete = any(
+                        type(i) in (Relation, Attribute, Annotation) 
+                        for i in entities if i is not entity
+                    )
+                    
+                    if has_concrete:
+                        # Remove generic Property, keep the concrete one
+                        self.entities[uri].discard(entity)
+                    else:
+                        inferred = self._infer_property_type(entity)
+                        old_dict = entity.__dict__.copy()
+                        entity.__class__ = inferred
+                        inferred.__init__(entity)
+                        entity.__dict__.update(old_dict)
+                        self._populate_entity(entity, uri)
+
+                self._enrich_or_apply_owl_defaults(entity, uri)        
+
+    def handle_domain(self, entity, uri, predicate, obj, setter=None):
+        """Handle rdfs:domain: link the property to its domain and the domain back to the property.
+
+        A domain that cannot become a Concept (it is cached as something else) is
+        forced into one, because of OWL punning.
+        """
+        concept = self.get_or_create(obj, Concept)
+        if concept is None:
+            concept = self._force_as_concept(obj)
+        entity.set_has_domain(concept)
+        concept.set_is_in_domain_of(entity)
+
+    def _is_data_range(self, node) -> bool:
+        """True if node denotes a data range: XSD/RDF built-in datatypes, rdfs:Literal,
+        anything typed rdfs:Datatype, or a datatype restriction BNode."""
+        if (node, RDF.type, RDFS.Datatype) in self.graph:
+            return True
+        if isinstance(node, BNode):
+            return (node, OWL.onDatatype, None) in self.graph
+        return str(node).startswith(str(XSD)) or node in (
+            RDFS.Literal, RDF.PlainLiteral, RDF.XMLLiteral, RDF.langString, RDF.HTML)
+
+    def handle_range(self, entity, uri, predicate, obj, setter=None):
+        """Handle rdfs:range: set the range of a property and link the target back to it.
+
+        An Attribute accepts only data ranges and a Relation only class ranges: any
+        other triple returns False, so it is not tracked for that entity.
+        """
+        # Punning: each entity takes only the ranges its class admits.
+        # Returning False marks the triple as not admissible (not tracked).
+        is_data = self._is_data_range(obj)
+        if isinstance(entity, Attribute) != is_data and isinstance(entity, (Attribute, Relation)):
+            return False
+        if isinstance(entity, Attribute):
+            resource = self.get_or_create(obj, Datatype)
+        else:
+            resource = self.get_or_create(obj, Concept)
+        if resource is None:
+            resource = self._force_as_concept(obj)
+        entity.set_has_range(resource)
+        resource.set_is_in_range_of(entity)
+        
+    def handle_equivalent_class(self, entity, uri, predicate, obj, setter=None):
+        """§9.1.2 EquivalentClasses — symmetry guaranteed."""
+
+        # add WARNING
+        if not isinstance(entity, Concept):
+            return
+
+        other = self.get_or_create(obj, Concept)
+        # add WARNING 
+        if not other or not isinstance(other, Concept):
+            return
+        
+        if other not in entity.get_is_equivalent_to():
+            entity.set_is_equivalent_to(other)
+        if entity not in other.get_is_equivalent_to():
+            other.set_is_equivalent_to(entity)
+
+    def handle_disjoint_with(self, entity, uri, predicate, obj, setter=None):
+        """§9.1.3 DisjointClasses — symmetry guaranteed."""
+        other = self.get_or_create(obj, Concept)
+        if other:
+            if other not in entity.get_is_disjoint_with():
+                entity.set_is_disjoint_with(other)
+            if entity not in other.get_is_disjoint_with():
+                other.set_is_disjoint_with(entity)
+
+    def handle_equivalent_property(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:equivalentProperty: link the two properties to each other (symmetric)."""
+        if obj in self.entities:
+            other = self.get_or_create(obj, Property)
+        else:
+            other = self.get_or_create(obj, type(entity))
+        if other:
+            if other not in entity.get_is_equivalent_to():
+                entity.set_is_equivalent_to(other)
+            if entity not in other.get_is_equivalent_to():
+                other.set_is_equivalent_to(entity)
+
+    def handle_property_disjoint_with(self, entity, uri, predicate, obj, setter=None):
+        """§9.2.3 DisjointObjectProperties — symmetry guaranteed."""
+        other = self.get_or_create(obj, Property)
+        if other:
+            if other not in entity.get_is_disjoint_with():
+                entity.set_is_disjoint_with(other)
+            if entity not in other.get_is_disjoint_with():
+                other.set_is_disjoint_with(entity)
+
+    def _ensure_individual(self, node):
+        """Get or create an Individual for node, preserving existing types (punning)."""
+        if isinstance(node, RDFlibLiteral):
+            return None
+        cached = self.entities.get(node, set())
+        ind = next((i for i in cached if isinstance(i, Individual)), None)
+        if ind:
+            return ind
+        ind = Individual()
+        ind.set_has_identifier(str(node))
+        self.entities.setdefault(node, set()).add(ind)
+        return ind
+
+    def handle_same_as(self, entity, uri, predicate, obj, setter=None):
+        """§9.6.1 SameIndividual — symmetry guaranteed."""
+        subj_ind = self._ensure_individual(uri)
+        other = self._ensure_individual(obj)
+        if subj_ind and other:
+            if other not in subj_ind.get_is_same_as():
+                subj_ind.set_is_same_as(other)
+            if subj_ind not in other.get_is_same_as():
+                other.set_is_same_as(subj_ind)
+
+    def handle_different_from(self, entity, uri, predicate, obj, setter=None):
+        """§9.6.2 DifferentIndividuals — symmetry guaranteed."""
+        subj_ind = self._ensure_individual(uri)
+        other = self._ensure_individual(obj)
+        if subj_ind and other:
+            if other not in subj_ind.get_is_different_from():
+                subj_ind.set_is_different_from(other)
+            if subj_ind not in other.get_is_different_from():
+                other.set_is_different_from(subj_ind)
+
+    def handle_inverse_of(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:inverseOf.
+
+        On a restriction it sets the property the restriction applies to; on a
+        relation it links the two relations to each other (symmetric).
+        """
+        if isinstance(entity, Restriction) and not isinstance(entity, Relation):
+            prop = self.get_or_create(obj, Property)
+            if prop:
+                entity.set_applies_on_property(prop)
+            return
+        other = self.get_or_create(obj, Relation)
+        if other:
+            if entity.get_is_inverse_of() is not other:
+                entity.set_is_inverse_of(other)
+            if other.get_is_inverse_of() is not entity:
+                other.set_is_inverse_of(entity)
+
+    def handle_on_property(self, entity, uri, predicate, obj, setter=None):
+        """If obj is a BNode with owl:inverseOf, resolve the real property and mark as inverse.
+        Undeclared properties default to Relation (ObjectProperty) per OWL DL.
+        """
+        if isinstance(obj, BNode) and (obj, OWL.inverseOf, None) in self.graph:
+            inverse_of = self.graph.value(obj, OWL.inverseOf)
+            if inverse_of:
+                prop = self.get_or_create(inverse_of, Property)
+                if prop and type(prop) is Property:
+                    prop = self.get_or_create(inverse_of, Relation)
+                if prop and isinstance(entity, PropertyConceptRestriction):
+                    entity.set_applies_on_property(prop)
+                    entity.set_is_inverse(True)
+                return
+        prop = self.get_or_create(obj, Property)
+        if prop and type(prop) is Property:
+            prop = self.get_or_create(obj, Relation)
+        if prop:
+            entity.set_applies_on_property(prop)
+            
+    def _force_as_concept(self, uri):
+        """Add a Concept to the cache for an IRI already classified as Individual or Resource (OWL punning).
+
+        It copies the attributes of the first cached entity, when there is one.
+        """
+        cached = list(self.entities.get(uri, set()))
+        concept = Concept()
+        if cached:
+            concept.__dict__.update(cached[0].__dict__)
+        else:
+            concept.set_has_identifier(str(uri))
+        self.entities.setdefault(uri, set()).add(concept)
+        return concept
+
+    def _enrich_or_apply_owl_defaults(self, entity, uri):
+        """
+        Applies OWL-mandated defaults to entities lacking explicit declarations.
+        A Relation or Attribute without a domain (or with only owl:Thing) inherits
+        it from its super properties or its inverses, falling back to owl:Thing.
+        The range falls back to owl:Thing for a Relation and to rdfs:Literal for
+        an Attribute. An Individual without a type gets owl:Thing. Entities that
+        share an IRI (punning) are cross-linked through also_defined_as, except
+        for punning subordinates.
+        """
+        
+        if uri not in self.entities:
+            return
+
+        owl_thing = self.get_or_create(OWL.Thing, Concept)
+        rdfs_string = self.get_or_create(RDFS.Literal, Datatype)
+
+        def _safe_inherited(entity, getter_name):
+            """Inherited values, with ranges filtered to the right kind: datatypes for an Attribute, concepts for a Relation."""
+            values = self._get_inherited_property_values(entity, getter_name)
+            if isinstance(entity, Attribute):
+                if getter_name == "get_has_range":
+                    return [v for v in values if isinstance(v, (Datatype, DatatypeRestriction))]
+            if isinstance(entity, Relation):
+                if getter_name == "get_has_range":
+                    return [v for v in values if isinstance(v, Concept)]
+            return values
+
+        def _is_only_default(values, default_id):
+            """True if the list is not empty and holds nothing but the default value."""
+            return values and all(d.get_has_identifier() == default_id for d in values)
+
+        # Type-specific defaults: always apply, even for punning subordinates
+        # (these are constitutive of the class, not generic Resource enrichments)
+
+        if isinstance(entity, Relation):
+            current_domains = entity.get_has_domain()
+            if not current_domains or _is_only_default(current_domains, owl_thing):
+                inherited_domain = _safe_inherited(entity, "get_has_domain")
+                if inherited_domain:
+                    entity.has_domain.clear()
+                    for domain in inherited_domain:
+                        entity.set_has_domain(domain)
+                elif not current_domains:
+                    entity.set_has_domain(owl_thing)
+
+            current_ranges = entity.get_has_range()
+            if not current_ranges or _is_only_default(current_ranges, owl_thing):
+                inherited_range = _safe_inherited(entity, "get_has_range")
+                if inherited_range:
+                    entity.has_range.clear()
+                    for r in inherited_range:
+                        entity.set_has_range(r)
+                elif not current_ranges:
+                    entity.set_has_range(owl_thing)
+
+        if isinstance(entity, Attribute):
+            current_domains = entity.get_has_domain()
+            if not current_domains or _is_only_default(current_domains, owl_thing):
+                inherited_domain = _safe_inherited(entity, "get_has_domain")
+                if inherited_domain:
+                    entity.has_domain.clear()
+                    for domain in inherited_domain:
+                        entity.set_has_domain(domain)
+                elif not current_domains:
+                    entity.set_has_domain(owl_thing)
+
+            current_ranges = entity.get_has_range()
+            if not current_ranges or _is_only_default(current_ranges, rdfs_string):
+                inherited_range = _safe_inherited(entity, "get_has_range")
+                if inherited_range:
+                    entity.has_range.clear()
+                    for r in inherited_range:
+                        entity.set_has_range(r)
+                elif not current_ranges:
+                    entity.set_has_range(rdfs_string)
+
+        if isinstance(entity, Individual):
+            if not entity.get_has_type():
+                entity.set_has_type(owl_thing)
+
+        # Generic Resource-level enrichments: skip for punning subordinates
+        if self._is_punning_subordinate(entity, uri):
+            return
+
+        if isinstance(entity, Resource):
+            if len(self.entities[uri]) > 1:
+                existing = entity.get_also_defined_as() or []
+                for other in self.entities[uri]:
+                    if other is entity:
+                        continue
+                    if other not in existing:
+                        entity.set_also_defined_as(other)
+                    if entity not in (other.get_also_defined_as() or []):
+                        other.set_also_defined_as(entity)
+
+
+    def _get_inherited_property_values(self, property_instance, getter_name: str) -> list:
+        """Return the domain or range inherited by a property, or [] when nothing is found.
+
+        For a Relation the inverse relations are tried first, with domain and range
+        swapped (the domain of a relation is the range of its inverse); then the
+        super properties are walked upwards.
+        """
+        def collect(node):
+            """Return the first non-empty value on an ancestor (or on its inverses, swapped), never on the property itself."""
+            if node is property_instance:
+                return None
+            getter = getattr(node, getter_name, None)
+            if getter:
+                values = getter()
+                if values:
+                    return values if isinstance(values, list) else [values]
+            if isinstance(node, Relation):
+                swapped_getter = {"get_has_domain": "get_has_range", "get_has_range": "get_has_domain"}.get(getter_name)
+                if swapped_getter:
+                    for inverse in (node.get_is_inverse_of() or []):
+                        swapped = getattr(inverse, swapped_getter, lambda: None)()
+                        if swapped:
+                            return swapped if isinstance(swapped, list) else [swapped]
+                        inverse_uri = URIRef(inverse.get_has_identifier())
+                        graph_pred = RDFS.range if swapped_getter == "get_has_range" else RDFS.domain
+                        for obj in self.graph.objects(inverse_uri, graph_pred):
+                            if isinstance(obj, BNode):
+                                continue
+                            inst = self.get_or_create(obj, Concept)
+                            if inst:
+                                return [inst]
+            return None
+
+        if isinstance(property_instance, Relation):
+            swapped_getter = {"get_has_domain": "get_has_range", "get_has_range": "get_has_domain"}.get(getter_name)
+            if swapped_getter:
+                owl_thing_id = str(OWL.Thing)
+                for inverse in (property_instance.get_is_inverse_of() or []):
+                    swapped = getattr(inverse, swapped_getter, lambda: None)()
+                    if swapped:
+                        filtered = [v for v in (swapped if isinstance(swapped, list) else [swapped])
+                                    if v.get_has_identifier() != owl_thing_id]
+                        if filtered:
+                            return filtered
+                    inverse_uri = URIRef(inverse.get_has_identifier())
+                    graph_pred = RDFS.range if swapped_getter == "get_has_range" else RDFS.domain
+                    for obj in self.graph.objects(inverse_uri, graph_pred):
+                        if isinstance(obj, BNode):
+                            continue
+                        inst = self.get_or_create(obj, Concept)
+                        if inst:
+                            return [inst]
+
+        result = self._traverse_hierarchy(
+            property_instance,
+            next_getter="get_is_sub_property_of",
+            direction="up",
+            collect=collect,
+        )
+        return result if result is not None else []
+
+
+    def _infer_property_type(self, entity) -> type:
+        """
+        Infers the concrete subtype (Relation, Attribute, Annotation) for a
+        generic Property entity.
+
+        Strategy:
+        1. owl:inverseOf in graph — if present, this is a Relation.
+        2. Traverse UP subPropertyOf — inherit type from ancestor.
+        3. Traverse DOWN subPropertyOf — inherit type from descendant.
+        4. Declared rdfs:range — XSD/Literal range -> Attribute, URIRef range -> Relation.
+        5. Graph usage — all literal objects -> Attribute, any URIRef object -> Relation.
+        6. Fallback to Annotation.
+        """
+        uri_ref = URIRef(entity.get_has_identifier()) if entity.get_has_identifier() else None
+
+        # (1) inverseOf in graph (entity not yet populated as Property)
+        if uri_ref:
+            if any(self.graph.objects(uri_ref, OWL.inverseOf)) or \
+               any(self.graph.subjects(OWL.inverseOf, uri_ref)):
+                return Relation
+
+        CONCRETE = (Relation, Attribute, Annotation)
+
+        # (2) UP THE HIERARCHY
+        def collect_type(node):
+            """Return the node's class when it is already a concrete property type."""
+            if type(node) in CONCRETE:
+                return type(node)
+            return None
+
+        result = self._traverse_hierarchy(
+            entity,
+            next_getter="get_is_sub_property_of",
+            direction="up",
+            collect=collect_type,
+        )
+        if result:
+            return result
+
+        # (3) DOWN THE HIERARCHY
+        result = self._traverse_hierarchy(
+            entity,
+            next_getter="get_is_sub_property_of",
+            direction="down",
+            collect=collect_type,
+        )
+        if result:
+            return result
+
+        # (4) Declared rdfs:range
+        if uri_ref:
+            for range_obj in self.graph.objects(uri_ref, RDFS.range):
+                range_str = str(range_obj)
+                if range_str.startswith(str(XSD)) or range_obj in (RDFS.Literal,):
+                    return Attribute
+                if isinstance(range_obj, URIRef):
+                    return Relation
+
+        # (5) Graph usage: how the property is used as predicate
+        if uri_ref:
+            has_literal = False
+            has_uriref = False
+            for s, p, o in self.graph.triples((None, uri_ref, None)):
+                if isinstance(o, RDFlibLiteral):
+                    has_literal = True
+                elif isinstance(o, URIRef):
+                    has_uriref = True
+            if has_uriref:
+                return Relation
+            if has_literal:
+                return Attribute
+
+        # (6) fallback
+        return Annotation
+
+    # ========== HELPERS & RELATED FUNCTIONS PHASE 1 ==========
+
+    def _classify_nested(self, classified, predicates):
+        """
+        Recursively classifies BNodes found inside OWL list collections
+        (owl:intersectionOf, owl:unionOf, owl:oneOf) hanging off already-classified
+        BNodes. Extends the classified dict in place with any newly discovered
+        BNode-to-class mappings.
+        """
+
+        list_preds = [OWL.intersectionOf, OWL.unionOf, OWL.oneOf, OWL.onDataRange]
+
+        for bnode in list(classified.keys()):
+            for pred, obj in self.graph.predicate_objects(bnode):
+                if pred in list_preds:
+                    try:
+                        collection = RDFLibCollection(self.graph, obj)
+                        for item in collection:
+                            if isinstance(item, BNode) and item not in classified:
+                                py_class = self._configuration.classify_by_predicate(item, self.graph)
+                                if py_class:
+                                    classified[item] = py_class
+                    except:
+                        pass
+
+    # ========== HELPERS & RELATED FUNCTIONS PHASE 2 ==========
+
+    def _apply_setters_immediate(self, entity, setters_config):
+        """Applies static setter values from the config directly to an entity,
+        without resolving any RDF object. Used in phase2 to apply constant values
+        (e.g. set_is_symmetric: True) defined alongside is: class entries.
+        """
+        for setter_item in setters_config:
+            if isinstance(setter_item, dict):
+                for setter_name, value in setter_item.items():
+                    if hasattr(entity, setter_name):
+                        getattr(entity, setter_name)(value)
+            else:
+                if hasattr(entity, setter_item):
+                    getattr(entity, setter_item)()
+
+    # ========== HANDLERS PHASE 4 (GROUP AXIOMS) ==========
+
+    def process_all_disjoint_classes(self, uri: Node):
+        """
+        Handles owl:AllDisjointClasses axioms by resolving the owl:members
+        collection and marking every pair of member Concepts as mutually
+        disjoint via set_is_disjoint_with.
+        """
+        members_list = self.graph.value(uri, OWL.members)
+        if not members_list:
+            return
+        try:
+            members = list(RDFLibCollection(self.graph, members_list))
+            for i, class_a_uri in enumerate(members):
+                class_a = self.get_or_create(class_a_uri, Concept)
+                for class_b_uri in members[i + 1:]:
+                    class_b = self.get_or_create(class_b_uri, Concept)
+                    class_a.set_is_disjoint_with(class_b)
+                    class_b.set_is_disjoint_with(class_a)
+        except Exception:
+            logger.warning("AllDisjointClasses failed for %s", uri, exc_info=True)
+
+    def process_all_different(self, uri: Node):
+        """
+        Handles owl:AllDifferent axioms by resolving the owl:distinctMembers
+        collection and marking every pair of member Individuals as mutually
+        different via set_is_different_from.
+        """
+        members_list = self.graph.value(uri, OWL.distinctMembers)
+        if not members_list:
+            return
+        try:
+            members = list(RDFLibCollection(self.graph, members_list))
+            for i, ind_a_uri in enumerate(members):
+                ind_a = self.get_or_create(ind_a_uri, Individual)
+                for ind_b_uri in members[i + 1:]:
+                    ind_b = self.get_or_create(ind_b_uri, Individual)
+                    ind_a.set_is_different_from(ind_b)
+                    ind_b.set_is_different_from(ind_a)
+        except Exception:
+            logger.warning("AllDifferent failed for %s", uri, exc_info=True)
+
+    def process_all_disjoint_properties(self, uri: Node):
+        """
+        Handles owl:AllDisjointProperties axioms by resolving the owl:members
+        collection and marking every pair of member Properties as mutually
+        disjoint via set_is_disjoint_with.
+        """
+        members_list = self.graph.value(uri, OWL.members)
+        if not members_list:
+            return
+        try:
+            members = list(RDFLibCollection(self.graph, members_list))
+            for i, prop_a_uri in enumerate(members):
+                prop_a = self.get_or_create(prop_a_uri, Property)
+                for prop_b_uri in members[i + 1:]:
+                    prop_b = self.get_or_create(prop_b_uri, Property)
+                    prop_a.set_is_disjoint_with(prop_b)
+                    prop_b.set_is_disjoint_with(prop_a)
+        except Exception:
+            logger.warning("AllDisjointProperties failed for %s", uri, exc_info=True)
+
+# ==========================================================================
+# OWL-SPECIFIC HANDLERS READ FROM DECLARATIVE MAPPING
+# ==========================================================================
+    
+    def handle_property_chain(self, entity, uri, predicate, obj, setter=None):
+        """Handler per owl:propertyChainAxiom"""
+
+        if not self._is_rdf_collection(obj):
+            raise ValueError(f"owl:propertyChainAxiom object is not an RDF list: {obj}")
+        collection = RDFLibCollection(self.graph, obj)
+        chain_instances = []
+        for chain_uri in collection:
+            chain_instance = self.get_or_create(chain_uri, Relation)
+            chain_instances.append(chain_instance)
+        entity.set_has_property_chain(chain_instances)
+
+    def handle_has_key(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:hasKey: add every property of the key list to the concept."""
+        try:
+            for prop_uri in RDFLibCollection(self.graph, obj):
+                prop = self.get_or_create(prop_uri, Property)
+                if prop:
+                    entity.set_has_key(prop)
+        except Exception:
+            logger.warning("handle_has_key failed for %s", uri, exc_info=True)
+
+    # ========== RESTRICTIONS ================================================
+
+    def handle_disjoint_union(self, entity, uri, predicate, obj, setter=None):
+        """§9.1.4 DisjointUnion(C CE1...CEn) — equivalent to:
+        EquivalentClasses(C ObjectUnionOf(CE1...CEn)) + DisjointClasses(CE1...CEn).
+        """
+        if not isinstance(entity, Concept):
+            return
+        try:
+            collection = RDFLibCollection(self.graph, obj)
+            members = list(collection)
+
+            # 1. C equivalentClass ObjectUnionOf(CE1...CEn)
+            tf = self.get_or_create(obj, TruthFunction)
+            if tf:
+                tf.set_has_logical_operator("or")
+                for member_uri in members:
+                    concept = self.get_or_create(member_uri, Concept)
+                    if concept:
+                        tf.set_applies_on_concept(concept)
+                entity.set_is_equivalent_to(tf)
+
+            # 2. DisjointClasses(CE1...CEn) — pairwise
+            for i, uri_a in enumerate(members):
+                concept_a = self.get_or_create(uri_a, Concept)
+                for uri_b in members[i+1:]:
+                    concept_b = self.get_or_create(uri_b, Concept)
+                    if concept_a and concept_b:
+                        concept_a.set_is_disjoint_with(concept_b)
+                        concept_b.set_is_disjoint_with(concept_a)
+
+        except Exception:
+            logger.warning("disjointUnion failed for %s", uri, exc_info=True)
+
+    def handle_datatype_restriction(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:withRestrictions: preserve the base datatype and every facet/value pair.
+
+        Facet nodes (e.g. xsd:minInclusive) are cached and tracked, so phase 6
+        does not turn them into Statements.
+        """
+        on_datatype = self.graph.value(uri, OWL.onDatatype)
+        if on_datatype:
+            dt = self.get_or_create(on_datatype, Datatype)
+            if dt:
+                entity.set_applies_on_concept(dt)
+        try:
+            collection = RDFLibCollection(self.graph, obj)
+            for facet_node in collection:
+                for facet_pred, facet_val in self.graph.predicate_objects(facet_node):
+                    if facet_pred == RDF.type:
+                        continue
+                    if isinstance(facet_val, RDFlibLiteral):
+                        FACET_MAP = {
+                            str(XSD.minInclusive): ">=",
+                            str(XSD.maxInclusive): "<=",
+                            str(XSD.minExclusive): ">",
+                            str(XSD.maxExclusive): "<",
+                            str(XSD.pattern): "pattern",
+                            str(XSD.length): "length",
+                            str(XSD.minLength): "minLength",
+                            str(XSD.maxLength): "maxLength",
+                        }
+                        manchester_facet = FACET_MAP.get(str(facet_pred), str(facet_pred))
+                        literal = self._create_literal(facet_val)
+                        entity.set_has_facet(manchester_facet, literal)
+
+                # Register facet node in cache keyed to the parent DatatypeRestriction
+                # and mark all its triples as mapped, so phase6 does not create
+                # spurious Statements or Individuals for the facet BNode.
+                if facet_node not in self.entities:
+                    self.entities[facet_node] = set()
+                self.entities[facet_node].add(entity)
+                self._track(entity, *((facet_node, fp, fv) for fp, fv in self.graph.predicate_objects(facet_node)))
+
+        except Exception:
+            logger.warning("Datatype restriction failed for %s", uri, exc_info=True)
+
+    def handle_cardinality_exactly(self, entity, uri, predicate, obj, setter=None):
+        """Handle an exact cardinality (plain or qualified): type "exactly", the number, and owl:Thing as the default concept."""
+        entity.set_has_cardinality_type("exactly")
+        entity.set_has_cardinality(obj)
+        entity.set_applies_on_concept(self.get_or_create(OWL.Thing, Concept))
+
+    def handle_cardinality_min(self, entity, uri, predicate, obj, setter=None):
+        """Handle a minimum cardinality (plain or qualified): type "min", the number, and owl:Thing as the default concept."""
+        entity.set_has_cardinality_type("min")
+        entity.set_has_cardinality(obj)
+        entity.set_applies_on_concept(self.get_or_create(OWL.Thing, Concept))
+
+    def handle_cardinality_max(self, entity, uri, predicate, obj, setter=None):
+        """Handle a maximum cardinality (plain or qualified): type "max", the number, and owl:Thing as the default concept."""
+        entity.set_has_cardinality_type("max")
+        entity.set_has_cardinality(obj)
+        entity.set_applies_on_concept(self.get_or_create(OWL.Thing, Concept))
+
+    # ========== HANDLER TRUTH FUNCTIONS ==========
+
+    def _build_truth_function(self, entity, obj, operator):
+        """
+        If entity is TruthFunction: populate in-place, return None.
+        If entity is Concept: create a separate TruthFunction keyed on obj, return tf.
+
+        If the list has a single element, log a warning and:
+        - if entity is TruthFunction: populate applies_on_concept anyway, return None
+        - if entity is Concept: return the Concept directly (no TruthFunction created)
+
+        If the list is empty, log a warning and return None.
+        """
+        try:
+            items = list(RDFLibCollection(self.graph, obj))
+        except Exception:
+            logger.warning("Truth function list failed for %s", obj, exc_info=True)
+            return None
+
+        if len(items) == 0:
+            checks.empty_truth_function(self, entity, obj, operator)
+            return None
+
+        if len(items) == 1:
+            checks.singleton_truth_function(self, entity, obj, operator)
+            single_concept = self.get_or_create(items[0], Concept)
+            if type(entity) is TruthFunction:
+                entity.set_has_logical_operator(operator)
+                if single_concept:
+                    entity.set_applies_on_concept(single_concept)
+                return None
+            else:
+                return single_concept
+
+        if type(entity) is TruthFunction:
+            entity.set_has_logical_operator(operator)
+            for item in items:
+                concept = self.get_or_create(item, Concept)
+                if concept:
+                    entity.set_applies_on_concept(concept)
+            return None
+        else:
+            tf = self.get_or_create(obj, TruthFunction)
+            if tf:
+                tf.set_has_logical_operator(operator)
+                for item in items:
+                    concept = self.get_or_create(item, Concept)
+                    if concept:
+                        tf.set_applies_on_concept(concept)
+            return tf
+
+    def handle_intersection(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:intersectionOf as an "and" truth function; on a Concept it becomes an equivalent class."""
+        if type(entity) not in (TruthFunction, Concept):
+            return
+        tf = self._build_truth_function(entity, obj, "and")
+        if tf and isinstance(entity, Concept):
+            entity.set_is_equivalent_to(tf)
+
+    def handle_union(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:unionOf as an "or" truth function; on a Concept it becomes an equivalent class."""
+        if type(entity) not in (TruthFunction, Concept):
+            return
+        tf = self._build_truth_function(entity, obj, "or")
+        if tf and isinstance(entity, Concept):
+            entity.set_is_equivalent_to(tf)
+
+    def handle_complement(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:complementOf as a "not" truth function over the target concept."""
+        if type(entity) not in (TruthFunction, Concept):
+            return
+        if type(entity) is TruthFunction:
+            entity.set_has_logical_operator("not")
+            concept = self.get_or_create(obj, Concept)
+            if concept:
+                entity.set_applies_on_concept(concept)
+        else:
+            tf = self.get_or_create(obj, TruthFunction)
+            if tf:
+                tf.set_has_logical_operator("not")
+                concept = self.get_or_create(obj, Concept)
+                if concept:
+                    tf.set_applies_on_concept(concept)
+            entity.set_is_equivalent_to(tf)
+
+    def handle_one_of(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:oneOf: add the listed individuals to an enumeration.
+
+        On a Concept a OneOf is created and set as its equivalent class.
+        """
+        if type(entity) not in (OneOf, Concept):
+            return
+        if type(entity) is Concept:
+            one_of = self.get_or_create(uri, OneOf)
+            if one_of:
+                try:
+                    collection = RDFLibCollection(self.graph, obj)
+                    for item in collection:
+                        resource = self.get_or_create(item, Individual)
+                        if resource:
+                            one_of.set_applies_on_resource(resource)
+                except Exception:
+                    logger.warning("oneOf on Concept failed for %s", uri, exc_info=True)
+                entity.set_is_equivalent_to(one_of)
+        else:  # type(entity) is OneOf
+            try:
+                collection = RDFLibCollection(self.graph, obj)
+                for item in collection:
+                    resource = self.get_or_create(item, Individual)
+                    if resource:
+                        entity.set_applies_on_resource(resource)
+            except Exception:
+                logger.warning("oneOf failed for %s", uri, exc_info=True)
+
+    def handle_has_value(self, entity, uri, predicate, obj, setter=None):
+        """Handle owl:hasValue: set the resource and, when the restriction names one, its property."""
+        resource = self.get_or_create(obj, Resource)
+        if resource:
+            entity.set_applies_on_resource(resource)
+        on_prop = self.graph.value(uri, OWL.onProperty)
+        if on_prop:
+            prop = self.get_or_create(on_prop, Property)
+            if prop:
+                entity.set_applies_on_property(prop)
+
+
+    def handle_rdf_type(self, entity, uri, predicate, obj, setter=None):
+        """
+        Bidirectional handler for rdf:type.
+
+        - subject.has_type += object  (Individual/Resource side)
+        - object.individuals_with_this_type += subject (Concept side, only if the object
+        is really classified as a Concept and is not a structural vocabulary URI)
+
+        Mirrors the filter logic of _apply_setters for set_has_type: it discards
+        objects in the OWL/RDF/RDFS namespaces, except owl:Thing, owl:Nothing,
+        rdfs:Literal.
+        """
+        if not isinstance(obj, URIRef) and not isinstance(obj, BNode):
+            return
+
+        # Structural URI filter (same logic as _apply_setters)
+        if isinstance(obj, URIRef):
+            obj_str = str(obj)
+            if any(obj_str.startswith(ns) for ns in self._allowed_namespaces) \
+                    and obj not in (OWL.Thing, OWL.Nothing, RDFS.Literal):
+                return
+
+        concept = self.get_or_create(obj, Concept)
+        if concept is None:
+            return
+
+        # Direct side
+        if hasattr(entity, 'set_has_type'):
+            entity.set_has_type(concept)
+
+        # Inverse side: only if the object is really a Concept
+        # (get_or_create can promote; the exact type() check avoids polluting
+        #  TruthFunction/Restriction/OneOf/etc.)
+        if type(concept) is Concept and isinstance(entity, Individual):
+            concept.set_individuals_with_this_type(entity)
+
+
+    # ========== Statement OVERRIDE for OWL (typed subject/object) ==========
+
+    def _create_statement_for_triple(self, subj, pred, obj):
+        """
+        Creates a Statement entity for a triple that was not mapped during
+        population phases.
+
+        Skips rdf:type triples — those are handled by phase2 and must not be
+        reified as Statements.
+
+        Subject is resolved as Individual; if the namespace filter blocks it
+        (e.g. OWL/RDF/RDFS URIs), the triple is silently dropped.
+
+        Predicate is looked up in the entity cache first. If not found, a bare
+        Annotation is created directly, bypassing the namespace filter — predicates
+        must always be reifiable regardless of their namespace.
+
+        Object is resolved based on its RDF type: RDF collections become
+        Containers, RDFLib Literals become Literal entities, everything else
+        is resolved as Individual.
+
+        OWL defaults (owl:Thing type for untyped Individuals) are applied to
+        subject and object after the Statement is built, since these entities
+        may have been created here for the first time, after phase3 defaults
+        have already run.
+        """
+        if pred == RDF.type or pred in self._property_mapping:
+            return
+        
+        # Subject: an unmapped structured BNode is a Statement, not an Individual.
+        # This handles the case where phase6 visits the BNode's outgoing triples
+        # before visiting the triple that points to it.
+        if self._is_unmapped_structured_bnode(subj):
+            # Just materialise it; its outgoing triples will be absorbed inside.
+            # Skip emitting a wrapper Statement for this triple — _create_nested_statement
+            # already records (subj, pred, obj) in the BNode-Statement's triples_map.
+            self._create_nested_statement(subj)
+            return
+
+        subj_inst = self._resolve_statement_endpoint(subj, Individual)
+        if subj_inst is None:
+            # Fallback for structural-namespace subjects: create a bare Resource
+            # so the predicate is still reifiable.
+            subj_inst = Resource()
+            subj_inst.set_has_identifier(str(subj))
+            if subj not in self.entities:
+                self.entities[subj] = set()
+            self.entities[subj].add(subj_inst)
+
+        if pred in self.entities:
+            pred_inst = next(
+                (i for i in self.entities[pred] if isinstance(i, Property)),
+                None
+            )
+        else:
+            pred_inst = None
+
+        if pred_inst is None:
+            pred_inst = Annotation()
+            pred_inst.set_has_identifier(str(pred))
+            if pred not in self.entities:
+                self.entities[pred] = set()
+            self.entities[pred].add(pred_inst)
+
+        statement = Statement()
+        stmt_bnode = BNode()
+        statement.set_has_identifier(str(stmt_bnode))
+
+        self._track(statement, (subj, pred, obj))
+
+        statement.set_has_subject(subj_inst)
+        statement.set_has_predicate(pred_inst)
+
+        if self._is_rdf_collection(obj):
+            obj_inst = self._convert_collection_to_container(obj)
+        elif isinstance(obj, RDFlibLiteral):
+            obj_inst = self._create_literal(obj)
+        elif self._is_unmapped_structured_bnode(obj):
+            obj_inst = self._create_nested_statement(obj)
+        else:
+            # object never seen: Individual (fallback class — _resolve_statement_endpoint
+            # returns the cached dominant entity if any, otherwise creates one)
+            obj_inst = self._resolve_statement_endpoint(obj, Resource)
+
+        if obj_inst:
+            statement.set_has_object(obj_inst)
+
+        if stmt_bnode not in self.entities:
+            self.entities[stmt_bnode] = set()
+        self.entities[stmt_bnode].add(statement)
+
+        self._enrich_or_apply_owl_defaults(subj_inst, subj)
+        if obj_inst and not isinstance(obj, RDFlibLiteral):
+            self._enrich_or_apply_owl_defaults(obj_inst, obj)
+
+    def _resolve_statement_endpoint(self, node, fallback_class):
+        """Return the entity to use as subject or object of a Statement.
+
+        It is the punning-dominant cached entity, or a new one of `fallback_class`.
+        """
+        dom = self._get_punning_dominant(node)
+        if dom is not None:
+            return dom
+        return self.get_or_create(node, fallback_class)
+    
+    # ========== SWRL ==========
+
+    def handle_swrl_imp(self, uri):
+        """Build a Rule from a swrl:Imp, with its body atoms as antecedent and head atoms as consequent."""
+        # Force promotion to Rule if cached as something else
+        if uri in self.entities:
+            existing = next(iter(self.entities[uri]))
+            if not isinstance(existing, Rule):
+                rule = Rule()
+                rule.__dict__.update(existing.__dict__)
+                self.entities[uri].discard(existing)
+                self.entities[uri].add(rule)
+                self._move_tracking(existing, rule)
+            else:
+                rule = existing
+        else:
+            rule = self.get_or_create(uri, Rule)
+        
+        if not rule:
+            return
+        
+        body_node = self.graph.value(uri, SWRL_NS.body)
+        if body_node:
+            try:
+                for atom_node in RDFLibCollection(self.graph, body_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_antecedent(atom)
+            except Exception:
+                logger.warning("SWRL body parsing failed for rule %s", uri, exc_info=True)
+
+        head_node = self.graph.value(uri, SWRL_NS.head)
+        if head_node:
+            try:
+                for atom_node in RDFLibCollection(self.graph, head_node):
+                    atom = self._parse_swrl_atom(atom_node)
+                    if atom:
+                        rule.set_has_consequent(atom)
+            except Exception:
+                logger.warning("SWRL head parsing failed for rule %s", uri, exc_info=True)
+
+    def _parse_swrl_atom(self, atom_node):
+        """Build an Atom from a SWRL atom node: its predicate (by atom kind) and its arguments."""
+        atom = self.get_or_create(atom_node, Atom)
+        if not atom:
+            return None
+
+        # classPredicate (ClassAtom)
+        class_pred = self.graph.value(atom_node, SWRL_NS.classPredicate)
+        if class_pred:
+            atom.set_has_predicate(self.get_or_create(class_pred, Concept))
+
+        # propertyPredicate (IndividualPropertyAtom, DatavaluedPropertyAtom)
+        prop_pred = self.graph.value(atom_node, SWRL_NS.propertyPredicate)
+        if prop_pred:
+            atom_type_uri = self.graph.value(atom_node, RDF.type)
+            local = iri_local_name(atom_type_uri) if atom_type_uri else ''
+            if local == 'DatavaluedPropertyAtom':
+                atom.set_has_predicate(self.get_or_create(prop_pred, Attribute))
+            else:
+                atom.set_has_predicate(self.get_or_create(prop_pred, Relation))
+
+        # builtin (BuiltinAtom)
+        builtin = self.graph.value(atom_node, SWRL_NS.builtin)
+        if builtin:
+            atom.set_has_predicate(self.get_or_create(builtin, Resource))
+
+        # SameIndividualsAtom / DifferentIndividualsAtom — no predicate in RDF
+        atom_type_uri = self.graph.value(atom_node, RDF.type)
+        if atom_type_uri:
+            local = iri_local_name(atom_type_uri)
+            if local == 'SameIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.sameAs, Relation))
+            elif local == 'DifferentIndividualsAtom':
+                atom.set_has_predicate(self.get_or_create(OWL.differentFrom, Relation))
+
+        # dataRange (DataRangeAtom)
+        data_range = self.graph.value(atom_node, SWRL_NS.dataRange)
+        if data_range and atom.get_has_predicate() is None:
+            atom.set_has_predicate(self.get_or_create(data_range, Datatype))
+
+        # argument1 / argument2 (most atom types)
+        arg1 = self.graph.value(atom_node, SWRL_NS.argument1)
+        if arg1:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg1))
+
+        arg2 = self.graph.value(atom_node, SWRL_NS.argument2)
+        if arg2:
+            atom.set_has_arguments(self._resolve_swrl_arg(arg2))
+
+        # arguments (BuiltinAtom — RDF list)
+        args_node = self.graph.value(atom_node, SWRL_NS.arguments)
+        if args_node:
+            try:
+                for arg in RDFLibCollection(self.graph, args_node):
+                    atom.set_has_arguments(self._resolve_swrl_arg(arg))
+            except Exception:
+                logger.warning("SWRL builtin arguments failed for atom %s",
+                               atom_node, exc_info=True)
+
+        return atom
+
+    def _resolve_swrl_arg(self, node):
+        """Resolve a SWRL argument: a Literal, a Variable or, by default, an Individual."""
+        if isinstance(node, RDFlibLiteral):
+            return self._create_literal(node)
+        if (node, RDF.type, SWRL_NS.Variable) in self.graph:
+            return self.get_or_create(node, Variable)
+        return self.get_or_create(node, Individual)
+    
+
+    # ========== PROVENANCE OWL-SPECIFIC ==========
+
+    _PROVENANCE_AXIOM_TYPES = (
+        OWL.AllDisjointClasses,
+        OWL.AllDifferent,
+        OWL.AllDisjointProperties,
+    )
+
+    def _add_axiom_provenance(self, entity, sub):
+        """Include general axioms that mention `entity` URI in members/distinctMembers."""
+        uri_str = getattr(entity, 'has_identifier', None)
+        if not uri_str:
+            return
+        uri_ref = URIRef(uri_str)
+        for axiom_type in self._PROVENANCE_AXIOM_TYPES:
+            for axiom in self.graph.subjects(RDF.type, axiom_type):
+                if self._uri_in_axiom_members(axiom, uri_ref):
+                    self._expand_bnode_into(axiom, sub, set())
+
+    def _uri_in_axiom_members(self, axiom_node, uri_ref):
+        """True if uri_ref appears in owl:members or owl:distinctMembers list of axiom_node."""
+        for list_pred in (OWL.members, OWL.distinctMembers):
+            head = self.graph.value(axiom_node, list_pred)
+            if head is None:
+                continue
+            node = head
+            while node and node != RDF.nil:
+                first = self.graph.value(node, RDF.first)
+                if first == uri_ref:
+                    return True
+                node = self.graph.value(node, RDF.rest)
+        return False

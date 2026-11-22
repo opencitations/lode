@@ -22,8 +22,8 @@ pip install "oc-lode[server]"
 
 ```bash
 # Build static documentation from an ontology URL or a local file
-lode build --url <url> --read-as <owl|rdf|skos> [--out ./docs] [--lang en] [--artefact-name index] [--imported] [--closure]
-lode build --file <path> --read-as <owl|rdf|skos> [--out ./docs]
+lode build --url <url> --read-as <owl|skos> [--out ./docs] [--lang en] [--artefact-name index] [--imported] [--closure]
+lode build --file <path> --read-as <owl|skos> [--out ./docs]
 
 # Run the web service locally (requires the [server] extra)
 lode serve --port 8000

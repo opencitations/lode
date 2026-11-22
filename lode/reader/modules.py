@@ -2,7 +2,7 @@
 """Enrichment modules: load external documents and add them to the graph of the
 documented ontology.
 
-Three modules, activated by the Loader (one at a time; partial_import has the lowest precedence):
+Three modules, activated by `apply` (imported or closure, then partial_import on top of them):
 
   imported        direct owl:imports (depth 1)
   closure         transitive closure of owl:imports (depth N)
@@ -23,7 +23,7 @@ skos:ConceptScheme), falling back to the URL it was loaded from. Modules never b
 contexts by hand: every document enters through ProvenanceGraph.add_document, so each
 triple stays in the graph of the document that asserts it.
 
-Every external document is loaded with a Loader without modules: no implicit
+Every external document is loaded with `load_document`, without modules: no implicit
 recursion, and the same security checks as the main document.
 
 Contract: every apply_* modifies the graph in place and returns (graph, visited),
@@ -34,7 +34,8 @@ from urllib.parse import urldefrag
 from typing import Optional
 
 from lode.helpers.rdf import iri_namespace, iri_stem
-from lode.reader.provenance_graph import ProvenanceGraph
+from lode.provenance_graph import ProvenanceGraph
+from lode.reader.loader import load_document
 
 import logging
 logger = logging.getLogger(__name__)
@@ -61,17 +62,15 @@ def _load_formal_import(graph: ProvenanceGraph, source: str, depth: int,
 
     visited.add(source)
 
-    # Reuse the Loader for the whole load (content negotiation, formats, security).
+    # Reuse load_document for the whole load (content negotiation, formats, security).
     # Modules are not propagated: each imported ontology is loaded as-is, and the
     # recursion over imports is handled by this function.
-    from lode.reader.loader import Loader  # local import: loader imports modules
     try:
-        imported_loader = Loader(source)
+        imported_graph = load_document(source)
     except Exception as e:
         logger.warning("Formal import failed for %s: %s", source, e)
         return
 
-    imported_graph = imported_loader.get_graph()
     logger.info("Formal import: %d triples from %s", len(imported_graph), source)
     # Context = ontology IRI declared in the document (fallback: source)
     graph.add_document(imported_graph, source)
@@ -90,9 +89,8 @@ def _load_informal_import(source: str, target: ProvenanceGraph, visited: set, fa
 
     if source in visited or source in failed:
         return
-    from lode.reader.loader import Loader  # local import: loader imports modules
     try:
-        g = Loader(source).get_graph()
+        g = load_document(source)
     except Exception as e:
         failed.add(source)
         logger.warning("Informal import failed for %s: %s: %s", source, type(e).__name__, e)
@@ -132,14 +130,13 @@ def apply_closure(graph: ProvenanceGraph):
 #    - what the documented ontology says about it, in the main graph, and
 #    - ALL the triples of its "home" graph (types included), in the home graph.
 #  No per-predicate priority here: both sources are kept with their provenance;
-#  conflicting types become punned instances in the Reader, and the Viewer decides
+#  conflicting types become punned entities in the Reader, and the Viewer decides
 #  what to show. Redefinitions in third-party ontologies are NOT copied.
 #  If the home cannot be reached, the term receives no external definition.
 
 def _namespace(term) -> str:
     """Namespace of an IRI, without the trailing separator:
     'http://ex.org/onto#T' -> 'http://ex.org/onto', 'http://ex.org/voc/t' -> 'http://ex.org/voc'."""
-    s = str(term)
     return iri_stem(iri_namespace(term))
 
 
@@ -229,3 +226,26 @@ def _copy_description(src: ProvenanceGraph, node, dst: ProvenanceGraph, seen: se
         dst.graph(c).add((node, p, o))
         if isinstance(o, BNode):
             _copy_description(src, o, dst, seen, ctx=c)
+
+
+# ----------------------------------------------------------
+#  ENTRY POINT
+# ----------------------------------------------------------
+
+def apply(graph: ProvenanceGraph, *, imported=None, closure=None, partial_import=None):
+    """Apply the requested modules to `graph` and return (graph, imported_uris).
+
+    Formal imports come first (imported, else closure); partial_import then runs on top of
+    them, so it only dereferences terms the imports did not already bring in. The returned
+    IRIs are the documents that were loaded, so the viewer can keep the original model
+    metadata.
+    """
+    imported_uris: set = set()
+    if imported:
+        graph, imported_uris = apply_imported(graph)
+    elif closure:
+        graph, imported_uris = apply_closure(graph)
+    if partial_import:
+        graph, visited = apply_partial_import(graph)
+        imported_uris = set(imported_uris or ()) | visited
+    return graph, imported_uris
